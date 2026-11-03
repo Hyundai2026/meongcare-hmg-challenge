@@ -1,5 +1,6 @@
 package com.meongcare.app.di
 
+import android.annotation.SuppressLint
 import android.content.Context
 import com.meongcare.app.BuildConfig
 
@@ -21,6 +22,7 @@ class DataModeStore(context: Context) {
     }
 
     /** 바꾼 값은 앱을 다시 시작해야 적용된다. */
+    @SuppressLint("ApplySharedPref")
     fun write(mode: DataMode) {
         // 바로 뒤에 프로세스를 다시 시작하므로 비동기 apply 대신 commit으로 확실히 저장한다.
         prefs.edit().putString(KEY_DATA_MODE, mode.name).commit()

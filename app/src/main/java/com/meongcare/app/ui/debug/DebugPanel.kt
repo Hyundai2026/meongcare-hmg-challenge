@@ -2,6 +2,7 @@ package com.meongcare.app.ui.debug
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -17,6 +18,7 @@ import androidx.compose.ui.unit.dp
  * debug 빌드에서만 보이는 개발자 패널. 화면 아래의 얇은 띠다.
  *
  * - Fake 모드일 때 주행 상태를 손으로 바꾼다.
+ * - Fake ↔ Real 모드를 바꾼다 (앱이 다시 시작된다).
  * - 주행 화면에도 보인다. 주행 화면에서 정차로 되돌릴 방법이 있어야 하기 때문이다.
  *   debug 전용이라 주행 화면 규칙(AGENTS.md 규칙 3)의 예외로 둔다.
  *
@@ -28,6 +30,7 @@ fun DebugPanel(
     onSetParked: () -> Unit,
     onSetDriving: () -> Unit,
     onSetUnknown: () -> Unit,
+    onToggleDataMode: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -48,6 +51,11 @@ fun DebugPanel(
                 OutlinedButton(onClick = onSetParked) { Text("정차") }
                 OutlinedButton(onClick = onSetDriving) { Text("주행") }
                 OutlinedButton(onClick = onSetUnknown) { Text("모름") }
+            }
+            Spacer(Modifier.weight(1f))
+            // 누르면 저장하고 앱을 다시 시작한다
+            OutlinedButton(onClick = onToggleDataMode) {
+                Text(if (isFakeMode) "Real로 전환" else "Fake로 전환")
             }
         }
     }

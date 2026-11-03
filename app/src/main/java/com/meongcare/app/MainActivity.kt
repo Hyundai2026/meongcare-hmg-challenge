@@ -7,6 +7,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.meongcare.app.di.DataMode
+import com.meongcare.app.domain.driving.DrivingState
+import com.meongcare.app.ui.debug.DebugPanel
 import com.meongcare.app.ui.home.HomeScreen
 import com.meongcare.app.ui.home.HomeViewModel
 import com.meongcare.app.ui.theme.MeongCareTheme
@@ -24,7 +27,20 @@ class MainActivity : ComponentActivity() {
                     viewModel(factory = HomeViewModel.factory(container.drivingStateSource))
                 val uiState by homeViewModel.uiState.collectAsStateWithLifecycle()
 
-                HomeScreen(uiState = uiState)
+                HomeScreen(
+                    uiState = uiState,
+                    bottomBar = {
+                        if (BuildConfig.DEBUG) {
+                            val fake = container.fakeDrivingStateSource
+                            DebugPanel(
+                                isFakeMode = container.dataMode == DataMode.FAKE,
+                                onSetParked = { fake.set(DrivingState.PARKED) },
+                                onSetDriving = { fake.set(DrivingState.DRIVING) },
+                                onSetUnknown = { fake.set(DrivingState.UNKNOWN) },
+                            )
+                        }
+                    },
+                )
             }
         }
     }

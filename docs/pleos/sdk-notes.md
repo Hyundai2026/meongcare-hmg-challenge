@@ -153,6 +153,9 @@ vehicle-sdk = { module = "ai.pleos.playground:Vehicle", version.ref = "vehicleSd
 - **"준비 중"인 SDK에 핵심 기능을 걸지 않는다.** 기획 전에 콘솔에서 상태를 다시 확인한다.
 - "준비 중"은 신청 버튼이 없는 상태다. STT/TTS의 `ON_DEVICE` 모드는 Client ID/Secret 없이 동작하도록 문서화되어 있지만, 콘솔 상태와의 관계는 문서에 없다. → 아래 "STT/TTS 사용 조건 정리" [create-project] [stt-intro]
 - 다만 Pleos Maven에는 SpeechToText/TextToSpeech 3.3.1(2026-10-13), NaviHelper 3.0.5(2026-10-19)가 게시되어 있다. [maven-meta]
+- > **불일치 (2026-11-03):** 대회 FAQ "어떤 SDK와 API를 쓸 수 있나요?"의 답은 "Vehicle SDK, NaviHelper SDK, TextToSpeech SDK, SpeechToText SDK, FusedLocation SDK입니다."다. 콘솔에서 "준비 중"인 3개가 들어 있다. FAQ는 "각 SDK의 현재 제공 상태와 사용 조건은 SDK 문서 페이지에서 확인해 주세요."라고만 한다. [contest-faq]
+  > 대회 개발 가이드의 앱 예시에도 "음성 메모 앱"이 있다: "SpeechToText SDK로 운전 중 음성을 받아 메모로 남깁니다." [contest-dev]
+  > 주최측이 STT를 쓰는 앱을 기대한다는 근거다. 다만 실제로 쓰는 방법(콘솔 신청, `ON_DEVICE`)은 여전히 미확인이다 → 주최측 문의 ([architecture.md](../architecture.md#pleos주최측에-문의할-것) B2)
 - 앱 심사에는 "프로젝트 ID(Key)"가 필요하다. 에뮬레이터 2.1.0부터는 CRN이 필요 없다.
 
 ## SDK API 정책 (AAOS 표준 우선) [sdk-api-policy] [hw-access]
@@ -641,6 +644,8 @@ val speechToText = SpeechToText(applicationContext, Mode.HYBRID)
 
 ## 출처
 
+- [contest-faq] https://appdevchallenge.auto-hmg.io/faq (대회 사이트, 2026-11-03 확인)
+- [contest-dev] https://appdevchallenge.auto-hmg.io/guide/development (대회 사이트, 2026-11-03 확인)
 - [setup] https://document.pleos.ai/docs/connect/guide/getting-started/application-development/setup-connect-sdk-emulator
 - [getting-started] https://document.pleos.ai/docs/pleos-only/getting-started
 - [project-setup] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/Vehicle/project-setup

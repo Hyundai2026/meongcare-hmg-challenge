@@ -82,6 +82,8 @@ Windows에서는 `gradlew.bat`을 쓴다. Bash에서는 `./gradlew`.
 | `docs/contest/` | 대회 요구사항 |
 | `docs/pleos/` | Pleos SDK와 에뮬레이터에 대해 검증된 사실 |
 | `docs/product/` | 기획 (문제, 차량특화성, 사업성). 기획서 DOCX의 원천 |
+| `docs/product/bmad/` | BMAD 기획 산출물 (브레인스토밍, 제품 개요, PRD, UX, 아키텍처) |
+| `_bmad/` | BMAD 설치본 (v6.12.4). 직접 고치지 않는다. 팀 설정은 `_bmad/custom/config.toml` |
 | `docs/plans/` | 실행 계획 (`active/`, `completed/`) |
 | `docs/notes/` | 개발 노트. 팀원별 폴더 아래 작업별 파일 |
 | `docs/conventions/` | Git 등 작업 규칙 |

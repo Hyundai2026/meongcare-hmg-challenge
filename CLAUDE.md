@@ -4,7 +4,7 @@
 
 ### 작업 흐름
 
-기능 하나를 만들 때 이 순서를 따른다. 1~2단계짜리 작은 수정은 계획(2)과 `tester`(5)를 건너뛰어도 된다. 대신 테스트는 직접 추가한다.
+기능 하나를 만들 때 이 순서를 따른다. 기획은 아래 "기획 단계: BMAD"를 따른다. 1~2단계짜리 작은 수정은 계획(2)과 `tester`(5)를 건너뛰어도 된다. 대신 테스트는 직접 추가한다.
 
 1. **브랜치**: 최신 dev에서 `feat/<이름>` 브랜치를 딴다.
 
@@ -28,6 +28,42 @@
    - 둘 다 커밋한다.
    - `/ship`으로 dev에 반영한다. push 단계에서 뜨는 권한 확인 창에서 사용자가 승인한다.
    - main은 건드리지 않는다. 사용자가 요청할 때만 `/promote`로 올린다.
+
+### 기획 단계: BMAD (v6.12.4)
+
+기획(아이디어 → 기획서 DOCX)은 BMAD 스킬로 한다. 개발은 위의 작업 흐름을 따른다.
+
+쓰는 스킬 (대략 이 순서):
+
+1. `bmad-brainstorming`, `bmad-forge-idea`: 아이디어를 내고, 약점을 찔러 본다.
+2. `bmad-deep-recon`: 시장과 경쟁 서비스를 조사한다. 사업성의 근거가 된다.
+3. `bmad-product-brief` 또는 `bmad-prfaq`: 제품 개요를 쓴다.
+4. `bmad-prd`: 요구사항을 정리한다.
+5. `bmad-ux`: 주행 중·정차 중 화면 경험을 설계한다 (AGENTS.md 규칙 3).
+6. `bmad-architecture`: 기술 구조를 정리한다. 기획서 5번 "개발 계획"에 쓴다.
+
+언제든 쓸 수 있는 것:
+
+- `bmad-help`: 다음에 할 일을 알려 준다.
+- `bmad-party-mode`: 여러 관점으로 토론한다.
+- `bmad-advanced-elicitation`: 결과물을 비판적으로 다시 본다.
+- 에이전트: Mary(분석가), John(PM), Sally(UX), Winston(아키텍트)
+
+규칙:
+
+- **산출물 위치**: `docs/product/bmad/planning-artifacts/`에 쌓인다.
+  - 확정된 내용은 `docs/product/idea.md`로 옮긴다. 기획서 DOCX는 idea.md를 원천으로 만든다.
+  - 기획서 점검은 `contest-judge`로 한다.
+- **개발 단계 스킬은 숨겼다** (`.claude/settings.json`의 `skillOverrides`).
+  - 숨긴 것: build, dev, sprint, epics/stories, code-review, retrospective 등
+  - `bmad-help`가 이 스킬들을 추천해도 쓰지 않는다. 개발은 위의 작업 흐름(planner → 구현 → tester → /ship)으로 한다.
+  - `bmad-project-context`도 숨겼다. AGENTS.md를 고치는 스킬이기 때문이다.
+- **Pleos SDK 내용은 BMAD 산출물에도 추측으로 쓰지 않는다** (AGENTS.md 규칙 1).
+  - 기능이 어떤 SDK에 기대는지는 `docs/pleos/sdk-notes.md`의 "사용 가능 상태"로 확인한다.
+- **개인 이름 설정**: `_bmad/custom/config.user.toml`에 `[core]` `user_name = "이름"`을 쓴다. 이 파일은 gitignore 대상이다.
+  - 팀 공통 설정(한국어)은 `_bmad/custom/config.toml`에 있다.
+- **업데이트할 때**: `npx bmad-method@<버전> install --action update --tools claude-code --yes`
+  - 업데이트 후에는 새로 생긴 개발 단계 스킬이 없는지 보고, `skillOverrides`에 추가한다.
 
 ### 도구
 

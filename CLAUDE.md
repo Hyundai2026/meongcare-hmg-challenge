@@ -32,6 +32,7 @@
 ### 기획 단계: BMAD (v6.12.4)
 
 기획(아이디어 → 기획서 DOCX)은 BMAD 스킬로 한다. 개발은 위의 작업 흐름을 따른다.
+기획 담당 팀원용 안내서: [docs/product/bmad-guide.md](docs/product/bmad-guide.md)
 
 쓰는 스킬 (대략 이 순서):
 

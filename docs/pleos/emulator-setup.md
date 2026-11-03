@@ -39,6 +39,33 @@
 - Virtual Console(차량 데이터 시뮬레이션)은 에뮬레이터 2.1.0 이상이 필요하다.
 - 블루투스 동글 페어링은 지원하지 않는다.
 
+## Virtual Console (차량 데이터 시뮬레이션)
+
+출처:
+- [vc-overview] https://document.pleos.ai/docs/connect/guide/getting-started/application-development/use-vehicle-emulator
+- [vc-guide] https://document.pleos.ai/docs/pleos-only/app-test-guide/virtual-console-guide
+
+(2026-11-03 확인)
+
+- 에뮬레이터 v2.1.0 이상이 필요하다. [vc-overview]
+- 실행: 터미널에서 `adb forward tcp:8088 tcp:8088`을 실행한 뒤 PC 브라우저로 `http://127.0.0.1:8088/`을 연다. [vc-overview]
+- 시뮬레이션할 수 있는 것 [vc-overview] [vc-guide]:
+  - Motion: "현재 기어를 P, R, N, D 중 하나로 설정합니다." 브레이크 페달 0~100%, 스티어링 각도 -540~540도, 누적 주행 거리 0~1,000,000km. [vc-guide]
+  - Safety(Telltales): "주차 브레이크, 안전벨트, ABS, TPMS 등 지원되는 경고등을 선택하여 Off, On, Blink 상태로 설정합니다." [vc-guide]
+  - ADAS: 크루즈 컨트롤 준비/작동 상태, 목표 속도 5.556~27.778m/s. [vc-guide]
+  - 그 밖에 도어, 창문, 트렁크, 시트, 조명, 와이퍼, 에너지(잔여 거리, 배터리, 충전), 공조. [vc-overview]
+- > **불일치:** 개요 페이지는 "차량 속도, 도어, 조명 등 차량 상태 변경"이 된다고 하지만 [vc-overview], 상세 가이드에는 일반 차량 속도 카드가 없고 크루즈 목표 속도만 있다 [vc-guide].
+- 기어·속도를 바꿨을 때 `CarUxRestrictions`(주행 규제)가 바뀌는지는 두 페이지 모두 언급이 없다 → 미확인.
+
+## 폼팩터 테스트
+
+출처: https://document.pleos.ai/docs/pleos-only/app-test-guide/form-factor-test-guide (2026-11-03 확인)
+
+- Display preset과 Orientation(`Portrait`/`Landscape`)을 골라 가상 디스플레이(`DISPLAY2` 창)를 만들어 레이아웃을 확인하는 도구가 있다. 예시: "12.9인치 Portrait 가상 디스플레이를 생성하면 다음과 같이 표시됩니다."
+- 요구: Go 1.22 이상, 포트 `8095`, `8096` 비워 두기.
+- 확인 항목: 요소 잘림·겹침, 텍스트·이미지·아이콘 크기와 정렬, 방향별 레이아웃, 터치 입력과 화면 전환.
+- 도구 설치·실행 절차와 프리셋 목록은 아직 정리하지 않았다.
+
 ## GPU가 부족한 팀원은 (팀 운영안, 공식 가이드 아님)
 
 1. 일반 Automotive AVD나 폰/태블릿 에뮬레이터를 쓴다.

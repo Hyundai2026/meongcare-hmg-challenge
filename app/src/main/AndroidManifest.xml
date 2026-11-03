@@ -4,6 +4,7 @@
     <!-- pleos.car.permission.* 권한은 사용자 승인 없이 추가하지 않는다 (AGENTS.md 규칙 2). -->
 
     <application
+        android:name=".MeongCareApplication"
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"

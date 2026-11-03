@@ -384,7 +384,7 @@ app/src/test/java/com/meongcare/app/
   - tester가 찾은 버그는 프로덕션 코드에서 `fix:` 커밋으로 따로 고친다.
   - 확인: `.\gradlew.bat testDebugUnitTest` 통과. 통과 수와 실패 수를 진행 로그에 적는다.
 
-- [ ] 11. 전체 검증 (`/verify`, 하네스). 커밋은 없다. 고친 게 있으면 `fix(...)` 커밋으로 낸다.
+- [x] 11. 전체 검증 (`/verify`, 하네스). 커밋은 없다. 고친 게 있으면 `fix(...)` 커밋으로 낸다.
   - `node .claude/hooks/build-gate.mjs pipeline` → "검증 파이프라인 통과."
   - 훅 동작을 기록한다. 진행 로그에 적을 것:
     - 단계 2 이후 앱 코드 커밋 때 precommit 빌드가 돌았는지
@@ -419,7 +419,7 @@ app/src/test/java/com/meongcare/app/
     - README 절차가 단계 11에서 실제로 돌린 명령과 같다.
     - 완료 기준 7의 Grep이 통과한다.
 
-- [ ] 13. 개발 노트 작성 (`docs/notes/`)
+- [x] 13. 개발 노트 작성 (`docs/notes/`)
   - `docs/notes/xxj15/YYYY-MM-DD-project-setup.md`. 형식은 `docs/notes/README.md` 템플릿을 따른다.
     - 사용한 SDK: Vehicle 2.3.2 (initialize/release만). 권한은 없다.
     - 시연 방법: debug 패널로 주행/정차 전환
@@ -484,6 +484,24 @@ app/src/test/java/com/meongcare/app/
       - 앱 코드 커밋마다 precommit이 `assembleDebug`를 돌렸다.
       - Stop 훅도 돌았다 (`turnDigest`·`session`이 기록됨).
       - `okDigest`와 `pipelineDigest`가 기록됐다.
+- 2026-11-03: 단계 11 화면 확인 완료 (`/verify`, `my_avd`).
+  - 에뮬레이터를 손봤다. 키보드 입력이 꺼져 있었고 GPU를 쓰지 않았다. 권장 설정은 emulator-setup.md에 적었다. 에뮬레이터도 37.2.13으로 올렸다.
+  - 확인한 것:
+    - 정차 화면
+    - [주행]을 누르면 주행 화면으로 바뀐다. 입력칸 0개.
+    - [정차]를 누르면 돌아온다.
+    - Real 전환 → 재시작 → `DEBUG · Real` + 주행 화면(UNKNOWN). Fake 복귀도 된다.
+    - 가로 화면, 다크 모드
+    - 크래시 0건
+  - 발견해서 고친 것 2건 (`fix(ui)`):
+    - 좁은 세로 화면에서 debug 패널이 깨졌다.
+    - 가로 화면에서 정차 화면 입력칸이 눌렸다.
+  - 재현 안 됨:
+    - 에뮬레이터 부팅 직후 첫 실행 1회에 Fake(정차)인데 주행 화면이 보였다.
+    - 이후 재시작·재설치 6회는 모두 정차 화면이었다.
+    - 원인 미상. 상태를 모를 때 보여주는 안전 기본값(주행 화면)이 나온 것으로 추정한다.
+  - 관찰 (선행 조사 3 해결): 차량 서비스가 없으면 `initialize()`는 예외 없이 끝나고, SDK가 약 15초 재시도한 뒤 로그만 남긴다 → sdk-notes.
+  - 확인 못 한 것: Pleos 에뮬레이터에서의 Real 모드 (이 PC는 GPU 사양이 되므로 후속으로 가능), 실제 키스토어로 서명.
 
 ## 결정 / 배운 점
 
@@ -498,3 +516,6 @@ app/src/test/java/com/meongcare/app/
   - `WhileSubscribed(replayExpirationMillis = 0)`으로, 5초 넘게 화면이 없다가 돌아오면 예전 "정차" 대신 주행 화면부터 보여준다.
   - tester가 지적했고, 재현 테스트를 먼저 실패시킨 뒤 고쳤다.
 - **Vehicle SDK 2.3.2 AAR에 문서에 없는 `getGear()`가 있다.** Real 주행 상태(005)에서 CarUxRestrictions의 대안으로 검토한다.
+- **화면은 세로·가로·다크를 모두 본다.**
+  - 단위 테스트와 Grep 검사는 모두 통과했지만, 실제 화면에서만 보이는 레이아웃 문제가 2건 나왔다.
+  - 그래서 `/verify`의 확인 항목에 넣었다.

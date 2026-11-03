@@ -17,7 +17,11 @@
 
 ## 기술 스택 (확정된 것만)
 
-- Kotlin. minSdk 28 (Pleos 보안 요구사항), compile/target SDK 34, Gradle 8.0+
+- Kotlin 2.0.0, Jetpack Compose + Material3. 공식 Pleos 샘플과 같은 값으로 맞춘다.
+- minSdk 28 (Pleos 보안 요구사항), compile/target SDK 35
+- AGP 8.8.2, Gradle wrapper 8.10.2 (Pleos 요구는 8.0 이상), JDK 17 이상 (소스·타깃은 17)
+- 단일 `app` 모듈, MVVM (ViewModel + StateFlow), 수동 DI. 구조와 결정 근거: [docs/architecture.md](docs/architecture.md)
+- applicationId `com.meongcare.app` (앱 이름 "멍케어"는 임시)
 - Pleos Maven: `https://nexus-playground.pleos.ai/repository/maven-releases/`
 - Vehicle SDK: `ai.pleos.playground:Vehicle:2.3.2`
 - 그 밖의 SDK 좌표, API, 권한: [docs/pleos/sdk-notes.md](docs/pleos/sdk-notes.md)
@@ -55,7 +59,7 @@ Windows에서는 `gradlew.bat`을 쓴다. Bash에서는 `./gradlew`.
    - 먼저 `docs/pleos/sdk-notes.md`를 본다.
    - 거기 없으면 `pleos-docs-researcher` 서브에이전트로 공식 문서를 확인하고, 출처와 함께 기록한 뒤에 쓴다.
 2. **새 `pleos.car.permission.*` 권한은 사용자에게 먼저 확인받는다.** 승인되지 않은 권한은 앱 심사에서 탈락 사유가 된다.
-3. **주행 중 화면은 최소 정보, 큰 터치 타깃, 텍스트 입력 없음.** 정차·주차 중에만 허용할 기능을 구분한다. (세부 가이드는 `docs/pleos/ux-guidelines.md`, 아직 미작성)
+3. **주행 중 화면은 최소 정보, 큰 터치 타깃, 텍스트 입력 없음.** 정차·주차 중에만 허용할 기능을 구분한다. 세부 가이드: [docs/pleos/ux-guidelines.md](docs/pleos/ux-guidelines.md)
 4. **비밀값은 커밋하지 않는다.**
    - Client ID/Secret은 `secrets.properties`, 서명키는 `keystore.properties` + `*.jks`. 둘 다 gitignore 대상이다.
    - 코드에는 BuildConfig로 주입한다.
@@ -77,7 +81,7 @@ Windows에서는 `gradlew.bat`을 쓴다. Bash에서는 `./gradlew`.
 
 | 경로 | 내용 |
 |---|---|
-| `app/` | Android 앱 모듈 (Android Studio로 생성 예정) |
+| `app/` | Android 앱 모듈 (`com.meongcare.app`). 패키지 구조: [docs/architecture.md](docs/architecture.md) |
 | `apk/` | 제출용 release APK (`<팀명>_<앱이름>_release.apk`) |
 | `docs/contest/` | 대회 요구사항 |
 | `docs/pleos/` | Pleos SDK와 에뮬레이터에 대해 검증된 사실 |

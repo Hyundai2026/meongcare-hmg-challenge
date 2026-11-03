@@ -49,6 +49,7 @@
 ### 해상도 관련 단서 (공식 스펙 아님)
 
 - 앱 심사 제출의 IVI 스크린샷 권장 해상도: "2560 x 1380 px", "1700 x 1212 px", "840 x 121 px" (문서 표기 그대로). PNG/JPEG, 장당 최대 8MB, 최대 8개. [app-submission]
+  - > **불일치:** 심사 가이드의 등록정보 페이지는 세 번째 값을 "840 xX 1212 px"로 적고 '규격'이라고 부른다 (원문: "해상도 규격 : 2560 xX 1380 px, 1700 xX 1212 px, 840 xX 1212 px"). 최소 2장, 최대 8장. [review-registration]
 - 공식 vehicle 샘플 README의 스크린샷은 "2560 x 1440 Android 14 emulator"에서 찍었다. [gh-vehicle]
 - 디스플레이 해상도(px)와 밀도(dpi) 공식 표는 찾지 못했다 → 미확인.
 
@@ -82,6 +83,8 @@
 
   - Google 문서 원문: "Current foreground activity can continue to run only when it is tagged as Distraction Optimized in the manifest." 플랫폼은 매니페스트 선언만 확인한다. [aaos-dd]
   - Pleos 에뮬레이터/실차에서 이 선언이 그대로 동작하는지는 Pleos 문서로 확인하지 못했다 → 미확인.
+  - 2026-11-03 재확인: 주행 규제 개발 가이드, 지역별 주행 규제 정책, CCP 개발 가이드, Maps/Navigation·Music/Audio 앱 개발 가이드 어디에도 `distractionOptimized`나 선언 방법이 없다. 주행 규제 개발 가이드에는 "DO 미선언 앱의 상황별 사용 가능 여부는 지역별 주행 규제 정책을 참조하세요."만 있다. [driving-restriction-dev] [driving-policy] [ccp-guide] [navi-app-guide] [music-app-guide]
+  - 앱 카테고리에 따라 DO 선언이 허용·거부되는지도 문서에 없다 → 미확인.
 
 ### 지역별 기능 허용 범위 (Driving 상태) [driving-policy]
 
@@ -157,6 +160,131 @@ if (mCurrentCarUxRestrictions.isRequiresDistractionOptimization()
   - Mobility Services: 주행과 밀접한 차량 관리, 즉시 필요한 위치 기반 정보, EV 충전소 검색과 경유지 설정, 주변 주유소 검색, 주행 중 갈 수 있는 주차 위치 확인
 - Lifestyle, Entertainment, Business, Kids, Social/Communication의 주행 중 허용 범위는 이 페이지에 없다.
 - 앱 심사 제출 시 Pleos App Market 카테고리를 필수로 고른다. [app-submission]
+- 카테고리별 핵심 목적 (원문) [app-category]:
+  - Maps/Navigation: "위치 기반 길 안내"
+  - Mobility Services: "이동 수단/이동 서비스 제공"
+  - Lifestyle: "일상생활 관리 및 향상"
+  - Entertainment: "오락 및 여가 제공"
+  - Business: "업무 및 생산성 지원"
+  - Music/Audio: "오디오 콘텐츠 중심"
+  - Kids: "아동 대상 콘텐츠"
+  - Social/Communication: "사람 간 소통 및 네트워크"
+- 의료·건강·반려동물 카테고리나 예시 앱은 없다. [app-category]
+
+### 카테고리 선언과 심사 [navi-app-guide] [music-app-guide] [review-registration]
+
+- Maps/Navigation 앱 가이드 원문: "모든 앱은 개발 및 등록 시 앱 카테고리를 필수적으로 선언해야 합니다." 매니페스트 인텐트 필터로 선언한다 (원문 코드):
+
+```
+<intent-filter>
+<action android:name="android.intent.action.MAIN" />
+<category android:name="android.intent.category.APP_MAPS" />
+</intent-filter>
+```
+
+- Music/Audio 앱 가이드는 다른 방식을 쓴다: "`<application>` 요소의 `android:appCategory` 속성을 `"audio"`로 설정합니다." → `<application  ...  android:appCategory="audio" />` [music-app-guide]
+- Lifestyle, Mobility Services 등 나머지 카테고리의 매니페스트 선언 값은 문서에 없다 → 미확인.
+- "선언된 카테고리와 실제 기능 불일치 시 심사에서 즉시 반려됩니다." "만약 앱 심사 중 기능이 변경된다면 반드시 재심사를 요청해야 합니다." [navi-app-guide]
+- 등록정보 심사: "카테고리 지정 시에는 앱에 가장 적합한 카테고리를 선택해야 합니다." 맞지 않으면 심사 측이 임의로 바꿀 수 있다. [review-registration]
+
+### Maps/Navigation 앱 가이드의 주행 중 조작 기준 [navi-app-guide]
+
+Maps/Navigation 카테고리 앱 대상 문서다 ("Pleos Connect의 Maps/Navigation 앱을 개발할 때 반영해야 할 기본 정책은 다음과 같습니다."). 다른 카테고리에 같은 기준이 적용되는지는 문서에 없다.
+
+- 주행 중 조작 금지: "복잡한 메뉴 탐색 (3 depth 초과)", "긴 리스트 스크롤", "영상, 애니메이션, 광고 노출"
+- 주행 중 허용: "음성 입력", "단일 터치 기반 주요 기능", "즐겨찾기 목적지 선택"
+- 권한: "위치 권한: 필수", "마이크: 음성 입력 시에만 허용", "불필요한 권한 요청 시 심사에서 반려됩니다."
+- 시스템 연동: "Pleos Connect 및 AAOS 공식 API 사용을 권장합니다." "비공식 센서/API 사용은 금지되어 있습니다."
+- UX 심사: "터치 영역 최소 크기 충족", "주행 핵심 정보 상시 노출", "주행 중 전체 화면 팝업 금지"
+- 즉시 반려: "주행 중 광고 노출", "영상·게임 요소 포함", "복수 내비 동시 경로 안내", "카테고리 위반 기능 제공", "OEM/AAOS 정책 위반"
+- 단일 경로 정책: "AAOS 환경에서는 하나의 Navigation 앱만 Active Route 상태를 가질 수 있기 때문에 복수 Navigation 앱의 음성 안내·경로 출력은 허용하지 않습니다." `CarAppFocusManager.requestAppFocus`로 경로 소유권을 다룬다.
+  - 참고: NaviHelper SDK는 경로 요청을 Pleos Connect Navigation 앱으로 보내고 결과를 콜백으로 돌려준다. [navi-intro] (sdk-notes.md의 NaviHelper 절)
+
+### 음성 입력에 대한 다른 근거
+
+- 주행 안전 설계 원칙: 검색·로그인에 키보드보다 프리셋, 최근 항목, 즐겨찾기, 음성 입력을 우선한다. [driver-distraction]
+- 지역별 주행 규제 표: 북미의 "검색"은 주행 중 "음성한정"("`음성한정`은 음성으로만 사용 가능함을 의미합니다."). [driving-policy]
+
+## 오디오 포커스와 음성 안내
+
+### 오디오 포커스 [audio-focus]
+
+- "각 오디오 스트림은 재생 시작 전 `AudioAttributes` + `AudioFocusRequest`로 포커스를 요청해야 합니다."
+- "C를 기대하는 컨텍스트(예: NAVIGATION이 MUSIC과 동시)라면 요청은 원칙적으로 `AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK`을 사용해야 합니다."
+- 포커스 상실: `AUDIOFOCUS_LOSS`는 즉시 중단, `AUDIOFOCUS_LOSS_TRANSIENT`는 일시정지 후 복귀 가능, `AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK`은 볼륨 감쇄.
+- Gleo 음성 명령: "Gleo 음성 명령은 일반 오디오보다 우선 처리하되, EMERGENCY, CALL 등 매트릭스에서 Reject로 정의된 컨텍스트에는 우선하지 않습니다." "Gleo가 호출되어 앱이 `AUDIOFOCUS_LOSS_TRANSIENT`를 수신하면, 즉시 재생을 중단하고 필요 시 오디오 포커스를 반납(abandon)해야 합니다."
+- 컨텍스트별 usage 매핑 (페이지 표, `USAGE_` 접두어 없이 표기):
+
+| CarAudioContext | AttributeUsages |
+|---|---|
+| MUSIC | `MUSIC`, `UNKNOWN`, `GAME`, `MEDIA` |
+| NAVIGATION | `NAVIGATION`, `ASSISTANCE_NAVIGATION_GUIDANCE` |
+| VOICE_COMMAND | `VOICE_COMMAND`, `ASSISTANT` |
+| CALL_RING | `CALL_RING`, `NOTIFICATION_RINGTONE` |
+| CALL | `CALL`, `VOICE_COMMUNICATION`, `VOICE_COMMUNICATION_SIGNALING` |
+| ALARM | `ALARM` |
+| NOTIFICATION | `NOTIFICATION`, `NOTIFICATION_*` |
+| SYSTEM_SOUND | `SYSTEM_SOUND`, `ASSISTANCE_SONIFICATION`, `ASSISTANCE_ACCESSIBILITY` |
+| EMERGENCY | `EMERGENCY` |
+| SAFETY | `SAFETY` |
+| VEHICLE_STATUS | `VEHICLE_STATUS` |
+| ANNOUNCEMENT | `ANNOUNCEMENT` |
+
+- 검증 예: CALL 중 MUSIC 요청은 R(실패), MUSIC 중 CALL 요청은 E(통화가 선점), EMERGENCY 중 MUSIC/NOTIFICATION 요청은 R.
+- Interaction Matrix의 셀 값은 이미지로만 있다. 서드파티 앱이 쓸 수 있는 usage 목록은 문서에 없다 → 미확인.
+
+### TTS·음성 안내 선행 묵음 [voice-preroll]
+
+- 적용 범위: TTS 음성 안내, 녹음 음원 안내 멘트, 내비게이션·알림·상태 안내 등 모든 음성 출력.
+- 선행 묵음은 최소 150ms, 기본 권장 150~200ms. 오디오 데이터 앞에 무음 패딩을 넣는 방식을 우선하고, 재생 지연만으로 처리하는 방식은 권장하지 않는다.
+- Pleos TextToSpeech SDK가 이를 자동으로 처리하는지는 문서에 없다 → 미확인.
+
+## 앱 심사·보안·개인정보 정책
+
+### 개인정보 처리방침과 약관 [review-registration] [app-submission] [review-privacy]
+
+- "사용자의 개인정보 또는 위치정보를 활용하는 앱은 서비스 이용 약관과 개인정보처리 방침을 함께 제출해야 하며, 앱의 개발자와 관리자가 적법한지 증명할 수 있어야 합니다." [review-registration]
+- "앱 전용 방침이 없는 경우, 해당 앱에 적용되는 회사 공통 개인정보처리방침을 제출할 수 있습니다." [review-registration]
+- "앱에서 위치정보 서비스를 사용하는 경우, '위치정보 이용약관 및 기타 정보 처리방침'을 함께 제출해야 합니다." [review-registration]
+- 제출 폼의 개인정보처리방침 항목(필수): "개인정보처리방침을 확인할 수 있는 URL 입력", "서비스 국가 또는 지역별 언어로 작성된 내용을 모두 확인이 가능해야 함" [app-submission]
+- 동의: 수집 항목, 처리 목적, 보유 기간, 거부권을 알리고 명시적 동의 절차를 구현한다. "제시된 동의 버튼을 누르는 행동 외의 행동을 동의로 간주해서는 안 됩니다." 접근권한은 "서비스에 필요한 범위 내로 최소화해야 합니다." [review-privacy]
+- 제3자 제공 시 제공처와 목적을 알린다. 사용자 동의 없이 데이터를 빼내거나 제3자에게 보내는 행위는 금지다. [review-privacy]
+- 위치정보를 저장·이용하면 국가별 법령에 따른 등록·신고 내용 확인을 요청받을 수 있다. [review-privacy]
+- 설계 원칙: "앱에서 사용자의 위치, 음성, 계정 정보 등을 요구할 때 “왜 필요한지” 명확히 해야 하며, 동의 플로우를 간단하고 이해하기 쉽게 설계해야 합니다." "불필요한 개인정보(PII)는 저장하지 않고, 로그에 개인정보가 포함될 경우 마스킹하여 기록합니다." "차량은 여러 사람이 함께 쓰는 기기이므로, 보안 및 개인 정보 보호에 유의하여 앱을 설계해야 합니다." [security-privacy]
+- 건강정보·민감정보에 대한 별도 기준은 개인정보 심사 페이지와 설계 원칙 페이지에 없다 → 미확인. [review-privacy] [security-privacy]
+
+### 외부 서버·네트워크 [app-submission] [review-registration] [app-security] [hw-access]
+
+- 외부 서버 호출을 금지하는 문장은 찾지 못했다. 외부 서버를 전제로 한 조건만 있다:
+  - "외부 서버와 연결이 필요한 앱인 경우 심사 중 바로 서비스 연결이 가능하도록 앱 제출 전 앱 운영에 필요한 구성 요소들을 미리 활성화해주시기 바랍니다." [app-submission]
+  - "웹 앱과 같이 웹 페이지를 연결 또는 활용하는 앱의 경우, 해당 웹 페이지의 도메인 등록 증빙을 제출해야 합니다." [review-registration]
+  - 로그인이 필요하면 "모든 기능 및 콘텐츠에 대한 접근이 활성화된 계정을 제공 바랍니다." [app-submission]
+- 보안 가이드 [app-security]:
+  - "외부 통신에는 HTTPS 등 암호화가 적용된 안전한 프로토콜을 사용해야 합니다."
+  - "TLS를 사용하는 통신에는 최소 TLS 1.2 이상을 사용해야 하며, TLS 1.3 사용을 권장합니다."
+  - "앱에서 연결하는 서버는 서비스 제공에 필요한 신뢰할 수 있는 대상이어야 합니다."
+  - "인증 토큰, 비밀 키 등 보안상 비밀로 관리해야 하는 정보가 소스코드, 리소스 또는 설정 파일에 하드코딩되지 않도록 해야 합니다."
+  - "인증 토큰은 Authorization 헤더 등 URL에 노출되지 않는 적절한 방식으로 전달해야 합니다."
+  - "기기에 저장하는 민감정보는 저장 위치와 관계없이 암호화하여 보호해야 합니다."
+  - "앱 출시 전에는 관련 로그 출력을 비활성화하거나 민감정보를 마스킹 처리해야 합니다."
+  - "배포용 앱에는 테스트 또는 디버그용 인증서 대신 정식 배포용 서명 인증서를 사용해야 합니다."
+  - "최종 배포 앱에서는 앱 디버깅, 디버그 빌드 설정 및 WebView 원격 디버깅 기능을 비활성화해야 합니다."
+- 주행 중 네트워크: "주행 중 셀룰러 또는 Wi-Fi 연결이 끊기거나 대역폭이 급격히 낮아지는 상황에 대비해야 합니다." 로컬 캐싱, 재시도·타임아웃, 오프라인 안내 UI를 권장한다. [hw-access]
+- Maps/Navigation 앱 가이드(해당 카테고리 대상): "위치 데이터는 암호화하여 처리해야 합니다." "HTTPS 통신을 사용해야 합니다." "개인정보 처리방침을 반드시 제공해야 합니다." "불필요한 위치 데이터 저장은 금지됩니다." [navi-app-guide]
+- LLM API, 지도·장소 검색 API 같은 특정 외부 서비스에 대한 언급은 없다 → 미확인.
+
+### 의료·건강 관련 콘텐츠 [review-content]
+
+- 의료, 진단, 응급, 반려동물에 대한 별도 심사 기준은 콘텐츠 안전 페이지에 없다.
+- 관련 원문:
+  - "적법한 승인이 되지 않은 식/약품이나 건강 또는 의료기구 등 처방전 없이 처방약을 판매 또는 구매를 용이하게 해서는 안 됩니다." (승인되지 않은 물품)
+  - "사용자의 신체에 손상을 입히거나, 위험한 상황에 처하게 만드는 내용의 콘텐츠가 포함되어서는 안 됩니다." (위험한 내용의 콘텐츠)
+- 앱 설명: "App Market 실적, 순위, 매출 등 사실 확인이 힘든 내용이 포함되어서는 안 됩니다." 의료 표현(예: "진단")을 따로 제한하는 문장은 없다. [review-registration]
+
+### 성능 기준 [review-function]
+
+- 앱은 10초 이내에 실행되고 콘텐츠를 로드해야 한다. 특정 버튼은 2초 이내에 반응하거나 동작 중임을 UI로 알려야 한다. "입력 후 차량 시스템의 응답 시간이 0.25초를 넘지 않게 하세요."
+- 사용자에게 기기 재시작이나 핵심 기능과 무관한 시스템 설정 변경을 요구하지 않는다.
 
 ## 디자인 가이드
 
@@ -226,6 +354,13 @@ dialog.show()
 - [ ] 주행 중 스크롤·리스트 길이 제한, 주행 판정 속도 임계값
 - [ ] Virtual Console에서 기어/속도를 바꾸면 `CarUxRestrictions`가 바뀌는지 (테스트 방법)
 - [ ] Window Policy의 두 가지 앱 실행 정책 중 현재 적용되는 것
+- [ ] Lifestyle, Mobility Services 등 Maps/Navigation·Music/Audio 외 카테고리의 매니페스트 선언 값과 주행 중 허용 범위 (2026-11-03 조사, 문서에 없음)
+- [ ] Maps/Navigation 앱이 아닌 앱도 주행 중 "음성 입력"이 허용되는지 (허용 목록은 Maps/Navigation 앱 가이드에만 있음)
+- [ ] 카테고리에 따라 DO 선언이 허용·거부되는지
+- [ ] 건강·의료 정보(반려동물 병력·복용약 포함)에 대한 심사 기준, "진단" 같은 의료 표현 제한 (콘텐츠 안전·개인정보 심사 페이지에 없음)
+- [ ] LLM API, 지도·장소 검색 API 등 외부 서비스 호출에 대한 별도 조건 (금지 문장은 못 찾음. HTTPS/TLS 1.2+, 도메인 증빙(웹 페이지 연결 시), 심사 중 서버 활성화 조건만 확인)
+- [ ] 서드파티 앱이 쓸 수 있는 `AudioAttributes` usage 목록과 Interaction Matrix 셀 값 (이미지에만 있음)
+- [ ] 화면 스크린샷 규격 세 번째 값: "840 x 121 px"(제출 가이드) vs "840 xX 1212 px"(심사 가이드)
 
 ## 출처
 
@@ -247,5 +382,18 @@ dialog.show()
 - [review-distraction] https://document.pleos.ai/docs/pleos-only/distribute/app-review-guide/review-driver-distraction-elements
 - [app-submission] https://document.pleos.ai/docs/pleos-only/distribute/app-submission-guide
 - [gh-vehicle] https://github.com/Pleos-Playground/pleos-sample-vehicle-app (Pleos 튜토리얼 페이지가 링크한 공식 샘플, `README.md`)
+- [hw-access] https://document.pleos.ai/docs/pleos-only/vehicle-app-planning-guide/platform-api-architecture
+- [security-privacy] https://document.pleos.ai/docs/pleos-only/vehicle-app-planning-guide/security-privacy
+- [navi-intro] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/NaviHelper/intro
+- [navi-app-guide] https://document.pleos.ai/docs/pleos-only/vehicle-app-developer-guide/navigation-app-development-guide
+- [music-app-guide] https://document.pleos.ai/docs/pleos-only/vehicle-app-developer-guide/music-audio-app-developement-guide
+- [ccp-guide] https://document.pleos.ai/docs/pleos-only/vehicle-app-developer-guide/ccp-rotary-controller-development
+- [audio-focus] https://document.pleos.ai/docs/pleos-only/vehicle-app-developer-guide/audio-focus-development-guide/audio-focus-development
+- [voice-preroll] https://document.pleos.ai/docs/pleos-only/vehicle-app-developer-guide/voice-guidance-preroll-silence-guide
+- [app-security] https://document.pleos.ai/docs/pleos-only/app-registration-guide/app-security-guide
+- [review-content] https://document.pleos.ai/docs/pleos-only/distribute/app-review-guide/review-content-safety
+- [review-function] https://document.pleos.ai/docs/pleos-only/distribute/app-review-guide/review-functionality-performance-stability
+- [review-registration] https://document.pleos.ai/docs/pleos-only/distribute/app-review-guide/review-app-registration-info
+- [review-privacy] https://document.pleos.ai/docs/pleos-only/distribute/app-review-guide/review-user-privacy-security
 - Pleos 외 출처 (Pleos [driver-distraction]이 직접 링크한 Google 공식 문서):
   - [aaos-dd] https://source.android.com/docs/automotive/driver_distraction/guidelines?hl=ko

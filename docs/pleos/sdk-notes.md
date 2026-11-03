@@ -151,6 +151,8 @@ vehicle-sdk = { module = "ai.pleos.playground:Vehicle", version.ref = "vehicleSd
 
 - 그 밖의 SDK는 사용 신청이 필요하고, 일부는 제휴 계약이 필요하다.
 - **"준비 중"인 SDK에 핵심 기능을 걸지 않는다.** 기획 전에 콘솔에서 상태를 다시 확인한다.
+- "준비 중"은 신청 버튼이 없는 상태다. STT/TTS의 `ON_DEVICE` 모드는 Client ID/Secret 없이 동작하도록 문서화되어 있지만, 콘솔 상태와의 관계는 문서에 없다. → 아래 "STT/TTS 사용 조건 정리" [create-project] [stt-intro]
+- 다만 Pleos Maven에는 SpeechToText/TextToSpeech 3.3.1(2026-10-13), NaviHelper 3.0.5(2026-10-19)가 게시되어 있다. [maven-meta]
 - 앱 심사에는 "프로젝트 ID(Key)"가 필요하다. 에뮬레이터 2.1.0부터는 CRN이 필요 없다.
 
 ## SDK API 정책 (AAOS 표준 우선) [sdk-api-policy] [hw-access]
@@ -284,6 +286,143 @@ implementation("ai.pleos.playground:NaviHelper:3.0.5")
   - API별 정확한 권한은 API Reference의 `@RequiresPermission`에서 확인한다.
 - 공식 샘플: https://github.com/Pleos-Playground/pleos-sample-navi-app [sample-app]
 
+#### 권한별 API (Declaring permissions 페이지 표) [navi-perm]
+
+| 권한 | API |
+|---|---|
+| `pleos.car.permission.NAVI_ROUTE` | `get*Info()`, `requestTrip()` |
+| `pleos.car.permission.NAVI_ROUTE_SEARCH` | `requestRoute()`, `requestRouteWithWaypoints()`, `cancelRoute()`, `requestReRoute()`, `addWaypoint()`, `removeWaypoint()`, `changeRouteOption()` |
+| `pleos.car.permission.NAVI_CUSTOM_MAP` | `requestNavigationScreen()` |
+
+> **불일치:** 공식 navi 샘플의 매니페스트는 위 3개 외에 `pleos.car.permission.NAVI_CUSTOM_ROUTE`, `pleos.car.permission.NAVI_CUSTOM_ETC`도 선언한다. 문서에는 이 두 권한이 없다. [gh-navi-src]
+
+#### 호환성 [api-compat]
+
+- API 호환성 표 원문: NaviHelper SDK는 "내비게이션이 탑재된 차량에 한해 전체 호환".
+- 내비게이션 탑재 여부를 확인하는 공개 API는 없다 (위 [faq] 항목 참고).
+- 공식 샘플 README의 요구 사항: Pleos 내비게이션 서비스를 쓸 수 있는 기기 또는 에뮬레이터, 호환되는 내비게이션 앱이 설치되어 기본 내비게이션 앱으로 설정되어 있을 것. 샘플은 내비게이션 응답을 직접 만들지 않는다. [gh-navi-src]
+
+#### 생성과 초기화 [navi-init] [gh-navi-src]
+
+- 생성: `val naviHelper = NaviHelper(applicationContext)` (Java: `new NaviHelper(getApplicationContext())`) [navi-init]
+- 초기화: `naviHelper.initialize(onConnected, onFailed)` 또는 인자 없이 `naviHelper.initialize()`. `onConnected`는 첫 서비스 연결 성공 후, `onFailed`는 초기 재연결 시도가 모두 실패한 뒤 호출된다. [navi-init]
+- 해제: 리스너를 먼저 제거하고 `naviHelper.release()` (보통 `onDestroy()`). release 후 다시 쓰려면 새 객체를 만든다. [navi-init]
+- 공식 샘플 코드 (원문) [gh-navi-src]:
+
+```kotlin
+helper = NaviHelper(context)
+helper.initialize()
+helper.addListener(this)
+
+helper.removeListener(this)
+helper.release()
+```
+
+#### 목적지·경로 요청 (원문 코드) [navi-dest] [navi-routes]
+
+```kotlin
+// 목적지 설정
+naviHelper.requestRoute(
+    RouteInfo(
+        latitude = 37.48544722,
+        longitude = 127.03636666,
+        displayLongitude = null,
+        displayLatitude = null,
+        poiName = "42dot",
+        poiId = "36khp37hh8gqcm5nqhe5",
+        poiSubId = "0",
+        address = "서울시 강남구 남부순환로 2621"
+    )
+)
+// 목적지 확인
+naviHelper.getDestinationInfo()
+// onDestinationInfo callback으로 데이터 수신
+override fun onDestinationInfo(destinationInfo: DestinationInfo) {
+    Log.d(logTag, "onDestinationInfo $destinationInfo")
+}
+// 목적지 취소
+naviHelper.cancelRoute()
+```
+
+- 목적지를 다시 설정할 때도 `requestRoute()`를 부른다. [navi-dest]
+- **Java 생성자는 경도를 먼저 받는다:** `new RouteInfo(127.03636666, 37.48544722, null, null, "42dot", "36khp37hh8gqcm5nqhe5", "서울시 강남구 남부순환로 2621", "0", RouteOption.RECOMMENDED)` (경도, 위도, 표시용 경도, 표시용 위도, poiName, poiId, address, poiSubId, RouteOption 순). [navi-dest]
+- 공식 샘플은 `displayLatitude`/`displayLongitude`를 생략하고 `latitude`, `longitude`, `poiId`, `poiName`, `poiSubId`, `address`만 넘긴다. [gh-navi-src]
+- `poiId`/`poiSubId`가 필수인지, 외부 장소 검색 결과(좌표만 있는 경우)로 경로를 요청할 때 어떤 값을 넣어야 하는지는 문서에 없다 → 미확인.
+- 경로 옵션: `naviHelper.changeRouteOption(RouteOption.HIGHWAY)`, 결과는 `onRouteOptionChanged(routeOption: RouteOption)`. 재탐색: `naviHelper.requestReRoute()`. [navi-routes]
+  - `RouteOption` 값: `RECOMMENDED`, `SHORT_DISTANCE`, `SHORT_TIME`, `FREE`, `HIGHWAY`, `COMFORTABLE`, `SCHOOL_ZONE` [navi-routes]
+  - 원문: "경로 옵션 변경과 재탐색은 활성 경로가 있는 상태에서 요청합니다. 처리 결과와 실제로 전달되는 콜백은 Navigation 앱의 상태에 따라 달라질 수 있습니다." [navi-routes]
+- 요청이 정상 수행되어도 경로 탐색이 끝났다는 뜻이 아니다. 결과는 이벤트 콜백으로 확인한다. 정보 조회 API는 값을 반환하지 않고 콜백으로 준다. [navi-dest]
+- `requestTrip(TripRequest)`: 공식 샘플의 요청 데이터 (원문) [gh-navi-src]. 이 API가 정확히 무엇을 하는지 설명하는 문서는 찾지 못했다 → 미확인.
+
+```kotlin
+val tripRequest = TripRequest(
+    latitude = 37.41275833,
+    longitude = 127.09481944,
+    poiId = "36khp2hdj2cfcm5nqhe3",
+    poiName = "소프트웨어드림센터",
+    poiSubId = "0"
+)
+```
+
+- 경유지 포함 요청: `RouteWithWaypointsRequest(destination = routeInfo, waypoints = listOf(waypointInfo))`를 `requestRouteWithWaypoints(...)`에 넘긴다. [gh-navi-src]
+- Navigation 화면 요청: 샘플은 `NavigationScreenRequest.RouteOptionList`를 `requestNavigationScreen(...)`에 넘긴다. [gh-navi-src]
+
+#### `NaviHelper` 메서드 (API Reference 목차) [navi-api-ref]
+
+`Constructor`, `addListener`, `addWaypoint`, `cancelRoute`, `changeRouteOption`, `getBookmarkInfo`, `getChargerOperatorInfo`, `getCurrentLocationInfo`, `getDestinationInfo`, `getRecentDestinationInfo`, `getRouteStateInfo`, `getTBTInfo`, `getWaypointInfo`, `initialize`, `release`, `removeListener`, `removeWaypoint`, `requestNavigationScreen`, `requestReRoute`, `requestRouteWithWaypoints`, `requestRoute`, `requestTrip`
+
+- 패키지: `ai.pleos.playground.navi.constants`, `ai.pleos.playground.navi.data`, `ai.pleos.playground.navi.helper`, `ai.pleos.playground.navi.helper.listener` [navi-api-ref]
+- 개별 메서드·데이터 클래스 페이지는 클라이언트 렌더링이라 본문이 비어 있다 (`.../route-state-info/entry`, `.../trip-info/entry`, `.../driving-info/entry`, `.../destination-arrived-info/entry` 확인).
+
+#### `NaviHelperEventListener` 콜백 (공식 샘플 원문 시그니처) [gh-navi-src] [navi-events]
+
+```kotlin
+import ai.pleos.playground.navi.helper.listener.NaviHelperEventListener
+
+override fun onRouteStarted(routeStartInfo: RouteStartInfo)
+@Deprecated("Deprecated by NaviHelperEventListener")
+override fun onRouteEnded()
+override fun onRoutingCompleted()
+override fun onReRouteEnded()
+override fun onRouteOptionChanged(routeOption: RouteOption)
+override fun onRouteCancelled()
+override fun onWaypointChanged(waypointChangedInfo: WaypointChangedInfo)
+override fun onDestinationArrived(destinationArrivedInfo: DestinationArrivedInfo)
+override fun onWayPointArrived(waypointArrivedInfo: WaypointArrivedInfo)
+override fun onError(errorCode: NaviErrorCode)
+override fun onCurrentLocationInfo(currentLocationInfo: CurrentLocationInfo)
+override fun onRouteStateInfo(routeStateInfo: RouteStateInfo)
+override fun onDestinationInfo(destinationInfo: DestinationInfo)
+override fun onWayPointInfo(waypointInfoList: List<WaypointInfo>)
+override fun onRecentDestinationInfo(recentDestinationInfoList: List<RecentDestinationInfo>)
+override fun onBookmarkInfo(bookmarkInfoList: List<BookmarkInfo>)
+override fun onCurrentRoadSpeedLimit(speedLimit: Int)
+override fun onCameraAlert(cameraAlertList: List<CameraAlert>)
+override fun onDrivingInfo(drivingInfo: DrivingInfo)
+override fun onBookMarkChanged()
+override fun onDestinationChanged()
+override fun onNavigationStatus(status: NavigationStatus)
+override fun onTBTInfo(tbtInfoList: List<TBTInfo>)
+override fun onChargerOperatorInfo(chargerOperatorList: List<ChargerOperator>)
+override fun onCautionPointInfo(cautionPointList: List<CautionPoint>)
+override fun onTripInfo(tripInfo: TripInfo)
+```
+
+- 데이터 클래스 import 경로: `ai.pleos.playground.navi.data.*`, 상수: `ai.pleos.playground.navi.constants.NaviErrorCode`, `NavigationStatus`, `RouteOption`, `WaypointIndex` [gh-navi-src]
+- 문서 원문: "Navigation 앱의 구현 시나리오에 따라 전달되는 이벤트가 달라질 수 있습니다." [navi-events]
+- **도착 이벤트:** `onDestinationArrived(DestinationArrivedInfo)`가 있다. 실제로 언제 오는지는 Navigation 앱 구현에 따른다.
+- **ETA·남은 거리:** 이름이 관련 있어 보이는 `RouteStateInfo`(`getRouteStateInfo()`/`onRouteStateInfo`), `TripInfo`(`onTripInfo`), `DrivingInfo`(`onDrivingInfo`), `TBTInfo`가 있지만, **필드 정의는 확인하지 못했다.** 공식 샘플도 객체를 `toString()`으로 로그에 찍기만 하고 필드에 접근하지 않는다. → 미확인.
+  - **산출물로 확인 (2026-11-03)** [aar-navi-data]: 데이터 클래스는 `NaviHelper:3.0.5`가 아니라 전이 의존성 `ai.pleos.playground:navi-data:3.0.4`의 `ai.pleos.playground.navi.data` 패키지에 있다. getter 목록 (`javap`):
+    - `TripInfo`: `getDistance(): Int`, **`getEta(): Int`**, `getEstimatedSocAtDest(): Int`, `getEnergyConsumption(): Double`, `getSummary(): TripSummary`
+    - `DrivingInfo`: `getDestination(): DrivingState`, `getWaypoints(): List<DrivingState>`
+      - `navi.data.DrivingState`: `getName()`, **`getDuration(): Int`**, **`getDistance(): Int`**, 충전 관련 필드
+    - `CurrentLocationInfo`: **`getLatitude()`, `getLongitude()`**, `getHeading()`, `getAddress()`, `getRouteId()`, `getCurrentRouteIndex()`
+    - `DestinationArrivedInfo`: `getDuration()`, `getDistance()`, `getName()`, `getAddress()`
+    - `RouteStateInfo`: `getTermsAgreement()`, `getNaviMode()`, `isRouting()`, `getRouteOption()`, 충전 관련, `getTrafficStatus()` (ETA 없음)
+  - **값의 단위(초/분, 미터)는 문서에도 클래스에도 없다.** → 미확인. 실제 값을 찍어 봐야 한다.
+  - 참고: `NaviHelper` 3.0.5의 전이 의존성은 `navi-data:3.0.4`, `navi-aidl:3.0.1`, `kotlin-stdlib:1.9.25`, `core-ktx:1.8.0`, `kotlinx-coroutines-android:1.6.3`이다 (pom).
+- 현재 위치: `getCurrentLocationInfo()` → `onCurrentLocationInfo(CurrentLocationInfo)` (권한 `NAVI_ROUTE`, `get*Info()`). 필드 정의는 미확인.
+
 ### FusedLocation SDK [fused-intro] [fused-setup] [fused-perm]
 
 - 설명: "FusedLocation SDK는 앱이 차량 위치 데이터를 수신할 수 있도록 API를 제공합니다." [fused-intro]
@@ -297,7 +436,17 @@ implementation("ai.pleos.playground:FusedLocation:1.1.3")
 - 권한: `<uses-permission android:name="pleos.car.permission.FUSED_LOCATION" />`. protection level은 `dangerous`이므로 앱이 권한 요청과 결과 처리를 직접 해야 한다. [fused-perm]
 - 차량 개인정보 설정이 위치 접근을 막으면 `showLocationAccessBlockedPopup()`으로 안내한다. 이 API가 권한을 주지는 않는다. 콜백의 `null`과 `onError(Exception)`을 처리한다. [fused-perm]
 - `ACCESS_COARSE_LOCATION`/`ACCESS_FINE_LOCATION`/`ACCESS_BACKGROUND_LOCATION`의 동작은 SDK 문서가 보장하지 않는다. [fused-perm]
+  - 원문: "Google Fused Location SDK의 설명을 Pleos Connect의 동작 보장으로 해석하면 안 됩니다." [fused-perm]
 - 공식 샘플: https://github.com/Pleos-Playground/pleos-sample-fusedlocation-app [sample-app]
+- 호환성: API 호환성 표에서 FusedLocation SDK는 "모델에 따라 다름", 확인 방법은 `isSupported` API. 원문: "FusedLocation SDK 가용 여부는 FusedLocation SDK `isSupported` API로 확인할 수 있습니다." [api-compat]
+- 사용 순서: 객체 생성 → `isSupported()` 확인 → `initialize()`. 지원하지 않는 환경이면 FusedLocation 기능을 제공하지 않게 처리하라고 권장한다. [fused-intro]
+
+### 위치를 얻는 다른 방법 (2026-11-03 조사)
+
+- **Android 표준 `LocationManager`:** Pleos 문서(FusedLocation 3개 페이지, 하드웨어 접근 정책, SDK API 정책, API 호환성, FAQ)에 허용·금지 언급이 없다 → 미확인.
+  - 관련 정책: 하드웨어 접근 정책은 모바일 전용 API가 차량에서 지원되지 않거나 제한될 수 있으니 지원 여부를 확인한 뒤 선택(Optional) 구조로 만들라고 한다. [hw-access]
+  - Maps/Navigation 앱 가이드: "Pleos Connect 및 AAOS 공식 API 사용을 권장합니다.", "비공식 센서/API 사용은 금지되어 있습니다." (Maps/Navigation 앱 대상 문서) [navi-app-guide]
+- **NaviHelper의 현재 위치:** `getCurrentLocationInfo()` → `onCurrentLocationInfo(CurrentLocationInfo)`. 권한은 `NAVI_ROUTE`(`get*Info()`). 내비게이션 탑재 차량에서만 호환된다. `CurrentLocationInfo` 필드는 미확인. [navi-perm] [api-compat] [gh-navi-src]
 
 ### TextToSpeech SDK (v3.3.1) [tts-intro] [tts-import] [tts-perm]
 
@@ -311,12 +460,34 @@ implementation("ai.pleos.playground:TextToSpeech:3.3.1")
 
 - 권한: `<uses-permission android:name="pleos.car.permission.TTS_SERVICE" />` [tts-perm]
 - 오류 콜백이 `PERMISSION_DENIED`면 매니페스트 선언과 실행 환경의 권한 허용을 확인한다. [tts-perm]
+  - 권한 페이지에는 보호 수준(normal/dangerous), 런타임 요청 필요 여부, 별도 승인 필요 여부가 적혀 있지 않다. [tts-perm]
+- 생성 (원문) [tts-intro]:
+
+```kotlin
+import ai.pleos.playground.tts.TextToSpeech
+import ai.pleos.playground.tts.constant.Mode
+
+val textToSpeech = TextToSpeech(applicationContext, Mode.HYBRID)
+```
+
+  - 원문: "`Mode`를 생략하면 `HYBRID`가 적용됩니다." 모드는 생성자 인자로 넘긴다. TTS 프로그래밍 가이드 페이지(초기화, 합성 시작·중지, 앱 등록)에는 모드를 바꾸는 API가 없다. [tts-intro] [tts-init] [tts-start] [tts-appreg]
+  - 원문: "합성된 음성을 차량의 오디오 시스템으로 재생합니다." [tts-intro]
+- 초기화·해제: `textToSpeech.initialize(object : OnInitializeListener { ... })` 또는 `textToSpeech.initialize()`. 해제는 `textToSpeech.removeEventListener(eventListener)` 후 `textToSpeech.release()`. release 후 다시 쓰려면 새 객체를 만든다. [tts-init]
+- 언어: `setLocale(locale: Locale)`. `speak()` 전에 호출한다. 예: `textToSpeech.setLocale(Locale.KOREA)` [tts-locale]
+  - 지원 locale: `ko-KR`, `en-US`, `fr-CA`, `es-US`, `es-MX` [tts-locale]
+  - 호출하지 않으면 같은 앱에서 이전에 설정한 값, 그것도 없으면 시스템 locale을 쓴다. [tts-locale]
+- 합성 (원문): `textToSpeech.speak("안녕하세요. 무엇을 도와드릴까요?")`, 중지 `textToSpeech.stop()`. 여러 조각은 마지막 조각 전까지 `isFinal = false`. 중지되면 `EventListener`의 `onStop()`이 호출된다. [tts-start]
+- 앱 등록 (서버 모드만): 초기화 후 `textToSpeech.registerApp(clientID = clientId, clientSecret = clientSecret, listener = object : OnServerConnectionListener { onConnected() / onFailed(errorType: ErrorType) })`. `onConnected()` 이후에 서버 요청을 시작한다. `ON_DEVICE`만 쓰면 등록하지 않아도 된다. [tts-appreg]
+- Pleos Maven 게시 버전: 2.1.2, 2.1.3, 2.1.3.1, 2.1.3.2, 2.1.5.1, 3.3.0, 3.3.1 (latest/release 3.3.1, lastUpdated 2026-10-13). [maven-meta]
+- 호환성: API 호환성 표에서 TextToSpeech·SpeechToText SDK는 "전체 호환". [api-compat]
 
 ### SpeechToText SDK (v3.3.1) [stt-intro] [stt-import] [stt-perm]
 
 - 음성을 텍스트로 바꿔 돌려준다. 명령을 실행하지는 않는다. 인식한 명령을 실행하려면 Gleo Interface가 필요하다. [stt-intro]
 - 진입 클래스: `ai.pleos.playground.stt.SpeechToText` [stt-intro]
 - 모드: `HYBRID`(기본, 서버 우선 후 네트워크 실패 시 온디바이스), `SERVER`, `ON_DEVICE`. 서버 기반 모드는 My Project 자격 증명으로 앱 등록이 필요하다. `ON_DEVICE`만 쓰면 등록이 필요 없다. [stt-intro]
+  - `ON_DEVICE` 원문: 차량 내 On-device 엔진으로 인식하며 네트워크와 앱 등록이 필요 없다. "이 모드만 사용하는 경우 앱 등록은 필요하지 않습니다." [stt-intro]
+  - `SERVER` 원문: "네트워크 연결과 앱 등록이 필요하며, 네트워크 연결에 실패해도 On-device 엔진으로 전환하지 않습니다." [stt-intro]
 - 의존성:
 
 ```kotlin
@@ -324,6 +495,58 @@ implementation("ai.pleos.playground:SpeechToText:3.3.1")
 ```
 
 - 권한: `<uses-permission android:name="pleos.car.permission.STT_SERVICE" />` [stt-perm]
+  - 권한 페이지에는 보호 수준, 런타임 요청 필요 여부, `android.permission.RECORD_AUDIO` 필요 여부, 별도 승인 필요 여부가 적혀 있지 않다. 선언하지 않으면 초기화나 API 호출이 실패할 수 있고 `PERMISSION_DENIED`가 올 수 있다. [stt-perm]
+- 생성 (원문) [stt-intro]:
+
+```kotlin
+import ai.pleos.playground.stt.SpeechToText
+import ai.pleos.playground.stt.constant.Mode
+val speechToText = SpeechToText(applicationContext, Mode.HYBRID)
+```
+
+  - 원문: "`Mode`를 생략하면 `HYBRID`가 적용됩니다." [stt-intro]
+  - 문서 코드에 나온 상수는 `Mode.HYBRID`뿐이다. `Mode` enum 페이지 본문이 비어 있어 `Mode.ON_DEVICE`라는 상수 이름은 코드로 확인하지 못했다. intro 본문의 모드 이름 표기는 `ON_DEVICE`다. [stt-intro] [stt-api-ref]
+  - **산출물로 확인 (2026-11-03):** `SpeechToText-3.3.1.aar`의 `ai.pleos.playground.stt.constant.Mode`에는 `HYBRID`, `SERVER`, `ON_DEVICE` 세 상수가 있다 (`javap`). [aar-stt]
+- 사용 순서: 생성 → `initialize()` → `addListener()` → (선택) `setLocale()` → (서버 모드면) 앱 등록 → `request()` → `stop()` → `removeListener()` 후 `release()` [stt-intro]
+- 초기화·해제: `speechToText.initialize(object : OnInitializeListener { ... })` 또는 `speechToText.initialize()`. 해제는 `speechToText.removeListener(resultListener)` 후 `speechToText.release()`. release 후 다시 쓰려면 새 객체를 만든다. [stt-init]
+- 언어: `setLocale(locale: Locale)`, 예 `speechToText.setLocale(Locale.KOREA)`. 지원 locale은 `ko-KR`, `en-US`, `fr-CA`, `es-US`, `es-MX`. 미호출 시 이전 설정값, 없으면 시스템 locale. [stt-locale]
+- 결과 리스너 `ResultListener` (원문 시그니처) [stt-listener]:
+  - `override fun onUpdated(stt: String, completed: Boolean)`: 인식 텍스트 갱신. `completed`가 `true`면 그 결과가 완료된 것.
+  - `override fun onError(errorType: ErrorType)`
+  - 그 밖에 `onReady()`, `onStartedRecognition()`, `onUpdatedEpdData(on, off)`, `onUpdatedRms(rms)`, `onEndedRecognition()` (이름만 확인, 시그니처 미확인)
+  - 원문: "인식 이벤트를 놓치지 않도록 `request()` 또는 `sendAudio()`를 호출하기 전에 리스너를 등록하세요."
+- 시작·중지 (원문): `speechToText.addListener(resultListener)` → `speechToText.request()`, 중지 `speechToText.stop()`. 원문: "서버 기반 인식이 필요한 모드에서는 앱 등록 또는 UA 인증도 완료해야 합니다." [stt-start]
+- 앱이 가진 PCM 보내기: `sendAudio(ByteArray)` 후 `completeAudioSend()`. **`ON_DEVICE` 모드에서만** 쓸 수 있다. 예시 포맷은 16 kHz, 16-bit, mono PCM, 100ms(3,200 bytes) 청크 (필수 형식이라고 하지는 않음). [stt-audio]
+- 앱 등록 (서버 모드만): `speechToText.registerApp(clientID = clientId, clientSecret = clientSecret, listener = object : OnServerConnectionListener { onConnected() / onFailed(errorType: ErrorType) })`. Client ID/Secret은 My Project 생성 시 발급된다. [stt-appreg]
+- `ErrorType` 값: `AUDIO_ERROR`, `INVALID_REQUEST_ERROR`, `MIC_ERROR`, `NETWORK_ERROR`, `NOT_SUPPORTED_API`("현재 모드 또는 실행 환경에서 지원하지 않는 API입니다."), `ON_DEVICE_ENGINE_ERROR`, `PERMISSION_DENIED`, `SERVER_INTERNAL_ERROR`, `TIMEOUT`, `UNAUTHENTICATED`, `UNAVAILABLE_LANGUAGE`, `UNKNOWN` [stt-error]
+- `SpeechToText` 클래스 멤버 (API Reference 목차): `Companion`, `Constructor`, `addListener`, `completeAudioSend`, `initialize`, `registerApp`, `release`, `removeListener`, `request`, `sendAudio`, `setLocale`, `stop`. 모드를 바꾸는 setter는 없다. 상세 페이지 본문은 비어 있다. [stt-api-ref]
+- Pleos Maven 게시 버전: 2.1.2, 2.1.3, 2.1.3.1, 2.1.3.1.1, 2.1.3.2, 3.3.0, 3.3.1 (latest/release 3.3.1, lastUpdated 2026-10-13). [maven-meta]
+
+### STT/TTS 사용 조건 정리 (2026-11-03 조사)
+
+- **콘솔 "준비 중"의 의미:** 신청 버튼이 없고 "Comming Soon" 배지가 붙는다(문서 표기 그대로). 원문: "해당 상태에서는 신청할 수 없으므로 **신청 필요** 상태로 변경된 후 진행하시기 바랍니다." [create-project]
+- **Client ID/Secret:** 콘솔 프로젝트 정보의 SDK 항목에서 확인한다. 원문: "앱 등록 등 서버 연결을 요구하는 SDK를 사용할 때 필요한 정보입니다." 해당 SDK는 TextToSpeech, SpeechToText. [create-project]
+- **`ON_DEVICE`와 "준비 중"의 관계:** STT/TTS 문서는 `ON_DEVICE`에 앱 등록이 필요 없다고만 하고, 콘솔 상태와의 관계는 어느 문서에도 없다. 권한(`STT_SERVICE`/`TTS_SERVICE`)에 "사전 협의 및 승인"이 필요한지도 STT/TTS 권한 페이지에는 없다. 반면 SDK 개요는 "퍼미션은 Pleos App Market과 사전 협의 및 승인된 범위 내에서만 사용할 수 있습니다."라고 한다. [sdk-overview] → **심사 제출 앱에서 `ON_DEVICE`를 써도 되는지는 미확인.**
+- **에뮬레이터:** STT/TTS intro 원문 "SpeechToText SDK를 사용하려면 Android Studio에 Pleos Connect Emulator를 설치하고 AVD를 설정합니다." 설정 항목에 "마이크 접근 설정", "Cold boot 설정"이 있다. [stt-intro] [tts-intro] 에뮬레이터에 On-device 엔진이 들어 있는지, 실제로 인식되는지는 문서에 없다 → 미확인 (GPU PC에서 직접 실행해 확인 필요). 마이크 설정은 [emulator-setup.md](emulator-setup.md#주의) 참고.
+- **Android 표준 `SpeechRecognizer` / `android.speech.tts.TextToSpeech`:** Pleos 문서(SDK 개요, SDK API 정책, 하드웨어 접근 정책, API 호환성, FAQ, 오디오 포커스 가이드, TTS 선행 묵음 가이드)에 허용·금지 언급이 없다 → 미확인.
+  - 관련 정책 문장: "동일하거나 유사한 기능의 API가 AAOS 표준에 이미 존재하는 경우, 해당 표준 API 사용을 권장하며 Pleos Connect SDK에서는 중복 기능을 제공하지 않습니다." [sdk-api-policy] Pleos가 STT/TTS SDK를 따로 제공하므로, 이 문장만으로 표준 API 사용 가능 여부를 판단할 수 없다.
+- **음성 출력의 오디오 포커스:** 재생 전 `AudioAttributes` + `AudioFocusRequest`로 포커스를 요청한다. 컨텍스트 매핑에서 NAVIGATION은 `NAVIGATION`, `ASSISTANCE_NAVIGATION_GUIDANCE`, VOICE_COMMAND는 `VOICE_COMMAND`, `ASSISTANT`. TTS SDK가 어느 usage로 재생하는지는 문서에 없다. 자세한 내용은 [ux-guidelines.md](ux-guidelines.md#오디오-포커스와-음성-안내) [audio-focus]
+
+### Gleo Interface (음성 명령으로 앱 기능 호출) [gleo-core] [gleo-deliver]
+
+- Gleo AI가 앱이 정의한 function을 호출하는 function calling 방식이다. 앱은 App Schema(JSON)를 등록하고, Gleo AI는 Gleo Action으로 앱을 부르며, 앱은 Callback으로 응답한다. [gleo-core]
+- 스키마 전달: 파일명은 "`schema.json`이어야 합니다.", "파일은 앱의 assets/ 디렉토리에 위치시켜야 합니다." 원문: "App Schema를 전달받으면, 당사 가이드라인을 준수하는지 검토합니다." "승인 후에는 통합이 자동으로 활성화됩니다." [gleo-deliver]
+- 신청 자격, 계약 필요 여부, 사용 가능 상태는 문서에 없다 → 미확인.
+
+### 전화 (2026-11-03 조사)
+
+- Pleos 문서에 서드파티 앱의 전화 걸기(`Intent.ACTION_DIAL`/`ACTION_CALL`, 블루투스 연결 폰 통화)에 대한 허용·금지 문장이 없다 → 미확인.
+- 관련 사실:
+  - 하드웨어 접근 정책: Telephony(전화)는 차량에서 제한될 수 있는 모바일용 API로 나열되어 있다. [hw-access]
+  - 지역별 주행 규제 표: 북미는 주행 중 "다이얼패드" 사용 제한(`UX_RESTRICTIONS_NO_DIALPAD(1)`). [driving-policy] → [ux-guidelines.md](ux-guidelines.md#지역별-기능-허용-범위-driving-상태)
+  - 오디오 포커스 가이드에 CALL 컨텍스트(`CALL`, `VOICE_COMMUNICATION`, `VOICE_COMMUNICATION_SIGNALING`)가 있다. 통화 중 MUSIC 요청은 거부(R)된다. [audio-focus]
+  - 에뮬레이터 2.1.0에서 "블루투스 동글 연동 제공 종료". 에뮬레이터로 폰 연결 통화를 시험할 수 없다. [emulator-release-note]
+  - 디자인 가이드의 System Color 토큰 분류에 "Phone"이 있다. 서드파티 앱의 전화 연동 방법은 문서에 없다. [design-colors]
 
 ## 권한
 
@@ -399,6 +622,23 @@ implementation("ai.pleos.playground:SpeechToText:3.3.1")
 - [ ] Gear 도메인(`getGear()`): 필요한 권한, `VehicleGear` 값, 실제 지원 여부. 문서에는 없고 AAR에만 있다.
 - [ ] 같은 `Vehicle` 인스턴스를 `release()`한 뒤 다시 `initialize()`해도 되는지. 우리 앱은 매번 새로 만들어 이 문제를 피한다.
 
+### PawCare 기획 관련 (2026-11-03 조사)
+
+- [x] STT/TTS 생성자, 모드 지정, `setLocale`과 지원 언어(`ko-KR` 포함), 결과 리스너, 앱 등록 방법 → 위 TextToSpeech / SpeechToText 절
+- [x] NaviHelper 목적지 요청(`requestRoute(RouteInfo)`), 도착 이벤트(`onDestinationArrived`), 권한별 API → 위 NaviHelper 절
+- [ ] 콘솔에서 "준비 중"인 STT/TTS를 `ON_DEVICE` 모드로 심사 제출 앱에서 써도 되는지. `STT_SERVICE`/`TTS_SERVICE` 권한에 사전 승인이 필요한지. (문서에 없음. Pleos 문의 필요)
+- [ ] Pleos 에뮬레이터에 On-device STT/TTS 엔진이 있어 실제로 인식·합성되는지 (GPU PC에서 직접 실행해 확인)
+- [x] `Mode.ON_DEVICE` 상수 이름 → `HYBRID`, `SERVER`, `ON_DEVICE` 확인 (AAR `javap`, 2026-11-03)
+- [ ] Android 표준 `SpeechRecognizer`, `android.speech.tts.TextToSpeech`를 Pleos에서 써도 되는지, `RECORD_AUDIO`가 필요한지
+- [ ] 서드파티 앱의 전화 걸기 (`ACTION_DIAL`/`ACTION_CALL`, 블루투스 연결 폰 통화) 허용 여부
+- [ ] Android 표준 `LocationManager`(`ACCESS_FINE_LOCATION`) 위치를 Pleos에서 받을 수 있는지
+- [x] NaviHelper 데이터 클래스 필드 → NaviHelper 절 "산출물로 확인" (`TripInfo.eta`, `DrivingState.duration/distance`, `CurrentLocationInfo` 좌표). 단위는 미확인 (2026-11-03)
+- [ ] `RouteInfo`의 `poiId`/`poiSubId`가 필수인지, 외부 장소 검색 결과(좌표+이름)만으로 경로를 요청할 수 있는지
+- [ ] `requestTrip(TripRequest)`의 동작 (설명 문서 없음)
+- [ ] 샘플 매니페스트의 `NAVI_CUSTOM_ROUTE`, `NAVI_CUSTOM_ETC`가 어느 API에 필요한지
+- [ ] Pleos 에뮬레이터에서 NaviHelper 요청을 받는 기본 Navigation 앱이 동작하는지
+- [ ] Gleo Interface(음성 명령 연동) 신청 자격과 사용 가능 상태
+
 ## 출처
 
 - [setup] https://document.pleos.ai/docs/connect/guide/getting-started/application-development/setup-connect-sdk-emulator
@@ -434,13 +674,46 @@ implementation("ai.pleos.playground:SpeechToText:3.3.1")
 - [stt-intro] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/SpeechToText/intro
 - [stt-import] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/SpeechToText/importing-sdk
 - [stt-perm] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/SpeechToText/declaring-permissions
+- [stt-init] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/SpeechToText/initialization-and-release
+- [stt-listener] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/SpeechToText/result-listeners
+- [stt-locale] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/SpeechToText/set-locale
+- [stt-appreg] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/SpeechToText/app-registration
+- [stt-start] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/SpeechToText/start-and-stop
+- [stt-audio] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/SpeechToText/sending-audio-data
+- [stt-error] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/SpeechToText/error-code
+- [stt-api-ref] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/SpeechToText/entry (하위: `.../speech-to-text/ai.pleos.playground.stt/speech-to-text/entry`, `.../ai.pleos.playground.stt.constant/mode/entry`)
+- [tts-init] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/TextToSpeech/initialization-and-release
+- [tts-locale] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/TextToSpeech/set-locale
+- [tts-start] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/TextToSpeech/start-and-stop
+- [tts-appreg] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/TextToSpeech/app-registration
+- [navi-init] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/NaviHelper/initialization-and-release
+- [navi-events] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/NaviHelper/event-listeners
+- [navi-dest] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/NaviHelper/destinations
+- [navi-routes] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/NaviHelper/routes
+- [navi-api-ref] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/NaviHelper/entry (하위: `.../navi-helper/ai.pleos.playground.navi.helper/navi-helper/entry`, `.../ai.pleos.playground.navi.data/entry`)
+- [api-compat] https://document.pleos.ai/docs/pleos-only/vehicle-app-planning-guide/api-compatibility-availability
+- [navi-app-guide] https://document.pleos.ai/docs/pleos-only/vehicle-app-developer-guide/navigation-app-development-guide
+- [audio-focus] https://document.pleos.ai/docs/pleos-only/vehicle-app-developer-guide/audio-focus-development-guide/audio-focus-development
+- [driving-policy] https://document.pleos.ai/docs/pleos-only/vehicle-app-planning-guide/driving-restiction-policy
+- [design-colors] https://document.pleos.ai/docs/connect/guide/docs-design/foundations/colors
+- [emulator-release-note] https://document.pleos.ai/docs/pleos-only/release-note/emulator-release-note
+- [gleo-core] https://document.pleos.ai/docs/pleos-only/app-integration-guide/guide/core-concepts
+- [gleo-deliver] https://document.pleos.ai/docs/pleos-only/app-integration-guide/guide/deliver-schema
 - 공식 샘플 저장소 ([sample-app] 페이지가 링크한 Pleos-Playground 조직, main 브랜치):
   - [gh-vehicle] https://github.com/Pleos-Playground/pleos-sample-vehicle-app (`README.md`, `app/build.gradle.kts`, `gradle/libs.versions.toml`, `gradle/wrapper/gradle-wrapper.properties`, `app/src/main/AndroidManifest.xml`)
   - [gh-navi] https://github.com/Pleos-Playground/pleos-sample-navi-app (`app/build.gradle.kts`, `gradle/libs.versions.toml`)
   - [gh-fused] https://github.com/Pleos-Playground/pleos-sample-fusedlocation-app (`app/build.gradle.kts`, `gradle/libs.versions.toml`)
   - [gh-vehicle-src] https://github.com/Pleos-Playground/pleos-sample-vehicle-app (`app/src/main/java/.../MainViewModel.kt`, `.../vehicle/VehicleClient.kt`, 커밋 959981d)
+  - [gh-navi-src] https://github.com/Pleos-Playground/pleos-sample-navi-app (`README.md`, `app/src/main/AndroidManifest.xml`, `app/src/main/java/ai/pleos/playground/navidevapp/screen/vm/NaviHelperViewModel.kt`, `.../data/model/SdkApi.kt`, `.../data/sample/NaviTestData.kt`, main 브랜치, 2026-11-03)
+  - 조직 저장소는 5개다: vehicle, fusedlocation, navi 샘플과 `pleos-guide`, `pleos-playground-api`. **STT/TTS 공식 샘플은 없다.** (2026-11-03)
 - 산출물:
   - [aar-2.3.2] Pleos Maven `ai.pleos.playground:Vehicle:2.3.2` AAR (`classes.jar`를 `javap`으로, `AndroidManifest.xml`, `proguard.txt`). 2026-11-03 확인.
+  - [aar-navi-data] Pleos Maven `ai.pleos.playground:navi-data:3.0.4` AAR과 `NaviHelper:3.0.5` pom (`javap`). 2026-11-03 확인.
+  - [aar-stt] Pleos Maven `ai.pleos.playground:SpeechToText:3.3.1` AAR (`javap`). 2026-11-03 확인.
+  - [maven-meta] Pleos Maven `maven-metadata.xml` (2026-11-03 확인):
+    - https://nexus-playground.pleos.ai/repository/maven-releases/ai/pleos/playground/SpeechToText/maven-metadata.xml
+    - https://nexus-playground.pleos.ai/repository/maven-releases/ai/pleos/playground/TextToSpeech/maven-metadata.xml
+    - https://nexus-playground.pleos.ai/repository/maven-releases/ai/pleos/playground/NaviHelper/maven-metadata.xml (versions 2.0.2, 2.0.3, 3.0.5; latest 3.0.5; lastUpdated 2026-10-19)
 - 관찰:
   - [obs-no-service] 우리 앱(Real 모드)을 일반 폰 에뮬레이터(`my_avd`, API 34 google_apis)에서 실행하고 `adb logcat`으로 확인. 2026-11-03.
 - Pleos 외 출처 (Pleos [faq]가 직접 링크한 Google 공식 문서):

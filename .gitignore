@@ -22,6 +22,9 @@ keystore.properties
 *.jks
 *.keystore
 
+# BMAD 개인 설정 (설치 프로그램이 만드는 개인 답변: 이름 등)
+_bmad/config.user.toml
+
 # Claude Code 개인 설정 / 캐시
 .claude/settings.local.json
 .claude/.cache/

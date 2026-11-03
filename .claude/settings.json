@@ -5,6 +5,20 @@
     "pr": "",
     "sessionUrl": false
   },
+  "skillOverrides": {
+    "bmad-build": "off",
+    "bmad-build-auto": "off",
+    "bmad-agent-dev": "off",
+    "bmad-code-review": "off",
+    "bmad-create-epics-and-stories": "off",
+    "bmad-sprint-planning": "off",
+    "bmad-correct-course": "off",
+    "bmad-retrospective": "off",
+    "bmad-qa-generate-e2e-tests": "off",
+    "bmad-walkthrough": "off",
+    "bmad-project-context": "off",
+    "bmad-customize": "user-invocable-only"
+  },
   "permissions": {
     "allow": [
       "Bash(./gradlew *)",

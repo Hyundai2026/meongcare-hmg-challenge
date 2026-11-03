@@ -75,11 +75,24 @@ git push origin main
 
 ## 6. 정리
 
+원격에 같은 이름의 브랜치가 있으면(`git ls-remote --heads origin <브랜치>`에 나오면) 원격부터 지운다.
+
+```
+git push origin --delete <브랜치>
+git fetch --prune origin
+```
+
+그다음 로컬 브랜치를 지운다.
+
 ```
 git branch -d <브랜치>
 ```
 
-- 원격에도 같은 이름의 브랜치가 있으면 지운다: `git push origin --delete <브랜치>`
+- 순서를 지키는 이유: 원격에 올라간 브랜치는 upstream이 걸려 있다.
+  - 이때 `git branch -d`는 main이 아니라 upstream을 기준으로 merge 여부를 판단한다.
+  - upstream이 브랜치보다 뒤처져 있으면 main에 다 들어갔어도 삭제를 거부한다.
+  - 원격을 지우고 prune하면 upstream이 사라져서 main 기준으로 판단한다.
+- `-d`가 그래도 거부하면 `-D`로 지우기 전에 확인한다: `git merge-base --is-ancestor <브랜치> origin/main`
 - main에 그대로 머문다. 다음 작업은 새 브랜치에서 시작한다.
 
 ## 7. 보고

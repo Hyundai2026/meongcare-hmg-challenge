@@ -1,0 +1,27 @@
+# Android / Gradle
+.gradle/
+.kotlin/
+build/
+/captures
+.externalNativeBuild/
+.cxx/
+local.properties
+*.iml
+.idea/
+.DS_Store
+
+# APK/AAB: 제출용 apk/ 폴더만 커밋
+*.apk
+*.aab
+!apk/*.apk
+output-metadata.json
+
+# 비밀값
+secrets.properties
+keystore.properties
+*.jks
+*.keystore
+
+# Claude Code 개인 설정 / 캐시
+.claude/settings.local.json
+.claude/.cache/

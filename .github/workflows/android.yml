@@ -1,0 +1,33 @@
+name: Android CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: check
+        run: |
+          if [ -f gradlew ]; then
+            echo "has_gradle=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "gradlew 없음: Android 프로젝트 생성 전이라 빌드를 생략한다."
+          fi
+
+      - if: steps.check.outputs.has_gradle == 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - if: steps.check.outputs.has_gradle == 'true'
+        uses: gradle/actions/setup-gradle@v4
+
+      - if: steps.check.outputs.has_gradle == 'true'
+        run: chmod +x gradlew && ./gradlew assembleDebug testDebugUnitTest lintDebug

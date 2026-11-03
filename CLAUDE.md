@@ -39,6 +39,7 @@
   - SessionStart: 마감 D-day와 진행 중인 계획을 보여준다.
   - `build-gate.mjs`: 앱 코드가 빌드되지 않는 상태로 커밋되거나 턴이 끝나지 않게 막는다.
     - 커밋 직전 (PreToolUse):
+      - 커밋 메시지나 PR 본문에 Claude 트레일러가 있으면 막는다. 트레일러 자동 추가는 `attribution` 설정으로 꺼져 있다.
       - main에 직접 커밋하면 막는다.
       - 앱 코드가 들어가는 커밋은 `assembleDebug`가 통과해야 진행된다.
     - 턴 종료 (Stop): 이번 턴에 앱 코드가 바뀌었으면 `assembleDebug`를 돌린다. 실패하면 멈추지 않고 이어서 고친다.

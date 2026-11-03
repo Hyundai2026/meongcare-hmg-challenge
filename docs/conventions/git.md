@@ -61,6 +61,9 @@
 - **요약**: 한국어 50자 이내. 마침표 없이, "~ 추가", "~ 수정"처럼 명사형으로 끝낸다.
   - 예: `feat(vehicle): 차속 Flow 래퍼 추가`
 - 본문에는 "무엇"보다 "왜"를 쓴다. 관련 계획이 있으면 경로를 적는다.
+- **Claude 트레일러를 넣지 않는다.** 커밋 메시지의 `Co-Authored-By: Claude ...`, PR 본문의 `🤖 Generated with Claude Code`가 해당된다.
+  - `.claude/settings.json`의 `attribution`을 빈 값으로 둬서 Claude Code가 자동으로 붙이지 않게 했다.
+  - 그래도 들어가면 커밋 직전 훅이 커밋과 PR 생성을 막는다.
 
 ## 스테이징
 

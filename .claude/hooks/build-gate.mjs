@@ -3,6 +3,7 @@
 //
 //   snapshot  (UserPromptSubmit) 턴 시작 시점의 앱 코드 해시를 기록한다.
 //   precommit (PreToolUse: Bash|PowerShell) git commit 직전에 검사한다.
+//             - 커밋 메시지나 PR 본문(gh pr create/edit)에 Claude 트레일러가 있으면 막는다.
 //             - main/master에 직접 커밋하면 막는다. 저장소의 첫 커밋은 예외.
 //             - 앱 코드가 바뀌었고 아직 빌드를 확인하지 않은 상태면 assembleDebug를 돌린다. 실패하면 커밋을 막는다.
 //   stop      (Stop) 이번 턴에 앱 코드가 바뀌었고 아직 빌드를 확인하지 않았으면 assembleDebug를 돌린다.
@@ -32,6 +33,8 @@ const GIT = String.raw`(^|[\s;&|(])git(\s+-[cC]\s+\S+)*\s+`;
 const GIT_COMMIT = new RegExp(`${GIT}commit(\\s|$)`);
 const GIT_ADD = new RegExp(`${GIT}add\\s`);
 const COMMIT_ALL = /\scommit\b.*\s(--all|-[A-Za-z]*a[A-Za-z]*)(\s|$)/;
+const GH_PR = /(^|[\s;&|(])gh\s+pr\s+(create|edit)\b/;
+const CLAUDE_TRAILER = /Co-Authored-By:\s*Claude|Generated with \[?Claude Code|claude\.com\/claude-code/i;
 
 const mode = process.argv[2] ?? 'stop';
 
@@ -52,6 +55,12 @@ try {
 
 // precommit은 모든 셸 명령마다 불린다. git commit이 아니면 가장 먼저 내보낸다.
 const command = input.tool_input?.command ?? '';
+if (mode === 'precommit' && (GIT_COMMIT.test(command) || GH_PR.test(command)) && CLAUDE_TRAILER.test(command)) {
+  block(
+    '[build-gate] 커밋 메시지와 PR 본문에 Claude 트레일러(Co-Authored-By: Claude, Generated with Claude Code)를 넣지 않는다 ' +
+      '(docs/conventions/git.md). 그 줄을 빼고 다시 실행하라.',
+  );
+}
 if (mode === 'precommit' && !GIT_COMMIT.test(command)) done();
 
 function git(...args) {

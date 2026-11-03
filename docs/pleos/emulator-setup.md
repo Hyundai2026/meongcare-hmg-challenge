@@ -73,3 +73,29 @@
    - 화면 아래 debug 패널에서 주행 상태를 바꾼다.
    - 구조: [docs/architecture.md](../architecture.md) "데이터 모드"
 3. Pleos SDK 연동 확인은 GPU가 되는 PC 한 대에서 몰아서 한다.
+
+## 일반 AVD 권장 설정 (팀 운영안, 공식 가이드 아님)
+
+기본값으로 만든 폰 AVD는 PC 키보드 입력이 안 되고 화면이 느리다. 2026-11-03에 `my_avd`에서 겪었다.
+AVD 폴더의 `config.ini` (`%USERPROFILE%\.android\avd\<이름>.avd\config.ini`)를 에뮬레이터를 끈 상태에서 고친다. 고치기 전에 백업한다.
+
+| 키 | 값 | 이유 |
+|---|---|---|
+| `hw.keyboard` | `yes` | PC 키보드로 입력 |
+| `hw.gpu.enabled` | `yes` | 그래픽카드로 화면을 그림 (끄면 CPU만 써서 느림) |
+| `hw.gpu.mode` | `host` | PC의 그래픽카드를 그대로 씀 |
+| `hw.ramSize` | `4096M` | Pleos 가이드의 AVD RAM과 같게 |
+| `vm.heapSize` | `512M` | |
+| `hw.cpu.ncore` | `8` | `my_avd`에서는 6코어까지 잡혔다 |
+| `fastboot.forceColdBoot` | `yes` | 항상 Cold boot (빠른 부팅으로 켜지는 것을 막음) |
+| `fastboot.forceFastBoot` | `no` | |
+
+- 확인 방법:
+  - GPU: `adb shell dumpsys SurfaceFlinger | grep GLES`에 그래픽카드 이름이 나온다.
+  - RAM: `adb shell cat /proc/meminfo`
+- 에뮬레이터 업데이트: `sdkmanager "emulator"`. 2026-11-03 기준 37.2.13.
+
+## 팀 PC 사양 메모
+
+- xxj15 PC: NVIDIA GeForce RTX 4070 Laptop GPU, RAM 64GB.
+  - Pleos 에뮬레이터 권장 사양(RTX 4060 Laptop 이상)을 넘는다. Pleos SDK 연동 확인을 이 PC에서 할 수 있다.

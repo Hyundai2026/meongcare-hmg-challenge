@@ -55,3 +55,5 @@
 - Android 프로젝트를 만든 뒤 처음 커밋할 때, 실제 `assembleDebug`로 커밋 게이트가 동작하는지 한 번 확인한다.
 - 커밋 메시지 형식은 문서로만 정해져 있고, 훅이 검사하지는 않는다.
 - 훅은 Claude의 커밋에만 걸린다. 사람이 main에 커밋하는 것까지 막으려면 GitHub 브랜치 보호 규칙을 켠다.
+  - (같은 날 변경) PR을 쓰지 않게 되어 "Require a pull request"는 켜지 않는다. 지금 기준은 `docs/conventions/git.md`의 "GitHub 저장소 설정"이다.
+  - 대신 main push 전 검증은 pre-push 훅이 맡는다. 자세한 내용은 [2026-11-03-local-merge-flow.md](2026-11-03-local-merge-flow.md).

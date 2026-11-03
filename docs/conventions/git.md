@@ -119,3 +119,8 @@
   - `--no-verify`로 건너뛰지 않는다.
 - CI(`.github/workflows/android.yml`)는 push 뒤에 같은 검사를 다시 돌리는 안전망이다. 실패하면 바로 고친다.
 - force push는 하지 않는다. `.claude/settings.json`에서 막혀 있다.
+
+GitHub 저장소 설정 (Settings → Branches → `main` 규칙):
+
+- **"Block force pushes"만 켠다.**
+- "Require a pull request before merging"은 켜지 않는다. main에 직접 push하는 방식이라 켜면 `/ship`이 막힌다.

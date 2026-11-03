@@ -1,7 +1,9 @@
 package com.meongcare.app.di
 
+import android.content.Context
 import com.meongcare.app.data.driving.FakeDrivingStateSource
 import com.meongcare.app.data.driving.RealDrivingStateSource
+import com.meongcare.app.data.vehicle.VehicleConnection
 import com.meongcare.app.domain.driving.DrivingStateSource
 
 /**
@@ -10,7 +12,7 @@ import com.meongcare.app.domain.driving.DrivingStateSource
  * 데이터 모드에 따라 Fake 또는 Real 구현을 골라 끼운다.
  * 화면 쪽은 인터페이스([DrivingStateSource])만 보므로, 어느 쪽이 끼워졌는지 모른다.
  */
-class AppContainer(val dataMode: DataMode) {
+class AppContainer(context: Context, val dataMode: DataMode) {
 
     /** debug 패널이 상태를 바꿀 때 쓴다. FAKE 모드에서만 화면에 연결된다. */
     val fakeDrivingStateSource = FakeDrivingStateSource()
@@ -18,5 +20,11 @@ class AppContainer(val dataMode: DataMode) {
     val drivingStateSource: DrivingStateSource = when (dataMode) {
         DataMode.FAKE -> fakeDrivingStateSource
         DataMode.REAL -> RealDrivingStateSource()
+    }
+
+    /** Pleos Vehicle 연결. REAL 모드에서만 만든다 (FAKE 모드에서는 Vehicle을 만들지 않는다). */
+    val vehicleConnection: VehicleConnection? = when (dataMode) {
+        DataMode.FAKE -> null
+        DataMode.REAL -> VehicleConnection(context)
     }
 }

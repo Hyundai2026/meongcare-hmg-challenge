@@ -36,6 +36,13 @@
   - `/release-apk`: 제출용 APK 생성
   - `/ship`: 작업 브랜치를 dev에 반영한다 (rebase → 검증 파이프라인 → `--no-ff` merge → push)
   - `/promote`: 검증된 dev를 main에 그대로 올린다. 사용자가 직접 실행할 때만 동작한다 (제출·PT 전)
+  - `/stack-diagram`: 기술 스택·아키텍처 다이어그램을 공식 로고와 함께 HTML/PNG로 만든다.
+    - 외부 스킬이다: caru-ini/stack-diagram@9e90a3b, MIT. 스크립트는 2026-11-03에 검토했다.
+    - **공개 갤러리 공유(SKILL.md 7단계, `share.py submit`)는 하지 않는다. 제안도 하지 않는다.** 출품작 구조는 아직 공개 전이다.
+    - Windows에서는 스킬 문서의 `python3` 대신 `python`을 쓴다. `python3`는 Microsoft Store 바로가기라서 동작하지 않는다.
+    - 기획서·PT에 쓸 결과물은 `docs/product/diagrams/`에 둔다. HTML과 PNG(라이트/다크)를 같이 둔다.
+    - 필요한 것: Python 3.9 이상, `pip install playwright && python -m playwright install chromium`
+    - 업데이트 방법: 원본 저장소의 `skills/stack-diagram`을 이 폴더에 덮어쓰고, 위의 커밋 해시를 고친다. 그 전에 스크립트를 다시 검토한다.
 - **서브에이전트** (`.claude/agents/`)
   - `planner`: 실행 계획을 커밋 단위로 써서 `docs/plans/active/`에 둔다
   - `tester`: 계약 기준으로 단위 테스트를 쓰고 실행한다. 프로덕션 코드는 고치지 않는다

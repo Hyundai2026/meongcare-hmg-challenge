@@ -64,6 +64,11 @@
 3. Node.js를 설치한다. 훅이 node로 동작한다.
 4. 이 폴더를 Claude Code로 연다. 세션이 시작되면 git 훅(`core.hooksPath=.githooks`)이 자동으로 켜진다.
    - Claude Code 없이 터미널만 쓴다면 직접 켠다: `git config core.hooksPath .githooks`
+5. (선택) 다이어그램 스킬(`/stack-diagram`)을 쓰려면 Python 3.9 이상과 Playwright가 필요하다.
+
+   ```
+   pip install playwright && python -m playwright install chromium
+   ```
 
 ### 브랜치
 
@@ -94,6 +99,7 @@
 | `/release-apk` | 제출용 APK를 만들 때 | **직접 입력해야만 동작** |
 | `/ship` | 작업 브랜치를 dev에 반영할 때 | 보통 Claude가 실행. 직접 입력해도 됨 |
 | `/verify` | 빌드한 앱을 에뮬레이터에서 스크린샷으로 확인할 때 | 보통 Claude가 실행 |
+| `/stack-diagram` | 기술 스택·아키텍처 그림이 필요할 때 (기획서, PT). 예: "우리 앱 구조도 그려줘" | 말로 시키면 Claude가 실행. 공개 갤러리에는 올리지 않는다 |
 
 ### 규칙
 

@@ -28,13 +28,26 @@
 
 ## 소스에서 빌드하기
 
-1. Android Studio(최신)와 JDK 17 이상을 준비한다.
-2. `secrets.properties.example`을 복사해 `secrets.properties`를 만들고 Pleos Client ID/Secret을 채운다.
-3. 빌드한다:
+Android Studio 없이 Gradle wrapper만으로 빌드된다.
+
+1. 준비물
+   - JDK 17 이상 (JDK 21에서 확인함)
+   - Android SDK Platform 35, Build-Tools 35
+   - `ANDROID_HOME` 환경 변수, 또는 저장소 루트 `local.properties`의 `sdk.dir`
+2. (선택) Pleos Client ID/Secret이 필요한 기능(TTS/STT)을 쓸 때만 `secrets.properties.example`을 복사해 `secrets.properties`를 만든다. 없어도 빌드된다.
+3. 빌드, 단위 테스트, 린트:
 
    ```
    ./gradlew assembleDebug
+   ./gradlew testDebugUnitTest
+   ./gradlew lintDebug
    ```
+
+   Windows PowerShell에서는 `.\gradlew.bat`을 쓴다.
+4. debug 빌드는 **Fake 모드**로 시작한다. 차량 없이 가짜 데이터로 동작한다.
+   - 화면 아래 debug 패널로 주행 상태(정차/주행/모름)를 바꾼다.
+   - 같은 패널에서 Real 모드로 전환할 수 있다. 앱이 다시 시작된다.
+   - release 빌드는 항상 Real 모드다.
 
 ## 팀
 

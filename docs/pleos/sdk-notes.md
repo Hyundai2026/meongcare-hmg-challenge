@@ -187,11 +187,44 @@ door.getCurrentDoorPosition(
 - 도메인 목록 [vehicle-intro]: Brake, CarInfo, Display, Door, DrivingMode, EvBattery, Fuel, HVAC, Light, Odometer, Safety, Seat, SideMirror, Steeringwheel, Tire, Toll, TurnSignal, Window, Wiper
 - vehicle 샘플 README에 따르면 2.3.2는 19개 도메인에 deprecated 아닌 public 메서드 442개를 노출한다. [gh-vehicle]
 
+### 2.3.2 AAR에서 직접 확인한 것 (산출물 기준, 2026-11-03) [aar-2.3.2]
+
+문서가 아니라 Pleos Maven에서 받은 `ai.pleos.playground:Vehicle:2.3.2` AAR을 `javap`과 AAR 매니페스트로 확인했다.
+
+- **좌표 해결**: 2.3.2가 Pleos Maven에서 정상 해결된다.
+  - 전이 의존성: `vehicle-aidl:1.1.1`, `vehicle-data:1.1.11`
+  - `vehicle-aidl`이 `com.google.dagger:hilt-android:2.51.1`을 끌고 온다. 우리 앱은 Hilt 플러그인을 쓰지 않으므로 라이브러리로만 들어온다.
+- **`Vehicle` 클래스 시그니처** (`ai.pleos.playground.vehicle.Vehicle`):
+
+  ```
+  public Vehicle(android.content.Context)
+  public final void initialize()
+  public final void release()
+  public final ai.pleos.playground.vehicle.api.<Domain> get<Domain>()   // 도메인별
+  ```
+
+  - `initialize()`/`release()`는 반환값이 없는 동기 함수다. 공식 샘플은 `initialize()`를 try/catch로 감싼다. [gh-vehicle-src]
+- **AAR이 병합 매니페스트에 스스로 넣는 것**:
+  - `<uses-permission android:name="ai.pleos.playground.service.vehicle.VEHICLE_BINDING" />`
+    - 차량 서비스에 연결하기 위한 권한이다. `pleos.car.permission.*`이 아니다.
+  - `<queries>`에 action `ai.pleos.playground.vehicle.VEHICLE_START`
+  - meta-data: 필요한 차량 서비스 최소 버전 `min_version_name` 2.3.13 (`min_version_code` 65)
+- **소비자 R8 규칙이 AAR에 들어 있다** (`proguard.txt`: `-keep class ai.pleos.playground.vehicle.api.implement.* { *; }` 등). 앱에서 R8을 켜도 SDK 쪽 규칙은 자동으로 적용된다.
+- **공식 샘플의 initialize/release 위치**: `AndroidViewModel`이 `Vehicle(application)`을 만든다. `init`에서 `initialize()`, `onCleared()`에서 `release()`를 부른다. 한 인스턴스를 release한 뒤 다시 initialize하지 않는다. [gh-vehicle-src]
+
 ## 속도·기어·주행 상태
 
 ### Vehicle SDK에는 속도·기어 도메인이 없다
 
 - `ai.pleos.playground.vehicle.api` 패키지의 클래스 19개 중 속도·기어 이름의 클래스는 없다. [vehicle-api]
+  - > **불일치 (2026-11-03):** 2.3.2 AAR의 `Vehicle` 클래스에는 `getGear()`가 있다. 반환형은 `ai.pleos.playground.vehicle.api.Gear`다. [aar-2.3.2]
+    > 도메인 getter도 문서의 19개가 아니라 20개다 (Gear 추가).
+    > `Gear` 인터페이스의 메서드:
+    > - `getCurrentGearSelectionState(onComplete: (VehicleGear) -> Unit, onFailed: (Exception) -> Unit)`
+    > - `registerGearSelection(GearSelectionListener)`
+    > - `unregisterGearSelection(GearSelectionListener)`
+    >
+    > 문서에는 없으므로 필요한 권한, `VehicleGear` 값, 지원 여부는 미확인이다. 주행 상태 Real 구현(후속 계획)에서 `CarUxRestrictions`의 대안으로 검토한다.
 - 도메인 설명 (원문) [vehicle-intro]:
   - DrivingMode: "드라이브 모드, 크루즈 컨트롤 정보 조회"
   - Brake: "브레이크 페달, 주차 브레이크 상태 조회"
@@ -352,6 +385,10 @@ implementation("ai.pleos.playground:SpeechToText:3.3.1")
 - [ ] Android for Cars App Library를 써도 되는지 (허용·금지 모두 문서에 없음)
 - [ ] Pleos가 명시한 "권장" compileSdk/targetSdk/AGP/Kotlin/JDK (문서는 샘플 기준값만 제시)
 - [ ] 화면 해상도(px)와 밀도(dpi) → [ux-guidelines.md](ux-guidelines.md#미확인)
+- [x] `Vehicle` import 경로와 `initialize()`/`release()` 시그니처, 2.3.2 해결 여부 → 위 "2.3.2 AAR에서 직접 확인한 것" (2026-11-03)
+- [ ] 차량 서비스가 없는 기기(일반 폰 에뮬레이터)에서 `Vehicle(context)`와 `initialize()`가 어떻게 되는지. 우리 앱은 예외를 잡고 계속하도록 만들었다.
+- [ ] Gear 도메인(`getGear()`): 필요한 권한, `VehicleGear` 값, 실제 지원 여부. 문서에는 없고 AAR에만 있다.
+- [ ] 같은 `Vehicle` 인스턴스를 `release()`한 뒤 다시 `initialize()`해도 되는지. 우리 앱은 매번 새로 만들어 이 문제를 피한다.
 
 ## 출처
 
@@ -392,6 +429,9 @@ implementation("ai.pleos.playground:SpeechToText:3.3.1")
   - [gh-vehicle] https://github.com/Pleos-Playground/pleos-sample-vehicle-app (`README.md`, `app/build.gradle.kts`, `gradle/libs.versions.toml`, `gradle/wrapper/gradle-wrapper.properties`, `app/src/main/AndroidManifest.xml`)
   - [gh-navi] https://github.com/Pleos-Playground/pleos-sample-navi-app (`app/build.gradle.kts`, `gradle/libs.versions.toml`)
   - [gh-fused] https://github.com/Pleos-Playground/pleos-sample-fusedlocation-app (`app/build.gradle.kts`, `gradle/libs.versions.toml`)
+  - [gh-vehicle-src] https://github.com/Pleos-Playground/pleos-sample-vehicle-app (`app/src/main/java/.../MainViewModel.kt`, `.../vehicle/VehicleClient.kt`, 커밋 959981d)
+- 산출물:
+  - [aar-2.3.2] Pleos Maven `ai.pleos.playground:Vehicle:2.3.2` AAR (`classes.jar`를 `javap`으로, `AndroidManifest.xml`, `proguard.txt`). 2026-11-03 확인.
 - Pleos 외 출처 (Pleos [faq]가 직접 링크한 Google 공식 문서):
   - [g-vehicle-property-ids] https://developer.android.com/reference/android/car/VehiclePropertyIds
   - https://developer.android.com/reference/android/car/hardware/property/CarPropertyManager

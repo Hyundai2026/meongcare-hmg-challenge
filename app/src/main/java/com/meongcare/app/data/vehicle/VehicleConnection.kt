@@ -14,6 +14,10 @@ import androidx.lifecycle.LifecycleOwner
  *   공식 샘플도 인스턴스 하나를 만들어 initialize하고, 끝날 때 release한 뒤 다시 쓰지 않는다.
  * - Real 모드에서만 쓴다. Fake 모드와 일반 에뮬레이터에는 차량 서비스가 없다.
  *
+ * 주의: [vehicle]이 null이 아니어도 차량 서비스에 연결됐다는 뜻은 아니다.
+ * 서비스가 없는 기기에서도 `initialize()`는 예외 없이 끝나고, SDK가 약 15초 동안 연결을 재시도한 뒤
+ * 로그만 남긴다 (docs/pleos/sdk-notes.md "차량 서비스가 없는 기기에서의 동작").
+ *
  * 차량 기능 래퍼는 [vehicle]을 여기서 얻는다. 직접 `Vehicle`을 만들지 않는다.
  * 주의: 도메인 API 콜백을 기다리는 중에는 release하면 안 된다 (docs/pleos/sdk-notes.md).
  *       도메인 API를 쓰는 래퍼를 만들 때 이 부분을 같이 처리한다.

@@ -211,6 +211,14 @@ door.getCurrentDoorPosition(
   - meta-data: 필요한 차량 서비스 최소 버전 `min_version_name` 2.3.13 (`min_version_code` 65)
 - **소비자 R8 규칙이 AAR에 들어 있다** (`proguard.txt`: `-keep class ai.pleos.playground.vehicle.api.implement.* { *; }` 등). 앱에서 R8을 켜도 SDK 쪽 규칙은 자동으로 적용된다.
 - **공식 샘플의 initialize/release 위치**: `AndroidViewModel`이 `Vehicle(application)`을 만든다. `init`에서 `initialize()`, `onCleared()`에서 `release()`를 부른다. 한 인스턴스를 release한 뒤 다시 initialize하지 않는다. [gh-vehicle-src]
+- **차량 서비스가 없는 기기에서의 동작** (관찰. 일반 폰 에뮬레이터 API 34, Vehicle 2.3.2, 2026-11-03) [obs-no-service]
+  - `initialize()`는 **예외 없이 바로 끝난다.**
+  - 이후 SDK가 백그라운드에서 서비스 연결을 시도한다.
+    - 대상: `ai.pleos.playground.service.vehicle/.VehicleService` (action `VEHICLE_START`)
+    - 약 0.5초 간격으로 31번 시도한다 (`currentRetryCount` 0~30, 약 15초).
+  - 끝나면 로그 `E [Pleos][SDK]b: Connect Service is Failed cause : null`를 남긴다. 앱에 따로 알리는 콜백은 보이지 않았다.
+  - 앱은 죽지 않는다.
+  - **주의:** 그래서 `initialize()`가 성공했다고 연결된 것이 아니다. 실제 연결 여부는 도메인 API 호출의 `onFailed`로 알게 될 것으로 보이지만, 아직 확인하지 않았다.
 
 ## 속도·기어·주행 상태
 
@@ -386,7 +394,8 @@ implementation("ai.pleos.playground:SpeechToText:3.3.1")
 - [ ] Pleos가 명시한 "권장" compileSdk/targetSdk/AGP/Kotlin/JDK (문서는 샘플 기준값만 제시)
 - [ ] 화면 해상도(px)와 밀도(dpi) → [ux-guidelines.md](ux-guidelines.md#미확인)
 - [x] `Vehicle` import 경로와 `initialize()`/`release()` 시그니처, 2.3.2 해결 여부 → 위 "2.3.2 AAR에서 직접 확인한 것" (2026-11-03)
-- [ ] 차량 서비스가 없는 기기(일반 폰 에뮬레이터)에서 `Vehicle(context)`와 `initialize()`가 어떻게 되는지. 우리 앱은 예외를 잡고 계속하도록 만들었다.
+- [x] 차량 서비스가 없는 기기에서 `initialize()`의 동작 → 위 "차량 서비스가 없는 기기에서의 동작" (관찰, 2026-11-03)
+- [ ] 차량 서비스 연결 실패를 앱이 알 수 있는 방법 (도메인 API `onFailed`로 오는지, 별도 콜백이 있는지)
 - [ ] Gear 도메인(`getGear()`): 필요한 권한, `VehicleGear` 값, 실제 지원 여부. 문서에는 없고 AAR에만 있다.
 - [ ] 같은 `Vehicle` 인스턴스를 `release()`한 뒤 다시 `initialize()`해도 되는지. 우리 앱은 매번 새로 만들어 이 문제를 피한다.
 
@@ -432,6 +441,8 @@ implementation("ai.pleos.playground:SpeechToText:3.3.1")
   - [gh-vehicle-src] https://github.com/Pleos-Playground/pleos-sample-vehicle-app (`app/src/main/java/.../MainViewModel.kt`, `.../vehicle/VehicleClient.kt`, 커밋 959981d)
 - 산출물:
   - [aar-2.3.2] Pleos Maven `ai.pleos.playground:Vehicle:2.3.2` AAR (`classes.jar`를 `javap`으로, `AndroidManifest.xml`, `proguard.txt`). 2026-11-03 확인.
+- 관찰:
+  - [obs-no-service] 우리 앱(Real 모드)을 일반 폰 에뮬레이터(`my_avd`, API 34 google_apis)에서 실행하고 `adb logcat`으로 확인. 2026-11-03.
 - Pleos 외 출처 (Pleos [faq]가 직접 링크한 Google 공식 문서):
   - [g-vehicle-property-ids] https://developer.android.com/reference/android/car/VehiclePropertyIds
   - https://developer.android.com/reference/android/car/hardware/property/CarPropertyManager

@@ -1,5 +1,8 @@
 #!/bin/sh
-# main에 push하기 전에 검증 파이프라인(assembleDebug testDebugUnitTest lintDebug) 통과를 확인한다.
+# dev·main에 push하기 전에 검사한다 (docs/conventions/git.md):
+#   - 검증 파이프라인(assembleDebug testDebugUnitTest lintDebug) 통과
+#   - main은 /promote로만 (PROMOTE_MAIN=1), origin/dev에 있는 커밋만
+#   - main·dev 삭제 금지
 # 로직은 .claude/hooks/build-gate.mjs의 prepush 모드에 있다.
 # 켜기: git config core.hooksPath .githooks  (Claude Code 세션을 열면 자동으로 켜진다)
 exec node "$(git rev-parse --show-toplevel)/.claude/hooks/build-gate.mjs" prepush "$@"

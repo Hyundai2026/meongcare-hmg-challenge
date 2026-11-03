@@ -1,0 +1,4 @@
+<resources>
+    <!-- 임시 이름. 팀명·앱 이름이 정해지면 바꾼다. -->
+    <string name="app_name">멍케어</string>
+</resources>

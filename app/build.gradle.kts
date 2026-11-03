@@ -18,6 +18,10 @@ fun String.asBuildConfigString(): String =
 // Pleos Client ID/Secret (TTS/STT용). secrets.properties.example 참고. 없으면 빈 값.
 val secrets = loadProperties(rootProject.file("secrets.properties"))
 
+// release 서명 정보. keystore.properties.example 참고. 없으면 서명하지 않은 release APK가 나온다.
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val hasReleaseKeystore = keystorePropertiesFile.exists()
+
 android {
     namespace = "com.meongcare.app"
     compileSdk = 35
@@ -33,8 +37,24 @@ android {
         buildConfigField("String", "PLEOS_CLIENT_SECRET", secrets.getProperty("PLEOS_CLIENT_SECRET", "").asBuildConfigString())
     }
 
+    signingConfigs {
+        if (hasReleaseKeystore) {
+            val keystore = loadProperties(keystorePropertiesFile)
+            create("release") {
+                // storeFile은 app 모듈 기준 경로다. 예시 값 ../release.jks는 저장소 루트를 가리킨다.
+                storeFile = file(keystore.getProperty("storeFile"))
+                storePassword = keystore.getProperty("storePassword")
+                keyAlias = keystore.getProperty("keyAlias")
+                keyPassword = keystore.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            if (hasReleaseKeystore) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             // Vehicle SDK의 R8 규칙이 확인되기 전까지는 난독화·축소를 끈다.
             isMinifyEnabled = false
             proguardFiles(

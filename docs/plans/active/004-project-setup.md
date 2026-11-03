@@ -196,10 +196,10 @@ app/src/test/java/com/meongcare/app/
 
 ### 필수
 
-- [ ] 0. 이 계획 파일 커밋 → `docs(plans): 004 프로젝트 초기 설정 계획 추가`
+- [x] 0. 이 계획 파일 커밋 → `docs(plans): 004 프로젝트 초기 설정 계획 추가`
   - 확인: `git log -1 --stat`에 이 파일만 있다.
 
-- [ ] 1. 문서 먼저 고치기 (AGENTS: "실제와 다르면 코드보다 문서를 먼저 고친다")
+- [x] 1. 문서 먼저 고치기 (AGENTS: "실제와 다르면 코드보다 문서를 먼저 고친다")
   - AGENTS.md 기술 스택을 위 "결정" 표 값으로 바꾼다.
     - compile/target SDK 35, AGP 8.8.2, Kotlin 2.0.0 + compose 플러그인, Gradle wrapper 8.10.2 (Pleos 요구는 8.0 이상), JDK 17 (빌드 JDK는 17 이상), Compose + Material3, MVVM, 수동 DI
     - 자세한 내용은 `docs/architecture.md`로 링크한다.
@@ -215,7 +215,7 @@ app/src/test/java/com/meongcare/app/
     - `docs(architecture): 기술 스택·구조 결정 기록 추가`
   - 확인: AGENTS.md에서 Grep `compile/target SDK 34`, `아직 미작성` 각각 0건.
 
-- [ ] 2. Gradle 뼈대와 빈 Compose 화면 (빌드되는 최소 앱)
+- [x] 2. Gradle 뼈대와 빈 Compose 화면 (빌드되는 최소 앱)
   - **wrapper:** (메인이 바꿈. 아래 "결정 / 배운 점" 참고)
     - 공식 Gradle 8.10.2 배포판(SHA-256 검증함)의 `gradle wrapper --gradle-version 8.10.2`로 만든다.
     - 공식 샘플의 wrapper jar는 Gradle 8.10.2 공식 체크섬과 다르다. 그래서 가져오지 않는다.
@@ -261,12 +261,12 @@ app/src/test/java/com/meongcare/app/
     - `app/build/outputs/apk/debug/app-debug.apk`가 있다.
     - 커밋 뒤 `.claude/.cache/build-gate.json`의 `okDigest`가 갱신됐다.
 
-- [ ] 3. 테마 → `feat(ui): 라이트·다크 테마와 큰 글씨·터치 기본값 추가`
+- [x] 3. 테마 → `feat(ui): 라이트·다크 테마와 큰 글씨·터치 기본값 추가`
   - `ui/theme/` 4개 파일. 위 "테마와 UI 수치"를 따른다.
   - `MainActivity`를 `MeongCareTheme`으로 감싼다.
   - 확인: `assembleDebug`. 기기가 있으면 `/verify`로 라이트·다크 둘 다 본다 (`adb shell cmd uimode night yes`/`no`).
 
-- [ ] 4. 주행 상태 인터페이스, Fake, 테스트 기반 → `feat(domain): 주행 상태 인터페이스와 Fake 구현 추가`
+- [x] 4. 주행 상태 인터페이스, Fake, 테스트 기반 → `feat(domain): 주행 상태 인터페이스와 Fake 구현 추가`
   - `domain/driving/DrivingState.kt`, `DrivingStateSource.kt`
     - KDoc에 적을 것: Real은 CarUxRestrictions를 기준으로 정한다. 구현은 후속 계획이다.
   - `data/driving/FakeDrivingStateSource.kt`: 초기값 PARKED, `set(state)`
@@ -277,7 +277,7 @@ app/src/test/java/com/meongcare/app/
     - `` `같은 상태로 다시 바꾸면 새 값을 내보내지 않는다`() ``
   - 확인: `.\gradlew.bat testDebugUnitTest --tests 'com.meongcare.app.data.driving.FakeDrivingStateSourceTest'` 통과
 
-- [ ] 5. Real 자리표시와 수동 DI
+- [x] 5. Real 자리표시와 수동 DI
   - `data/driving/RealDrivingStateSource.kt`: UNKNOWN만 내보낸다. KDoc에 "CarUxRestrictions 구현 전 자리표시, 후속 계획"이라고 적는다.
   - `di/DataMode.kt`, `di/DataModeStore.kt`, `di/AppContainer.kt`, `MeongCareApplication.kt`
     - 매니페스트에 `android:name=".MeongCareApplication"`을 추가한다.
@@ -290,7 +290,7 @@ app/src/test/java/com/meongcare/app/
     - `feat(di): Application과 AppContainer 수동 DI 추가`
   - 확인: `assembleDebug`. 기기가 있으면 실행해서 크래시가 없는지 본다.
 
-- [ ] 6. 홈 ViewModel과 주행/정차 화면 (Fake로 동작)
+- [x] 6. 홈 ViewModel과 주행/정차 화면 (Fake로 동작)
   - `ui/home/HomeUiState.kt`, `HomeViewModel.kt`
     - 매핑과 초기값은 위 "주행 상태 → 화면"을 따른다.
     - factory는 `viewModelFactory { initializer { ... } }`로 만들고 `AppContainer`에서 꺼낸다.
@@ -312,7 +312,7 @@ app/src/test/java/com/meongcare/app/
     - `DrivingScreen.kt`에서 Grep `TextField` 0건
     - 기기가 있으면 `/verify`로 정차 화면을 본다.
 
-- [ ] 7. debug 패널: Fake 상태 조작과 모드 전환
+- [x] 7. debug 패널: Fake 상태 조작과 모드 전환
   - `ui/debug/DebugPanel.kt`
     - `BuildConfig.DEBUG`일 때만 홈 화면 아래에 작은 띠로 보인다. "DEBUG" 표시를 단다.
     - FAKE 모드: [정차] [주행] [모름] 버튼
@@ -327,7 +327,7 @@ app/src/test/java/com/meongcare/app/
     - 기기가 있으면 `/verify`: 정차 → [주행] → 주행 화면 → [정차] → 정차 화면
     - 버튼 좌표는 `adb shell uiautomator dump /sdcard/ui.xml` → `adb pull`로 찾는다.
 
-- [ ] 8. 비밀값과 release 서명
+- [x] 8. 비밀값과 release 서명
   - **`secrets.properties`:**
     - 루트에 있으면 읽고, 없으면 빈 문자열을 쓴다.
     - `buildConfigField("String", "PLEOS_CLIENT_ID", ...)`와 `PLEOS_CLIENT_SECRET`을 만든다. 키 이름은 `secrets.properties.example`과 같다. 따옴표를 이스케이프한다.
@@ -345,7 +345,7 @@ app/src/test/java/com/meongcare/app/
     - `secrets.properties`가 **없을 때만** `app/build/generated/source/buildConfig/debug/com/meongcare/app/BuildConfig.java`에서 두 필드가 `""`인지 본다. 있으면 값이 노출되므로 보지 않는다.
     - 서명 경로는 키스토어가 없어 확인하지 못한다. 진행 로그에 그렇게 적는다.
 
-- [ ] 9. [선행: pleos-docs-researcher] Vehicle 연결 수명주기 (Real 쪽 SDK 래퍼)
+- [x] 9. [선행: pleos-docs-researcher] Vehicle 연결 수명주기 (Real 쪽 SDK 래퍼)
   - 선행 조사("확인 필요" 1~4)가 안 끝났으면 이 단계를 건너뛰고 후속 계획으로 넘긴다. 진행 로그에 적는다.
   - **처음 쓰는 의존성:**
     - `ai.pleos.playground:Vehicle:2.3.2` (`vehicle-sdk`)
@@ -374,7 +374,7 @@ app/src/test/java/com/meongcare/app/
     - Grep `import ai.pleos`가 `data/` 밖에 0건
     - Pleos 에뮬레이터에서의 실제 동작은 **확인 못 함** (GPU 없음). 그대로 기록한다.
 
-- [ ] 10. 경계 테스트 (`tester`) → `test: 주행 상태와 홈 ViewModel 경계 테스트 추가`
+- [x] 10. 경계 테스트 (`tester`) → `test: 주행 상태와 홈 ViewModel 경계 테스트 추가`
   - 메인이 `tester` 서브에이전트에 이 계획 경로를 넘긴다.
   - 기대 동작:
     - 주행 → 정차 → 주행 왕복
@@ -400,7 +400,7 @@ app/src/test/java/com/meongcare/app/
   - 기기가 없으면 멈추고 사용자에게 Cold boot를 요청한다. 확인 못 한 건 확인 못 했다고 적는다.
   - 완료 기준 5의 Grep 검사를 모두 돌린다.
 
-- [ ] 12. 문서 마무리
+- [x] 12. 문서 마무리
   - README.md "소스에서 빌드하기":
     - JDK 17 이상 (21에서 확인함)
     - Android SDK Platform 35와 Build-Tools 35
@@ -470,6 +470,20 @@ app/src/test/java/com/meongcare/app/
 - 2026-11-03 (메인):
   - android-35 플랫폼 설치 완료 (`sdkmanager "platforms;android-35"`).
   - Gradle 8.10.2 배포판을 받아 SHA-256을 공식 값과 대조했다 (`31c55713…`). 일치한다.
+- 2026-11-03: 단계 0~10, 12 완료. 단계 11은 화면 확인만 남았다.
+  - 단계 3·6·7(UI) 커밋 때 에뮬레이터가 꺼져 있었다. 그래서 빌드만 확인했고, 화면은 단계 11에서 몰아서 본다.
+  - 단계 8: 두 비밀값 파일 모두 없다.
+    - 없을 때 debug와 release가 빌드되고, `app-release-unsigned.apk`가 생기는 것을 확인했다.
+    - 서명 경로는 저장소 밖에 만든 버리는 테스트 키로 확인했다 (`apksigner`: `CN=throwaway test`). 키와 설정 파일은 지웠다.
+  - 단계 9: 선행 조사 1·2·4는 2.3.2 AAR과 공식 샘플 소스로 확인해 sdk-notes에 기록했다. 3(차량 서비스 없는 기기)은 미확인이다.
+  - 단계 10: tester가 19개를 추가했다. 지적에 따라 `fix(ui)`도 1건 냈다 (아래 "결정 / 배운 점"). 단위 테스트 26개가 통과한다.
+  - 단계 11 (화면 제외):
+    - `pipeline`이 통과했다.
+    - 정적 검사 4개는 모두 0건이다.
+    - 훅 기록:
+      - 앱 코드 커밋마다 precommit이 `assembleDebug`를 돌렸다.
+      - Stop 훅도 돌았다 (`turnDigest`·`session`이 기록됨).
+      - `okDigest`와 `pipelineDigest`가 기록됐다.
 
 ## 결정 / 배운 점
 
@@ -477,3 +491,10 @@ app/src/test/java/com/meongcare/app/
   - 샘플의 `gradle-wrapper.jar` SHA-256(`e996d452…`)이 Gradle 8.10.2 공식 wrapper 체크섬(`2db75c40…`)과 다르다.
   - 8.7~9.1의 다른 공식 체크섬과도 맞지 않았다.
   - 검증되지 않은 실행 파일을 저장소에 넣지 않기 위해, 검증한 배포판으로 직접 만든다.
+  - 그 결과 jar는 공식 체크섬 `2db75c40…`과 일치한다. `distributionSha256Sum`도 고정했다.
+- **코루틴 버전을 BOM 1.9.0으로 맞췄다.**
+  - 이유: Turbine(1.8.0)과 lifecycle이 코루틴 버전을 끌어올려, 앱(1.7.3)과 테스트의 버전이 섞일 위험이 있었다.
+- **"확인 필요 8"의 일부를 바꿨다: 화면에 돌아올 때도 안전 우선으로 한다.**
+  - `WhileSubscribed(replayExpirationMillis = 0)`으로, 5초 넘게 화면이 없다가 돌아오면 예전 "정차" 대신 주행 화면부터 보여준다.
+  - tester가 지적했고, 재현 테스트를 먼저 실패시킨 뒤 고쳤다.
+- **Vehicle SDK 2.3.2 AAR에 문서에 없는 `getGear()`가 있다.** Real 주행 상태(005)에서 CarUxRestrictions의 대안으로 검토한다.

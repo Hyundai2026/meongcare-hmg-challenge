@@ -1,0 +1,4 @@
+<resources>
+    <!-- 화면은 Compose 테마가 그린다. 이건 앱이 켜지는 순간의 창 배경용이다. -->
+    <style name="Theme.MeongCare" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>

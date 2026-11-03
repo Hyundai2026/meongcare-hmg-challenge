@@ -17,7 +17,11 @@
 
 ## 기술 스택 (확정된 것만)
 
-- Kotlin. minSdk 28 (Pleos 보안 요구사항), compile/target SDK 34, Gradle 8.0+
+- Kotlin 2.0.0, Jetpack Compose + Material3. 공식 Pleos 샘플과 같은 값으로 맞춘다.
+- minSdk 28 (Pleos 보안 요구사항), compile/target SDK 35
+- AGP 8.8.2, Gradle wrapper 8.10.2 (Pleos 요구는 8.0 이상), JDK 17 이상 (소스·타깃은 17)
+- 단일 `app` 모듈, MVVM (ViewModel + StateFlow), 수동 DI. 구조와 결정 근거: [docs/architecture.md](docs/architecture.md)
+- applicationId `com.meongcare.app` (앱 이름 "멍케어"는 임시)
 - Pleos Maven: `https://nexus-playground.pleos.ai/repository/maven-releases/`
 - Vehicle SDK: `ai.pleos.playground:Vehicle:2.3.2`
 - 그 밖의 SDK 좌표, API, 권한: [docs/pleos/sdk-notes.md](docs/pleos/sdk-notes.md)
@@ -41,12 +45,14 @@ Windows에서는 `gradlew.bat`을 쓴다. Bash에서는 `./gradlew`.
 
 ## 아키텍처 규칙
 
-- Pleos SDK는 `data/` 아래 래퍼 클래스에서만 호출한다. UI와 도메인은 인터페이스(예: `VehicleDataSource`)만 의존한다.
+- Pleos SDK와 AAOS Car API는 `data/` 아래 래퍼 클래스에서만 호출한다. UI와 도메인은 `domain/`의 인터페이스(예: `DrivingStateSource`)만 의존한다.
 - SDK 래퍼마다 **Fake 구현을 같이 만든다.**
   - 쓰임: GPU 없는 PC에서 개발, 단위 테스트, 시연 영상 촬영.
-  - debug 빌드에서 Fake와 Real을 전환할 수 있게 한다.
+  - `AppContainer`가 데이터 모드에 따라 Fake나 Real을 끼운다.
+  - debug 빌드는 화면 아래 debug 패널에서 모드를 바꾼다 (재시작하면 적용). release는 항상 Real이다.
 - SDK의 콜백 API(`onComplete`/`onFailed`)는 래퍼 안에서 `suspend` 함수나 `Flow`로 감싼다.
-- `Vehicle`의 `initialize()`/`release()`는 한 곳(Application 또는 lifecycle-aware 객체)에서만 관리한다.
+- `Vehicle`의 `initialize()`/`release()`는 한 곳에서만 관리한다: `data/vehicle/VehicleConnection` (REAL 모드에서만, 프로세스 수명주기에 맞춰).
+  - 차량 기능 래퍼는 `VehicleConnection.vehicle`을 쓴다. `Vehicle`을 직접 만들지 않는다.
 - `secrets.properties`가 없어도 빌드는 되게 한다 (빈 값을 기본값으로). 그래야 CI와 새 팀원 PC에서 깨지지 않는다.
 
 ## 규칙
@@ -55,7 +61,7 @@ Windows에서는 `gradlew.bat`을 쓴다. Bash에서는 `./gradlew`.
    - 먼저 `docs/pleos/sdk-notes.md`를 본다.
    - 거기 없으면 `pleos-docs-researcher` 서브에이전트로 공식 문서를 확인하고, 출처와 함께 기록한 뒤에 쓴다.
 2. **새 `pleos.car.permission.*` 권한은 사용자에게 먼저 확인받는다.** 승인되지 않은 권한은 앱 심사에서 탈락 사유가 된다.
-3. **주행 중 화면은 최소 정보, 큰 터치 타깃, 텍스트 입력 없음.** 정차·주차 중에만 허용할 기능을 구분한다. (세부 가이드는 `docs/pleos/ux-guidelines.md`, 아직 미작성)
+3. **주행 중 화면은 최소 정보, 큰 터치 타깃, 텍스트 입력 없음.** 정차·주차 중에만 허용할 기능을 구분한다. 세부 가이드: [docs/pleos/ux-guidelines.md](docs/pleos/ux-guidelines.md)
 4. **비밀값은 커밋하지 않는다.**
    - Client ID/Secret은 `secrets.properties`, 서명키는 `keystore.properties` + `*.jks`. 둘 다 gitignore 대상이다.
    - 코드에는 BuildConfig로 주입한다.
@@ -77,7 +83,7 @@ Windows에서는 `gradlew.bat`을 쓴다. Bash에서는 `./gradlew`.
 
 | 경로 | 내용 |
 |---|---|
-| `app/` | Android 앱 모듈 (Android Studio로 생성 예정) |
+| `app/` | Android 앱 모듈 (`com.meongcare.app`). 패키지 구조: [docs/architecture.md](docs/architecture.md) |
 | `apk/` | 제출용 release APK (`<팀명>_<앱이름>_release.apk`) |
 | `docs/contest/` | 대회 요구사항 |
 | `docs/pleos/` | Pleos SDK와 에뮬레이터에 대해 검증된 사실 |

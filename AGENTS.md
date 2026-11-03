@@ -34,6 +34,8 @@ Windows에서는 `gradlew.bat`을 쓴다. Bash에서는 `./gradlew`.
 | 린트 | `./gradlew lintDebug` |
 | 설치 | `adb install -r app/build/outputs/apk/debug/app-debug.apk` |
 | 빌드→실행→스크린샷 확인 | `/verify` 스킬 |
+| 검증 파이프라인 (CI와 같음) | `node .claude/hooks/build-gate.mjs pipeline` |
+| main에 반영 | `/ship` 스킬 |
 | 제출용 APK | `/release-apk` 스킬 |
 
 ## 아키텍처 규칙
@@ -59,11 +61,12 @@ Windows에서는 `gradlew.bat`을 쓴다. Bash에서는 `./gradlew`.
 5. **3단계 이상이거나 여러 세션에 걸치는 작업은** `docs/plans/active/`에 계획을 먼저 쓴다. 형식은 [docs/plans/README.md](docs/plans/README.md).
 6. **"완료"라고 말하기 전에 빌드가 통과해야 한다.** UI 변경은 `/verify`로 화면까지 확인한다. 확인하지 못한 건 확인 못 했다고 보고한다.
 7. **새로 알게 된 사실과 결정은 해당 docs 파일에 반영한다.** 대화에만 남기지 않는다.
-8. **작업 브랜치에서 작게 커밋한다.**
+8. **작업 브랜치에서 작게 커밋하고, 검증 파이프라인을 통과해야 main에 합친다.**
    - main에 직접 커밋하지 않는다.
    - 논리 단위 하나가 끝날 때마다 커밋하고, 커밋할 때마다 빌드가 통과해야 한다.
-   - push와 PR은 사용자가 요청할 때만 한다.
-   - 브랜치 이름, 커밋 메시지 형식, 머지 방식: [docs/conventions/git.md](docs/conventions/git.md)
+   - PR은 쓰지 않는다. 순서: 최신 main 위로 rebase → 검증 파이프라인 → 로컬에서 `--no-ff` merge → push
+   - 작업 브랜치는 원격에 push하지 않는다.
+   - 브랜치 이름, 커밋 메시지 형식, 반영 절차: [docs/conventions/git.md](docs/conventions/git.md)
 9. **작업이 끝나면 개발 노트를 남긴다.**
    - 위치: `docs/notes/<git user.name>/YYYY-MM-DD-<작업>.md`
    - 형식: [docs/notes/README.md](docs/notes/README.md)

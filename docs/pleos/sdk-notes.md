@@ -565,7 +565,223 @@ val speechToText = SpeechToText(applicationContext, Mode.HYBRID)
 
 - Gleo AI가 앱이 정의한 function을 호출하는 function calling 방식이다. 앱은 App Schema(JSON)를 등록하고, Gleo AI는 Gleo Action으로 앱을 부르며, 앱은 Callback으로 응답한다. [gleo-core]
 - 스키마 전달: 파일명은 "`schema.json`이어야 합니다.", "파일은 앱의 assets/ 디렉토리에 위치시켜야 합니다." 원문: "App Schema를 전달받으면, 당사 가이드라인을 준수하는지 검토합니다." "승인 후에는 통합이 자동으로 활성화됩니다." [gleo-deliver]
-- 신청 자격, 계약 필요 여부, 사용 가능 상태는 문서에 없다 → 미확인.
+- 원문: "현재 가이드는 개발이 진행됨에 따라 지속적으로 개선될 예정입니다." [gleo-core]
+- **SDK 의존성과 권한이 없다.** Gleo 가이드 6개 페이지 어디에도 Gradle 좌표와 `pleos.car.permission.*` 권한이 없다. 앱은 Android Intent로 받고 Broadcast로 응답한다. [gleo-core] [gleo-schema] [gleo-callback] [gleo-examples] [gleo-deliver] [gleo-radio]
+  - Pleos Maven에도 이름에 "gleo"가 들어간 아티팩트가 없다 (2026-11-03 검색. 같은 방법으로 `NaviHelper`는 검색됨). [maven-search]
+- 가이드 구성 (사이드바 "Gleo Interface 구현 가이드"): Gleo Interface(core-concepts), App Schema 작성 가이드, Callback Schema 작성 가이드, 예제 코드, App Schema를 Gleo에 전달하기, Use Cases(라디오 앱 하나). [gleo-core]
+
+#### 사용 가능 상태와 신청 (2026-11-03 조사)
+
+- **신청 자격, 신청 방법, 제휴·계약 필요 여부: 문서에 없다.** 아래 페이지에 해당 문장이 없다.
+  - Gleo 가이드 6개 페이지 [gleo-core] [gleo-schema] [gleo-callback] [gleo-examples] [gleo-deliver] [gleo-radio]
+  - 프로젝트 생성·SDK 사용 신청 [create-project], SDK 개요 [sdk-overview], 개발 가이드 소개 [dev-guide-intro]
+  - 앱 제출 가이드 [app-submission], 앱 심사 가이드와 하위 페이지(기능·성능·안정성, 등록 정보) [app-review]
+- **SDK 목록 어디에도 Gleo가 없다.**
+  - 프로젝트 생성 페이지의 상태별 목록: 준비 중 "FusedLocation, TextToSpeech, SpeechToText, Vehicle Control SDK", 사용 가능 "Vehicle State, NaviHelper SDK" [create-project]
+  - 콘솔 (2026-11-03 팀원 확인)에도 없다. [console-2026-11-03]
+  - SDK 개요의 목록: "Vehicle SDK", "NaviHelper SDK", "TextToSpeech SDK", "SpeechToText SDK", "FusedLocation SDK". Gleo는 사이드바 항목 "Gleo Interface 구현 가이드"로만 나온다. [sdk-overview]
+  - 대회 FAQ의 사용 가능 SDK 목록과 대회 개발 가이드에도 Gleo가 없다. [contest-faq] [contest-dev]
+- Developer Journey 페이지의 개발·연동 단계 설명에 Gleo가 한 번 나온다: "including app feature implementation, SDK usage, and Gleo Interface integration." 자격이나 절차는 없다. [dev-journey]
+- 문의처:
+  - deliver-schema 원문: "해당 부분에 대해 추가적인 안내가 필요하다면 이 문서의 저자에게 문의해 주시기 바랍니다." 저자 연락처는 페이지에 없다. [gleo-deliver]
+  - 사이트 공통 하단의 연락처는 `partnership@pleos.ai`다. Gleo 문의 창구라는 문장은 없다. [gleo-deliver]
+- 참고 (Gleo 언급은 없는 일반 규정): "제휴 계약 필요 상태로 표시된 항목의 경우에는 웹 사이트를 통한 신청 방법을 제공하지 않습니다." "서비스 계약 담당자에게 별도 문의하여 제휴 계약을 진행하신 후 사용 가능한 항목입니다." [create-project]
+
+#### 스키마 검토 기간과 전달 경로
+
+- **검토 기간: 문서에 없다.**
+  - deliver-schema는 "검토합니다", "승인 후에는 통합이 자동으로 활성화됩니다."라고만 한다. [gleo-deliver]
+  - 앱 제출·심사 가이드에도 Gleo, 스키마, 심사 기간에 대한 문장이 없다. [app-submission] [app-review]
+- **전달 경로도 문서에 없다.** APK 안의 `assets/schema.json`이 앱 심사 때 같이 검토되는지, 따로 보내는지 적혀 있지 않다. [gleo-deliver]
+
+#### 에뮬레이터와 개발 중 테스트
+
+- **에뮬레이터에 Gleo AI가 들어 있는지: 문서에 없다.**
+  - 개발 환경 구성(에뮬레이터 setup) 페이지에 Gleo, 음성, 어시스턴트, 마이크 언급이 없다. [setup]
+  - 에뮬레이터 릴리스 노트(v2.1.0, 2026-10-19만 있음)에도 Gleo 언급이 없다. 제거 항목은 "LLM SDK 제공 종료", "CRN 제공 종료", "블루투스 동글 연동 제공 종료"다. [emulator-release-note]
+  - Resources 페이지의 에뮬레이터 설명: "The emulator provides the Pleos Connect system UI (including the Home screen, GNB, driving view, and multi-window mode)". Gleo는 나오지 않는다. [resources]
+- **테스트 도구, 디버그 모드, 승인 전 로컬 시험 방법: 문서에 없다.**
+  - Gleo 가이드 6개 페이지에 테스트 방법이 없다.
+  - 앱 테스트 가이드(폼 팩터 테스트, Virtual Console)에도 Gleo가 없다. Virtual Console 탭은 Vehicle, Motion, ADAS, Convenience, Safety, Energy, Climate다. [form-factor-test] [virtual-console]
+- **Gleo AI가 스키마를 읽는 시점** (원문) [gleo-deliver]:
+  - "Gleo AI 앱(Gleo AI를 실행하고 타사 앱과 상호작용하는 앱)이 부팅되면, `AssetManager`를 사용하여 모든 시스템 또는 타사 앱을 스캔합니다."
+  - "`assets/` 디렉토리에서 발견된 모든 `schema.json` 파일은 읽혀 데이터베이스에 저장됩니다." "해당 프로세스는 **부팅 시점에 한 번만** 실행됩니다."
+  - AAOS 환경: "Gleo AI 앱이 설치(ADB install 또는 앱 마켓을 통해 설치)되거나 삭제될 때," "앱의 `assets/` 디렉토리에서 `schema.json` 파일을 읽고 데이터베이스를 갱신합니다."
+  - 영문판도 주어가 "When Gleo AI App is installed (via ADB install or App Market) or uninstalled"다. **타사 앱을 설치할 때 다시 읽는다는 문장은 없다.** [gleo-deliver]
+  - 이 로딩과 "승인 후 자동 활성화"의 관계는 문서에 없다. 승인 전 스키마도 읽히는지 알 수 없다.
+
+#### 앱 쪽 구현 (원문) [gleo-schema] [gleo-examples] [gleo-callback]
+
+**App Schema 필드** [gleo-schema]
+
+- 원문 정의:
+  - `packageName`(`string`): "Android 애플리케이션의 패키지명입니다."
+  - `appDescription`(`string`): "앱의 주요 목적을 명확히 나타내는 간결한 설명입니다."
+  - `version`(`string`): "Pleos 앱 마켓에 등록된 애플리케이션 버전입니다."
+  - `actionCalls`(`array`): "음성 명령으로 호출할 수 있는 function 목록입니다 (최대 3개)."
+  - 항목마다 `type`("function"으로 고정)과 `function`(`object`)
+- `function` 안의 필드:
+  - `component`(`string`, 기본값 "activity"): "Android에서 Gleo AI가 function을 호출하는 방식을 지정합니다."
+    - `"activity"`: "Android의 context.startActivity() 메서드를 사용하여 action을 실행합니다."
+    - `"service"`: "Android의 context.sendBroadcast() 메서드를 사용하여 action을 전송합니다."
+  - `name`, `description`
+  - `parameters`: `type`("object"), `properties`, `required`(`array<string>`)
+    - `properties` 원문: "허용 가능한 값의 범위가 정해져 있는 경우, `enum`에 해당 문자열 값의 목록을 지정할 수 있습니다."
+- 작성 규칙:
+  - 원문: "모든 description은 영어로 작성해야 합니다." "Description 내에 구체적인 예시를 제공하지 마세요."
+  - (요약) parameter `type`은 string, number, boolean, array 중 하나다. `enum`은 문자열만 되고 `null`은 지원하지 않는다.
+- > **불일치:** 예시 JSON에는 `"invokeWord" : "리마인더"`가 있지만, 필드 정의 목록에는 `invokeWord`가 없다. 한글판과 영문판이 같다. [gleo-schema]
+
+예시 JSON (원문 중 function 1개. 줄바꿈과 들여쓰기는 원본과 다를 수 있다) [gleo-schema]:
+
+```json
+{
+  "packageName": "ai.dot42.pleos.reminderapp",
+  "appDescription": "A reminder app that lets you schedule tasks and receive notifications at the right time.",
+  "invokeWord" : "리마인더",
+  "version" : "1.0.0",
+  "actionCalls": [
+    {
+      "type": "function",
+      "function": {
+        "name": "ADD_REMINDER",
+        "description": "Add a reminder that will notify the user at the given date and time.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string",
+              "description": "Title of the reminder."
+            },
+            "dateTime": {
+              "type": "string",
+              "description": "Date and time to trigger the reminder notification, in ISO 8601 date and time format."
+            }
+          },
+          "required": ["title", "dateTime"]
+        },
+        "component": "activity"
+      }
+    }
+  ]
+}
+```
+
+**Gleo Action 받기** [gleo-deliver] [gleo-examples]
+
+- 원문: "Gleo Action을 수신하려면 각 function에 대한 action filter를 정의해야 합니다." [gleo-deliver]
+
+```xml
+<activity android:name=".YourActivity">
+    <intent-filter>
+        <action android:name="ADD_REMINDER" />
+        <category android:name="android.intent.category.DEFAULT" />
+    </intent-filter>
+</activity>
+```
+
+- 문서 예시에는 `android:exported`가 없다. `component`="service"용 `<receiver>` 매니페스트 예시도 없다. [gleo-deliver] [gleo-examples]
+- Gleo AI가 만드는 Gleo Action JSON (원문 예시): `{"packageName": "ai.dot42.pleos.reminderapp", "action": "ADD_REMINDER", "actionParameters": {"title": "미팅", "dateTime": "2025-02-20T06:00:00Z"}}` [gleo-examples]
+- Intent 변환 규칙 원문 [gleo-examples]:
+  - "`action` 값은 Intent의 action으로 설정됩니다."
+  - "`packageName` 값은 대상 앱을 지정하는 데 사용됩니다."
+  - "`actionParameters` JSON 객체는 파싱되며, 각 key-value 쌍이 개별적으로 Intent에 추가됩니다 (putExtra)."
+- Gleo AI 쪽 예시 코드: `intent.action = "ADD_REMINDER"`, `intent.putExtra("ACTION_PARAM", <JSON 문자열>)`, `intent.setPackage("ai.dot42.pleos.reminderapp")`, 그다음 `context.startActivity(intent)`("activity") 또는 `context.sendBroadcast(intent)`("service"). [gleo-examples]
+- > **불일치:** 본문은 key-value마다 extra를 따로 넣는다고 한다. 그런데 같은 페이지의 코드는 파라미터 전체를 JSON 문자열 하나로 `"ACTION_PARAM"` extra에 넣고, 수신 예시도 그것을 파싱한다. 실제 형식은 미확인이다. [gleo-examples]
+
+수신 예시 (원문) [gleo-examples]:
+
+```kotlin
+// component = "activity"
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        // ...
+        val bundle = intent?.extras
+        bundle?.let { data ->
+            runCatching {
+                val actionParam = data.getString("ACTION_PARAM")
+                // ...
+            }.onFailure {
+                Log.e(logTag, "Failed to get intent extras: $it")
+            }
+        }
+    }
+}
+
+// component = "service"
+class CustomReceiver : BroadcastReceiver() {
+    override fun onReceive(
+        context: Context,
+        intent: Intent
+    ) {
+        if (intent.action == "ADD_REMINDER") {
+            val rawJson = intent.getStringExtra("ACTION_PARAM") ?: "{}"
+            try {
+                // JSON parsing
+                val json = JSONObject(rawJson)
+                val title = json.optString("title", "No Title")
+                val dateTime = json.optString("dateTime", "No DateTime")
+                // To Do..
+                Log.d("ReminderReceiver", "Title: $title, DateTime: $dateTime")
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Log.e("ReminderReceiver", "Failed to parse actionParameters")
+            }
+        }
+    }
+}
+```
+
+**Callback 응답** [gleo-callback] [gleo-examples]
+
+- 원문: "Gleo AI는 다음 형식의 Broadcast를 수신해야 합니다." "Gleo AI는 Android 서비스이므로 broadcast 수신이 가능합니다." [gleo-examples]
+- 필드 (원문) [gleo-callback]:
+  - "functionName(string, required): Callback을 발생시킨 intent action의 이름입니다."
+  - "status(enum, 필수): 앱에서 Gleo Action을 호출한 의 상태를 나타냅니다." ("호출한 의"는 원문 표기 그대로) 값: "success", "asking", "fail"
+    - success: "Action이 정상적으로 처리되었을 때 사용됩니다."
+    - asking: "Action을 실행하기 위해 추가 정보(예: 필수 parameter)가 필요하거나 사용자 확인 같은 후속 상호작용이 필요한 경우 사용됩니다."
+    - fail: "Action이 완료될 수 없을 때 사용됩니다."
+  - "message(string, 필수): 호출 결과에 대한 짧은 설명으로, 완전한 문장으로 작성되어야 합니다." (예시는 모두 영어)
+  - "mode(enum, 선택, 기본값은 "voice"): Gleo AI가 사용자에게 답변을 전달하는 방법을 나타냅니다." 값: "voice", "beep", "silent"
+  - "data(string, 선택): 요청 결과를 JSON 객체 배열 문자열 형식(key-value 형식의 객체들)으로 표현한 값입니다."
+- **타임아웃** 원문: "참고로, Gleo는 timeout을 위해 7초 후 Action을 취소합니다." [gleo-callback]
+
+응답 보내기 (원문) [gleo-examples]:
+
+```kotlin
+import android.content.Intent
+import android.util.Log
+import org.json.JSONArray
+import org.json.JSONObject
+
+fun sendGleoBroadcast(
+    functionName: String,
+    status: String,
+    message: String,
+    data: String? = null
+) {
+    runCatching {
+        val jsonObject = JSONObject().apply {
+            put("functionName", functionName)
+            put("status", status)
+            put("message", message)
+            data?.let { put("data", it) }
+        }
+        Intent("ai.pleos.playground.intent.action.APP_ACTION_RESPONSE").apply {
+            putExtra("packageName", packageName)
+            putExtra("response", jsonObject.toString())
+        }.also {
+            sendBroadcast(it)
+            Log.d("ThirdPartyApp", "respondAction success jsonObject: $jsonObject")
+        }
+    }.onFailure {
+        Log.e("ThirdPartyApp", "respondAction onFailure >> $it")
+    }
+}
+```
+
+- 예시 코드의 응답 Intent에는 `setPackage`가 없다. 응답 broadcast를 보낼 때 필요한 권한도 문서에 없다. [gleo-examples]
+- 예시 코드에는 `mode` 필드를 넣는 부분이 없다 (기본값 "voice"). [gleo-examples] [gleo-callback]
 
 ### 전화 (2026-11-03 조사)
 
@@ -666,7 +882,12 @@ val speechToText = SpeechToText(applicationContext, Mode.HYBRID)
 - [ ] `requestTrip(TripRequest)`의 동작 (설명 문서 없음)
 - [ ] 샘플 매니페스트의 `NAVI_CUSTOM_ROUTE`, `NAVI_CUSTOM_ETC`가 어느 API에 필요한지
 - [ ] Pleos 에뮬레이터에서 NaviHelper 요청을 받는 기본 Navigation 앱이 동작하는지
-- [ ] Gleo Interface(음성 명령 연동) 신청 자격과 사용 가능 상태
+- [ ] Gleo Interface(음성 명령 연동) 신청 자격과 사용 가능 상태: **문서에 없음** (2026-11-03 조사). Gleo 가이드 6쪽, 프로젝트 생성·SDK 신청, SDK 개요, 앱 제출·심사 가이드에 자격·신청·제휴 문장이 없다. SDK 목록과 콘솔에도 Gleo가 없다. Pleos·주최측에 문의해야 한다 → 위 "Gleo Interface" 절
+- [ ] Gleo 스키마 검토 기간, 전달 경로(앱 심사와 함께인지 따로인지): 문서에 없음 (2026-11-03)
+- [ ] Pleos 에뮬레이터에 Gleo AI가 들어 있는지, 승인 전 스키마를 로컬에서 시험하는 방법: 문서에 없음 (setup, 에뮬레이터 릴리스 노트, 앱 테스트 가이드 확인, 2026-11-03). GPU PC에서 직접 확인하거나 문의해야 한다.
+- [ ] Gleo Action의 extra 형식: 본문(key별 `putExtra`)과 코드(`ACTION_PARAM` JSON 하나)가 다르다 (불일치)
+- [ ] App Schema의 `invokeWord` 필드 정의 (예시에만 있음)
+- [ ] `component`="service"일 때 `<receiver>` 선언 방법, `android:exported` 값, 응답 broadcast(`APP_ACTION_RESPONSE`)에 필요한 권한
 
 ## 출처
 
@@ -731,7 +952,17 @@ val speechToText = SpeechToText(applicationContext, Mode.HYBRID)
 - [design-colors] https://document.pleos.ai/docs/connect/guide/docs-design/foundations/colors
 - [emulator-release-note] https://document.pleos.ai/docs/pleos-only/release-note/emulator-release-note
 - [gleo-core] https://document.pleos.ai/docs/pleos-only/app-integration-guide/guide/core-concepts
-- [gleo-deliver] https://document.pleos.ai/docs/pleos-only/app-integration-guide/guide/deliver-schema
+- [gleo-deliver] https://document.pleos.ai/docs/pleos-only/app-integration-guide/guide/deliver-schema (영문판 `/en/docs/...`도 대조)
+- [gleo-schema] https://document.pleos.ai/docs/pleos-only/app-integration-guide/guide/app-capability (영문판 대조)
+- [gleo-callback] https://document.pleos.ai/docs/pleos-only/app-integration-guide/guide/action_callback
+- [gleo-examples] https://document.pleos.ai/docs/pleos-only/app-integration-guide/guide/examples
+- [gleo-radio] https://document.pleos.ai/docs/pleos-only/app-integration-guide/use-cases/radio-app
+- [dev-guide-intro] https://document.pleos.ai/docs/pleos-only/vehicle-app-developer-guide/intro
+- [app-review] https://document.pleos.ai/docs/pleos-only/distribute/app-review-guide (하위 `review-functionality-performance-stability`, `review-app-registration-info`도 확인)
+- [form-factor-test] https://document.pleos.ai/docs/pleos-only/app-test-guide/form-factor-test-guide
+- [virtual-console] https://document.pleos.ai/docs/pleos-only/app-test-guide/virtual-console-guide
+- [resources] https://developers.pleos.ai/playground/discover/resources (`pleos.ai/playground/discover/resources`가 301로 옮겨 감, 2026-11-03)
+- [dev-journey] https://developers.pleos.ai/playground/discover/developer-journey
 - 공식 샘플 저장소 ([sample-app] 페이지가 링크한 Pleos-Playground 조직, main 브랜치):
   - [gh-vehicle] https://github.com/Pleos-Playground/pleos-sample-vehicle-app (`README.md`, `app/build.gradle.kts`, `gradle/libs.versions.toml`, `gradle/wrapper/gradle-wrapper.properties`, `app/src/main/AndroidManifest.xml`)
   - [gh-navi] https://github.com/Pleos-Playground/pleos-sample-navi-app (`app/build.gradle.kts`, `gradle/libs.versions.toml`)
@@ -743,6 +974,7 @@ val speechToText = SpeechToText(applicationContext, Mode.HYBRID)
   - [aar-2.3.2] Pleos Maven `ai.pleos.playground:Vehicle:2.3.2` AAR (`classes.jar`를 `javap`으로, `AndroidManifest.xml`, `proguard.txt`). 2026-11-03 확인.
   - [aar-navi-data] Pleos Maven `ai.pleos.playground:navi-data:3.0.4` AAR과 `NaviHelper:3.0.5` pom (`javap`). 2026-11-03 확인.
   - [aar-stt] Pleos Maven `ai.pleos.playground:SpeechToText:3.3.1` AAR (`javap`). 2026-11-03 확인.
+  - [maven-search] Pleos Maven 검색 API, 2026-11-03 확인. `https://nexus-playground.pleos.ai/service/rest/v1/search?repository=maven-releases&q=gleo` (`q=Gleo*`도) → items 비어 있음. 대조로 `q=NaviHelper` → 2.0.2, 2.0.3, 3.0.5.
   - [maven-meta] Pleos Maven `maven-metadata.xml` (2026-11-03 확인):
     - https://nexus-playground.pleos.ai/repository/maven-releases/ai/pleos/playground/SpeechToText/maven-metadata.xml
     - https://nexus-playground.pleos.ai/repository/maven-releases/ai/pleos/playground/TextToSpeech/maven-metadata.xml

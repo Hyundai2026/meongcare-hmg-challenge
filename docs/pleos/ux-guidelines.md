@@ -23,6 +23,9 @@
 - 권장: portrait에는 핵심 기능과 주요 정보를, landscape에는 부가 정보와 확장 기능을 둔다. [app-structure]
 - 디자인 가이드: 한 방향 전용 앱(예: 가로 전용 게임)이 아니면 "Landscape, Portrait 두 가지 레이아웃에 적절하게 조절되도록 설계해야 합니다." [design-layout]
 - 사용자가 window bar나 제스처로 위치와 크기를 바꿀 수 있다. 크기가 바뀌어도 핵심 기능을 쓸 수 있어야 한다. [app-structure]
+- > **관찰 (2026-11-03, Pleos 에뮬레이터 v2.1.0):** `screenOrientation`을 지정하지 않은 우리 앱을 adb로 실행했더니 portrait 반쪽 창이 아니었다. Driving view 오른쪽 앱 영역 전체(1682×1210dp, 가로 설정)에 떴다. 내비 앱은 그 뒤로 갔다.
+  > 문서의 "지정하지 않으면 portrait, window 하나"와 다르다. 실행 방법(adb 실행, 앱 목록에서 실행)이나 이미 떠 있던 앱에 따라 달라지는지는 확인하지 않았다.
+  > → 세로 반쪽과 가로 전체 두 가지 레이아웃을 모두 만든다는 방향은 그대로다. [emulator-setup.md](emulator-setup.md#설치-후-확인한-것-관찰-2026-11-03)
 
 ### 멀티 윈도우 정책 [app-structure] [design-window]
 

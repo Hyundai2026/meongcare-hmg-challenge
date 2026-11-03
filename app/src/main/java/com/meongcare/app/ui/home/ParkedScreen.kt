@@ -1,5 +1,7 @@
 package com.meongcare.app.ui.home
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -26,6 +28,9 @@ import com.meongcare.app.ui.theme.MeongCareTheme
 /**
  * 정차·주차 중 화면. 일반 기능과 텍스트 입력을 둘 수 있다.
  * 지금 버튼과 입력칸은 자리표시다. 기획이 정해지면 실제 기능으로 바꾼다.
+ *
+ * 가로 화면이나 화면 분할처럼 높이가 낮으면 내용이 넘치므로 세로 스크롤을 둔다.
+ * (스크롤 금지는 주행 화면에만 해당한다.)
  */
 @Composable
 fun ParkedScreen(modifier: Modifier = Modifier) {
@@ -34,6 +39,7 @@ fun ParkedScreen(modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(Dimens.ScreenPadding),
         verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacing),
     ) {

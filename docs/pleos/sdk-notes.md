@@ -158,6 +158,21 @@ vehicle-sdk = { module = "ai.pleos.playground:Vehicle", version.ref = "vehicleSd
   > 주최측이 STT를 쓰는 앱을 기대한다는 근거다. 다만 실제로 쓰는 방법(콘솔 신청, `ON_DEVICE`)은 여전히 미확인이다 → 주최측 문의 ([architecture.md](../architecture.md#pleos주최측에-문의할-것) B2)
 - 앱 심사에는 "프로젝트 ID(Key)"가 필요하다. 에뮬레이터 2.1.0부터는 CRN이 필요 없다.
 
+### 프로젝트 생성 화면의 입력 항목 [create-project] [app-submission]
+
+경로: Pleos Playground 로그인 → Workspace > My Project → 프로젝트 생성. 회원 가입 단계에는 아래 항목이 없다.
+
+| 항목 | 문서 설명 (원문) | 나중에 변경 |
+|---|---|---|
+| 프로젝트 이름 | "앱 이름 또는 앱 개발 과제의 이름을 입력합니다." | "이 값은 나중에 변경 가능합니다." |
+| 개발사명 | "소속 회사의 이름을 입력합니다." | 언급 없음 |
+| 카테고리 | "개발하려는 앱의 카테고리를 선택합니다." "카테고리를 정의하고 시작하실 것을 권장합니다." | 언급 없음 |
+| 애플리케이션 설명 | "개발하려는 앱에 대한 간단한 설명을 작성합니다." | 언급 없음 |
+
+- 필수 여부, 글자 수, 개인 개발자나 사업자 등록 여부에 대한 규칙은 없다.
+- 개발사명이 App Market에 공개되는지는 문서에 없다. 앱 제출 가이드는 "앱 제출 전 Pleos App Market에 등록할 개발자(또는 개발사) 정보가 정확한지 확인합니다."라고 한다. [app-submission]
+- 우리 프로젝트의 입력값: 개발사명은 팀명(확정 전이면 임시 팀명), 카테고리는 주최측 답(architecture.md 문의 B3)이 오기 전까지 잠정값을 쓴다.
+
 ## SDK API 정책 (AAOS 표준 우선) [sdk-api-policy] [hw-access]
 
 - "Pleos Connect SDK는 동일 혹은 유사 기능의 API가 AAOS에 추가될 경우 플랫폼 파편화를 최소화하고 앱의 이식성을 극대화하기 위해 AAOS Alignment 정책을 준수합니다." [sdk-api-policy]
@@ -652,6 +667,7 @@ val speechToText = SpeechToText(applicationContext, Mode.HYBRID)
 - [vehicle-intro] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/Vehicle/intro
 - [sdk-overview] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/
 - [create-project] https://document.pleos.ai/docs/pleos-only/create-my-project
+- [app-submission] https://document.pleos.ai/docs/pleos-only/distribute/app-submission-guide
 - [planning-guide] https://document.pleos.ai/docs/pleos-only/vehicle-app-planning-guide/intro
 - [sample-app] https://document.pleos.ai/docs/pleos-only/tutorial/vehicle-sdk-sample-app
 - [app-structure] https://document.pleos.ai/docs/pleos-only/vehicle-app-planning-guide/app-structure-screen-model

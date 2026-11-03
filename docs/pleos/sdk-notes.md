@@ -138,16 +138,27 @@ vehicle-sdk = { module = "ai.pleos.playground:Vehicle", version.ref = "vehicleSd
   - vehicle 샘플 README: `MainActivity` "hosts Compose and forwards UI actions." Compose UI 테스트는 `connectedDebugAndroidTest`로 돌린다. [gh-vehicle]
 - 화면 방향, 멀티 윈도우, 디스플레이 종류는 [ux-guidelines.md](ux-guidelines.md#화면-구성)에 정리했다.
 
-## SDK 사용 가능 상태 (Playground 콘솔 기준) [create-project]
+## SDK 사용 가능 상태 (Playground 콘솔 기준) [create-project] [console-2026-11-03]
 
-| SDK | 상태 |
-|---|---|
-| Vehicle State | 사용 가능 |
-| NaviHelper | 사용 가능 |
-| FusedLocation | 준비 중 |
-| TextToSpeech | 준비 중 (Client ID/Secret 필요) |
-| SpeechToText | 준비 중 (Client ID/Secret 필요) |
-| Vehicle Control | 준비 중 |
+**2026-11-03에 팀원이 Playground 콘솔에 로그인해 직접 확인했다.** 문서의 상태표와 같다. 콘솔은 SDK를 기능 항목 단위로 보여 준다.
+
+| SDK | 콘솔 항목 | 상태 |
+|---|---|---|
+| Vehicle State | 11개: 차량 제원 정보, 차량 주행 정보(브레이크 페달, 드라이브 모드, 크루즈 컨트롤, 주행 거리), 도어/트렁크/프렁크, EV 및 연료, 내부 온도 및 공조, 내부/외부 라이트, 차량 안전 상태(경고등: 안전벨트, 브레이크, 에어백, 엔진 오일, 타이어 공기압), 좌석 설정, 사이드미러, 통행료 시스템, 창문 (모두 "조회") | 11개 모두 사용 가능 |
+| NaviHelper | 경로 정보 조회 ("현재 설정된 경로 정보, 위치 정보, TBT 등을 조회합니다."), 경로 탐색 설정 ("경로 탐색 옵션을 설정합니다.") | 2개 모두 사용 가능 |
+| FusedLocation | 정밀 위치 정보 조회 | 준비 중 |
+| TextToSpeech | TextToSpeech | 준비 중 (문서: Client ID/Secret 필요) |
+| SpeechToText | SpeechToText | 준비 중 (문서: Client ID/Secret 필요) |
+| Vehicle Control | 8개: 도어/트렁크/프렁크 제어, 공조 설정, 주행 정보 설정, EV 충전 설정, 창문 제어, 좌석 제어, 사이드미러 제어, 라이트 제어 | 8개 모두 준비 중 |
+
+- Vehicle State의 "차량 주행 정보"에도 속도·기어는 없다. 아래 "속도·기어·주행 상태"와 맞는다.
+- NaviHelper 콘솔 항목과 권한의 대응은 콘솔에 적혀 있지 않다. 설명으로 보면 "경로 정보 조회"는 `NAVI_ROUTE`(`get*Info()`), "경로 탐색 설정"은 `NAVI_ROUTE_SEARCH`(`requestRoute()` 등)에 해당하는 것으로 보인다 (추정). `NAVI_CUSTOM_MAP`(`requestNavigationScreen()`)에 해당하는 항목은 없다.
+- 차량은 **읽기만** 된다. 공조·창문 등을 바꾸는 Vehicle Control은 전부 준비 중이다.
+- 상태의 뜻 (문서 원문) [create-project]:
+  - 준비 중: "API 제공 준비 중인 상태로 신청 버튼이 나타나지 않습니다." "해당 상태에서는 신청할 수 없으므로 신청 필요 상태로 변경된 후 진행하시기 바랍니다."
+  - 사용 가능: "신청 없이 사용 가능한 SDK이거나 신청이 승인되어 사용 가능한 상태입니다." "Vehicle State와 NaviHelper SDK가 이 상태에 해당합니다. 이 두 SDK는 신청 없이 바로 사용 가능합니다."
+  - 신청 필요: "신청해야 사용 가능한데 아직 신청하지 않는 상태입니다."
+- **해석 (2026-11-03 팀 판단): "준비 중"인 SDK는 지금 쓸 수 없는 것으로 본다.** `ON_DEVICE`가 앱 등록 없이 동작한다는 STT/TTS 문서의 문장은 사용 허가가 아니다. 열리는 시점은 주최측에 묻는다 ([architecture.md](../architecture.md#pleos주최측에-문의할-것) B2).
 
 - 그 밖의 SDK는 사용 신청이 필요하고, 일부는 제휴 계약이 필요하다.
 - **"준비 중"인 SDK에 핵심 기능을 걸지 않는다.** 기획 전에 콘솔에서 상태를 다시 확인한다.
@@ -667,6 +678,7 @@ val speechToText = SpeechToText(applicationContext, Mode.HYBRID)
 - [vehicle-intro] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/Vehicle/intro
 - [sdk-overview] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/
 - [create-project] https://document.pleos.ai/docs/pleos-only/create-my-project
+- [console-2026-11-03] Pleos Playground 콘솔 (https://pleos.ai/playground, 로그인 필요). 2026-11-03 팀원이 직접 확인한 SDK 항목 목록
 - [app-submission] https://document.pleos.ai/docs/pleos-only/distribute/app-submission-guide
 - [planning-guide] https://document.pleos.ai/docs/pleos-only/vehicle-app-planning-guide/intro
 - [sample-app] https://document.pleos.ai/docs/pleos-only/tutorial/vehicle-sdk-sample-app

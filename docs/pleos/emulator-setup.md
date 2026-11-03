@@ -69,5 +69,7 @@
 ## GPU가 부족한 팀원은 (팀 운영안, 공식 가이드 아님)
 
 1. 일반 Automotive AVD나 폰/태블릿 에뮬레이터를 쓴다.
-2. 앱은 `FakeVehicleDataSource`로 띄워서 UI와 로직을 개발한다 (AGENTS.md의 아키텍처 규칙 참고).
+2. 앱은 debug 빌드의 **Fake 모드**(기본값)로 띄워서 UI와 로직을 개발한다.
+   - 화면 아래 debug 패널에서 주행 상태를 바꾼다.
+   - 구조: [docs/architecture.md](../architecture.md) "데이터 모드"
 3. Pleos SDK 연동 확인은 GPU가 되는 PC 한 대에서 몰아서 한다.

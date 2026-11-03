@@ -19,12 +19,27 @@
 
 ```
 app/src/main/java/com/meongcare/app/
-  MeongCareApplication.kt   AppContainer를 만든다
-  MainActivity.kt           Compose 화면을 띄운다
-  di/                       AppContainer, 데이터 모드(Fake/Real) 저장, debug 재시작
-  domain/                   앱이 쓰는 개념과 인터페이스. 안드로이드·Pleos를 모른다
-  data/                     domain 인터페이스의 구현 (Fake, Real). Pleos SDK와 Car API는 여기서만 쓴다
-  ui/                       Compose 화면과 ViewModel, 테마
+  MeongCareApplication.kt     AppContainer를 만들고, REAL 모드면 VehicleConnection을 수명주기에 붙인다
+  MainActivity.kt             Compose 화면을 띄우고, debug 패널에 AppContainer의 값과 동작을 넘긴다
+  di/
+    AppContainer.kt           모드에 맞는 구현을 골라 들고 있다 (수동 DI)
+    DataMode.kt               FAKE / REAL
+    DataModeStore.kt          debug에서 고른 모드를 저장 (release는 항상 REAL)
+    AppRestarter.kt           모드를 저장하고 앱을 다시 시작 (debug)
+  domain/driving/
+    DrivingState.kt           PARKED / DRIVING / UNKNOWN
+    DrivingStateSource.kt     주행 상태를 Flow로 주는 인터페이스
+  data/driving/
+    FakeDrivingStateSource.kt 손으로 바꾸는 Fake (처음엔 PARKED)
+    RealDrivingStateSource.kt 자리표시. UNKNOWN만 낸다 (CarUxRestrictions 구현 예정)
+  data/vehicle/
+    VehicleConnection.kt      Pleos Vehicle initialize/release를 한 곳에서
+  ui/theme/                   Color, Type(글자 크기), Dimens(터치 크기), Theme
+  ui/home/                    HomeViewModel, HomeUiState, HomeScreen, ParkedScreen, DrivingScreen
+  ui/debug/                   DebugPanel (상태 없음. 값과 동작은 MainActivity가 넘긴다)
+app/src/test/java/com/meongcare/app/
+  testutil/MainDispatcherRule.kt
+  data/driving/, ui/home/     단위 테스트
 ```
 
 ## 의존 방향
@@ -60,8 +75,13 @@ ui ──▶ domain ◀── data
 
 ## Vehicle SDK 수명주기
 
-- `Vehicle`의 `initialize()`와 `release()`는 한 곳에서만 부른다 (AGENTS.md 아키텍처 규칙).
-- Real 모드에서만 연결한다. 구체적인 위치는 구현하면서 정하고 여기에 적는다.
+- `Vehicle`의 `initialize()`와 `release()`는 `data/vehicle/VehicleConnection`에서만 부른다 (AGENTS.md 아키텍처 규칙).
+- REAL 모드에서만 만든다. `MeongCareApplication`이 `ProcessLifecycleOwner`에 붙인다.
+  - 앱이 화면에 보이면(onStart): 새 `Vehicle`을 만들고 `initialize()`
+  - 화면에서 사라지면(onStop): `release()`하고 버린다
+  - 같은 인스턴스를 다시 initialize하지 않는다. 공식 샘플도 그렇게 한다 (docs/pleos/sdk-notes.md "2.3.2 AAR에서 직접 확인한 것").
+- `initialize()`가 실패하면(차량 서비스가 없는 기기 등) 로그만 남기고 앱은 계속 돈다.
+- 차량 기능 래퍼는 `VehicleConnection.vehicle`을 쓴다. 도메인 API 콜백을 기다리는 중에 release되지 않게 하는 처리는 래퍼를 만들 때 함께 한다.
 
 ## 테스트 전략
 

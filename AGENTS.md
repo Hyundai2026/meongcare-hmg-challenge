@@ -45,12 +45,14 @@ Windows에서는 `gradlew.bat`을 쓴다. Bash에서는 `./gradlew`.
 
 ## 아키텍처 규칙
 
-- Pleos SDK는 `data/` 아래 래퍼 클래스에서만 호출한다. UI와 도메인은 인터페이스(예: `VehicleDataSource`)만 의존한다.
+- Pleos SDK와 AAOS Car API는 `data/` 아래 래퍼 클래스에서만 호출한다. UI와 도메인은 `domain/`의 인터페이스(예: `DrivingStateSource`)만 의존한다.
 - SDK 래퍼마다 **Fake 구현을 같이 만든다.**
   - 쓰임: GPU 없는 PC에서 개발, 단위 테스트, 시연 영상 촬영.
-  - debug 빌드에서 Fake와 Real을 전환할 수 있게 한다.
+  - `AppContainer`가 데이터 모드에 따라 Fake나 Real을 끼운다.
+  - debug 빌드는 화면 아래 debug 패널에서 모드를 바꾼다 (재시작하면 적용). release는 항상 Real이다.
 - SDK의 콜백 API(`onComplete`/`onFailed`)는 래퍼 안에서 `suspend` 함수나 `Flow`로 감싼다.
-- `Vehicle`의 `initialize()`/`release()`는 한 곳(Application 또는 lifecycle-aware 객체)에서만 관리한다.
+- `Vehicle`의 `initialize()`/`release()`는 한 곳에서만 관리한다: `data/vehicle/VehicleConnection` (REAL 모드에서만, 프로세스 수명주기에 맞춰).
+  - 차량 기능 래퍼는 `VehicleConnection.vehicle`을 쓴다. `Vehicle`을 직접 만들지 않는다.
 - `secrets.properties`가 없어도 빌드는 되게 한다 (빈 값을 기본값으로). 그래야 CI와 새 팀원 PC에서 깨지지 않는다.
 
 ## 규칙

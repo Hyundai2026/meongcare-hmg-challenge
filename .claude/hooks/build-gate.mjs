@@ -2,20 +2,28 @@
 // 빌드 게이트. 다음을 막는다:
 //   - 앱 코드가 빌드되지 않는 상태로 커밋되는 것
 //   - 그런 상태로 턴이 끝나는 것
-//   - 검증 파이프라인을 통과하지 않은 상태로 main에 push되는 것
+//   - 검증 파이프라인을 통과하지 않은 상태로 dev나 main에 push되는 것
+//   - /promote를 거치지 않고 main에 push되는 것
+//
+// 브랜치 (docs/conventions/git.md)
+//   dev   통합 브랜치. /ship이 작업 브랜치를 merge한다.
+//   main  제출·시연용. /promote로만 바뀐다 (PROMOTE_MAIN=1). dev에 이미 있는 커밋만 올라간다.
 //
 // Claude Code 훅 (.claude/settings.json)
 //   snapshot  (UserPromptSubmit) 턴 시작 시점의 앱 코드 해시를 기록한다.
 //   precommit (PreToolUse: Bash|PowerShell) git commit 직전에 검사한다.
 //             - 커밋 메시지나 PR 본문(gh pr create/edit)에 Claude 트레일러가 있으면 막는다.
-//             - main/master에 직접 커밋하면 막는다. 저장소의 첫 커밋은 예외. merge는 막지 않는다.
+//             - main·dev에 직접 커밋하면 막는다. 저장소의 첫 커밋은 예외. merge는 막지 않는다.
 //             - 앱 코드가 바뀌었고 아직 빌드를 확인하지 않은 상태면 assembleDebug를 돌린다. 실패하면 커밋을 막는다.
 //   stop      (Stop) 이번 턴에 앱 코드가 바뀌었고 아직 빌드를 확인하지 않았으면 assembleDebug를 돌린다.
 //             실패하면 exit 2로 에러를 돌려줘서, Claude가 멈추지 않고 이어서 고치게 한다.
 //
 // 직접 실행 / git 훅
 //   pipeline  (/ship 스킬) 검증 파이프라인(CI와 같은 작업)을 돌리고, 통과하면 기록한다.
-//   prepush   (git pre-push 훅: .githooks/pre-push) main에 push할 때 검증 파이프라인 통과를 확인한다.
+//   prepush   (git pre-push 훅: .githooks/pre-push) dev·main에 push할 때 검사한다.
+//             - main·dev 브랜치를 지우는 push는 막는다.
+//             - main push는 PROMOTE_MAIN=1이어야 하고, origin/dev에 이미 있는 커밋이어야 한다.
+//             - 검증 파이프라인 통과를 확인한다.
 //             - 아래 경우에는 막는다. 검증한 대상과 push하는 대상이 달라지기 때문이다.
 //               - 커밋 안 된 앱 코드가 있을 때
 //               - push할 커밋이 체크아웃돼 있지 않을 때
@@ -41,7 +49,9 @@ const IGNORE = /^(\.claude|docs|apk)\//;
 const TASKS = ['assembleDebug'];
 const PIPELINE = ['assembleDebug', 'testDebugUnitTest', 'lintDebug']; // .github/workflows/android.yml과 같게 유지
 const MAX_FAILS = 3;
-const PROTECTED_BRANCHES = ['main', 'master'];
+const RELEASE_BRANCHES = ['main', 'master']; // /promote로만 바뀐다
+const INTEGRATION_BRANCH = 'dev'; // /ship이 merge한다
+const PROTECTED_BRANCHES = [...RELEASE_BRANCHES, INTEGRATION_BRANCH]; // 직접 커밋·삭제 금지, push 전 검증
 const GIT = String.raw`(^|[\s;&|(])git(\s+-[cC]\s+\S+)*\s+`;
 const GIT_COMMIT = new RegExp(`${GIT}commit(\\s|$)`);
 const GIT_ADD = new RegExp(`${GIT}add\\s`);
@@ -106,17 +116,34 @@ if (mode === 'precommit') {
 }
 
 // prepush: git이 stdin으로 "<local ref> <local sha> <remote ref> <remote sha>" 줄을 넘긴다.
-let pushedSha = null;
+// 브랜치 규칙은 Android 프로젝트가 없어도 적용한다.
+const pushes = []; // 보호 브랜치로 가는 push: { branch, sha }
 if (mode === 'prepush') {
   for (const line of stdin.split(/\r?\n/)) {
     const [, localSha, remoteRef] = line.trim().split(/\s+/);
-    if (!localSha || /^0+$/.test(localSha)) continue; // 원격 브랜치 삭제
-    if (PROTECTED_BRANCHES.some((b) => remoteRef === `refs/heads/${b}`)) {
-      pushedSha = localSha;
-      break;
+    if (!localSha || !remoteRef?.startsWith('refs/heads/')) continue;
+    const branch = remoteRef.slice('refs/heads/'.length);
+    if (!PROTECTED_BRANCHES.includes(branch)) continue;
+    if (/^0+$/.test(localSha)) block(`[build-gate] ${branch} 브랜치는 지우지 않는다.`);
+    pushes.push({ branch, sha: localSha });
+  }
+  if (pushes.length === 0) process.exit(0); // 작업 브랜치 push
+
+  for (const { branch, sha } of pushes) {
+    if (!RELEASE_BRANCHES.includes(branch)) continue;
+    if (process.env.PROMOTE_MAIN !== '1') {
+      block(
+        `[build-gate] ${branch}에는 /promote로만 push한다 (docs/conventions/git.md). ` +
+          `평소 작업은 /ship으로 ${INTEGRATION_BRANCH}에 반영한다.`,
+      );
+    }
+    if (git('merge-base', '--is-ancestor', sha, `refs/remotes/origin/${INTEGRATION_BRANCH}`) === null) {
+      block(
+        `[build-gate] ${branch}에는 origin/${INTEGRATION_BRANCH}에 이미 있는 커밋만 올린다. ` +
+          `${INTEGRATION_BRANCH}에 먼저 반영(/ship)하고, git fetch origin 후 /promote 한다.`,
+      );
     }
   }
-  if (pushedSha === null) process.exit(0); // main이 아닌 push
 }
 
 if (!existsSync(join(ROOT, 'gradlew'))) {
@@ -209,10 +236,11 @@ if (mode === 'snapshot') {
 if (mode === 'pipeline' || mode === 'prepush') {
   if (mode === 'prepush') {
     const head = git('rev-parse', 'HEAD')?.trim();
-    if (head !== pushedSha) {
+    const off = pushes.find((p) => p.sha !== head);
+    if (off) {
       block(
-        `[build-gate] push하려는 main 커밋(${pushedSha.slice(0, 7)})이 체크아웃돼 있지 않다. ` +
-          '검증은 작업 트리 기준이라, git switch main 후 push한다.',
+        `[build-gate] push하려는 ${off.branch} 커밋(${off.sha.slice(0, 7)})이 체크아웃돼 있지 않다. ` +
+          `검증은 작업 트리 기준이라, git switch ${off.branch} 후 push한다.`,
       );
     }
     if (changedAppFiles().length > 0) {

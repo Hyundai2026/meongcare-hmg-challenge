@@ -32,7 +32,16 @@ lines.push(
     : '진행 중 계획 없음.',
 );
 
-// main push 전 검증 훅(.githooks/pre-push)을 켠다. 이 저장소의 로컬 설정만 바꾼다.
+// 보호 브랜치(main·dev)에서 세션을 시작했으면 작업 브랜치부터 따라고 알린다.
+const branch = spawnSync('git', ['branch', '--show-current'], { cwd: ROOT, encoding: 'utf8' }).stdout?.trim();
+if (['main', 'master', 'dev'].includes(branch)) {
+  lines.push(
+    `현재 브랜치: ${branch}. 여기에는 직접 커밋하지 않는다. 작업은 dev에서 딴 브랜치에서 한다: ` +
+      'git switch dev && git pull --ff-only && git switch -c feat/<이름>',
+  );
+}
+
+// dev·main push 전 검증 훅(.githooks/pre-push)을 켠다. 이 저장소의 로컬 설정만 바꾼다.
 // 다른 값이 이미 설정돼 있으면 덮어쓰지 않고 알리기만 한다.
 if (existsSync(join(ROOT, '.githooks'))) {
   const current = spawnSync('git', ['config', '--get', 'core.hooksPath'], { cwd: ROOT, encoding: 'utf8' }).stdout?.trim();

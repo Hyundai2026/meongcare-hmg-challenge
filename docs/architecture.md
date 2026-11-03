@@ -15,6 +15,48 @@
 | 테스트 | JUnit4 + kotlinx-coroutines-test + Turbine | JVM 단위 테스트만으로 Flow와 ViewModel을 검증한다. 에뮬레이터가 필요 없다 | |
 | 비밀값 | `secrets.properties` → BuildConfig. 파일이 없으면 빈 값 | CI와 새 팀원 PC에서도 빌드가 깨지지 않는다 | |
 
+## 서비스 기능 스택 (PawCare, 2026-11-03 결정)
+
+서비스: 반려동물 의료 이동 코파일럿 (가칭 PawCare Drive)
+- 운전 중: 음성으로 증상을 말하면 병원 연결과 길안내를 시작한다.
+- 정차 후: 진료 카드를 확인하고 공유한다.
+
+근거가 된 Pleos 사실은 [docs/pleos/sdk-notes.md](pleos/sdk-notes.md)와 [ux-guidelines.md](pleos/ux-guidelines.md)에 있다.
+
+| 영역 | 결정 | 근거 | 상태 |
+|---|---|---|---|
+| 의료 프로필 저장 | Room + 암호화 (SQLCipher) | Pleos 보안 가이드: 기기에 저장하는 민감정보는 암호화해야 한다 | 결정 |
+| 음성 → 글자 | **Pleos SpeechToText `ON_DEVICE`** (`ko-KR`) + Fake | 네트워크와 앱 등록이 필요 없다. 기술 활용성 점수에 유리하다 | 결정. 단, 심사 가능 여부는 Pleos 문의 (아래) |
+| 음성 안내 | Pleos TextToSpeech `ON_DEVICE` + Fake | STT와 같은 이유 | 결정. 문의는 STT와 같다 |
+| 증상 → 진료 카드 | Claude API, 구조화 출력(JSON 스키마). 진단하지 않고 말한 내용만 정리한다. 카드 생성이 길안내·병원 연결을 막지 않게 뒤에서 따로 돈다 | 정해진 형식으로 증상·복용약·병력만 뽑는다 | **임시: `claude-opus-5-5` (effort `low`). 모델과 AI 범위는 팀 논의 필요** |
+| 서버 | **Firebase** (Functions, TypeScript) | AI 키와 장소 검색 키를 앱에 넣지 않는다 (Pleos 보안 가이드: 키 하드코딩 금지, HTTPS·TLS 1.2+). 팀의 웹 경험과 가깝다 | 결정 |
+| 병원 검색 | 카카오 로컬 API (서버를 거쳐서) | 병원 이름·좌표·전화번호 | 결정 |
+| 길안내 | Pleos NaviHelper `requestRoute(RouteInfo)` | 콘솔 "사용 가능" SDK | 결정. `poiId` 없이 좌표만으로 요청되는지는 미확인 |
+| 도착 예정 시간 | NaviHelper `TripInfo.eta`, `DrivingInfo.destination.duration` | navi-data AAR에서 필드 확인 | 결정. 단위(초/분)는 실기기 확인 필요 |
+| 현재 위치 | NaviHelper `getCurrentLocationInfo()` | FusedLocation이 "준비 중"이라 대신 쓴다 | 결정 |
+| 도착 감지 | NaviHelper `onDestinationArrived` | 도착하면 카드 화면으로 넘어간다 | 결정 |
+| 병원 전화 | 안드로이드 다이얼러(`ACTION_DIAL`). 안 되면 번호를 크게 보여준다 | | 미확인 (Pleos 문서에 없음, 에뮬레이터로 시험 불가) |
+| 카드 공유 | MVP: 정차 화면에 크게 보여주기. 나중에 QR·링크 | 서버 작업이 가장 적다 | 결정 |
+| 운전 중 사용 | DO(`distractionOptimized`) 선언 | 음성 SOS가 운전 중에 동작해야 한다 | Pleos 선언 방법 미확인 (문의) |
+
+### 사용하기로 한 Pleos 권한 (AGENTS.md 규칙 2, 2026-11-03 팀 승인)
+
+- `pleos.car.permission.NAVI_ROUTE_SEARCH`: 병원까지 경로 요청
+- `pleos.car.permission.NAVI_ROUTE`: 현재 위치, 도착 예정 시간, 경로 정보 조회
+- `pleos.car.permission.STT_SERVICE`: 음성 인식
+- `pleos.car.permission.TTS_SERVICE`: 음성 안내
+
+이 4개 밖의 `pleos.car.permission.*`은 다시 승인을 받는다. 앱 마켓 심사 전에는 Pleos 승인 범위인지 확인한다 (아래 문의).
+
+### Pleos(주최측)에 문의할 것
+
+문의처: appdevchallenge@hyundai-partners.com
+
+1. 콘솔에서 "준비 중"인 SpeechToText·TextToSpeech를 `ON_DEVICE` 모드로 쓴 앱이 심사를 통과할 수 있는가? `STT_SERVICE`·`TTS_SERVICE` 권한에 사전 승인이 필요한가?
+2. 주행 중에도 쓰는 앱(DO)은 Pleos에서 어떻게 선언하는가? Maps/Navigation이 아닌 앱도 주행 중 음성 입력이 허용되는가?
+3. 이 서비스에 맞는 앱 카테고리는 무엇인가 (Lifestyle / Mobility Services)?
+4. 서드파티 앱이 차량에서 전화를 걸 수 있는가 (`ACTION_DIAL`)?
+
 ## 패키지 구조
 
 ```

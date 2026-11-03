@@ -59,6 +59,14 @@ Windows에서는 `gradlew.bat`을 쓴다. Bash에서는 `./gradlew`.
 5. **3단계 이상이거나 여러 세션에 걸치는 작업은** `docs/plans/active/`에 계획을 먼저 쓴다. 형식은 [docs/plans/README.md](docs/plans/README.md).
 6. **"완료"라고 말하기 전에 빌드가 통과해야 한다.** UI 변경은 `/verify`로 화면까지 확인한다. 확인하지 못한 건 확인 못 했다고 보고한다.
 7. **새로 알게 된 사실과 결정은 해당 docs 파일에 반영한다.** 대화에만 남기지 않는다.
+8. **작업 브랜치에서 작게 커밋한다.**
+   - main에 직접 커밋하지 않는다.
+   - 논리 단위 하나가 끝날 때마다 커밋하고, 커밋할 때마다 빌드가 통과해야 한다.
+   - push와 PR은 사용자가 요청할 때만 한다.
+   - 브랜치 이름, 커밋 메시지 형식, 머지 방식: [docs/conventions/git.md](docs/conventions/git.md)
+9. **작업이 끝나면 개발 노트를 남긴다.**
+   - 위치: `docs/notes/<git user.name>/YYYY-MM-DD-<작업>.md`
+   - 형식: [docs/notes/README.md](docs/notes/README.md)
 
 ## 디렉토리
 
@@ -70,3 +78,5 @@ Windows에서는 `gradlew.bat`을 쓴다. Bash에서는 `./gradlew`.
 | `docs/pleos/` | Pleos SDK와 에뮬레이터에 대해 검증된 사실 |
 | `docs/product/` | 기획 (문제, 차량특화성, 사업성). 기획서 DOCX의 원천 |
 | `docs/plans/` | 실행 계획 (`active/`, `completed/`) |
+| `docs/notes/` | 개발 노트. 팀원별 폴더 아래 작업별 파일 |
+| `docs/conventions/` | Git 등 작업 규칙 |

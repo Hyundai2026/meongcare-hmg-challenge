@@ -54,5 +54,12 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
 
+    implementation(platform(libs.kotlinx.coroutines.bom))
+
     debugImplementation(libs.androidx.ui.tooling)
+
+    testImplementation(platform(libs.kotlinx.coroutines.bom))
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.junit)
+    testImplementation(libs.turbine)
 }

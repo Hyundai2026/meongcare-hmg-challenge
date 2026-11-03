@@ -43,8 +43,21 @@
           {
             "type": "command",
             "command": "node",
-            "args": ["${CLAUDE_PROJECT_DIR}/.claude/hooks/stop-verify.mjs", "snapshot"],
+            "args": ["${CLAUDE_PROJECT_DIR}/.claude/hooks/build-gate.mjs", "snapshot"],
             "timeout": 15
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": ["${CLAUDE_PROJECT_DIR}/.claude/hooks/build-gate.mjs", "precommit"],
+            "timeout": 600
           }
         ]
       }
@@ -55,7 +68,7 @@
           {
             "type": "command",
             "command": "node",
-            "args": ["${CLAUDE_PROJECT_DIR}/.claude/hooks/stop-verify.mjs"],
+            "args": ["${CLAUDE_PROJECT_DIR}/.claude/hooks/build-gate.mjs", "stop"],
             "timeout": 600
           }
         ]

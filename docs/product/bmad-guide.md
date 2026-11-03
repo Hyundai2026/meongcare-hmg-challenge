@@ -16,8 +16,17 @@
 
 ## 0. 5zum 전용: 처음 세팅 총정리
 
-> 아래 명령을 **위에서부터 순서대로** 복사해서 붙여 넣으면 세팅이 끝나요.
-> 각 단계가 무슨 뜻인지는 [2. 이 저장소 시작하기](#2-이-저장소-시작하기-처음-한-번만)에 자세히 있어요.
+아래 두 방법 중 **하나만** 하면 돼요. 제목을 누르면 펼쳐져요.
+
+- **방법 1. 직접 입력 버전**: PowerShell에 명령어를 하나씩 붙여 넣어요. 무엇이 설치되는지 하나하나 보여요.
+- **방법 2. 클로드코드 딸깍 버전**: Claude Code만 설치하면, 나머지는 붙여넣기 한 번으로 Claude가 해 줘요. 처음이라면 이쪽이 편해요.
+
+각 단계가 무슨 뜻인지는 [2. 이 저장소 시작하기](#2-이-저장소-시작하기-처음-한-번만)에 자세히 있어요.
+
+<details>
+<summary><b>방법 1. 직접 입력 버전</b>: PowerShell에 명령어를 순서대로 붙여 넣기</summary>
+
+<br>
 
 **어디에 입력하나요?**
 
@@ -108,17 +117,95 @@ code .
 3. 첫 메시지에 남은 마감 일수(D-day)가 보이면 **세팅 끝!**
 4. 입력창에 `/bmad-help`를 써 보세요. 여기서부터는 [3. BMAD 시작하기](#3-bmad-시작하기)를 보면 돼요.
 
-### 매일 작업을 시작할 때
+</details>
 
-```powershell
-cd $HOME\projects\meongcare-hmg-challenge
-git switch dev
-git pull
-code .
+<details>
+<summary><b>방법 2. 클로드코드 딸깍 버전</b>: Claude Code에 한 번 붙여 넣으면 알아서 세팅</summary>
+
+<br>
+
+**직접 할 일은 이것뿐이에요**
+
+1. **VS Code 설치**
+   - https://code.visualstudio.com 에서 받아서 설치해요.
+   - PowerShell을 쓸 줄 알면 `winget install --id Microsoft.VisualStudioCode -e` 한 줄로도 돼요.
+2. **Claude Code 설치**
+   - VS Code를 열고, 왼쪽의 **확장**(네모 4개 아이콘)을 눌러요.
+   - `Claude Code`를 검색해서 설치하고, 팀에서 쓰는 Claude 계정으로 로그인해요.
+3. **저장소 초대 수락**
+   - 팀장에게 GitHub 저장소 초대를 요청해요.
+   - 메일로 온 초대를 **5zum 계정**으로 수락해요.
+4. **작업 위치 열기**
+   - VS Code에서 **파일 → 폴더 열기**를 누르고, 내 사용자 폴더(`C:\Users\<내 이름>`)를 선택해요.
+   - Claude가 여기서 작업을 시작해요.
+5. **붙여넣기**
+   - 오른쪽 위 **Claude 아이콘**을 눌러 Claude Code 패널을 열어요.
+   - 아래 상자의 내용을 **통째로** 복사해서 붙여 넣고 Enter를 눌러요.
+
+**붙여 넣을 내용**
+
+```text
+이 PC(Windows)에 우리 팀 BMAD 기획 환경을 세팅해줘. PowerShell로 진행하고, 단계마다 결과를 한두 줄로 알려줘.
+
+1. 설치: Git, Node.js LTS, uv가 있는지 확인하고, 없는 것만 winget으로 설치해줘.
+   - 패키지 ID: Git.Git, OpenJS.NodeJS.LTS, astral-sh.uv
+   - winget 옵션: -e --accept-source-agreements --accept-package-agreements
+   - 설치한 뒤에는 아래 명령으로 PATH에 새 경로를 더해서, 새로 설치한 프로그램이 바로 인식되게 해줘.
+     명령마다 셸이 새로 열리면, 이후 명령 앞에도 이 줄을 붙여서 실행해줘.
+     $env:Path += ';' + [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User')
+2. 확인: git, node, uv 버전과 `uv run python --version` 결과를 보여줘.
+3. git 사용자 정보를 전역으로 설정해줘.
+   - user.name: 5zum
+   - user.email: 190751656+5zum@users.noreply.github.com
+4. 저장소 받기:
+   - $HOME\projects 폴더를 만들고, 거기에 https://github.com/Hyundai2026/meongcare-hmg-challenge.git 을 clone해줘.
+   - clone한 뒤 dev 브랜치로 전환해줘.
+   - 이미 받아져 있으면 clone하지 말고 dev로 전환한 뒤 git pull만 해줘.
+   - clone 전에 GitHub 로그인 창이 뜰 수 있다고 미리 알려줘.
+   - "Repository not found"가 나오면 멈추고, 저장소 초대를 수락하라고 알려줘.
+5. BMAD 개인 설정:
+   - 저장소 안에 _bmad\custom\config.user.toml 파일을 아래 두 줄로 만들어줘. UTF-8(BOM 없음)으로 저장해야 해.
+     [core]
+     user_name = "5zum"
+   - 만든 뒤 저장소 폴더에서 `uv run _bmad/scripts/resolve_config.py --project-root . --key core`를 실행해서, user_name이 5zum이고 communication_language가 Korean인지 확인해줘.
+6. 저장소의 다른 파일은 고치지 말고, 커밋이나 push도 하지 마. 세팅만 해줘.
+7. 끝나면 결과를 요약하고, VS Code에서 그 저장소 폴더를 다시 여는 방법과 그다음에 /bmad-help를 입력하라고 알려줘.
 ```
 
-- 팀원들이 올린 최신 내용을 받은 뒤 VS Code를 여는 명령이에요.
-- 오류가 나면 VS Code를 연 다음 Claude에게 "지금 상태 확인하고 정리해줘"라고 말하세요.
+**붙여 넣은 다음에**
+
+1. 승인 창이 몇 번 떠요. 프로그램 설치, 명령 실행, GitHub 로그인 때예요.
+   - 내용을 보고 **승인**을 눌러요.
+   - GitHub 로그인 창에서는 **5zum 계정**으로 로그인해요.
+2. Claude가 끝났다고 하면, VS Code에서 **파일 → 폴더 열기**로 `C:\Users\<내 이름>\projects\meongcare-hmg-challenge`를 열어요.
+3. Claude 패널을 다시 열어요. 첫 메시지에 남은 마감 일수(D-day)가 보이면 **세팅 끝!**
+4. 입력창에 `/bmad-help`를 써 보세요. 여기서부터는 [3. BMAD 시작하기](#3-bmad-시작하기)를 보면 돼요.
+
+**잘 안 될 때**
+
+- Claude Code가 "Git이 필요하다"는 식으로 말하며 시작되지 않을 수 있어요.
+  - 그럴 때는 https://git-scm.com 에서 Git을 먼저 설치해요.
+  - 그다음 VS Code를 껐다 켜고, 다시 붙여 넣어요.
+- 중간에 막히면 Claude에게 "어디까지 됐어? 남은 거 이어서 해줘"라고 말해요.
+- 그래도 안 되면 **방법 1**로 직접 입력하면 돼요.
+
+</details>
+
+### 매일 작업을 시작할 때
+
+방법 1과 방법 2 모두 같아요. 둘 중 편한 쪽으로 하면 돼요.
+
+- **VS Code에서**: **파일 → 최근 항목 열기**로 `meongcare-hmg-challenge` 폴더를 열고, Claude에게 "dev 최신으로 받아줘"라고 말해요.
+- **PowerShell에서**:
+
+  ```powershell
+  cd $HOME\projects\meongcare-hmg-challenge
+  git switch dev
+  git pull
+  code .
+  ```
+
+오류가 나면 VS Code를 연 다음 Claude에게 "지금 상태 확인하고 정리해줘"라고 말하세요.
 
 ---
 

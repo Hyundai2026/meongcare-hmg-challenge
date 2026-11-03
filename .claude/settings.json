@@ -6,12 +6,24 @@
       "Bash(gradlew.bat *)",
       "Bash(sh gradlew *)",
       "Bash(adb *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git switch *)",
       "PowerShell(.\\gradlew.bat *)",
       "PowerShell(adb *)",
+      "PowerShell(git add *)",
+      "PowerShell(git commit *)",
+      "PowerShell(git switch *)",
       "WebFetch(domain:document.pleos.ai)",
       "WebFetch(domain:pleos.ai)",
       "WebFetch(domain:appdevchallenge.auto-hmg.io)",
       "WebFetch(domain:developer.android.com)"
+    ],
+    "ask": [
+      "Bash(git push *)",
+      "PowerShell(git push *)",
+      "Bash(gh pr create *)",
+      "Bash(gh pr merge *)"
     ],
     "deny": [
       "Read(**/secrets.properties)",
@@ -21,7 +33,9 @@
       "Edit(**/*.jks)",
       "Edit(**/*.keystore)",
       "Bash(git push --force *)",
-      "Bash(git push -f *)"
+      "Bash(git push -f *)",
+      "PowerShell(git push --force *)",
+      "PowerShell(git push -f *)"
     ]
   },
   "hooks": {

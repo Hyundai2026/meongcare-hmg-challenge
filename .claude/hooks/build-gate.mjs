@@ -1,13 +1,25 @@
 #!/usr/bin/env node
-// 빌드 게이트 훅. 앱 코드가 빌드되지 않는 상태로 커밋되거나 턴이 끝나는 것을 막는다.
+// 빌드 게이트. 다음을 막는다:
+//   - 앱 코드가 빌드되지 않는 상태로 커밋되는 것
+//   - 그런 상태로 턴이 끝나는 것
+//   - 검증 파이프라인을 통과하지 않은 상태로 main에 push되는 것
 //
+// Claude Code 훅 (.claude/settings.json)
 //   snapshot  (UserPromptSubmit) 턴 시작 시점의 앱 코드 해시를 기록한다.
 //   precommit (PreToolUse: Bash|PowerShell) git commit 직전에 검사한다.
 //             - 커밋 메시지나 PR 본문(gh pr create/edit)에 Claude 트레일러가 있으면 막는다.
-//             - main/master에 직접 커밋하면 막는다. 저장소의 첫 커밋은 예외.
+//             - main/master에 직접 커밋하면 막는다. 저장소의 첫 커밋은 예외. merge는 막지 않는다.
 //             - 앱 코드가 바뀌었고 아직 빌드를 확인하지 않은 상태면 assembleDebug를 돌린다. 실패하면 커밋을 막는다.
 //   stop      (Stop) 이번 턴에 앱 코드가 바뀌었고 아직 빌드를 확인하지 않았으면 assembleDebug를 돌린다.
 //             실패하면 exit 2로 에러를 돌려줘서, Claude가 멈추지 않고 이어서 고치게 한다.
+//
+// 직접 실행 / git 훅
+//   pipeline  (/ship 스킬) 검증 파이프라인(CI와 같은 작업)을 돌리고, 통과하면 기록한다.
+//   prepush   (git pre-push 훅: .githooks/pre-push) main에 push할 때 검증 파이프라인 통과를 확인한다.
+//             - 아래 경우에는 막는다. 검증한 대상과 push하는 대상이 달라지기 때문이다.
+//               - 커밋 안 된 앱 코드가 있을 때
+//               - push할 커밋이 체크아웃돼 있지 않을 때
+//             - pipeline으로 이미 통과한 상태면 다시 돌리지 않는다.
 //
 // 해시는 커밋 여부와 상관없이 "작업 트리에 있는 앱 코드 전체의 내용"으로 만든다.
 // 그래서 턴 중에 커밋해도 Stop 검사를 건너뛰지 않는다.
@@ -27,6 +39,7 @@ const STATE_FILE = join(STATE_DIR, 'build-gate.json');
 const WATCH = /\.(kt|kts|java|xml|gradle|toml|pro|properties)$/i;
 const IGNORE = /^(\.claude|docs|apk)\//;
 const TASKS = ['assembleDebug'];
+const PIPELINE = ['assembleDebug', 'testDebugUnitTest', 'lintDebug']; // .github/workflows/android.yml과 같게 유지
 const MAX_FAILS = 3;
 const PROTECTED_BRANCHES = ['main', 'master'];
 const GIT = String.raw`(^|[\s;&|(])git(\s+-[cC]\s+\S+)*\s+`;
@@ -48,9 +61,20 @@ function block(message) {
   process.exit(2);
 }
 
+function say(message) {
+  process.stderr.write(`${message}\n`);
+}
+
+// pipeline은 사람이나 Claude가 직접 실행한다. stdin을 읽으면 입력을 기다리며 멈출 수 있어 읽지 않는다.
+let stdin = '';
+if (mode !== 'pipeline') {
+  try {
+    stdin = readFileSync(0, 'utf8');
+  } catch {}
+}
 let input = {};
 try {
-  input = JSON.parse(readFileSync(0, 'utf8') || '{}');
+  input = JSON.parse(stdin || '{}');
 } catch {}
 
 // precommit은 모든 셸 명령마다 불린다. git commit이 아니면 가장 먼저 내보낸다.
@@ -81,10 +105,30 @@ if (mode === 'precommit') {
   }
 }
 
-if (!existsSync(join(ROOT, 'gradlew'))) done(); // Android 프로젝트가 아직 없음
+// prepush: git이 stdin으로 "<local ref> <local sha> <remote ref> <remote sha>" 줄을 넘긴다.
+let pushedSha = null;
+if (mode === 'prepush') {
+  for (const line of stdin.split(/\r?\n/)) {
+    const [, localSha, remoteRef] = line.trim().split(/\s+/);
+    if (!localSha || /^0+$/.test(localSha)) continue; // 원격 브랜치 삭제
+    if (PROTECTED_BRANCHES.some((b) => remoteRef === `refs/heads/${b}`)) {
+      pushedSha = localSha;
+      break;
+    }
+  }
+  if (pushedSha === null) process.exit(0); // main이 아닌 push
+}
+
+if (!existsSync(join(ROOT, 'gradlew'))) {
+  // Android 프로젝트가 아직 없음
+  if (mode === 'pipeline' || mode === 'prepush') say('[build-gate] gradlew가 없어 검증 파이프라인을 건너뛴다.');
+  done();
+}
 
 // 작업 트리(추적 중인 파일 + gitignore되지 않은 새 파일)에 있는 앱 코드 전체의 내용 해시.
 // gitignore 대상(secrets.properties, local.properties, build/ 등)은 읽지 않는다.
+// 줄바꿈(CRLF/LF)은 무시한다. Windows(autocrlf)에서는 브랜치 전환이나 merge 때 git이 파일을 CRLF로 다시 써서,
+// 내용이 같아도 해시가 바뀌어 빌드·파이프라인을 다시 돌리게 되기 때문이다.
 function appCodeDigest() {
   const out = git('ls-files', '-z', '--cached', '--others', '--exclude-standard');
   if (out === null) return null;
@@ -93,7 +137,7 @@ function appCodeDigest() {
   for (const f of files) {
     h.update(`${f}\0`);
     try {
-      h.update(readFileSync(join(ROOT, f)));
+      h.update(readFileSync(join(ROOT, f), 'latin1').replace(/\r\n/g, '\n'), 'latin1');
     } catch {
       h.update('<deleted>');
     }
@@ -140,8 +184,8 @@ function decode(buf) {
   }
 }
 
-function build() {
-  const args = [...TASKS, '--console=plain', '-q'];
+function build(tasks) {
+  const args = [...tasks, '--console=plain', '-q'];
   const opts = { cwd: ROOT, timeout: 570_000, maxBuffer: 32 * 1024 * 1024 };
   // Windows: 현재 폴더 실행이 막힌 환경(NoDefaultCurrentDirectoryInExePath)이 있어 절대 경로로 실행한다.
   const run =
@@ -162,6 +206,41 @@ if (mode === 'snapshot') {
   done();
 }
 
+if (mode === 'pipeline' || mode === 'prepush') {
+  if (mode === 'prepush') {
+    const head = git('rev-parse', 'HEAD')?.trim();
+    if (head !== pushedSha) {
+      block(
+        `[build-gate] push하려는 main 커밋(${pushedSha.slice(0, 7)})이 체크아웃돼 있지 않다. ` +
+          '검증은 작업 트리 기준이라, git switch main 후 push한다.',
+      );
+    }
+    if (changedAppFiles().length > 0) {
+      block('[build-gate] 커밋 안 된 앱 코드 변경이 있다. 검증 대상과 push 대상이 달라지므로 커밋하거나 치운 뒤 push한다.');
+    }
+  }
+  if (digest !== null && digest === state.pipelineDigest) {
+    say('[build-gate] 이 상태는 이미 검증 파이프라인을 통과했다.');
+    process.exit(0);
+  }
+  say(`[build-gate] 검증 파이프라인 실행: gradlew ${PIPELINE.join(' ')}`);
+  const result = build(PIPELINE);
+  if (result.ok) {
+    save({ pipelineDigest: digest, okDigest: digest });
+    say('[build-gate] 검증 파이프라인 통과.');
+    process.exit(0);
+  }
+  block(
+    [
+      `[build-gate] 검증 파이프라인 실패.${mode === 'prepush' ? ' push하지 않았다.' : ''} 아래 에러를 고친 뒤 다시 실행하라.`,
+      ENV_HINT,
+      result.error ? `실행 오류: ${result.error}` : '',
+      '',
+      result.tail,
+    ].join('\n'),
+  );
+}
+
 if (mode === 'precommit') {
   // 이번 커밋에 앱 코드가 들어가는 경우만 검사한다.
   // 같은 명령 안에서 git add나 commit -a를 하면 아직 스테이징 전이므로, 바뀐 앱 코드가 있으면 들어간다고 본다.
@@ -170,7 +249,7 @@ if (mode === 'precommit') {
   if (!includesAppCode) done();
   if (digest !== null && digest === state.okDigest) done(); // 이 상태는 이미 빌드 통과
 
-  const result = build();
+  const result = build(TASKS);
   if (result.ok) {
     save({ okDigest: digest });
     done();
@@ -198,7 +277,7 @@ if (fails >= MAX_FAILS) {
   done(`⚠ 빌드가 ${MAX_FAILS}회 연속 실패해 build-gate가 더 이상 막지 않습니다.`);
 }
 
-const result = build();
+const result = build(TASKS);
 if (result.ok) {
   save({ okDigest: digest, failDigest: null, fails: 0, session: input.session_id });
   done();

@@ -3,6 +3,7 @@
 이 문서는 개발을 몰라도 BMAD로 공모전 기획을 진행할 수 있도록 쓴 안내서예요.
 순서대로 따라 하면 됩니다.
 
+0. [5zum 전용: 처음 세팅 총정리](#0-5zum-전용-처음-세팅-총정리) ← 여기부터 따라 하세요
 1. [BMAD가 뭐예요?](#1-bmad가-뭐예요)
 2. [이 저장소 시작하기](#2-이-저장소-시작하기-처음-한-번만)
 3. [BMAD 시작하기](#3-bmad-시작하기)
@@ -10,6 +11,114 @@
 5. [추천 진행 순서](#5-추천-진행-순서-1115-마감-기준)
 6. [지켜야 할 것](#6-지켜야-할-것)
 7. [자주 막히는 곳](#7-자주-막히는-곳)
+
+---
+
+## 0. 5zum 전용: 처음 세팅 총정리
+
+> 아래 명령을 **위에서부터 순서대로** 복사해서 붙여 넣으면 세팅이 끝나요.
+> 각 단계가 무슨 뜻인지는 [2. 이 저장소 시작하기](#2-이-저장소-시작하기-처음-한-번만)에 자세히 있어요.
+
+**어디에 입력하나요?**
+
+- 시작 메뉴에서 `PowerShell`을 검색해서 **Windows PowerShell**을 열어요.
+- 명령을 복사해서 창에 붙여 넣고(마우스 오른쪽 클릭) **Enter**를 누르면 돼요.
+
+### 1단계: 프로그램 설치
+
+```powershell
+winget install --id Microsoft.VisualStudioCode -e
+winget install --id Git.Git -e
+winget install --id OpenJS.NodeJS.LTS -e
+winget install --id astral-sh.uv -e
+```
+
+- 한 줄씩 붙여 넣고 Enter를 눌러요.
+- 약관 동의를 물으면 `Y`를 입력해요.
+- "이미 설치되어 있음"이라고 나오는 건 괜찮아요. 넘어가면 돼요.
+- 다 끝나면 **PowerShell 창을 닫고 새로 열어요.** 새 창에서 계속해요.
+
+### 2단계: 설치 확인
+
+```powershell
+git --version
+node --version
+uv --version
+uv run python --version
+```
+
+- 네 줄 모두 버전 번호(예: `git version 2.x`)가 나오면 성공이에요.
+- 마지막 줄은 처음 실행할 때 Python을 자동으로 받느라 조금 걸릴 수 있어요.
+- "인식되지 않습니다"라는 오류가 나오면 컴퓨터를 재시작한 뒤 다시 해 보세요.
+
+### 3단계: Claude Code 설치
+
+```powershell
+code --install-extension anthropic.claude-code
+```
+
+- `code`를 찾을 수 없다고 나오면, VS Code를 한 번 실행했다가 닫고 PowerShell을 새로 연 뒤 다시 해 보세요.
+
+### 4단계: git에 내 정보 등록
+
+```powershell
+git config --global user.name "5zum"
+git config --global user.email "190751656+5zum@users.noreply.github.com"
+```
+
+- 이메일은 GitHub가 주는 **비공개용 주소**예요. 내 실제 이메일이 작업 기록에 남지 않아요.
+
+### 5단계: 저장소 받기
+
+```powershell
+New-Item -ItemType Directory -Force $HOME\projects | Out-Null
+cd $HOME\projects
+git clone https://github.com/Hyundai2026/meongcare-hmg-challenge.git
+cd meongcare-hmg-challenge
+git switch dev
+```
+
+- clone할 때 GitHub 로그인 창이 뜨면 **5zum 계정**으로 로그인해요.
+- `Repository not found`가 나오면 아직 저장소 권한이 없는 거예요.
+  - 팀장에게 초대를 요청하고, 메일로 온 초대를 수락한 뒤 다시 해요.
+- 저장소는 `내 사용자 폴더\projects\meongcare-hmg-challenge`에 받아져요.
+
+### 6단계: BMAD가 내 이름을 부르게 하기
+
+아래 **4줄을 한 번에** 복사해서 붙여 넣어요.
+
+```powershell
+@"
+[core]
+user_name = "5zum"
+"@ | Set-Content -Encoding ascii _bmad\custom\config.user.toml
+```
+
+- 아무 메시지도 안 나오면 성공이에요.
+- 이 파일은 내 컴퓨터에만 있고, 팀 저장소에는 올라가지 않아요.
+
+### 7단계: VS Code로 열기
+
+```powershell
+code .
+```
+
+1. VS Code가 열리면 오른쪽 위 **Claude 아이콘**을 눌러 Claude Code 패널을 열어요.
+2. 팀에서 쓰는 Claude 계정으로 로그인해요.
+3. 첫 메시지에 남은 마감 일수(D-day)가 보이면 **세팅 끝!**
+4. 입력창에 `/bmad-help`를 써 보세요. 여기서부터는 [3. BMAD 시작하기](#3-bmad-시작하기)를 보면 돼요.
+
+### 매일 작업을 시작할 때
+
+```powershell
+cd $HOME\projects\meongcare-hmg-challenge
+git switch dev
+git pull
+code .
+```
+
+- 팀원들이 올린 최신 내용을 받은 뒤 VS Code를 여는 명령이에요.
+- 오류가 나면 VS Code를 연 다음 Claude에게 "지금 상태 확인하고 정리해줘"라고 말하세요.
 
 ---
 
@@ -47,31 +156,29 @@
 
 ### 2-1. 설치할 프로그램
 
-| 프로그램 | 왜 필요해요? | 설치 |
-|---|---|---|
-| **VS Code** | 문서를 보고 Claude Code를 쓰는 편집기 | https://code.visualstudio.com |
-| **Claude Code** (VS Code 확장) | AI와 대화하며 BMAD를 쓰는 도구 | VS Code 왼쪽 "확장(Extensions)"에서 `Claude Code` 검색 → 설치 → 로그인 |
-| **Git** | 저장소를 받고 변경 내용을 공유 | https://git-scm.com (설치 옵션은 기본값 그대로) |
-| **Node.js** (LTS) | 저장소의 자동 검사 도구가 사용 | https://nodejs.org |
-| **Python** (3.10 이상) | BMAD가 사용 | https://www.python.org (설치할 때 "Add python.exe to PATH" 체크) |
-| **uv** | BMAD가 사용 | 아래 명령 참고 |
+> 설치 명령은 [0번 총정리](#0-5zum-전용-처음-세팅-총정리)의 1단계를 그대로 쓰면 돼요. 여기서는 각 프로그램이 왜 필요한지만 설명해요.
 
-uv는 VS Code 터미널(메뉴 **보기 → 터미널**)에 아래 한 줄을 붙여 넣어 설치해요.
+| 프로그램 | 왜 필요해요? |
+|---|---|
+| **VS Code** | 문서를 보고 Claude Code를 쓰는 편집기 |
+| **Claude Code** (VS Code 확장) | AI와 대화하며 BMAD를 쓰는 도구 |
+| **Git** | 저장소를 받고, 변경 내용을 팀과 공유 |
+| **Node.js** | 저장소의 자동 검사 도구가 사용 |
+| **uv** | BMAD가 사용. BMAD에 필요한 Python도 uv가 알아서 설치해요 |
 
-```
-powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-```
-
-설치가 끝나면 **VS Code를 껐다 켜세요.** 그래야 새로 설치한 프로그램이 인식돼요.
+설치가 끝나면 **열려 있는 PowerShell과 VS Code를 모두 껐다 켜세요.** 그래야 새로 설치한 프로그램이 인식돼요.
 
 ### 2-2. 내 이름 등록 (Git)
 
-터미널에 아래 두 줄을 입력해요. 따옴표 안은 본인 정보로 바꾸세요.
+터미널에 아래 두 줄을 입력해요. 5zum 계정 기준으로 이미 채워 두었어요.
 
 ```
-git config --global user.name "홍길동"
-git config --global user.email "내이메일@example.com"
+git config --global user.name "5zum"
+git config --global user.email "190751656+5zum@users.noreply.github.com"
 ```
+
+- 이메일은 GitHub가 계정마다 주는 비공개용 주소예요.
+- 실제 이메일 대신 이 주소가 작업 기록에 남아요. 그래도 GitHub에서는 5zum의 작업으로 표시돼요.
 
 여기서 정한 이름으로 작업 기록 폴더(`docs/notes/<이름>/`)가 만들어져요.
 
@@ -80,10 +187,14 @@ git config --global user.email "내이메일@example.com"
 저장소 접근 권한이 없으면 먼저 팀장에게 GitHub 초대를 요청하세요.
 
 ```
+New-Item -ItemType Directory -Force $HOME\projects | Out-Null
+cd $HOME\projects
 git clone https://github.com/Hyundai2026/meongcare-hmg-challenge.git
 cd meongcare-hmg-challenge
 git switch dev
 ```
+
+- 처음 두 줄은 내 사용자 폴더 아래에 `projects` 폴더를 만들고 그리로 이동하는 명령이에요.
 
 - 마지막 줄이 중요해요. 우리 팀은 평소 작업을 **dev** 브랜치에 모아요.
 - **main**은 심사위원이 보는 제출용이에요. 건드리지 않아요.
@@ -101,8 +212,11 @@ git switch dev
 
 ```
 [core]
-user_name = "길동"
+user_name = "5zum"
 ```
+
+- 0번 총정리의 6단계 명령을 쓰면 이 파일이 자동으로 만들어져요.
+- 직접 만들 때는 **UTF-8(BOM 없음)** 으로 저장해야 BMAD가 읽을 수 있어요.
 
 ---
 

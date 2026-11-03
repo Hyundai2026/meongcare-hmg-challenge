@@ -224,6 +224,28 @@ class HomeViewModelTest {
     }
 
     @Test
+    fun `5초 넘게 화면이 없다가 돌아오면 새 상태를 받기 전까지 예전 정차 상태 대신 주행 화면 상태다`() = runTest {
+        val source = ManualDrivingStateSource()
+        val viewModel = HomeViewModel(source)
+
+        val screen = backgroundScope.launch { viewModel.uiState.collect {} }
+        source.states.subscriptionCount.first { it > 0 }
+        source.states.emit(DrivingState.PARKED)
+        runCurrent()
+        assertEquals(HomeUiState.Parked, viewModel.uiState.value)
+
+        screen.cancel()
+        runCurrent()
+        advanceTimeBy(5_001)
+        runCurrent()
+
+        // 그사이 실제로는 주행이 시작됐을 수 있다. 소스가 새 값을 주기 전에는 안전하게 주행 화면을 보여준다.
+        viewModel.uiState.test {
+            assertEquals(HomeUiState.Driving, awaitItem())
+        }
+    }
+
+    @Test
     fun `ViewModel이 정리되면 5초를 기다리지 않고 주행 상태 구독을 해제한다`() = runTest {
         val source = CountingDrivingStateSource(FakeDrivingStateSource())
         val store = ViewModelStore()

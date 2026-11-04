@@ -34,6 +34,7 @@
 ## 명령어로 설치하기 (팀 운영안, 2026-11-03 xxj15 PC에서 확인)
 
 Android Studio 화면 대신 명령어로 설치하는 방법이다. 결과는 위의 화면 순서와 같다. SDK 경로는 `C:\Android` 기준이다 (`ANDROID_HOME`).
+Mac(Apple Silicon)은 아래 "명령어로 설치하기: Mac"을 본다. 순서는 같고 패키지 이름과 경로가 다르다.
 
 **설치하면 42dot의 Pleos Connect SDK 라이선스에 동의하게 된다.** 동의 전에 약관을 확인한다.
 - 무료이고 Pleos Connect용 앱 개발에만 쓸 수 있다.
@@ -118,6 +119,63 @@ echo no| C:\Android\cmdline-tools\latest\bin\avdmanager.bat create avd -n pleos_
   - Fake 모드: 정차 화면과 debug 패널이 정상이다.
   - Real 모드: `VehicleConnection`의 initialize 실패 로그가 없다. 주행 상태는 Real 구현 전이라 UNKNOWN이고, 그래서 기어가 P인데도 주행 화면이 뜬다 (설계대로).
 
+## 명령어로 설치하기: Mac (팀 운영안, 2026-11-04 xxj15 Mac에서 확인)
+
+Apple Silicon Mac용이다. 순서는 위 Windows와 같다. SDK 경로는 Android Studio 기본값인 `~/Library/Android/sdk`다 (`ANDROID_HOME`).
+
+**디스크를 30GB 이상 비워 둔다.** 다운로드는 4.7GB인데, 압축을 풀면 시스템 이미지만 19GB다 (`system.img` 18.3GB).
+
+1. `~/.android/repositories.cfg`를 만든다. 주소만 Mac용(`crp-arm64-sys-img.xml`)이고 형식은 Windows와 같다.
+
+   ```
+   ### User Sources for Android SDK Manager
+   count=1
+   disp00=Pleos Connect System Image
+   enabled00=true
+   src00=https\://nexus-playground.pleos.ai/repository/raw-releases/connect-avd/2.x/crp-arm64-sys-img.xml
+   ```
+
+   - 확인: `sdkmanager --list`에 아래 줄이 나온다.
+     - `system-images;android-34;pleos_car_emulator;arm64-v8a | 2 | Pleos Connect v2.1.0 APIs arm64 System Image`
+   - 패키지 정보 (위 XML 기준): 파일 `crp_car_arm64_emulator.zip`, 4,669,762,816 bytes. 요구 emulator 24 이상. 라이선스 ID는 Windows와 같은 `pleos-connect-sdk-license`.
+2. 시스템 이미지를 설치한다. zsh에서는 `yes |`로 라이선스 질문에 답하면 된다. compileSdk 35용 Platform이 없으면 같이 받는다.
+
+   ```
+   yes | sdkmanager "platforms;android-35" "system-images;android-34;pleos_car_emulator;arm64-v8a"
+   ```
+
+   - 설치 위치: `~/Library/Android/sdk/system-images/android-34/pleos_car_emulator/arm64-v8a/`
+   - 기기 정의(`devices.xml`)는 Windows와 같다: ID `Pleos_Connect_v2_0`, 2560×1440, mdpi.
+3. AVD를 만든다.
+
+   ```
+   echo no | avdmanager create avd -n pleos_connect -k "system-images;android-34;pleos_car_emulator;arm64-v8a" -d Pleos_Connect_v2_0
+   ```
+
+   - 다른 시스템 이미지의 `devices.xml`을 못 읽는다는 `Error: Could not load devices ...` 줄이 나와도 AVD는 만들어진다.
+   - `config.ini`(`~/.android/avd/pleos_connect.avd/config.ini`)를 위 Windows 표대로 고친다. Mac의 avdmanager 기본값은 Windows와 두 군데 다르다:
+     - `hw.ramSize`: `2G` (Windows `1536M`) → `4096`
+     - `disk.dataPartition.size`: `10G` (Windows `800M`) → `6442450944`
+   - 시스템 이미지의 `source.properties`는 `hw.ramSize=8192`를 권한다. 우리는 Pleos 안내대로 4GB로 둔다.
+4. 켠다.
+
+   ```
+   emulator -avd pleos_connect -no-snapshot-load -no-snapshot-save -gpu host
+   ```
+
+### Mac 설치 후 확인한 것 (관찰, 2026-11-04)
+
+- PC: MacBook, Apple M4 Pro, RAM 24GB, macOS 15.1. 에뮬레이터 36.6.11.
+- 로그: `Hardware GPU requirements to run avd: pleos_connect are passed`. 그래픽은 `Apple M4 Pro` 위의 OpenGL ES 3.0 (Metal) 번역 계층이다.
+- 커널 시작 후 약 12초 만에 부팅 화면이 끝났다 (`sf_stop_bootanim: 12431`ms). `sys.boot_completed=1`.
+- `adb shell getprop`:
+  - Android 14, 모델 "Car on arm64 emulator" (Windows는 "Connect on x86_64 emulator")
+  - fingerprint `Pleos/crp_avd_arm64/crp_avd_arm64:14/RELEASE.release_connect_v2.1.0/...`
+  - `wm size` 2560x1440, `wm density` 160, RAM 약 4GB
+- 화면 구성은 Windows와 같다: 왼쪽 Driving view, 오른쪽 앱 영역, 아래 GNB.
+- 우리 debug APK(`com.meongcare.app`)를 설치하고 실행했다: 오른쪽 앱 영역에 Fake 모드 정차 화면과 debug 패널이 정상으로 떴다.
+- Virtual Console: `adb forward tcp:8088 tcp:8088` 뒤 `http://127.0.0.1:8088/`이 열린다 (페이지 제목 "Pleos Connect Virtual Console").
+
 ## 주의
 
 - **반드시 Cold boot로 켠다.** Quick boot로 켜면 VHAL(차량 데이터)을 쓸 수 없다.
@@ -187,3 +245,6 @@ AVD 폴더의 `config.ini` (`%USERPROFILE%\.android\avd\<이름>.avd\config.ini`
 - xxj15 PC: NVIDIA GeForce RTX 4070 Laptop GPU, RAM 64GB.
   - Pleos 에뮬레이터 권장 사양(RTX 4060 Laptop 이상)을 넘는다. Pleos SDK 연동 확인을 이 PC에서 할 수 있다.
   - 2026-11-03 Pleos 에뮬레이터 설치 완료. AVD 이름 `pleos_connect` (위 "명령어로 설치하기"). 폰 AVD `my_avd`도 그대로 있다.
+- xxj15 Mac: Apple M4 Pro, RAM 24GB.
+  - 2026-11-04 Pleos 에뮬레이터(arm64) 설치 완료. AVD 이름 `pleos_connect` (위 "명령어로 설치하기: Mac"). 폰 AVD `Pixel_9_Pro_XL`도 있다.
+  - 두 대가 같이 켜지면 `/verify`가 기기를 고르지 못한다. 하나만 켠다.

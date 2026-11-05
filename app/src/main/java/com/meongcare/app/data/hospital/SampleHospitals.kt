@@ -1,6 +1,7 @@
 package com.meongcare.app.data.hospital
 
 import com.meongcare.app.domain.guidance.Destination
+import com.meongcare.app.domain.hospital.Hospital
 
 /**
  * 시연용 샘플 병원. 병원 검색(카카오 로컬 + 서버)이 붙기 전까지 쓴다.
@@ -12,9 +13,13 @@ import com.meongcare.app.domain.guidance.Destination
  * - 주소는 화면에 보여주지 않는다.
  */
 object SampleHospitals {
-    val demo = Destination(
-        name = "시연용 동물병원",
-        latitude = 37.48544722,
-        longitude = 127.03636666,
+    val demo = Hospital(
+        destination = Destination(
+            name = "시연용 동물병원",
+            latitude = 37.48544722,
+            longitude = 127.03636666,
+        ),
+        phoneNumber = null,
+        isSample = true,
     )
 }

@@ -32,7 +32,7 @@ class MainActivity : ComponentActivity() {
                     viewModel(factory = HomeViewModel.factory(container.drivingStateSource))
                 val uiState by homeViewModel.uiState.collectAsStateWithLifecycle()
                 val guidanceViewModel: GuidanceViewModel = viewModel(
-                    factory = GuidanceViewModel.factory(container.guidanceSource, container.sampleHospital),
+                    factory = GuidanceViewModel.factory(container.guidanceSource, container.sampleHospital.destination),
                 )
                 val guidanceUiState by guidanceViewModel.uiState.collectAsStateWithLifecycle()
 

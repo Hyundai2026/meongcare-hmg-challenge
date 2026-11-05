@@ -12,8 +12,8 @@ import com.meongcare.app.data.hospital.SampleHospitals
 import com.meongcare.app.data.vehicle.VehicleConnection
 import com.meongcare.app.domain.driving.DrivingState
 import com.meongcare.app.domain.driving.DrivingStateSource
-import com.meongcare.app.domain.guidance.Destination
 import com.meongcare.app.domain.guidance.GuidanceSource
+import com.meongcare.app.domain.hospital.Hospital
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -55,8 +55,8 @@ class AppContainer(context: Context, val dataMode: DataMode) {
         SourceKind.REAL -> RealGuidanceSource()
     }
 
-    /** 길안내 목적지. 병원 검색이 붙기 전까지 시연용 샘플 병원 1곳을 쓴다. */
-    val sampleHospital: Destination = SampleHospitals.demo
+    /** 병원 (길안내 목적지 + 전화번호). 병원 검색이 붙기 전까지 시연용 샘플 병원 1곳을 쓴다. */
+    val sampleHospital: Hospital = SampleHospitals.demo
 
     /** Pleos Vehicle 연결. Real 구성에서만 만든다 (Fake에서는 Vehicle을 만들지 않는다). */
     val vehicleConnection: VehicleConnection? =

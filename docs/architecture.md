@@ -15,9 +15,9 @@
 | 테스트 | JUnit4 + kotlinx-coroutines-test + Turbine | JVM 단위 테스트만으로 Flow와 ViewModel을 검증한다. 에뮬레이터가 필요 없다 | |
 | 비밀값 | `secrets.properties` → BuildConfig. 파일이 없으면 빈 값 | CI와 새 팀원 PC에서도 빌드가 깨지지 않는다 | |
 
-## 서비스 기능 스택 (PawCare, 2026-11-03 결정)
+## 서비스 기능 스택 (MeongCare, 2026-11-03 결정)
 
-서비스: 반려동물 의료 이동 코파일럿 (가칭 PawCare Drive)
+서비스: 반려동물 의료 이동 코파일럿. 앱 이름은 **MeongCare** (2026-11-05 사용자 결정. 기획 초기 가칭은 PawCare Drive)
 - 운전 중: 음성으로 증상을 말하면 병원 연결과 길안내를 시작한다.
 - 정차 후: 진료 카드를 확인하고 공유한다.
 
@@ -254,7 +254,7 @@ web/src/
 ```
 
 - `ui`는 `domain`·`photo`만 import한다. `data`는 `main.tsx`·`container.ts`만 안다 (앱의 `ui → domain ← data`와 같다).
-- 앱 이름은 `web/src/config.ts` 한 곳에 있다. 정해지면 이 파일과 Android `strings.xml`을 바꾼다.
+- 웹의 앱 이름은 `web/src/config.ts` 한 곳에 있다 (지금 MeongCare). 바꿀 때는 이 파일과 Android `strings.xml`을 같이 바꾼다.
 
 ### 저장과 개인정보
 

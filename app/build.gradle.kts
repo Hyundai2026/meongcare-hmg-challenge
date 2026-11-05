@@ -26,6 +26,10 @@ android {
     namespace = "com.meongcare.app"
     compileSdk = 35
 
+    // AAOS Car API (CarUxRestrictionsManager)를 컴파일할 때만 쓴다. 실행할 때는 차량 기기에 있는 것을 쓴다.
+    // 근거: Google parked/automotive-os 문서 (docs/pleos/sdk-notes.md). 일반 폰에서는 부르지 않는다.
+    useLibrary("android.car")
+
     defaultConfig {
         applicationId = "com.meongcare.app"
         minSdk = 28 // Pleos 보안 요구사항

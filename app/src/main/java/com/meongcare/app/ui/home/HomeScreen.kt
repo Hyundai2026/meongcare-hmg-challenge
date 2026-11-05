@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import com.meongcare.app.ui.guidance.ArrivedScreen
 import com.meongcare.app.ui.guidance.GuidanceUiState
 
 /**
@@ -31,10 +32,14 @@ fun HomeScreen(
         Column(modifier = Modifier.fillMaxSize().safeDrawingPadding()) {
             Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
                 when (homeContentOf(uiState, guidanceUiState)) {
-                    HomeContent.PARKED, HomeContent.ARRIVAL -> ParkedScreen(
+                    HomeContent.PARKED -> ParkedScreen(
                         guidanceUiState = guidanceUiState,
                         onStartGuidance = onStartGuidance,
                         onCancelGuidance = onCancelGuidance,
+                    )
+                    HomeContent.ARRIVAL -> ArrivedScreen(
+                        destinationName = guidanceUiState.destinationName,
+                        onDismiss = onDismissArrival,
                     )
                     HomeContent.DRIVING -> DrivingScreen(guidanceUiState)
                 }

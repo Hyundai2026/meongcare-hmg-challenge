@@ -11,6 +11,7 @@ import com.meongcare.app.di.AppRestarter
 import com.meongcare.app.di.DataMode
 import com.meongcare.app.domain.driving.DrivingState
 import com.meongcare.app.ui.debug.DebugPanel
+import com.meongcare.app.ui.guidance.GuidanceViewModel
 import com.meongcare.app.ui.home.HomeScreen
 import com.meongcare.app.ui.home.HomeViewModel
 import com.meongcare.app.ui.theme.MeongCareTheme
@@ -27,9 +28,17 @@ class MainActivity : ComponentActivity() {
                 val homeViewModel: HomeViewModel =
                     viewModel(factory = HomeViewModel.factory(container.drivingStateSource))
                 val uiState by homeViewModel.uiState.collectAsStateWithLifecycle()
+                val guidanceViewModel: GuidanceViewModel = viewModel(
+                    factory = GuidanceViewModel.factory(container.guidanceSource, container.sampleHospital),
+                )
+                val guidanceUiState by guidanceViewModel.uiState.collectAsStateWithLifecycle()
 
                 HomeScreen(
                     uiState = uiState,
+                    guidanceUiState = guidanceUiState,
+                    onStartGuidance = guidanceViewModel::onStartGuidance,
+                    onCancelGuidance = guidanceViewModel::onCancelGuidance,
+                    onDismissArrival = guidanceViewModel::onDismissArrival,
                     bottomBar = {
                         if (BuildConfig.DEBUG) {
                             val fake = container.fakeDrivingStateSource

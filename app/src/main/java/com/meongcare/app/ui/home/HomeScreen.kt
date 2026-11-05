@@ -8,9 +8,11 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import com.meongcare.app.ui.guidance.ArrivedScreen
+import com.meongcare.app.ui.guidance.GuidanceUiState
 
 /**
- * 홈 화면. 주행 상태에 따라 정차 화면과 주행 화면을 바꿔 보여준다.
+ * 홈 화면. 주행 상태와 길안내 상태를 합쳐([homeContentOf]) 정차·도착·주행 화면 중 하나를 보여준다.
  *
  * 전환 애니메이션은 넣지 않는다 (주행 중 움직이는 요소를 줄인다).
  *
@@ -19,15 +21,27 @@ import androidx.compose.ui.Modifier
 @Composable
 fun HomeScreen(
     uiState: HomeUiState,
+    guidanceUiState: GuidanceUiState,
+    onStartGuidance: () -> Unit,
+    onCancelGuidance: () -> Unit,
+    onDismissArrival: () -> Unit,
     modifier: Modifier = Modifier,
     bottomBar: @Composable () -> Unit = {},
 ) {
     Surface(modifier = modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize().safeDrawingPadding()) {
             Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
-                when (uiState) {
-                    HomeUiState.Parked -> ParkedScreen()
-                    HomeUiState.Driving -> DrivingScreen()
+                when (homeContentOf(uiState, guidanceUiState)) {
+                    HomeContent.PARKED -> ParkedScreen(
+                        guidanceUiState = guidanceUiState,
+                        onStartGuidance = onStartGuidance,
+                        onCancelGuidance = onCancelGuidance,
+                    )
+                    HomeContent.ARRIVAL -> ArrivedScreen(
+                        destinationName = guidanceUiState.destinationName,
+                        onDismiss = onDismissArrival,
+                    )
+                    HomeContent.DRIVING -> DrivingScreen(guidanceUiState)
                 }
             }
             bottomBar()

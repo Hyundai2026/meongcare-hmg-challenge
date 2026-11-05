@@ -878,6 +878,7 @@ fun sendGleoBroadcast(
 - [ ] 서드파티 앱의 전화 걸기 (`ACTION_DIAL`/`ACTION_CALL`, 블루투스 연결 폰 통화) 허용 여부
 - [ ] Android 표준 `LocationManager`(`ACCESS_FINE_LOCATION`) 위치를 Pleos에서 받을 수 있는지
 - [x] NaviHelper 데이터 클래스 필드 → NaviHelper 절 "산출물로 확인" (`TripInfo.eta`, `DrivingState.duration/distance`, `CurrentLocationInfo` 좌표). 단위는 미확인 (2026-11-03)
+- [ ] `TripInfo.eta`가 "도착까지 남은 시간"인지 "도착 예정 시각"인지, `DrivingInfo.destination.duration`과 무엇이 다른지. getter 이름만 있고 뜻을 설명하는 문서·클래스 주석이 없다 (2026-11-05, Fake 길안내 계획 005에서 정리). 우리 앱은 남은 시간을 `Duration`으로 받아 변환을 Real 래퍼 안에 가둔다.
 - [ ] `RouteInfo`의 `poiId`/`poiSubId`가 필수인지, 외부 장소 검색 결과(좌표+이름)만으로 경로를 요청할 수 있는지
 - [ ] `requestTrip(TripRequest)`의 동작 (설명 문서 없음)
 - [ ] 샘플 매니페스트의 `NAVI_CUSTOM_ROUTE`, `NAVI_CUSTOM_ETC`가 어느 API에 필요한지

@@ -159,6 +159,7 @@ vehicle-sdk = { module = "ai.pleos.playground:Vehicle", version.ref = "vehicleSd
   - 사용 가능: "신청 없이 사용 가능한 SDK이거나 신청이 승인되어 사용 가능한 상태입니다." "Vehicle State와 NaviHelper SDK가 이 상태에 해당합니다. 이 두 SDK는 신청 없이 바로 사용 가능합니다."
   - 신청 필요: "신청해야 사용 가능한데 아직 신청하지 않는 상태입니다."
 - **해석 (2026-11-03 팀 판단): "준비 중"인 SDK는 지금 쓸 수 없는 것으로 본다.** `ON_DEVICE`가 앱 등록 없이 동작한다는 STT/TTS 문서의 문장은 사용 허가가 아니다. 열리는 시점은 주최측에 묻는다 ([architecture.md](../architecture.md#pleos주최측에-문의할-것) B2).
+  - 기술적으로는 STT `ON_DEVICE`가 지금도 Pleos 에뮬레이터에서 동작한다 (2026-11-05 관찰, 아래 "STT `ON_DEVICE` 실행 확인"). 써도 되는지(허가)는 여전히 B2 답에 달렸다.
 
 - 그 밖의 SDK는 사용 신청이 필요하고, 일부는 제휴 계약이 필요하다.
 - **"준비 중"인 SDK에 핵심 기능을 걸지 않는다.** 기획 전에 콘솔에서 상태를 다시 확인한다.
@@ -956,10 +957,39 @@ val speechToText = SpeechToText(applicationContext, Mode.HYBRID)
 - **콘솔 "준비 중"의 의미:** 신청 버튼이 없고 "Comming Soon" 배지가 붙는다(문서 표기 그대로). 원문: "해당 상태에서는 신청할 수 없으므로 **신청 필요** 상태로 변경된 후 진행하시기 바랍니다." [create-project]
 - **Client ID/Secret:** 콘솔 프로젝트 정보의 SDK 항목에서 확인한다. 원문: "앱 등록 등 서버 연결을 요구하는 SDK를 사용할 때 필요한 정보입니다." 해당 SDK는 TextToSpeech, SpeechToText. [create-project]
 - **`ON_DEVICE`와 "준비 중"의 관계:** STT/TTS 문서는 `ON_DEVICE`에 앱 등록이 필요 없다고만 하고, 콘솔 상태와의 관계는 어느 문서에도 없다. 권한(`STT_SERVICE`/`TTS_SERVICE`)에 "사전 협의 및 승인"이 필요한지도 STT/TTS 권한 페이지에는 없다. 반면 SDK 개요는 "퍼미션은 Pleos App Market과 사전 협의 및 승인된 범위 내에서만 사용할 수 있습니다."라고 한다. [sdk-overview] → **심사 제출 앱에서 `ON_DEVICE`를 써도 되는지는 미확인.**
-- **에뮬레이터:** STT/TTS intro 원문 "SpeechToText SDK를 사용하려면 Android Studio에 Pleos Connect Emulator를 설치하고 AVD를 설정합니다." 설정 항목에 "마이크 접근 설정", "Cold boot 설정"이 있다. [stt-intro] [tts-intro] 에뮬레이터에 On-device 엔진이 들어 있는지, 실제로 인식되는지는 문서에 없다 → 미확인 (GPU PC에서 직접 실행해 확인 필요). 마이크 설정은 [emulator-setup.md](emulator-setup.md#주의) 참고.
+- **에뮬레이터:** STT/TTS intro 원문 "SpeechToText SDK를 사용하려면 Android Studio에 Pleos Connect Emulator를 설치하고 AVD를 설정합니다." 설정 항목에 "마이크 접근 설정", "Cold boot 설정"이 있다. [stt-intro] [tts-intro] 에뮬레이터에 On-device 엔진이 들어 있는지, 실제로 인식되는지는 문서에 없다. → **Pleos 에뮬레이터에서 직접 실행해 동작을 확인했다** (2026-11-05, 아래 "STT `ON_DEVICE` 실행 확인"). 마이크 설정은 [emulator-setup.md](emulator-setup.md#주의) 참고.
 - **Android 표준 `SpeechRecognizer` / `android.speech.tts.TextToSpeech`:** Pleos 문서(SDK 개요, SDK API 정책, 하드웨어 접근 정책, API 호환성, FAQ, 오디오 포커스 가이드, TTS 선행 묵음 가이드)에 허용·금지 언급이 없다 → 미확인.
   - 관련 정책 문장: "동일하거나 유사한 기능의 API가 AAOS 표준에 이미 존재하는 경우, 해당 표준 API 사용을 권장하며 Pleos Connect SDK에서는 중복 기능을 제공하지 않습니다." [sdk-api-policy] Pleos가 STT/TTS SDK를 따로 제공하므로, 이 문장만으로 표준 API 사용 가능 여부를 판단할 수 없다.
 - **음성 출력의 오디오 포커스:** 재생 전 `AudioAttributes` + `AudioFocusRequest`로 포커스를 요청한다. 컨텍스트 매핑에서 NAVIGATION은 `NAVIGATION`, `ASSISTANCE_NAVIGATION_GUIDANCE`, VOICE_COMMAND는 `VOICE_COMMAND`, `ASSISTANT`. TTS SDK가 어느 usage로 재생하는지는 문서에 없다. 자세한 내용은 [ux-guidelines.md](ux-guidelines.md#오디오-포커스와-음성-안내) [audio-focus]
+
+### STT `ON_DEVICE` 실행 확인 (관찰, 2026-11-05)
+
+xxj15 Mac(M4 Pro), AVD `pleos_connect`(arm64, Cold boot). 문서가 아니라 실행해서 본 결과다. 실험 코드는 로컬 브랜치 `spike/stt-ondevice`(dev에 합치지 않음)의 debug 화면 `SttProbeActivity`다.
+
+- **결론: Client ID/Secret 없이 `ON_DEVICE` 모드로 한국어 인식이 된다.** 콘솔 상태는 "준비 중"인 채다. 심사 제출 앱에서 써도 되는지는 여전히 미확인이다 (위 "`ON_DEVICE`와 '준비 중'의 관계", 문의 B2).
+- SDK 받기: `ai.pleos.playground:SpeechToText:3.3.1`이 Pleos Maven에서 그대로 받아진다. 전이 의존성은 `ai.pleos.playground.security:universal-access:0.6.0` 하나다.
+- AAR 매니페스트 (산출물):
+  - `android.permission.INTERNET`을 선언한다 (주석: "CCG Validation 체크를 위한 권한").
+  - `<queries>`로 `ai.pleos.playground.caas.intent.action.SPEECH_START`를 찾는다.
+  - 요구 음성 서비스(CAAS) 최소 버전: `4.1.29` (versionCode 4001029).
+- 에뮬레이터 쪽 (`adb shell`):
+  - 음성 서비스 `ai.pleos.playground.caas` **4.2.10-coral-aosp**가 들어 있다. `SPEECH_START`를 받는 서비스는 `ai.pleos.playground.caas.service.speech.SpeechService`다.
+  - `pleos.car.permission.STT_SERVICE`는 이 패키지가 정의하고 보호 수준이 **`normal`**이다. 매니페스트에 선언만 하면 설치할 때 허용된다 (`granted=true`).
+- 클래스 시그니처 (`javap`, 3.3.1):
+  - `SpeechToText(Context, Mode)`, `initialize(OnInitializeListener)`, `addListener(ResultListener)`, `setLocale(Locale)`, `request()`, `stop()`, `sendAudio(byte[])`, `completeAudioSend()`, `release()`
+  - `OnInitializeListener`: `onSuccess()`, `onFailure(ErrorType)`
+  - `ResultListener`: `onUpdated(String, Boolean)`, `onUpdatedEpdData(Long, Long)`, `onStartedRecognition()`, `onEndedRecognition()`, `onError(ErrorType)`, `onReady()`, `onUpdatedRms(Double)`
+  - 문서 목차에 없는 멤버: `getCallApi()`, `getAmbientAi()`, `registerApp`의 람다 오버로드 2개
+- **PCM 입력 (`sendAudio`)**: Mac `say -v Yuna`로 만든 문장을 16 kHz, 16-bit, mono로 바꿔 3,200 bytes(100ms)씩 넣었다.
+  - 순서: `initialize` → `onSuccess` → `addListener` → `setLocale(Locale.KOREA)` → `sendAudio` 반복 → `completeAudioSend`. `request()` 없이 된다.
+  - 결과: 넣기 시작한 지 약 1초 뒤부터 `onUpdated(completed=false)`로 글자가 점점 늘었다. 그 뒤 `onEndedRecognition`, `onUpdated(completed=true, "강아지가 갑자기 토하고 숨을 가쁘게 쉬어요")`가 왔다. 넣은 문장과 글자가 똑같다.
+  - 부분 결과마다 `onStartedRecognition`이 다시 온다. 한 번만 오는 이벤트로 다루면 안 된다.
+  - `initialize` 성공까지 약 20ms 걸렸다. 네트워크·앱 등록 호출은 없었다.
+- **마이크 입력 (`request`)**: `onReady`까지 오고, 음성 서비스 로그에 16 kHz 녹음 시작(`AudioRecorderImpl start`)이 찍힌다. 에뮬레이터가 Mac 마이크 소리를 받지 못해 인식 결과까지는 확인하지 못했다 → 미확인. 에뮬레이터 Extended Controls > Microphone을 켜고 사람이 직접 말해 확인한다.
+- **`RECORD_AUDIO`**: AAOS 앱은 운전자 계정 **user 10**에서 돈다. `adb shell pm grant`는 기본이 user 0이라 `--user 10`을 붙여야 한다.
+  - 앱에 권한이 없을 때: 서비스 로그 `callerIdentityForRecordAudio(...) mode=1`. 녹음은 음성 서비스(`ai.pleos.playground.caas`) 이름으로 시작됐다.
+  - 권한이 있을 때: `mode=0`이고 녹음이 우리 앱 이름으로 시작됐다.
+  - 우리 앱에 `RECORD_AUDIO`가 꼭 필요한지는 문서에 없다. 권한이 없을 때 실차에서도 이렇게 대신 녹음되는지는 미확인이다.
 
 ### Gleo Interface (음성 명령으로 앱 기능 호출) [gleo-core] [gleo-deliver]
 
@@ -1282,6 +1312,7 @@ fun sendGleoBroadcast(
 
 - [x] STT/TTS 생성자, 모드 지정, `setLocale`과 지원 언어(`ko-KR` 포함), 결과 리스너, 앱 등록 방법 → 위 TextToSpeech / SpeechToText 절
 - [x] NaviHelper 목적지 요청(`requestRoute(RouteInfo)`), 도착 이벤트(`onDestinationArrived`), 권한별 API → 위 NaviHelper 절
+- [x] Pleos 에뮬레이터에서 STT `ON_DEVICE`가 Client ID/Secret 없이 동작하는지 → 동작한다 (PCM 입력으로 한국어 인식 확인, 2026-11-05). 마이크 입력은 결과까지 미확인. 위 "STT `ON_DEVICE` 실행 확인"
 - [ ] 콘솔에서 "준비 중"인 STT/TTS를 `ON_DEVICE` 모드로 심사 제출 앱에서 써도 되는지. `STT_SERVICE`/`TTS_SERVICE` 권한에 사전 승인이 필요한지. (문서에 없음. Pleos 문의 필요)
 - [ ] Pleos 에뮬레이터에 On-device STT/TTS 엔진이 있어 실제로 인식·합성되는지 (GPU PC에서 직접 실행해 확인)
 - [x] `Mode.ON_DEVICE` 상수 이름 → `HYBRID`, `SERVER`, `ON_DEVICE` 확인 (AAR `javap`, 2026-11-03)

@@ -1056,6 +1056,26 @@ xxj15 Mac(M4 Pro), AVD `pleos_connect`(arm64, Cold boot). 문서가 아니라 �
   - 권한이 있을 때: `mode=0`이고 녹음이 우리 앱 이름으로 시작됐다.
   - 우리 앱에 `RECORD_AUDIO`가 꼭 필요한지는 문서에 없다. 권한이 없을 때 실차에서도 이렇게 대신 녹음되는지는 미확인이다.
 
+#### 앱 구현(010)에서 본 것 (관찰, 2026-11-05)
+
+xxj15 Mac, AVD `pleos_connect`, 앱 debug 빌드 "시연 (주행 Real)" 모드 (음성 = Real). 무음 시험은 에뮬레이터 마이크를 끈 채로 했다 (`adb emu avd hostmicoff`).
+
+- import 경로 (3.3.1): `ai.pleos.playground.stt.SpeechToText`, `ai.pleos.playground.stt.constant.ErrorType`, `ai.pleos.playground.stt.constant.Mode`, `ai.pleos.playground.stt.listener.OnInitializeListener`, `ai.pleos.playground.stt.listener.ResultListener`.
+- 병합 매니페스트의 권한은 `pleos.car.permission.STT_SERVICE`(우리가 선언), `android.permission.INTERNET`(AAR이 더함) 둘뿐이다. `RECORD_AUDIO`는 선언하지 않았다 (010 사용자 결정).
+  - 설치하면 `STT_SERVICE: granted=true`, `INTERNET: granted=true`다 (`dumpsys package`, 설치 권한이라 user 0·10 공통).
+  - `RECORD_AUDIO` 없이도 음성 서비스가 녹음한다. 서비스 로그 `callerIdentityForRecordAudio(com.meongcare.app) mode=0`, `startRecordAudioOp(... packageName=com.meongcare.app) - result: 0`.
+- 콜백 스레드: SDK가 binder 스레드에서 받아(`[binder:...]onUpdated ReadyToStartRecognition`) 메인 스레드로 넘긴 뒤(`SttViewModel [main]notifyReady`) 우리 리스너를 불렀다. `onReady`, `OnInitializeListener.onSuccess`가 메인 스레드에서 왔다 (로그의 pid = tid).
+- `initialize` 성공까지 4~35ms였다. 듣기마다 새 객체를 만들어도 두 번째 듣기가 문제없이 시작됐다.
+- **무음일 때 (Q3 관찰)**: `onReady` 뒤 아무 이벤트도 오지 않았다. 15초 동안 `onEndedRecognition`도, `onError(TIMEOUT)`도 없었다. 서비스는 1초마다 `recognize(... isFinal=false, cnt=N)`를 찍으며 계속 들었다.
+  - 그래서 우리 앱은 최대 듣기 시간(15초)으로 끝낸다 → "말소리를 듣지 못했어요". 더 빨리 끝내려면 "준비 뒤 N초 동안 받아쓰기가 없으면 끝" 규칙을 더해야 한다 (하지 않음).
+- **`stop()` 바로 뒤에 `release()`하면 음성 서비스가 녹음을 멈추지 않는다.**
+  - SDK 3.3.1 바이트코드: `stop()` → `SttServiceManager.closeStream()` → `OnDeviceStt`가 `close`를 **코루틴으로 띄운다**. `release()` → `disconnectService()` → 그 자리에서 `unbindService`.
+  - 그래서 `stop()` → `removeListener()` → `release()`를 이어 부르면 서비스 쪽에 `close(com.meongcare.app)` 로그가 없고, 녹음(`AudioRecordingConfiguration`, `pack:ai.pleos.playground.caas`)이 계속 켜져 있었다. 서비스는 100ms마다 `Resources$NotFoundException: com.meongcare.app not found check register`를 찍었다 (떼어 낸 리스너에 결과를 보내려다 실패).
+  - 우리 앱 프로세스를 끝내도(`adb install -r`) 계속 녹음했다. 같은 앱이 다음에 `request()`를 부르자 서비스가 옛 작업을 끝냈다 (`(jobId=37) finish(com.meongcare.app)`, `Session.stop`, `releaseRecord`).
+  - `stop()`만 부르고 기다리면: 서비스가 1~7ms 안에 `close(com.meongcare.app)` → `finish` → `Session.stop`으로 녹음을 멈췄다. **`onEndedRecognition`은 오지 않았다** (4번 시험). 위 Q2 "`stop()` 뒤에는 `onEndedRecognition()`이 온다"는 문장과 다르다.
+  - 그래서 앱은 `stop()` 뒤 `onEndedRecognition`이 오거나 1초가 지나면 `removeListener()` → `release()`한다 (`PleosSpeechToTextClient`). 고친 뒤 [듣기 취소], 15초 시간 초과, 듣는 중 주행 전환(기어 D) 모두 녹음이 멈췄다.
+- 우리 앱 로그(`PleosStt`)에는 이벤트 이름만 남는다. SDK와 음성 서비스 자체 로그에 인식 문장이 찍히는지는 이번에 말소리 없이 시험해서 보지 못했다.
+
 ### Gleo Interface (음성 명령으로 앱 기능 호출) [gleo-core] [gleo-deliver]
 
 - Gleo AI가 앱이 정의한 function을 호출하는 function calling 방식이다. 앱은 App Schema(JSON)를 등록하고, Gleo AI는 Gleo Action으로 앱을 부르며, 앱은 Callback으로 응답한다. [gleo-core]

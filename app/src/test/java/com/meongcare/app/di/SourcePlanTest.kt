@@ -34,8 +34,40 @@ class SourcePlanTest {
     }
 
     @Test
+    fun `시연 모드는 차량 기기에서 Real 주행 상태와 Fake 길안내를 쓰고 시나리오를 돌리지 않는다`() {
+        val plan = sourcePlanOf(DataMode.DEMO, isAutomotive = true)
+
+        assertEquals(SourceKind.REAL, plan.driving)
+        assertEquals(SourceKind.FAKE, plan.guidance)
+        assertFalse("주행 상태는 차가 정한다", plan.runsTripScenario)
+    }
+
+    @Test
+    fun `시연 모드는 차량 기기가 아니면 Fake 주행 상태와 시나리오를 쓴다`() {
+        val plan = sourcePlanOf(DataMode.DEMO, isAutomotive = false)
+
+        assertEquals(SourceKind.FAKE, plan.driving)
+        assertEquals(SourceKind.FAKE, plan.guidance)
+        assertTrue(plan.runsTripScenario)
+    }
+
+    @Test
+    fun `시연 모드는 주행 중일 때만 길안내 시간이 흐른다`() {
+        assertTrue(sourcePlanOf(DataMode.DEMO, isAutomotive = true).guidanceWaitsForDriving)
+        assertTrue(sourcePlanOf(DataMode.DEMO, isAutomotive = false).guidanceWaitsForDriving)
+    }
+
+    @Test
+    fun `시연 모드는 Vehicle 연결을 만들지 않는다`() {
+        assertFalse(sourcePlanOf(DataMode.DEMO, isAutomotive = true).createsVehicleConnection)
+        assertFalse(sourcePlanOf(DataMode.DEMO, isAutomotive = false).createsVehicleConnection)
+    }
+
+    @Test
     fun `Fake 길안내를 쓰면 시연용 표시를 한다`() {
         assertTrue(sourcePlanOf(DataMode.FAKE, isAutomotive = false).isGuidanceSimulated)
+        assertTrue(sourcePlanOf(DataMode.DEMO, isAutomotive = true).isGuidanceSimulated)
+        assertTrue(sourcePlanOf(DataMode.DEMO, isAutomotive = false).isGuidanceSimulated)
     }
 
     @Test

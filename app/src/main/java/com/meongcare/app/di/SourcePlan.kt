@@ -28,7 +28,6 @@ data class SourcePlan(
  *
  * @param isAutomotive 기기에 `PackageManager.FEATURE_AUTOMOTIVE`가 있는지 ([AppContainer]가 구해서 넘긴다)
  */
-@Suppress("UNUSED_PARAMETER") // 시연 모드에서 쓴다 (다음 커밋)
 fun sourcePlanOf(mode: DataMode, isAutomotive: Boolean): SourcePlan = when (mode) {
     DataMode.FAKE -> SourcePlan(
         driving = SourceKind.FAKE,
@@ -37,6 +36,25 @@ fun sourcePlanOf(mode: DataMode, isAutomotive: Boolean): SourcePlan = when (mode
         guidanceWaitsForDriving = false,
         createsVehicleConnection = false,
     )
+    // 심사 환경을 모른다 (문의 A2). 차량 기기면 실제 기어로 화면이 바뀌고,
+    // 일반 폰이면 Real 주행 상태가 항상 UNKNOWN이라 Fake 시나리오로 흐름을 잇는다.
+    DataMode.DEMO -> if (isAutomotive) {
+        SourcePlan(
+            driving = SourceKind.REAL,
+            guidance = SourceKind.FAKE,
+            runsTripScenario = false,
+            guidanceWaitsForDriving = true,
+            createsVehicleConnection = false,
+        )
+    } else {
+        SourcePlan(
+            driving = SourceKind.FAKE,
+            guidance = SourceKind.FAKE,
+            runsTripScenario = true,
+            guidanceWaitsForDriving = true,
+            createsVehicleConnection = false,
+        )
+    }
     DataMode.REAL -> SourcePlan(
         driving = SourceKind.REAL,
         guidance = SourceKind.REAL,

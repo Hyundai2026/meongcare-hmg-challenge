@@ -10,17 +10,21 @@ import com.meongcare.app.data.guidance.FakeGuidanceSource
 import com.meongcare.app.data.guidance.RealGuidanceSource
 import com.meongcare.app.data.hospital.SampleHospitals
 import com.meongcare.app.data.vehicle.VehicleConnection
+import com.meongcare.app.domain.driving.DrivingState
 import com.meongcare.app.domain.driving.DrivingStateSource
 import com.meongcare.app.domain.guidance.Destination
 import com.meongcare.app.domain.guidance.GuidanceSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 
 /**
  * 앱 전체에서 쓰는 객체를 만들고 들고 있는 곳 (수동 DI).
  *
- * 데이터 모드에 따라 Fake 또는 Real 구현을 골라 끼운다. 무엇을 끼울지는 [sourcePlanOf]의 표가 정한다.
+ * 데이터 모드(Fake / 시연 / Real)에 따라 구현을 골라 끼운다. 무엇을 끼울지는 [sourcePlanOf]의 표가 정한다.
  * 화면 쪽은 인터페이스([DrivingStateSource], [GuidanceSource])만 보므로, 어느 쪽이 끼워졌는지 모른다.
  */
 class AppContainer(context: Context, val dataMode: DataMode) {
@@ -44,7 +48,10 @@ class AppContainer(context: Context, val dataMode: DataMode) {
     }
 
     val guidanceSource: GuidanceSource = when (sourcePlan.guidance) {
-        SourceKind.FAKE -> FakeGuidanceSource(applicationScope)
+        SourceKind.FAKE -> FakeGuidanceSource(
+            scope = applicationScope,
+            progressGate = if (sourcePlan.guidanceWaitsForDriving) isDrivingFlow() else null,
+        )
         SourceKind.REAL -> RealGuidanceSource()
     }
 
@@ -60,5 +67,17 @@ class AppContainer(context: Context, val dataMode: DataMode) {
         if (sourcePlan.runsTripScenario) {
             FakeTripScenario(applicationScope, guidanceSource, fakeDrivingStateSource).start()
         }
+    }
+
+    /**
+     * 시연 모드의 길안내 진행 조건: 주행(DRIVING) 중인지. UNKNOWN은 진행하지 않는다.
+     *
+     * Real 주행 상태는 메인 스레드에서 구독해야 해서(차량 연결 콜백) `flowOn(Main)`을 붙인다.
+     * Fake 길안내의 진행은 [applicationScope](Default)에서 돈다.
+     * 안내 중에는 화면(`HomeViewModel`)과 이 조건이 각자 차량에 연결한다 (docs/plans 007 "설계 결정 3").
+     */
+    private fun isDrivingFlow(): Flow<Boolean> {
+        val isDriving = drivingStateSource.drivingState.map { it == DrivingState.DRIVING }
+        return if (sourcePlan.driving == SourceKind.REAL) isDriving.flowOn(Dispatchers.Main) else isDriving
     }
 }

@@ -5,6 +5,14 @@ enum class DataMode {
     /** 가짜 데이터. GPU 없는 PC 개발, 테스트, 시연 영상용. debug 빌드의 기본값이다. */
     FAKE,
 
+    /**
+     * 시연. 제출 APK로 핵심 흐름을 보여 주기 위한 모드다.
+     * - 주행 상태: 차량 기기(`FEATURE_AUTOMOTIVE`)면 Real(주행 규제), 아니면 Fake + 출발·주차 시나리오.
+     * - 길안내: 시연용 Fake (Pleos NaviHelper 연동 전). 주행 중일 때만 남은 시간이 준다.
+     * 화면에 시연용 길안내라고 알린다. 구성표는 [sourcePlanOf].
+     */
+    DEMO,
+
     /** 실제 차량(또는 Pleos 에뮬레이터). release 빌드는 항상 이 모드다. */
     REAL,
 }

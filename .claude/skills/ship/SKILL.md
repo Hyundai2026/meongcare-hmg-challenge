@@ -1,6 +1,6 @@
 ---
 name: ship
-description: 작업 브랜치를 dev에 반영한다. 최신 dev 위로 rebase하고, 검증 파이프라인(assembleDebug testDebugUnitTest lintDebug)을 통과시킨 뒤, 로컬에서 --no-ff merge하고 push한다. PR 대신 쓴다. 작업이 끝나 노트까지 커밋한 뒤에 사용한다. main 반영은 /promote다.
+description: 작업 브랜치를 dev에 반영한다. 최신 dev 위로 rebase하고, 검증 파이프라인(Android assembleDebug testDebugUnitTest lintDebug + 보호자 웹 check)을 통과시킨 뒤, 로컬에서 --no-ff merge하고 push한다. PR 대신 쓴다. 작업이 끝나 노트까지 커밋한 뒤에 사용한다. main 반영은 /promote다.
 argument-hint: "[브랜치 이름. 생략하면 현재 브랜치]"
 ---
 
@@ -45,10 +45,14 @@ git rebase origin/dev
 node .claude/hooks/build-gate.mjs pipeline
 ```
 
-- CI(`.github/workflows/android.yml`)와 같은 작업을 돌린다: `assembleDebug testDebugUnitTest lintDebug`
+- CI(`.github/workflows/android.yml`, `web.yml`)와 같은 작업을 돌린다.
+  - Android: `assembleDebug testDebugUnitTest lintDebug`
+  - 보호자 웹: `npm --prefix web run check` (`web/package.json`이 있을 때)
+  - 웹 의존성이 설치되지 않았다고 멈추면, 사용자 확인을 받아 `npm --prefix web ci`를 하고 다시 한다.
 - 통과하면 결과가 기록된다. 그래서 5단계의 pre-push 훅이 같은 검사를 다시 돌리지 않는다.
 - 실패하면 이 브랜치에서 고치고 커밋한 뒤 3단계를 다시 한다.
 - 이 브랜치에 UI 변경이 있으면 `/verify`로 화면도 확인한다.
+  - 보호자 웹 화면이 바뀌었으면 `web/README.md` "화면 확인" 순서(`verify_screens.py`)로 본다.
   - 에뮬레이터가 없으면 확인하지 못했다고 보고에 적는다.
 
 ## 4. dev에 합치기

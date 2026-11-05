@@ -99,7 +99,8 @@
     - 턴 종료 (Stop): 이번 턴에 앱 코드가 바뀌었으면 `assembleDebug`를 돌린다. 실패하면 멈추지 않고 이어서 고친다.
 - **git 훅** (`.githooks/`)
   - `pre-push`: dev·main에 push하기 전에 검사한다. 사람이 터미널에서 push해도 걸린다.
-    - 검증 파이프라인을 통과했는지 확인한다.
+    - 검증 파이프라인을 통과했는지 확인한다. 파이프라인은 Android와 보호자 웹(`npm --prefix web run check`)을 함께 검사한다.
+    - 웹은 커밋 직전·턴 종료 때는 검사하지 않는다 (008). 웹 파일을 고친 턴에는 직접 `npm --prefix web run build`로 확인한다.
     - main은 `/promote`(`PROMOTE_MAIN=1`)로만, dev에 있는 커밋만 받는다.
     - main·dev 삭제는 막는다.
 - **권한**

@@ -145,7 +145,8 @@ Android Studio 없이 Gradle wrapper만으로 빌드된다.
 
 - main과 dev에는 직접 커밋하지 않는다. 작업 브랜치는 원격에 push하지 않는다.
 - PR은 쓰지 않는다.
-  - 대신 검증 파이프라인(`assembleDebug testDebugUnitTest lintDebug`)을 통과해야 dev나 main에 push된다.
+  - 대신 검증 파이프라인(Android `assembleDebug testDebugUnitTest lintDebug` + 보호자 웹 `npm --prefix web run check`)을 통과해야 dev나 main에 push된다.
+  - 보호자 웹 의존성이 없으면 파이프라인이 멈춘다. `npm --prefix web ci`를 한 번 실행한다.
   - `--no-verify`와 force push는 쓰지 않는다.
 - 커밋은 작게, 한 커밋에 한 가지 이유만 담는다.
   - 메시지 형식은 `type(scope): 요약`이다. 예: `feat(vehicle): 차속 Flow 래퍼 추가`

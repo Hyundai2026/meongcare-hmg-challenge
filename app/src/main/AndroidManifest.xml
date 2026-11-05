@@ -21,6 +21,18 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!--
+                주행 중 사용(DO, Distraction Optimized) 선언. 없으면 주행 중에 시스템 화면
+                ("주행 중에는 사용할 수 없습니다.")이 이 Activity를 가린다.
+                - 방식: AAOS Google 가이드 그대로 (docs/pleos/ux-guidelines.md "DO 미선언 앱").
+                - Pleos 에뮬레이터에서 동작을 확인했다 (2026-11-05). 실차·앱 심사 허용 여부는
+                  주최측 문의 B1 답을 기다린다. 안 된다고 하면 이 선언을 넣은 커밋을 revert한다.
+                - 선언했으므로 주행 중 안전은 앱이 책임진다: 주행 규제가 걸리면 주행 화면만 보여 준다
+                  (입력·스크롤·애니메이션 없음, AGENTS.md 규칙 3).
+            -->
+            <meta-data
+                android:name="distractionOptimized"
+                android:value="true" />
         </activity>
     </application>
 

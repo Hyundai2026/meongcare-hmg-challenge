@@ -5,6 +5,7 @@ import com.meongcare.app.domain.driving.DrivingStateSource
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.distinctUntilChanged
 
 /**
@@ -47,7 +48,11 @@ class RealDrivingStateSource(
                 // 닫다가 난 예외로 구독 종료를 막지 않는다.
             }
         }
-    }.distinctUntilChanged()
+    }
+        // 상태 값이라 최신 값만 의미가 있다. 구독자가 늦게 받는 사이 값이 몰려도 버퍼가 넘쳐
+        // 최신 값을 잃지 않게, 밀린 값은 버리고 마지막 값만 남긴다 (tester가 찾음: 66개 이상 몰리면 최신 값이 버려졌다).
+        .conflate()
+        .distinctUntilChanged()
 }
 
 internal fun UxRestrictionsEvent.toDrivingState(): DrivingState = when (this) {

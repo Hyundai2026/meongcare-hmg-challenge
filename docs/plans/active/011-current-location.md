@@ -396,7 +396,7 @@ fun currentLocationKindOf(mode: DataMode, isAutomotive: Boolean): SourceKind
   - 위 "시작 전" 정리 뒤에 `.\gradlew.bat testDebugUnitTest`를 돌려 통과 수를 진행 로그에 적는다 (완료 기준 3의 기준값).
   - 확인: `git log -1 --stat`에 이 파일만 있다.
 
-- [ ] 1. AAR로 확인한 현재 위치 API를 sdk-notes에 기록 → `docs(pleos): NaviHelper 현재 위치 API를 AAR로 확인한 내용 기록`
+- [x] 1. AAR로 확인한 현재 위치 API를 sdk-notes에 기록 → `docs(pleos): NaviHelper 현재 위치 API를 AAR로 확인한 내용 기록`
   - 메인이 2026-11-05에 javap로 확인한 사실을 쓴다 (이 계획을 받을 때 넘겨받은 내용). 구현(단계 4)보다 먼저 기록한다 (AGENTS.md 규칙 1).
   - `docs/pleos/sdk-notes.md` "AAR에서 직접 확인한 것 … [aar-navi]" 절에 더한다:
     - `NaviHelper` 3.0.5: `public final void getCurrentLocationInfo()`. 반환값이 없고, 결과는 리스너 콜백으로 온다.
@@ -414,7 +414,7 @@ fun currentLocationKindOf(mode: DataMode, isAutomotive: Boolean): SourceKind
   - "출처" 목록에 `[aar-navi]` 정의가 없으면 한 줄 더한다 (2026-11-05 현재 `[aar-navi-data]`만 있다). 010이 같은 줄을 넣어 rebase 때 겹치면 하나만 남긴다.
   - 확인: `git show --stat`에 문서만 있다.
 
-- [ ] 2. 도메인 인터페이스, Fake, 내비 위치 해석 (SDK 없음)
+- [x] 2. 도메인 인터페이스, Fake, 내비 위치 해석 (SDK 없음)
   - 2-1. → `feat(domain): 현재 위치 인터페이스와 Fake 위치 추가`
     - `domain/location/CurrentLocation.kt`, `domain/location/CurrentLocationSource.kt` (결정 1의 블록)
     - `data/location/FakeCurrentLocationSource.kt` (결정 4: `DEMO_LOCATION`, 생성자로 null도 받음)
@@ -442,7 +442,7 @@ fun currentLocationKindOf(mode: DataMode, isAutomotive: Boolean): SourceKind
       - `` `로그에 좌표와 주소를 남기지 않는다`() ``
   - 확인: 두 테스트 클래스 통과, `assembleDebug`. 완료 기준 5의 `import android.` 검사.
 
-- [ ] 3. debug 패널에 현재 위치 (Fake로 동작 확인)
+- [x] 3. debug 패널에 현재 위치 (Fake로 동작 확인)
   - 3-1. → `feat(ui): debug 현재 위치 상태와 문구 추가`
     - `ui/debug/DebugLocationViewModel.kt`: VM, `DebugLocationUiState`, `DebugLocationRow`, `debugLocationText` (결정 5)
     - `DebugLocationViewModelTest` (`MainDispatcherRule`, 테스트 안의 가짜 `CurrentLocationSource`):
@@ -461,7 +461,7 @@ fun currentLocationKindOf(mode: DataMode, isAutomotive: Boolean): SourceKind
     - `MainActivity`: debug 블록에서 VM 생성, 정차일 때만 `location`을 넘긴다, 출처 이름 "Fake"
     - 확인: `assembleDebug`. `/verify`로 일반 폰 P1·P2·P4. Pleos에서도 Fake 모드 P1이 같은지 한 번 본다.
 
-- [ ] 4. Pleos 어댑터와 데이터 모드 연결
+- [x] 4. Pleos 어댑터와 데이터 모드 연결
   - 4-1. → `feat(data): Pleos NaviHelper로 현재 위치 묻기 추가`
     - `PleosNaviClient`가 `NaviLocationClient`도 구현한다. `currentLocation()`은 결정 2의 기본안이다. KDoc을 고친다.
     - 새 의존성과 권한은 없다 (NaviHelper 3.0.5와 `NAVI_ROUTE`는 010에 있다).
@@ -557,5 +557,11 @@ fun currentLocationKindOf(mode: DataMode, isAutomotive: Boolean): SourceKind
   - "시작 전"의 미추적 파일 2개는 010 세션이 별도 worktree(`.claude/.cache/wt-010`, `feat/real-navi-guidance`)로 옮겼다. 이 작업 트리에는 없다.
   - 010 세션과 정한 것: 010은 `NaviClient.kt`·`PleosNaviClient.kt`를 더 고치지 않는다. 010이 더 고치는 곳은 `NaviGuidanceSource.kt`, `NaviRouteOnlyGuidanceSource.kt`, 새 `NaviRemainingTime.kt`, 테스트, 문서(sdk-notes 포함). 010이 `emulator-5554`로 확인하는 동안에는 이쪽에서 설치하지 않는다.
   - 기존 테스트 기준값: `testDebugUnitTest` **324개 통과, 실패 0**.
+- 2026-11-05: 단계 1~4 구현.
+  - 커밋: `docs(pleos)` 1, `feat(domain)` 2-1, `feat(data)` 2-2, `feat(ui)` 3-1·3-2, `feat(data)` 4-1, `feat(di)` 4-2. 커밋마다 `assembleDebug` 통과.
+  - `testDebugUnitTest` **354개 통과** (324 + 새 30: Fake 3, Navi 15, VM 5, 문구 3, LocationPlan 4). 계획 목록에 더해 `좌표 경계값은 받는다`를 따로 두었다.
+  - `PleosNaviClient.kt` diff의 `-` 줄은 클래스 선언 1줄뿐이다. KDoc은 기존 줄을 고치지 않고 한 줄만 더했다 (010이 `trip()` 안과 KDoc 한 줄을 고치므로 rebase 충돌을 줄이려는 것).
+  - 정적 검사: `import ai.pleos.playground.navi`·`NaviHelper(`·`getCurrentLocationInfo`는 `PleosNaviClient.kt`에만 있다. 병합 매니페스트의 `pleos.car.permission`은 2건.
+  - 해석 층에 `timeSource` 인자를 더했다 (테스트가 가상 시간으로 걸린 시간을 재게). 내비 쪽에서 난 `CancellationException`은 부른 쪽이 살아 있으면 모름으로 본다 (`ensureActive`).
 
 ## 결정 / 배운 점

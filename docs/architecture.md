@@ -33,7 +33,7 @@
 | 병원 검색 | 카카오 로컬 API (서버를 거쳐서) | 병원 이름·좌표·전화번호 | 결정 |
 | 길안내 | Pleos NaviHelper `requestRoute(RouteInfo)` (`NaviHelper:3.0.5`) | 콘솔 "사용 가능" SDK | **구현함 (010)**: `data/guidance/navi/PleosNaviClient`. 좌표 + 이름만으로 경로 요청이 된다 (`poiId` 빈 값, Pleos 에뮬레이터 확인). 차량 기기에서만 쓴다 (아래 "데이터 모드") |
 | 도착 예정 시간 | NaviHelper `onRouteStarted`의 `duration`, `onDrivingInfo`의 `destination.duration` | 에뮬레이터에서 값이 내비 화면과 같았다 | **단위는 초** (2100 = 35분, `[obs-navi-emu]`). `onTripInfo`는 오지 않았다 |
-| 현재 위치 | NaviHelper `getCurrentLocationInfo()` | FusedLocation이 "준비 중"이라 대신 쓴다 | 결정 |
+| 현재 위치 | NaviHelper `getCurrentLocationInfo()` | FusedLocation이 "준비 중"이라 대신 쓴다 | **구현함 (011)**: `data/location/NaviCurrentLocationSource` + `PleosNaviClient.currentLocation`. 물을 때마다 연결하고 답을 받으면 release한다. 지금은 debug 패널에서만 쓴다 (병원 검색 전). Pleos 에뮬레이터에서 64~263ms에 왔다. **내비 화면을 한 번 띄우기 전에는 답이 오지 않는다** (`[obs-navi-emu]`) |
 | 도착 감지 | NaviHelper `onDestinationArrived` | 도착하면 카드 화면으로 넘어간다 | Real 모드에서 쓴다. **에뮬레이터에서는 내비 속 차가 움직이지 않아 확인하지 못했다** (JVM 테스트로만) |
 | 병원 전화 | 안드로이드 다이얼러(`ACTION_DIAL`, 권한 없음, 걸지 않음). 안 되면 번호를 크게 보여준다 | | 구현함 (009, `data/phone/AndroidPhoneDialer`). Pleos 에뮬레이터에서 "전화" 앱이 열렸지만 번호는 보이지 않았다 ([sdk-notes.md](pleos/sdk-notes.md) "전화" 관찰). 실차는 미확인 (문의 B4). 시연용 번호 `02-0000-0000` |
 | 카드 공유 | MVP: 정차 화면에 크게 보여주기. 나중에 QR·링크 | 서버 작업이 가장 적다 | 결정 |
@@ -87,6 +87,7 @@ app/src/main/java/com/meongcare/app/
     DataMode.kt               FAKE / DEMO(시연) / REAL, resolveDataMode(release는 DEMO), next(패널 전환 순서)
     SourcePlan.kt             모드 × 차량 기기 → 끼울 구현의 구성표 (순수 함수 sourcePlanOf)
     NaviPlan.kt               모드 × 차량 기기 → 차량 내비 사용 범위 NONE / ROUTE_ONLY / FULL (순수 함수 naviUseOf, 010)
+    LocationPlan.kt           모드 × 차량 기기 → 현재 위치 출처 FAKE / REAL(내비) (순수 함수 currentLocationKindOf, 011)
     DataModeStore.kt          debug에서 고른 모드를 저장 (release는 항상 DEMO)
     AppRestarter.kt           모드를 저장하고 앱을 다시 시작 (debug)
   domain/driving/
@@ -96,6 +97,9 @@ app/src/main/java/com/meongcare/app/
     Destination.kt            길안내 목적지 (이름, 좌표, 주소?)
     GuidanceState.kt          Idle / Guiding(목적지, 남은 시간: Duration?) / Arrived(목적지)
     GuidanceSource.kt         길안내 인터페이스 (start / cancel / dismissArrival)
+  domain/location/
+    CurrentLocation.kt        현재 위치 (위도, 경도, 주소?)
+    CurrentLocationSource.kt  현재 위치를 한 번 묻는 인터페이스 (suspend current(): CurrentLocation?, null = 모름)
   data/driving/
     FakeDrivingStateSource.kt 손으로 바꾸는 Fake (처음엔 PARKED)
     RealDrivingStateSource.kt 주행 규제 값 → 주행 상태 (android.car 없음, JVM 테스트)
@@ -108,8 +112,12 @@ app/src/main/java/com/meongcare/app/
     NaviGuidanceSource.kt     전부 차량 내비 (Real + 차량 기기): 남은 시간·도착·취소를 내비 이벤트로
     NaviRouteOnlyGuidanceSource.kt  경로만 차량 내비 (시연 + 차량 기기): 내비 예상 시간에서 시연용 Fake를 시작, 시연 도착 시 내비 경로 종료
     navi/NaviClient.kt        내비 경계 (trip(destination): Flow<NaviEvent>). SDK 타입 없음
-    navi/PleosNaviClient.kt   NaviHelper 어댑터. NaviHelper를 부르는 유일한 파일. 안내 한 번마다 연결하고 끝나면 release
+    navi/NaviLocationClient.kt  내비 현재 위치 경계 (currentLocation(): Flow<NaviLocationEvent>). SDK 타입 없음 (011)
+    navi/PleosNaviClient.kt   NaviHelper 어댑터. NaviHelper를 부르는 유일한 파일. 안내 한 번, 현재 위치 한 번마다 연결하고 끝나면 release
     navi/NaviTiming.kt        내비 남은 초 → 남은 시간 규칙, 안내 시작 대기 30초
+  data/location/
+    FakeCurrentLocationSource.kt  Pleos 에뮬레이터와 같은 시연 위치(수정구 시흥동)를 바로 준다
+    NaviCurrentLocationSource.kt  내비 위치 해석: 시간 초과 5초, 값 검사(currentLocationOf), 한 번에 하나, 좌표 없는 로그 (JVM 테스트)
   domain/pet/                 PetProfile(형식 문서 대응), PetAge(나이 계산, 웹과 같은 규칙), PetProfileSource + PetProfileLoad
   domain/card/                Symptom(12개 프리셋, 선언 순서 = 화면·카드 순서), MedicalCardSession(고르는 중/카드 있음, 메모리)
   domain/hospital/            Hospital(길안내 목적지 + 전화번호 + 시연용 여부)
@@ -126,10 +134,10 @@ app/src/main/java/com/meongcare/app/
   ui/home/                    HomeViewModel, HomeUiState, HomeContent(1단계 화면 조합), ParkedContent(2단계: 정차 안), HomeScreen, ParkedScreen(처음 화면), DrivingScreen
   ui/card/                    MedicalCardViewModel, MedicalCardContent(medicalCardOf: 카드 조합), MedicalCardScreen, SymptomPickerScreen, CardTexts, PetVisuals(발바닥·아바타)
   ui/guidance/                GuidanceViewModel, GuidanceUiState, GuidanceText, SimulatedGuidanceNotice
-  ui/debug/                   DebugPanel (상태 없음. 값과 동작은 MainActivity가 넘긴다)
+  ui/debug/                   DebugPanel (상태 없음. 값과 동작은 MainActivity가 넘긴다), DebugLocationViewModel([위치 묻기] 상태와 문구, debug 빌드에서만 만든다)
 app/src/test/java/com/meongcare/app/
   testutil/MainDispatcherRule.kt
-  data/driving/, data/guidance/, data/demo/, data/pet/, domain/pet/, domain/card/, ui/home/, ui/guidance/, ui/card/   단위 테스트
+  data/driving/, data/guidance/, data/demo/, data/location/, data/pet/, di/, domain/pet/, domain/card/, ui/home/, ui/guidance/, ui/card/, ui/debug/   단위 테스트
 ```
 
 ## 의존 방향
@@ -165,6 +173,18 @@ ui ──▶ domain ◀── data
       - 내비 오류: 안내 시작 전이면 시연은 바로 기본값으로 시작하고, 전부 내비는 안내 없음이다. 시작 뒤 오류는 무시한다.
       - 내비에 이전 경로가 남아 있으면 경로 요청 직후 그 경로의 취소가 먼저 온다. 어댑터가 `onRouteStarted` 전의 취소를 거른다 (`[obs-navi-emu]`).
     - [길 안내 시작]을 누르면 내비 앱이 앞에 나와 우리 앱을 가린다. 남은 시간·카드는 GNB의 MeongCare 아이콘으로 돌아와 본다.
+  - **현재 위치 (011)**: `di/LocationPlan.kt`의 `currentLocationKindOf`가 정한다. 007·010의 표와 테스트는 그대로다.
+
+    | 모드 | 차량 기기 | 현재 위치 | debug 패널 표시 |
+    |---|---|---|---|
+    | 시연 (release), Real | 예 | 내비 (`NaviCurrentLocationSource` + `PleosNaviClient`) | 위치(내비) |
+    | 그 밖 (Fake, 일반 폰) | | Fake: Pleos 에뮬레이터와 같은 값 (37.4127212, 127.094681, "수정구 시흥동") | 위치(Fake) |
+
+    - Fake 값을 에뮬레이터 위치로 한 이유: 두 에뮬레이터가 같은 위치를 쓰게 되어, 나중에 병원 검색 결과가 에뮬레이터마다 달라지지 않는다. 사람의 실제 위치가 아니다.
+    - NaviHelper 수명: 물을 때마다 새 NaviHelper를 만들고 답을 받으면 release한다. 한 번에 하나만 묻는다. 길안내 쪽 NaviHelper와 동시에 있어도 됐다 (Pleos 에뮬레이터).
+    - 지금 위치를 쓰는 곳은 debug 패널 [위치 묻기]뿐이다. 정차 중에만 보이고, release 빌드에는 없다. 그래서 release에서는 NaviHelper가 위치용으로 만들어지지 않는다.
+    - 로그(`CurrentLocation` 태그)에는 결과 종류와 걸린 시간만 남긴다. 좌표와 주소는 남기지 않는다.
+    - 시연 준비: 에뮬레이터를 켠 뒤 내비 화면을 한 번 띄워 둔다. 그 전에는 내비가 위치 요청에 답하지 않는다.
 - debug 패널에서 모드를 바꾸면 저장하고 앱을 다시 시작한다. 실행 중에 데이터 소스를 바꾸지 않아서 상태가 꼬이지 않는다.
 - 어떤 구현을 끼울지는 `di/SourcePlan.kt`의 `sourcePlanOf(mode, isAutomotive)`가 정한다. Android를 모르는 순수 함수라 표 전체를 JVM 테스트로 확인한다.
 

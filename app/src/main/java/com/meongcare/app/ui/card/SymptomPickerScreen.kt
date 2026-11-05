@@ -40,6 +40,10 @@ import com.meongcare.app.domain.card.Symptom
 import com.meongcare.app.ui.theme.ActionBlue
 import com.meongcare.app.ui.theme.Dimens
 import com.meongcare.app.ui.theme.MeongCareTheme
+import com.meongcare.app.ui.voice.VoiceActions
+import com.meongcare.app.ui.voice.VoicePanel
+import com.meongcare.app.ui.voice.VoiceScreenState
+import com.meongcare.app.ui.voice.VoiceUiState
 
 private val SymptomButtonHeight = 88.dp
 private val SymptomColumnWidth = 200.dp
@@ -47,6 +51,8 @@ private val SymptomColumnWidth = 200.dp
 /**
  * 증상 고르기 (정차 중에만). 글자 입력 대신 큰 버튼으로 여러 개를 고른다.
  * 버튼 순서는 [Symptom] 선언 순서다. 아래 [취소] [카드 만들기]는 스크롤 밖에 고정한다.
+ *
+ * @param voice 음성 입력 영역 (010). `null`이거나 음성 입력이 없는 구성이면 그리지 않는다.
  */
 @Composable
 fun SymptomPickerScreen(
@@ -55,6 +61,8 @@ fun SymptomPickerScreen(
     onCancel: () -> Unit,
     onConfirm: () -> Unit,
     modifier: Modifier = Modifier,
+    voice: VoiceScreenState? = null,
+    voiceActions: VoiceActions = VoiceActions(),
 ) {
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val columns = (maxWidth / SymptomColumnWidth).toInt().coerceIn(2, 4)
@@ -73,6 +81,9 @@ fun SymptomPickerScreen(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                if (voice != null && voice.available) {
+                    VoicePanel(state = voice, actions = voiceActions)
+                }
                 Spacer(Modifier.height(4.dp))
                 Symptom.entries.chunked(columns).forEach { row ->
                     Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -146,7 +157,17 @@ private fun SymptomToggle(symptom: Symptom, checked: Boolean, onToggle: () -> Un
 @Composable
 private fun SymptomPickerWidePreview() {
     MeongCareTheme(darkTheme = true) {
-        Surface { SymptomPickerScreen(setOf(Symptom.COUGH, Symptom.BREATHING_DIFFICULTY), {}, {}, {}) }
+        Surface {
+            SymptomPickerScreen(
+                selected = setOf(Symptom.COUGH, Symptom.BREATHING_DIFFICULTY, Symptom.VOMITING),
+                onToggle = {}, onCancel = {}, onConfirm = {},
+                voice = VoiceScreenState(
+                    available = true,
+                    isSimulated = false,
+                    voice = VoiceUiState.Heard("강아지가 갑자기 토하고 숨을 가쁘게 쉬어요", listOf(Symptom.BREATHING_DIFFICULTY, Symptom.VOMITING)),
+                ),
+            )
+        }
     }
 }
 
@@ -154,6 +175,12 @@ private fun SymptomPickerWidePreview() {
 @Composable
 private fun SymptomPickerNarrowPreview() {
     MeongCareTheme(darkTheme = false) {
-        Surface { SymptomPickerScreen(setOf(Symptom.COUGH), {}, {}, {}) }
+        Surface {
+            SymptomPickerScreen(
+                selected = setOf(Symptom.COUGH),
+                onToggle = {}, onCancel = {}, onConfirm = {},
+                voice = VoiceScreenState(available = true, isSimulated = true, voice = VoiceUiState.Idle),
+            )
+        }
     }
 }

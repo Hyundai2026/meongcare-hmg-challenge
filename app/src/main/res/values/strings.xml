@@ -20,7 +20,6 @@
     <string name="guidance_arrived_driving_hint">정차하면 진료 카드를 볼 수 있어요</string>
 
     <!-- 도착 화면 (정차 중) -->
-    <string name="arrival_title">%1$s에 도착했어요</string>
     <string name="arrival_card_title">진료 카드</string>
     <string name="arrival_card_placeholder">진료 카드는 준비 중이에요</string>
     <string name="arrival_close">닫기</string>

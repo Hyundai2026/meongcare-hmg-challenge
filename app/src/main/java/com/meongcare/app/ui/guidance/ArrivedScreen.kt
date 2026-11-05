@@ -40,10 +40,19 @@ fun ArrivedScreen(
             .padding(Dimens.ScreenPadding),
         verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacing),
     ) {
-        Text(
-            text = stringResource(R.string.arrival_title, destinationName),
-            style = MaterialTheme.typography.headlineMedium,
-        )
+        // 제목과 병원 이름을 한 문장("○○에 도착했어요")으로 쓰면, 이름이 길 때 "요" 한 글자만
+        // 다음 줄로 떨어진다 (세로 화면에서 확인). 그래서 두 줄로 나눈다.
+        Column {
+            Text(
+                text = stringResource(R.string.guidance_arrived),
+                style = MaterialTheme.typography.headlineMedium,
+            )
+            Text(
+                text = destinationName,
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(
                 modifier = Modifier.padding(Dimens.CardPadding),

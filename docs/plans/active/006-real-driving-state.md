@@ -276,10 +276,10 @@ curl -s "$VC/vehicle/state"                             # 현재 값 확인
 
 ### 필수
 
-- [ ] 0. 이 계획 파일 커밋 → `docs(plans): 006 Real 주행 상태 계획 추가`
+- [x] 0. 이 계획 파일 커밋 → `docs(plans): 006 Real 주행 상태 계획 추가`
   - 확인: `git log -1 --stat`에 이 파일만 있다.
 
-- [ ] 1. 주행 규제 경계와 Real 주행 상태 흐름 (JVM 테스트) → `feat(data): 주행 규제 값으로 Real 주행 상태를 정하는 흐름 추가`
+- [x] 1. 주행 규제 경계와 Real 주행 상태 흐름 (JVM 테스트) → `feat(data): 주행 규제 값으로 Real 주행 상태를 정하는 흐름 추가`
   - `data/driving/UxRestrictionsClient.kt`: `UxRestrictionsEvent`, `UxRestrictionsClient` (설계 결정 1). `android.car` import 없음.
   - `data/driving/RealDrivingStateSource.kt`:
     - 생성자 `client: UxRestrictionsClient? = null`
@@ -304,7 +304,7 @@ curl -s "$VC/vehicle/state"                             # 현재 값 확인
     - `.\gradlew.bat testDebugUnitTest --tests 'com.meongcare.app.data.driving.*'` 통과
     - `HomeViewModelTest` 통과, 완료 기준 3의 `git diff` 출력 비어 있음
 
-- [ ] 2. `android.car` 어댑터 → `feat(data): CarUxRestrictionsManager로 주행 규제를 받는 래퍼 추가`
+- [x] 2. `android.car` 어댑터 → `feat(data): CarUxRestrictionsManager로 주행 규제를 받는 래퍼 추가`
   - `app/build.gradle.kts`의 `android { }`에 `useLibrary("android.car")`. 의존성은 처음 쓰는 커밋에 같이 넣는다 (git.md).
   - `data/driving/CarUxRestrictionsClient.kt` (설계 결정 4, 5)
   - `data/driving/UxRestrictionsClientFactory.kt`: `uxRestrictionsClientOrNull(context)` (설계 결정 5)
@@ -312,7 +312,7 @@ curl -s "$VC/vehicle/state"                             # 현재 값 확인
     - `assembleDebug`, `testDebugUnitTest`(useLibrary가 단위 테스트를 깨지 않는다), `lintDebug`(새 경고만 처리. `NewApi`가 나오면 확인 필요 Q2)
     - `useLibrary`로 빌드가 실패하면 멈추고 보고한다 ("실행해서 확인할 것" 마지막 항목).
 
-- [ ] 3. Real 모드에 연결하고 두 에뮬레이터에서 먼저 확인 → `feat(di): Real 모드에 차량 주행 규제 연결`
+- [x] 3. Real 모드에 연결하고 두 에뮬레이터에서 먼저 확인 → `feat(di): Real 모드에 차량 주행 규제 연결`
   - `di/AppContainer.kt` REAL 분기: `RealDrivingStateSource(uxRestrictionsClientOrNull(context))`
   - `domain/driving/DrivingStateSource.kt` KDoc: "구현은 후속 계획이다" → Real 기준 한 줄 (CarUxRestrictions DO: true = 주행, false = 정차, 모름 = UNKNOWN)
   - 빠른 확인 (실패를 일찍 찾기 위해서다. 전체 확인은 단계 6에서 한다):
@@ -322,7 +322,7 @@ curl -s "$VC/vehicle/state"                             # 현재 값 확인
     - `SecurityException` → 멈추고 사용자에게 보고한다 (설계 결정 6).
     - 기기가 없으면 빌드만 확인하고 커밋한다. 확인하지 못했다고 진행 로그에 적고 단계 6에서 몰아서 본다.
 
-- [ ] 4. DO 선언 (`[사용자 승인 필요]` 1에서 **1a**일 때만) → `feat(manifest): MainActivity에 주행 중 사용(DO) 선언 추가`
+- [x] 4. DO 선언 (`[사용자 승인 필요]` 1에서 **1a**일 때만) → `feat(manifest): MainActivity에 주행 중 사용(DO) 선언 추가`
   - `AndroidManifest.xml`의 `MainActivity` 안에 `<meta-data android:name="distractionOptimized" android:value="true" />`
     - XML 주석: 근거(ux-guidelines "DO 미선언 앱", Google 방식, Pleos 에뮬레이터에서 동작 확인)와 "실차·심사 허용은 문의 B1 확인 전"
   - 커밋 본문에 적는다: B1 답이 "안 된다"면 이 커밋을 `git revert`한다.
@@ -414,6 +414,19 @@ curl -s "$VC/vehicle/state"                             # 현재 값 확인
   - 1 → **1a**: DO 선언을 이 계획의 별도 커밋으로 넣는다 (단계 4).
   - 2 → **2a**: release 시연 모드는 다음 계획(007)으로 한다. 있으면 좋음 A·B는 하지 않는다.
   - 3 → 기어 D에 정지해 있어도 주행 화면이다 (규제 값을 그대로 따른다).
-  - 확인: `C:\Android\platforms\android-35\optional\android.car.jar`가 있고 `optional.json`에 `android.car`가 있다. `javap`로 `Car.createCar(Context, Handler, long, CarServiceLifecycleListener)`, `CarUxRestrictionsManager.registerListener/unregisterListener/getCurrentCarUxRestrictions`, `CarUxRestrictions.isRequiresDistractionOptimization/getActiveRestrictions`가 있는 것을 봤다.
+  - 확인 (시작 전): `C:\Android\platforms\android-35\optional\android.car.jar`가 있고 `optional.json`에 `android.car`가 있다. `javap`로 `Car.createCar(Context, Handler, long, CarServiceLifecycleListener)`, `CarUxRestrictionsManager.registerListener/unregisterListener/getCurrentCarUxRestrictions`, `CarUxRestrictions.isRequiresDistractionOptimization/getActiveRestrictions`가 있는 것을 봤다.
+
+- 2026-11-05: 단계 0~4 완료 (`63c517b`, `64f3dc1`, `03a46ac`, `5ffc044`, `11b8709`).
+  - 단계 1: `RealDrivingStateSourceTest` 12개(기존 3 + 새 9) 통과. `HomeViewModelTest` 15개 통과, `HomeViewModel.kt`·`HomeViewModelTest.kt`의 `git diff dev` 비어 있음.
+  - 단계 2: `useLibrary("android.car")`로 `assembleDebug testDebugUnitTest lintDebug` 통과. 린트 새 경고 없음(기존 `GradleDependency`·`AndroidGradlePluginVersion`·`OldTargetApi`만). `NewApi` 없음 → Q2 조사 불필요.
+  - 단계 3 빠른 확인 (Pleos 에뮬레이터, DO 없이, debug Real):
+    - `pm list features`에 `android.hardware.type.automotive` 있음. `NoClassDefFoundError` 없음 → Q1(`<uses-library>`) 불필요.
+    - 표 1행 P: 정차 화면, 로그 `DO=false active=0x0`.
+    - 표 2행 D 0km/h: 덤프 Driving State 1, DO true(0x50). 앱 로그 `DO=true active=0x50`. **시스템 화면 "주행 중에는 사용할 수 없습니다."가 앱을 가린다.** UI 트리에는 가려진 우리 앱의 "주행 중"이 남아 있다.
+    - 표 3행 D 30km/h: Driving State 2. 시스템 화면이 계속 가린다. 앱 로그 새 줄 없음(값이 같아서).
+    - 표 4행 P 복귀: `DO=false`. 시스템 화면이 사라지고 우리 앱이 정차 화면으로 앞에 온다.
+    - `SecurityException` 없음.
+    - `my_avd`(일반 폰) 확인은 단계 6으로 미뤘다 (에뮬레이터를 하나씩 켠다).
+  - 단계 4: 결정 1a대로 DO meta-data를 넣었다. 병합 매니페스트에 `distractionOptimized` 1건.
 
 ## 결정 / 배운 점

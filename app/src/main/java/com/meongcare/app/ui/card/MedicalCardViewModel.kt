@@ -33,7 +33,12 @@ data class CardFlowUiState(
     val isHospitalSample: Boolean,
     /** 전화 앱을 열지 못했을 때 크게 보여 줄 번호. null이면 번호 패널이 없다 */
     val shownPhoneNumber: String?,
+    /** [홈]을 눌러 카드를 둔 채 처음 화면을 보는 중 */
+    val atHome: Boolean = false,
 ) {
+    /** 처음 화면에 [카드 보기]를 둘 카드가 있는지 */
+    val hasCard: Boolean get() = session is CardSessionState.Ready
+
     /** 증상 고르기 화면에서 선택된 증상 */
     val pickingDraft: Set<Symptom> get() = (session as? CardSessionState.Picking)?.draft ?: emptySet()
 }
@@ -61,13 +66,25 @@ class MedicalCardViewModel(
         petProfileSource.profile.map<PetProfileLoad, PetProfileLoad?> { it }.onStart { emit(null) }
 
     val uiState: StateFlow<CardFlowUiState> =
-        combine(profileOrLoading, session.state, shownPhoneNumber) { profile, state, shown ->
-            uiStateOf(profile, state, shown)
+        combine(profileOrLoading, session.state, shownPhoneNumber, session.atHome) { profile, state, shown, atHome ->
+            uiStateOf(profile, state, shown, atHome)
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
-            initialValue = uiStateOf(profile = null, state = session.state.value, shown = null),
+            initialValue = uiStateOf(profile = null, state = session.state.value, shown = null, atHome = session.atHome.value),
         )
+
+    /** [홈]: 카드를 지우지 않고 처음 화면으로 */
+    fun onGoHome() {
+        shownPhoneNumber.value = null
+        session.goHome()
+    }
+
+    /** 처음 화면의 [카드 보기] */
+    fun onOpenCard() = session.openCard()
+
+    /** 처음 화면의 [새로 만들기]: 있던 카드를 버리고 다시 고른다 */
+    fun onStartNewCard() = session.startNew()
 
     /** [진료 카드 만들기] */
     fun onStartCard() = session.startPicking()
@@ -100,7 +117,7 @@ class MedicalCardViewModel(
         shownPhoneNumber.value = null
     }
 
-    private fun uiStateOf(profile: PetProfileLoad?, state: CardSessionState, shown: String?) = CardFlowUiState(
+    private fun uiStateOf(profile: PetProfileLoad?, state: CardSessionState, shown: String?, atHome: Boolean) = CardFlowUiState(
         session = state,
         card = medicalCardOf(
             profile = profile,
@@ -116,6 +133,7 @@ class MedicalCardViewModel(
         hospitalPhone = hospital.phoneNumber,
         isHospitalSample = hospital.isSample,
         shownPhoneNumber = shown,
+        atHome = atHome,
     )
 
     companion object {

@@ -26,9 +26,13 @@ enum class ParkedContent {
  * | 도착 | CARD (고른 증상 없음) | SYMPTOMS | CARD |
  *
  * 안내 중·도착인데 세션이 없으면(나중 Real 길안내에서 내비 앱으로 시작한 안내 등) 등록된 의료정보만으로 카드를 보인다.
+ *
+ * @param atHome [홈]을 눌러 처음 화면을 보는 중이면 true. 고르는 중이 아니면 처음 화면이다 (처음 화면에 [카드 보기]가 있다).
  */
-fun parkedContentOf(guidance: GuidanceUiState, session: CardSessionState): ParkedContent = when (session) {
-    is CardSessionState.Picking -> ParkedContent.SYMPTOMS
-    is CardSessionState.Ready -> ParkedContent.CARD
-    CardSessionState.None -> if (guidance is GuidanceUiState.Idle) ParkedContent.HOME else ParkedContent.CARD
-}
+fun parkedContentOf(guidance: GuidanceUiState, session: CardSessionState, atHome: Boolean = false): ParkedContent =
+    when {
+        session is CardSessionState.Picking -> ParkedContent.SYMPTOMS
+        atHome -> ParkedContent.HOME
+        session is CardSessionState.Ready -> ParkedContent.CARD
+        else -> if (guidance is GuidanceUiState.Idle) ParkedContent.HOME else ParkedContent.CARD
+    }

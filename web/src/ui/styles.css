@@ -207,6 +207,161 @@ select {
   color: var(--color-text-sub);
 }
 
+/* 저장 실패 띠 */
+.banner {
+  margin: 0;
+  padding: var(--space-3) 14px;
+  border-radius: var(--radius-control);
+  font-size: 15px;
+}
+
+.banner--error {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
+/* 폼 */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form__title {
+  margin: 0;
+  font-size: 22px;
+  color: var(--color-navy);
+}
+
+.form__actions {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.field__label {
+  padding: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-navy);
+}
+
+.field__required {
+  font-weight: 400;
+  color: var(--color-text-faint);
+}
+
+.field__hint {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-text-faint);
+}
+
+.field__error {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-danger);
+}
+
+/* 입력칸: iOS가 포커스할 때 확대하지 않게 16px 이상 */
+.input {
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  font-size: 16px;
+}
+
+.input:focus {
+  outline: 3px solid var(--color-blue-soft);
+  border-color: var(--color-blue);
+}
+
+.input[aria-invalid='true'] {
+  border-color: var(--color-danger);
+}
+
+.input::placeholder {
+  color: var(--color-text-faint);
+}
+
+/* 나란히 고르는 버튼 (라디오) */
+.segmented {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  border-radius: var(--radius-control);
+  background: #eef2fa;
+}
+
+.segmented__option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--touch-min);
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-sub);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.segmented__option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.segmented__option:has(input:checked) {
+  background: var(--color-surface);
+  color: var(--color-navy);
+  box-shadow: 0 1px 4px rgb(31 43 91 / 0.12);
+}
+
+.segmented__option:has(input:focus-visible) {
+  outline: 3px solid var(--color-blue-soft);
+}
+
+.age-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+}
+
+.age-input {
+  position: relative;
+}
+
+.age-input__field {
+  padding-right: 48px;
+}
+
+.age-input__suffix {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  transform: translateY(-50%);
+  color: var(--color-text-sub);
+}
+
 /* 저장 위치 안내 */
 .notice {
   display: flex;

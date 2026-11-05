@@ -13,6 +13,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import sys
 from dataclasses import dataclass, field
@@ -101,6 +102,75 @@ def s01_empty(r: Run) -> None:
     r.shot("empty")
 
 
+def save_button(r: Run):
+    return r.page.get_by_role("button", name="저장", exact=True)
+
+
+def open_register(r: Run) -> None:
+    r.open()
+    r.page.get_by_role("button", name="반려견 등록하기").click()
+    expect(r.page.get_by_role("heading", name="반려견 등록")).to_be_visible()
+
+
+def register_bori(r: Run, photo: Path | None = None) -> None:
+    """빈 화면에서 보리를 등록한다 (S4·S5 값)."""
+    open_register(r)
+    r.page.get_by_label("이름").fill("보리")
+    r.page.get_by_label("품종").fill("골든리트리버")
+    r.page.get_by_label("생년월일").fill("2014-08-01")
+    r.page.get_by_text("수컷", exact=True).click()
+    if photo is not None:
+        r.page.get_by_label("사진 선택").set_input_files(str(photo))
+        expect(r.page.locator(".photo-picker__preview img")).to_be_visible()
+    save_button(r).click()
+    expect(r.page.get_by_role("button", name="프로필 수정")).to_be_visible()
+
+
+def stored_json(r: Run) -> dict:
+    raw = r.stored_raw()
+    r.check(raw is not None, f"localStorage에 {STORAGE_KEY} 키가 없다")
+    return json.loads(raw)
+
+
+def s02_name_required(r: Run) -> None:
+    open_register(r)
+    save_button(r).click()
+    expect(r.page.get_by_text("이름을 입력해 주세요")).to_be_visible()
+    focused = r.page.evaluate("() => document.activeElement && document.activeElement.id")
+    r.check(focused == "pf-name", f"첫 오류 칸(이름)에 포커스가 가지 않았다: {focused!r}")
+    r.check(r.stored_raw() is None, "저장되면 안 되는데 저장됐다")
+    r.shot("name-required")
+
+
+def s03_limits(r: Run) -> None:
+    open_register(r)
+    r.page.get_by_label("이름").fill("가" * 21)
+    save_button(r).click()
+    expect(r.page.get_by_text("20자까지 쓸 수 있어요")).to_be_visible()
+    r.page.get_by_label("이름").fill("보리")
+    r.page.get_by_label("생년월일").fill("2026-12-01")
+    save_button(r).click()
+    expect(r.page.get_by_text("오늘 이후 날짜는 고를 수 없어요")).to_be_visible()
+    r.page.get_by_text("나이로 입력", exact=True).click()
+    r.page.get_by_label("나이(세)").fill("1")
+    r.page.get_by_label("나이(개월)").fill("12")
+    save_button(r).click()
+    expect(r.page.get_by_text("0~30세, 0~11개월로 입력해 주세요")).to_be_visible()
+    r.check(r.stored_raw() is None, "저장되면 안 되는데 저장됐다")
+    r.shot("age-invalid")
+
+
+def s10_cancel(r: Run) -> None:
+    register_bori(r)
+    before = r.stored_raw()
+    r.page.get_by_role("button", name="프로필 수정").click()
+    r.page.get_by_label("이름").fill("보리2")
+    r.page.get_by_role("button", name="취소").click()
+    expect(r.page.get_by_role("button", name="프로필 수정")).to_be_visible()
+    expect(r.page.get_by_text("보리2")).to_have_count(0)
+    r.check(r.stored_raw() == before, "취소했는데 저장된 값이 바뀌었다")
+
+
 def s12_corrupted(r: Run) -> None:
     r.open()
     r.page.evaluate(f"() => localStorage.setItem({STORAGE_KEY!r}, '{{broken')")
@@ -113,6 +183,9 @@ def s12_corrupted(r: Run) -> None:
 
 SCENARIOS: list[Scenario] = [
     Scenario("S01", "빈 화면", s01_empty, widths=(390, 360)),
+    Scenario("S02", "이름 없이 저장", s02_name_required),
+    Scenario("S03", "글자 수·날짜·나이 범위", s03_limits),
+    Scenario("S10", "수정하다 취소", s10_cancel),
     Scenario("S12", "저장된 정보가 깨졌을 때", s12_corrupted),
 ]
 

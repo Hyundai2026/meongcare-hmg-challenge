@@ -14,6 +14,6 @@ const repository = createPetProfileRepository()
 
 createRoot(root).render(
   <StrictMode>
-    <App repository={repository} />
+    <App repository={repository} now={() => new Date()} />
   </StrictMode>,
 )

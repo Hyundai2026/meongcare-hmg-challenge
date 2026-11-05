@@ -75,11 +75,12 @@ private fun ParkedFlow(
     isGuidanceSimulated: Boolean,
     isPetProfileSample: Boolean,
 ) {
-    when (parkedContentOf(guidanceUiState, cardUiState.session)) {
+    when (parkedContentOf(guidanceUiState, cardUiState.session, cardUiState.atHome)) {
         ParkedContent.HOME -> ParkedScreen(
-            pet = cardUiState.card.pet,
+            card = cardUiState,
+            guidance = guidanceUiState,
+            actions = cardActions,
             isPetProfileSample = isPetProfileSample,
-            onStartCard = cardActions.onStartCard,
         )
         ParkedContent.SYMPTOMS -> {
             // 시스템 뒤로 = [취소]
@@ -92,8 +93,8 @@ private fun ParkedFlow(
             )
         }
         ParkedContent.CARD -> {
-            // 안내 전 카드에서 시스템 뒤로 = [수정]. 안내 중·도착 카드에서는 가로채지 않는다.
-            BackHandler(enabled = guidanceUiState is GuidanceUiState.Idle, onBack = cardActions.onEditSymptoms)
+            // 카드에서 시스템 뒤로 = [홈] (카드는 남는다)
+            BackHandler(onBack = cardActions.onGoHome)
             MedicalCardScreen(
                 state = cardUiState,
                 guidance = guidanceUiState,

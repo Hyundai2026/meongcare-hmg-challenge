@@ -27,8 +27,31 @@ class MedicalCardSession {
     private val _state = MutableStateFlow<CardSessionState>(CardSessionState.None)
     val state: StateFlow<CardSessionState> = _state.asStateFlow()
 
+    private val _atHome = MutableStateFlow(false)
+
+    /** [홈]을 눌러 카드를 둔 채 처음 화면을 보는 중인지. 카드를 열거나 고르기를 시작하거나 비우면 false가 된다. */
+    val atHome: StateFlow<Boolean> = _atHome.asStateFlow()
+
+    /** [홈]: 카드를 지우지 않고 처음 화면으로. 고르는 중이었으면 고르기를 취소한다. */
+    fun goHome() {
+        cancelPicking()
+        _atHome.value = true
+    }
+
+    /** 처음 화면의 [카드 보기] */
+    fun openCard() {
+        _atHome.value = false
+    }
+
+    /** 처음 화면의 [새로 만들기]: 있던 카드를 버리고 빈 선택으로 고른다. */
+    fun startNew() {
+        clear()
+        startPicking()
+    }
+
     /** 고르기 시작. 카드가 있으면 그 증상이 선택된 채로 고른다. 이미 고르는 중이면 그대로. */
     fun startPicking() = _state.update { state ->
+        _atHome.value = false
         when (state) {
             CardSessionState.None -> CardSessionState.Picking(draft = emptySet(), previous = null)
             is CardSessionState.Ready -> CardSessionState.Picking(draft = state.symptoms, previous = state.symptoms)
@@ -57,5 +80,6 @@ class MedicalCardSession {
     /** 카드를 버린다. */
     fun clear() {
         _state.value = CardSessionState.None
+        _atHome.value = false
     }
 }

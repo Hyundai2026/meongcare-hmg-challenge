@@ -2,6 +2,7 @@ package com.meongcare.app.ui.home
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,32 +18,44 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.meongcare.app.R
-import com.meongcare.app.domain.pet.PetProfileLoad
+import com.meongcare.app.ui.card.CardFlowUiState
+import com.meongcare.app.ui.card.CardScale
+import com.meongcare.app.ui.card.LocalCardScale
+import com.meongcare.app.ui.card.MedicalCardActions
 import com.meongcare.app.ui.card.Notice
 import com.meongcare.app.ui.card.PetAvatar
 import com.meongcare.app.ui.card.PetHeader
 import com.meongcare.app.ui.card.PetTitle
-import com.meongcare.app.ui.card.PreviewPet
-import com.meongcare.app.ui.card.medicalCardOf
+import com.meongcare.app.ui.card.joinedText
+import com.meongcare.app.ui.card.previewCardState
+import com.meongcare.app.ui.card.symptomLabelRes
+import com.meongcare.app.ui.guidance.GuidanceUiState
+import com.meongcare.app.ui.guidance.remainingTimeText
 import com.meongcare.app.ui.theme.ActionBlue
 import com.meongcare.app.ui.theme.CardColors
 import com.meongcare.app.ui.theme.Dimens
 import com.meongcare.app.ui.theme.MeongCareTheme
-import java.time.LocalDate
-import java.time.ZoneId
+
+private val ContentMaxWidth = 960.dp
 
 /**
  * 정차·주차 중 처음 화면: 반려견 요약 + [진료 카드 만들기].
+ *
+ * 만든 카드가 있거나 안내 중·도착이면([홈]으로 온 경우) 그 상태와 [카드 보기]를 먼저 보인다.
+ * 안내가 없을 때만 [새로 만들기]로 있던 카드를 버리고 다시 만든다.
  *
  * 길안내는 진료 카드의 [길 안내 시작]에서만 시작한다 (사용자 결정 2026-11-05, docs/plans 009).
  * 글자 입력칸은 두지 않는다. 높이가 낮은 화면을 위해 세로 스크롤을 둔다 (스크롤 금지는 주행 화면에만 해당한다).
@@ -51,54 +64,116 @@ import java.time.ZoneId
  */
 @Composable
 fun ParkedScreen(
-    pet: PetHeader,
+    card: CardFlowUiState,
+    guidance: GuidanceUiState,
+    actions: MedicalCardActions,
     isPetProfileSample: Boolean,
-    onStartCard: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(Dimens.ScreenPadding),
-        verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacing),
-    ) {
-        Text(text = stringResource(R.string.parked_status), style = MaterialTheme.typography.headlineMedium)
-        Surface(
-            shape = RoundedCornerShape(24.dp),
-            color = CardColors.Surface,
-            contentColor = CardColors.Text,
-            border = BorderStroke(1.dp, CardColors.Border),
-            modifier = Modifier.widthIn(max = 720.dp).fillMaxWidth(),
-        ) {
-            Row(modifier = Modifier.padding(24.dp), verticalAlignment = Alignment.CenterVertically) {
-                PetAvatar(initial = (pet as? PetHeader.Registered)?.initial, size = 112.dp)
-                Spacer(Modifier.width(24.dp))
-                PetTitle(pet, modifier = Modifier.weight(1f))
+    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+        val wide = maxWidth >= 840.dp
+        CompositionLocalProvider(LocalCardScale provides if (wide) CardScale.Wide else CardScale.Narrow) {
+            val scale = LocalCardScale.current
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(Dimens.ScreenPadding),
+                verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacing),
+            ) {
+                Text(text = stringResource(R.string.parked_status), style = MaterialTheme.typography.headlineMedium)
+                Surface(
+                    shape = RoundedCornerShape(28.dp),
+                    color = CardColors.Surface,
+                    contentColor = CardColors.Text,
+                    border = BorderStroke(1.dp, CardColors.Border),
+                    shadowElevation = 2.dp,
+                    modifier = Modifier.widthIn(max = ContentMaxWidth).fillMaxWidth(),
+                ) {
+                    Row(modifier = Modifier.padding(28.dp), verticalAlignment = Alignment.CenterVertically) {
+                        PetAvatar(initial = (card.card.pet as? PetHeader.Registered)?.initial, size = if (wide) 160.dp else 104.dp)
+                        Spacer(Modifier.width(28.dp))
+                        PetTitle(card.card.pet, modifier = Modifier.weight(1f))
+                    }
+                }
+                if (isPetProfileSample && card.card.pet is PetHeader.Registered) Notice(stringResource(R.string.card_sample_pet_notice))
+
+                val showsCurrent = card.hasCard || guidance !is GuidanceUiState.Idle
+                if (showsCurrent) {
+                    CurrentCardPanel(card, guidance, actions.onOpenCard)
+                    if (guidance is GuidanceUiState.Idle) {
+                        OutlinedButton(
+                            onClick = actions.onStartNewCard,
+                            border = BorderStroke(2.dp, MaterialTheme.colorScheme.outline),
+                            shape = RoundedCornerShape(20.dp),
+                            modifier = Modifier.widthIn(max = ContentMaxWidth).fillMaxWidth().heightIn(min = scale.buttonHeight),
+                        ) {
+                            Text(
+                                stringResource(R.string.home_new_card),
+                                style = MaterialTheme.typography.labelLarge.copy(fontSize = scale.button),
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
+                    }
+                } else {
+                    Text(text = stringResource(R.string.home_card_hint), style = MaterialTheme.typography.bodyLarge)
+                    PrimaryButton(stringResource(R.string.home_start_card), actions.onStartCard)
+                }
             }
-        }
-        if (isPetProfileSample && pet is PetHeader.Registered) Notice(stringResource(R.string.card_sample_pet_notice))
-        Text(text = stringResource(R.string.home_card_hint), style = MaterialTheme.typography.bodyLarge)
-        Button(
-            onClick = onStartCard,
-            colors = ButtonDefaults.buttonColors(containerColor = ActionBlue, contentColor = Color.White),
-            shape = RoundedCornerShape(20.dp),
-            modifier = Modifier.widthIn(max = 720.dp).fillMaxWidth().heightIn(min = Dimens.DrivingPrimaryButtonHeight),
-        ) {
-            Text(text = stringResource(R.string.home_start_card), style = MaterialTheme.typography.titleLarge)
         }
     }
 }
 
-@Preview(widthDp = 960, heightDp = 540)
+/** 만든 카드(또는 진행 중인 안내)와 [카드 보기] */
 @Composable
-private fun ParkedScreenPreview() {
-    MeongCareTheme {
+private fun CurrentCardPanel(card: CardFlowUiState, guidance: GuidanceUiState, onOpenCard: () -> Unit) {
+    val scale = LocalCardScale.current
+    val title = when (guidance) {
+        is GuidanceUiState.Idle -> stringResource(R.string.home_current_card_title)
+        is GuidanceUiState.Guiding -> remainingTimeText(guidance) + " · " + guidance.destinationName
+        is GuidanceUiState.Arrived -> stringResource(R.string.guidance_arrived) + " · " + guidance.destinationName
+    }
+    val symptoms = card.card.symptoms
+        .takeIf { it.isNotEmpty() }
+        ?.let { list -> stringResource(R.string.home_symptoms_line, joinedText(list.map { stringResource(symptomLabelRes(it)) })) }
+        ?: stringResource(R.string.card_value_no_symptoms)
+    Surface(
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        border = BorderStroke(2.dp, ActionBlue),
+        modifier = Modifier.widthIn(max = ContentMaxWidth).fillMaxWidth(),
+    ) {
+        Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Text(text = title, style = MaterialTheme.typography.titleLarge.copy(fontSize = scale.title), fontWeight = FontWeight.Bold)
+            Text(text = symptoms, style = MaterialTheme.typography.bodyLarge.copy(fontSize = scale.row))
+            PrimaryButton(stringResource(R.string.home_open_card), onOpenCard)
+        }
+    }
+}
+
+@Composable
+private fun PrimaryButton(text: String, onClick: () -> Unit) {
+    val scale = LocalCardScale.current
+    Button(
+        onClick = onClick,
+        colors = ButtonDefaults.buttonColors(containerColor = ActionBlue, contentColor = Color.White),
+        shape = RoundedCornerShape(20.dp),
+        modifier = Modifier.widthIn(max = ContentMaxWidth).fillMaxWidth().heightIn(min = Dimens.DrivingPrimaryButtonHeight),
+    ) {
+        Text(text = text, style = MaterialTheme.typography.titleLarge.copy(fontSize = scale.button))
+    }
+}
+
+@Preview(widthDp = 1682, heightDp = 1210)
+@Composable
+private fun ParkedScreenWithCardPreview() {
+    MeongCareTheme(darkTheme = true) {
         Surface {
             ParkedScreen(
-                pet = medicalCardOf(PetProfileLoad.Loaded(PreviewPet), emptySet(), LocalDate.of(2026, 11, 5), ZoneId.of("Asia/Seoul")).pet,
+                card = previewCardState().copy(atHome = true),
+                guidance = GuidanceUiState.Guiding("시연용 동물병원", 12),
+                actions = MedicalCardActions(),
                 isPetProfileSample = true,
-                onStartCard = {},
             )
         }
     }

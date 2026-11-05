@@ -41,4 +41,7 @@ object CardColors {
     val ChipBackground = Color(0xFFE9EFFF)
     val Accent = ActionBlue
     val AvatarBackground = Color(0xFFE9EFFF)
+    /** 주요 증상 강조 띠. 글자와 대비 약 7:1 */
+    val SymptomBackground = Color(0xFFFFF1E0)
+    val SymptomText = Color(0xFF7A3E00)
 }

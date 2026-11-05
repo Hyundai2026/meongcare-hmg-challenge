@@ -12,4 +12,7 @@ data class MedicalCardActions(
     val onCloseCard: () -> Unit = {},
     val onCallHospital: () -> Unit = {},
     val onDismissPhoneNumber: () -> Unit = {},
+    val onGoHome: () -> Unit = {},
+    val onOpenCard: () -> Unit = {},
+    val onStartNewCard: () -> Unit = {},
 )

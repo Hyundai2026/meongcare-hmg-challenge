@@ -266,6 +266,7 @@ app/src/test/java/com/meongcare/app/
 Real 길안내 계획을 쓸 때 `[선행: pleos-docs-researcher]`로 확인한다. 이번 인터페이스는 이 답들에 묶이지 않게 잡았다.
 
 - `TripInfo.getEta()`는 "남은 시간"인가, "도착 예정 시각"인가? 단위는 무엇인가? `DrivingInfo.destination.duration`과 무엇이 다른가?
+  - 값이 없거나 이상할 때(음수, 0, 아주 큰 값) Real 래퍼는 `null`(경로 찾는 중/모름)로 바꾼다. `Duration.INFINITE`를 내보내면 화면이 "1분"을 보여준다 (005 tester 관찰).
 - `RouteInfo`의 `poiId`/`poiSubId`가 필수인가? 좌표와 이름만으로 경로를 요청할 수 있나? (sdk-notes 미확인)
 - Pleos 에뮬레이터의 기본 Navigation 앱이 `requestRoute`를 받는가? `onRouteStarted` → `onTripInfo`(주기) → `onDestinationArrived`가 실제로 오는가? 에뮬레이터에서 주행을 흉내 내 도착 이벤트를 받을 수 있나?
 - Navigation 앱에서 사용자가 경로를 취소하면 `onRouteCancelled`가 오는가?
@@ -400,7 +401,7 @@ Real 길안내 계획을 쓸 때 `[선행: pleos-docs-researcher]`로 확인한�
     - 완료 기준 4의 Grep 중 `DrivingScreen.kt`·`HomeScreen.kt` 항목
     - 기기가 있으면 `/verify`로 각 커밋의 화면을 본다
 
-- [ ] 6. 경계 테스트 (`tester`) → `test: 길안내 Fake와 화면 상태 경계 테스트 추가`
+- [x] 6. 경계 테스트 (`tester`) → `test: 길안내 Fake와 화면 상태 경계 테스트 추가`
   - 메인이 `tester`에게 **이 계획 파일 경로와 대상만** 넘긴다. 구현 설명은 넘기지 않는다.
     - 대상: `FakeGuidanceSource`, `FakeTripScenario`, `RealGuidanceSource`, `GuidanceViewModel`, `homeContentOf`
   - 기대 동작 (계약 기준):
@@ -424,7 +425,7 @@ Real 길안내 계획을 쓸 때 `[선행: pleos-docs-researcher]`로 확인한�
   - 완료 기준 4의 Grep을 모두 돌린다.
   - 기기가 없으면 멈추고 사용자에게 Cold boot를 요청한다. 확인하지 못한 건 그대로 적는다.
 
-- [ ] 8. 문서 맞추기
+- [x] 8. 문서 맞추기
   - `docs/architecture.md`:
     - "패키지 구조"에 이번에 추가한 패키지를 넣는다.
     - "주행 상태와 화면"에 결정 4의 화면 조합 표와 취소 경로를 넣는다.
@@ -476,6 +477,10 @@ Real 길안내 계획을 쓸 때 `[선행: pleos-docs-researcher]`로 확인한�
 - 2026-11-05: 단계 0~5 완료 (커밋 `59bb64d`~`e51b1b4`).
   - 새 단위 테스트 25개 통과: FakeGuidanceSource 8, FakeTripScenario 4, RealGuidanceSource 2, GuidanceViewModel 8, HomeContent 3.
   - 기기(`my_avd`)가 연결되지 않아 단계 5의 커밋마다 `/verify`는 하지 못했다. 빌드만 확인했다. 화면은 단계 7에서 몰아서 본다.
+- 2026-11-05: 단계 6 완료 (`029481c`). tester가 경계 테스트 38개를 더했다. 전체 89개 통과, 실패 0. 계약 위반 버그 없음.
+  - tester 관찰 (계약 밖): `toDisplayMinutes`에 `Duration.INFINITE`가 오면 덧셈이 넘쳐 "1분"이 된다. 지금 Fake는 그 값을 내지 않고, 계약상 "모름"은 `null`이다. → Real 후속 계획에서 ETA를 모르면 `INFINITE`가 아니라 `null`로 바꾼다 (아래 후속 질문에 추가).
+- 2026-11-05: 단계 8 완료 (`d4017b7`, `4e3a25a`). 단계 7 중 기기 없이 되는 것: 검증 파이프라인 통과, 완료 기준 4의 Grep 모두 0건.
+  - 병합 매니페스트의 `pleos.car.permission` 1건은 우리 매니페스트의 XML 주석이다. 실제 선언(`android:name="pleos.car.permission`)은 0건.
 
 ## 결정 / 배운 점
 

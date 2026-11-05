@@ -59,7 +59,7 @@ export function petProfileFromJson(value: unknown): ParseResult {
   if (!(photoDataUrl === null || (typeof photoDataUrl === 'string' && photoDataUrl.startsWith(PHOTO_DATA_URL_PREFIX)))) {
     return CORRUPTED
   }
-  if (typeof updatedAt !== 'string' || Number.isNaN(Date.parse(updatedAt))) return CORRUPTED
+  if (typeof updatedAt !== 'string' || !isIsoUtcInstant(updatedAt)) return CORRUPTED
   const medicalInfo = medicalFromJson(medical)
   if (medicalInfo === null) return CORRUPTED
 
@@ -80,6 +80,15 @@ export function petProfileFromJson(value: unknown): ParseResult {
 }
 
 const CORRUPTED: ParseResult = { ok: false, reason: 'corrupted' }
+
+/** 'YYYY-MM-DDTHH:mm:ss(.소수)Z'. Date.parse는 "1" 같은 값도 날짜로 읽어서 쓰지 않는다 (차 앱의 Instant.parse와 맞춘다). */
+const ISO_UTC_INSTANT = /^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2}):(\d{2})(\.\d{1,9})?Z$/
+
+function isIsoUtcInstant(text: string): boolean {
+  const match = ISO_UTC_INSTANT.exec(text)
+  if (match === null) return false
+  return parseLocalDate(match[1]) !== null && Number(match[2]) < 24 && Number(match[3]) < 60 && Number(match[4]) < 60
+}
 
 function medicalFromJson(value: unknown): MedicalInfo | null {
   if (!isObject(value)) return null

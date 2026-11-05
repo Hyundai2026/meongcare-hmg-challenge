@@ -947,6 +947,10 @@ fun sendGleoBroadcast(
   - 오디오 포커스 가이드에 CALL 컨텍스트(`CALL`, `VOICE_COMMUNICATION`, `VOICE_COMMUNICATION_SIGNALING`)가 있다. 통화 중 MUSIC 요청은 거부(R)된다. [audio-focus]
   - 에뮬레이터 2.1.0에서 "블루투스 동글 연동 제공 종료". 에뮬레이터로 폰 연결 통화를 시험할 수 없다. [emulator-release-note]
   - 디자인 가이드의 System Color 토큰 분류에 "Phone"이 있다. 서드파티 앱의 전화 연동 방법은 문서에 없다. [design-colors]
+- > **관찰 (2026-11-05, Pleos 에뮬레이터 v2.1.0, 실차 아님. 009 진료 카드):** 우리 앱(application context, `FLAG_ACTIVITY_NEW_TASK`, 권한·`<queries>` 없음)에서 `ACTION_DIAL` + `tel:02-0000-0000`을 보내면 `ai.umos.callandmessage/ai.umos.mainscreen.MainScreenActivity`("전화" 앱)가 열렸다 (logcat `START u10 {act=android.intent.action.DIAL ... cmp=ai.umos.callandmessage/...} result code=0`, 예외 없음).
+  > - 전화 앱은 "최근 통화" 탭으로 열리고, **넘긴 번호는 화면에 보이지 않았다.** 폰이 연결되지 않은 에뮬레이터라서인지, 이 앱이 DIAL의 번호를 쓰지 않는지는 모른다 (블루투스 동글 연동 종료로 시험할 수 없다).
+  > - 뒤로 가거나 우리 앱을 다시 열면 같은 진료 카드로 돌아왔다.
+  > - 실차·앱 심사에서 허용되는지는 여전히 문의 B4다. 일반 폰 에뮬레이터(구글 전화 앱)에서는 번호가 채워진 다이얼 화면이 열렸다.
 
 ## 권한
 

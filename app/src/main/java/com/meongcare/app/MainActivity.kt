@@ -106,7 +106,10 @@ class MainActivity : ComponentActivity() {
                                 // 주행 중(모름 포함)에는 위치 줄을 숨긴다. 주행 화면 정보를 늘리지 않는다 (AGENTS.md 규칙 3).
                                 location = if (uiState == HomeUiState.Parked) {
                                     DebugLocationRow(
-                                        text = debugLocationText(locationState, sourceName = "Fake"),
+                                        text = debugLocationText(
+                                            locationState,
+                                            sourceName = if (container.locationKind == SourceKind.REAL) "내비" else "Fake",
+                                        ),
                                         isAsking = locationState == DebugLocationUiState.Asking,
                                     )
                                 } else {

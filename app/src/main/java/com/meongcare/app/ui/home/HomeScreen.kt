@@ -19,6 +19,9 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.meongcare.app.domain.hospital.RankedHospital
 import com.meongcare.app.domain.trip.FinderStep
 import com.meongcare.app.domain.trip.TripState
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.lifecycle.compose.LifecycleEventEffect
 import com.meongcare.app.ui.card.CardFlowUiState
 import com.meongcare.app.ui.card.MedicalCardActions
 import com.meongcare.app.ui.card.MedicalCardScreen
@@ -29,6 +32,8 @@ import com.meongcare.app.ui.guidance.tripPanelOf
 import java.time.Instant
 import java.time.ZoneId
 import kotlinx.coroutines.delay
+import com.meongcare.app.ui.voice.VoiceActions
+import com.meongcare.app.ui.voice.VoiceScreenState
 
 /**
  * 홈 화면. 두 단계로 보여줄 화면을 고른다.
@@ -42,6 +47,8 @@ import kotlinx.coroutines.delay
  * @param onCloseArrival 도착 카드 [닫기]. 도착 상태를 지우고 카드도 비운다.
  * @param finder 병원 찾기 단계 (012). 목록·확인 화면은 [hospitalList]·[hospitalConfirm]이 그린다.
  * @param onFinderBack 병원 찾기 화면의 시스템 뒤로 (= 화면의 [뒤로])
+ * @param voice 증상 고르기 화면의 음성 영역 (010). `null`이면 음성 영역이 없다.
+ * @param voiceActions 음성 영역 동작. 증상 고르기 화면이 사라지거나 앱이 뒤로 가면 `onStop`을 부른다.
  * @param bottomBar 화면 아래에 붙는 영역. debug 빌드의 개발자 패널이 들어간다.
  * @param cardExtras 고른 병원과 카드 전송 상태 (012). 안내 영역([tripPanelOf], 013)을 여기서 만든다.
  * @param link 보호자 웹 연결 (014): 처음 화면의 연결 줄과 연결 화면. 연결 화면은 [linkScreen]이 그린다.
@@ -66,6 +73,8 @@ fun HomeScreen(
     cardExtras: CardExtras = CardExtras(),
     link: LinkExtras = LinkExtras(),
     linkScreen: @Composable () -> Unit = {},
+    voice: VoiceScreenState? = null,
+    voiceActions: VoiceActions = VoiceActions(),
     bottomBar: @Composable () -> Unit = {},
 ) {
     // 안내 영역의 도착 예정 시각이 정차 중에 낡지 않게 30초마다 다시 계산한다 (주행 화면은 시각을 보이지 않는다)
@@ -100,6 +109,8 @@ fun HomeScreen(
                         onResend = cardExtras.onResend,
                         link = link,
                         linkScreen = linkScreen,
+                        voice = voice,
+                        voiceActions = voiceActions,
                     )
                     HomeContent.DRIVING -> DrivingScreen(guidanceUiState, panel = panel)
                 }
@@ -129,6 +140,8 @@ private fun ParkedFlow(
     onResend: () -> Unit,
     link: LinkExtras,
     linkScreen: @Composable () -> Unit,
+    voice: VoiceScreenState?,
+    voiceActions: VoiceActions,
 ) {
     when (parkedContentOf(guidanceUiState, cardUiState.session, cardUiState.atHome, finder, link.linking)) {
         ParkedContent.HOME -> {
@@ -161,11 +174,17 @@ private fun ParkedFlow(
         ParkedContent.SYMPTOMS -> {
             // 시스템 뒤로 = [취소]
             BackHandler(onBack = cardActions.onCancelPicking)
+            // 이 화면이 사라지면(주행으로 바뀜, 다른 화면으로 감) 또는 앱이 뒤로 가면 듣기를 멈추고 들은 것을 버린다 (010 "설계 결정 2").
+            val stopVoice by rememberUpdatedState(voiceActions.onStop)
+            DisposableEffect(Unit) { onDispose { stopVoice() } }
+            LifecycleEventEffect(Lifecycle.Event.ON_STOP) { stopVoice() }
             SymptomPickerScreen(
                 selected = cardUiState.pickingDraft,
                 onToggle = cardActions.onToggleSymptom,
                 onCancel = cardActions.onCancelPicking,
                 onConfirm = cardActions.onConfirmSymptoms,
+                voice = voice,
+                voiceActions = voiceActions,
             )
         }
         ParkedContent.CARD -> {

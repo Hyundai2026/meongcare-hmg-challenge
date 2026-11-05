@@ -9,6 +9,10 @@ import com.meongcare.app.data.driving.uxRestrictionsClientOrNull
 import com.meongcare.app.data.guidance.FakeGuidanceSource
 import com.meongcare.app.data.guidance.RealGuidanceSource
 import com.meongcare.app.data.hospital.SampleHospitals
+import com.meongcare.app.data.pet.FakePetProfileSource
+import com.meongcare.app.domain.card.MedicalCardSession
+import com.meongcare.app.domain.pet.PetProfileSource
+import com.meongcare.app.domain.phone.PhoneDialer
 import com.meongcare.app.data.vehicle.VehicleConnection
 import com.meongcare.app.domain.driving.DrivingState
 import com.meongcare.app.domain.driving.DrivingStateSource
@@ -57,6 +61,21 @@ class AppContainer(context: Context, val dataMode: DataMode) {
 
     /** 병원 (길안내 목적지 + 전화번호). 병원 검색이 붙기 전까지 시연용 샘플 병원 1곳을 쓴다. */
     val sampleHospital: Hospital = SampleHospitals.demo
+
+    /**
+     * 반려견 프로필. 서버(보호자 웹 연결)가 생기기 전까지 **모든 데이터 모드에서 Fake("보리")**다.
+     * 서버 구현이 생기면 [sourcePlanOf]에 칸을 더한다 (docs/plans 009 "설계 결정 3").
+     */
+    val petProfileSource: PetProfileSource = FakePetProfileSource()
+
+    /** 반려견 정보가 시연용 샘플인지. 화면에 그 사실을 알린다 (출품 유의사항). 지금은 Fake뿐이라 항상 true. */
+    val isPetProfileSample: Boolean = true
+
+    /** 고른 증상과 진료 카드. Fake 길안내와 같은 프로세스 수명이라 안내 시작부터 도착까지 남는다. */
+    val medicalCardSession = MedicalCardSession()
+
+    /** 전화 앱 열기. 다음 커밋에서 Android 구현으로 바꾼다. 지금은 항상 번호를 크게 보여 준다. */
+    val phoneDialer: PhoneDialer = PhoneDialer { false }
 
     /** Pleos Vehicle 연결. Real 구성에서만 만든다 (Fake에서는 Vehicle을 만들지 않는다). */
     val vehicleConnection: VehicleConnection? =

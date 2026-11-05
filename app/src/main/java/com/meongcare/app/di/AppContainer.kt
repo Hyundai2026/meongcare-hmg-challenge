@@ -43,6 +43,8 @@ import com.meongcare.app.data.server.nearbyFunctionUrlOf
 import com.meongcare.app.domain.hospital.HospitalBoard
 import com.meongcare.app.data.phone.AndroidPhoneDialer
 import com.meongcare.app.data.voice.FakeVoiceInput
+import com.meongcare.app.data.voice.PleosSpeechToTextClient
+import com.meongcare.app.data.voice.RealVoiceInput
 import com.meongcare.app.domain.card.MedicalCardSession
 import com.meongcare.app.domain.pet.PetProfileSource
 import com.meongcare.app.domain.phone.PhoneDialer
@@ -302,8 +304,7 @@ class AppContainer(context: Context, val dataMode: DataMode) {
     val voiceInput: VoiceInput? = when (voiceInputKind) {
         VoiceInputKind.NONE -> null
         VoiceInputKind.FAKE -> FakeVoiceInput()
-        // Pleos SpeechToText 래퍼를 붙이기 전까지 임시로 없음 (docs/plans 010 단계 5-2에서 바꾼다).
-        VoiceInputKind.REAL -> null
+        VoiceInputKind.REAL -> RealVoiceInput(PleosSpeechToTextClient(context))
     }
 
     /** 음성 입력이 실제로 듣지 않는 시연용인지. 화면에 그 사실을 알린다 (출품 유의사항). */

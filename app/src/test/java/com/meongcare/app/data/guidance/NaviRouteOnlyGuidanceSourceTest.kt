@@ -58,7 +58,7 @@ class NaviRouteOnlyGuidanceSourceTest {
         val navi = FakeNaviClient()
         val source = source(navi)
         source.start(hospital)
-        advance(10.seconds)
+        advance(30.seconds)
         assertEquals(listOf<Duration?>(null), starts)
         assertEquals(GuidanceState.Guiding(hospital, 12.minutes), source.state.value)
     }

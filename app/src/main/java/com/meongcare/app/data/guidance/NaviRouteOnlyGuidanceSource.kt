@@ -94,7 +94,7 @@ class NaviRouteOnlyGuidanceSource(
     }
 
     companion object {
-        /** 내비가 안내를 시작하기까지 (카운트다운 약 3초) 기다리는 시간 */
-        val DEFAULT_ROUTE_START_TIMEOUT: Duration = 10.seconds
+        /** 내비가 안내를 시작하기까지 기다리는 시간. 경로 계산 + 카운트다운 약 3초. Pleos 에뮬레이터에서 지도 로딩 때 10초를 넘었다 */
+        val DEFAULT_ROUTE_START_TIMEOUT: Duration = 30.seconds
     }
 }

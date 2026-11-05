@@ -29,11 +29,12 @@ private val DarkColors = darkColorScheme(
     onPrimaryContainer = Sky100,
     secondary = Amber500,
     onSecondary = Gray900,
-    background = Gray900,
+    // 컨셉 그림처럼 남색 배경 (009). 주행 화면 배경도 같이 남색이 된다.
+    background = Navy950,
     onBackground = Gray50,
-    surface = Gray900,
+    surface = Navy950,
     onSurface = Gray50,
-    surfaceVariant = Gray800,
+    surfaceVariant = Navy850,
     onSurfaceVariant = Gray200,
     error = Red300,
 )

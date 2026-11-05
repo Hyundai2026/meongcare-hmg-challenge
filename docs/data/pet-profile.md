@@ -5,7 +5,7 @@
 
 - 예시: [pet-profile.example.json](pet-profile.example.json). 컨셉 그림의 "보리"다. 웹 테스트가 이 파일을 읽어서, 문서와 코드가 어긋나면 테스트가 깨진다.
 - 웹 구현: `web/src/domain/petProfile.ts`, `web/src/domain/petProfileJson.ts`
-- 지금 쓰는 곳: 보호자 웹 하나 (브라우저 localStorage). 차 앱은 다음 계획에서 같은 형식으로 Fake를 만든다.
+- 지금 쓰는 곳: 보호자 웹 (브라우저 localStorage), 차 앱 (진료 카드. 아직 웹과 연결되지 않아 이 예시와 같은 값의 Fake "보리"를 쓴다, 009).
 
 ## 필드
 
@@ -86,11 +86,13 @@
 | 보호자 웹 (지금) | localStorage `owner-web.pet-profile` | JSON 문자열 하나 (사진 포함). 앱 이름과 묶지 않아서 이름을 바꿔도 데이터가 그대로다 |
 | 서버 (나중) | Firestore 문서 (미정) | 문의 A1 이후. docs/architecture.md "보호자 웹" |
 
-## Kotlin 대응 (제안, 차 앱 계획에서 확정)
+## Kotlin 대응 (차 앱, 009에서 확정)
+
+구현: `app/src/main/java/com/meongcare/app/domain/pet/PetProfile.kt`, 나이 계산 `PetAge.kt`.
 
 | JSON | Kotlin |
 |---|---|
-| `schemaVersion` | `Int` |
+| `schemaVersion` | 도메인 모델에 두지 않는다. JSON을 읽는 쪽(나중 서버 구현)이 1인지 확인하고, 아니면 `PetProfileLoad.Unavailable`을 낸다 |
 | `name` | `String` |
 | `breed` | `String?` |
 | `sex` | `enum class Sex { MALE, FEMALE }`, `Sex?` |
@@ -100,6 +102,18 @@
 | `medical.conditions`, `medical.allergies` | `List<String>` |
 | `medical.medications` | `List<Medication>` (`name: String`, `dosage: String`) |
 | `updatedAt` | `Instant` |
+
+- 출처는 `PetProfileSource.profile: Flow<PetProfileLoad>`다: `Loaded(profile)` / `NotRegistered`(보호자가 아직 등록 안 함) / `Unavailable`(읽지 못함. 짐작해서 보여 주지 않는다).
+
+## 진료 카드 표시 규칙 (차 앱)
+
+- 줄: 주요 증상(차에서 고른 것) / 기존 병력(= `conditions`) / 알레르기 / 복용 약물.
+- 빈 목록은 "등록된 정보 없음"이다 (빈 배열 = 등록하지 않음). 증상을 고르지 않았으면 "고른 증상 없음".
+- 항목의 앞뒤 공백을 지우고, 비면 건너뛴다. 그 밖에는 그대로 쓴다. 긴 목록도 자르지 않는다.
+- 약은 "심장약 (1일 1회)", 복용법이 없으면 "심장약".
+- 증상은 고른 순서가 아니라 프리셋 순서(`domain/card/Symptom.kt` 선언 순서)로 적는다.
+- 프로필을 받지 못했으면(`NotRegistered`, `Unavailable`, 아직 받는 중) 의료정보 줄을 그리지 않고 안내 한 줄만 보인다.
+- 나이는 위 "나이 계산" 규칙대로 "12세 3개월"이고, 추정이면 "(추정)"을 붙인다. 정보 갱신일은 `updatedAt`을 기기 시간대 날짜로 바꾼 것이다.
 
 ## 나중 후보 (지금 하지 않음)
 

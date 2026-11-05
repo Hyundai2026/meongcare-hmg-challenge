@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.meongcare.app.di.AppRestarter
@@ -13,6 +14,8 @@ import com.meongcare.app.di.SourceKind
 import com.meongcare.app.di.SourcePlan
 import com.meongcare.app.di.next
 import com.meongcare.app.domain.driving.DrivingState
+import com.meongcare.app.ui.card.MedicalCardActions
+import com.meongcare.app.ui.card.MedicalCardViewModel
 import com.meongcare.app.ui.debug.DebugPanel
 import com.meongcare.app.ui.guidance.GuidanceViewModel
 import com.meongcare.app.ui.home.HomeScreen
@@ -32,17 +35,45 @@ class MainActivity : ComponentActivity() {
                     viewModel(factory = HomeViewModel.factory(container.drivingStateSource))
                 val uiState by homeViewModel.uiState.collectAsStateWithLifecycle()
                 val guidanceViewModel: GuidanceViewModel = viewModel(
-                    factory = GuidanceViewModel.factory(container.guidanceSource, container.sampleHospital),
+                    factory = GuidanceViewModel.factory(container.guidanceSource, container.sampleHospital.destination),
                 )
                 val guidanceUiState by guidanceViewModel.uiState.collectAsStateWithLifecycle()
+                val cardViewModel: MedicalCardViewModel = viewModel(
+                    factory = MedicalCardViewModel.factory(
+                        petProfileSource = container.petProfileSource,
+                        session = container.medicalCardSession,
+                        hospital = container.sampleHospital,
+                        phoneDialer = container.phoneDialer,
+                    ),
+                )
+                val cardUiState by cardViewModel.uiState.collectAsStateWithLifecycle()
+                val cardActions = remember(cardViewModel) {
+                    MedicalCardActions(
+                        onStartCard = cardViewModel::onStartCard,
+                        onToggleSymptom = cardViewModel::onToggleSymptom,
+                        onConfirmSymptoms = cardViewModel::onConfirmSymptoms,
+                        onCancelPicking = cardViewModel::onCancelPicking,
+                        onEditSymptoms = cardViewModel::onEditSymptoms,
+                        onCloseCard = cardViewModel::onCloseCard,
+                        onCallHospital = cardViewModel::onCallHospital,
+                        onDismissPhoneNumber = cardViewModel::onDismissPhoneNumber,
+                    )
+                }
 
                 HomeScreen(
                     uiState = uiState,
                     guidanceUiState = guidanceUiState,
+                    cardUiState = cardUiState,
+                    cardActions = cardActions,
                     onStartGuidance = guidanceViewModel::onStartGuidance,
                     onCancelGuidance = guidanceViewModel::onCancelGuidance,
-                    onDismissArrival = guidanceViewModel::onDismissArrival,
+                    // 도착 상태를 먼저 지우고 카드를 비운다. 중간 프레임이 "생성 완료" 카드라 거의 보이지 않는다.
+                    onCloseArrival = {
+                        guidanceViewModel.onDismissArrival()
+                        cardViewModel.onCloseCard()
+                    },
                     isGuidanceSimulated = container.sourcePlan.isGuidanceSimulated,
+                    isPetProfileSample = container.isPetProfileSample,
                     bottomBar = {
                         if (BuildConfig.DEBUG) {
                             val fake = container.fakeDrivingStateSource

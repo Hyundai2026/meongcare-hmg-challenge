@@ -437,7 +437,7 @@ Real 길안내 계획을 쓸 때 `[선행: pleos-docs-researcher]`로 확인한�
     - `docs(pleos): TripInfo.eta 의미 미확인 항목 추가`
   - 확인: 완료 기준 5
 
-- [ ] 9. 개발 노트 작성 (`docs/notes/`)
+- [x] 9. 개발 노트 작성 (`docs/notes/`)
   - `docs/notes/xxj15/YYYY-MM-DD-navi-route-fake.md`. 형식은 `docs/notes/README.md` 템플릿을 따른다.
     - 사용한 Pleos SDK: 없음. 권한: 없음. NaviHelper는 후속 계획이다.
     - 시연 방법: 결정 2·3의 타임라인과 조작 순서 (debug 빌드, Fake 모드)
@@ -490,6 +490,8 @@ Real 길안내 계획을 쓸 때 `[선행: pleos-docs-researcher]`로 확인한�
   - Real 전환 → "주행 중"(이전과 같음) → Fake 복귀. 크래시 없음 (`logcat *:E`, crash 버퍼에 `meongcare` 없음).
   - **발견해서 고친 것** (`905dc12`): 도착 화면 제목 "시연용 동물병원에 도착했어요"가 세로 화면에서 "요" 한 글자만 다음 줄로 넘어갔다. "도착했어요"와 병원 이름을 두 줄로 나눴다. 다시 설치해서 확인했다.
   - **알려진 한계** (고치지 않음): 휴대폰 가로 화면(높이 약 411dp)에서는 debug 패널이 높이의 약 1/3을 차지해 [안내 취소]·[닫기]가 화면 아래로 밀린다. 스크롤하면 닿는다(도착 화면에서 확인). release에는 패널이 없다. 가로로 시연 영상을 찍으면 있으면 좋음 A(패널 접기)로 해결한다.
+- 2026-11-05: 단계 9 완료. 노트 `docs/notes/xxj15/2026-11-05-navi-route-fake.md`. 계획을 `completed/`로 옮겼다.
+  - 있으면 좋음 A·B는 하지 않았다. C(촬영 절차)는 노트의 "시연 방법"에 넣었다.
 
 ## 결정 / 배운 점
 

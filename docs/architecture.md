@@ -25,17 +25,17 @@
 
 | 영역 | 결정 | 근거 | 상태 |
 |---|---|---|---|
-| 의료 프로필 저장 | Room + 암호화 (SQLCipher) | Pleos 보안 가이드: 기기에 저장하는 민감정보는 암호화해야 한다 | 결정 |
+| 의료 프로필 저장 | Room + 암호화 (SQLCipher) | Pleos 보안 가이드: 기기에 저장하는 민감정보는 암호화해야 한다 | 결정. **지금(009)은 기기에 저장하지 않는다**: 프로필은 메모리의 Fake("보리"). 서버(보호자 웹) 연동 때 저장 방식을 정한다 |
 | 음성 → 글자 | **Pleos SpeechToText `ON_DEVICE`** (`ko-KR`) + Fake | 네트워크와 앱 등록이 필요 없다. 기술 활용성 점수에 유리하다 | **재검토 (팀 논의)**: 콘솔 "준비 중" = 신청 불가라서 지금은 쓸 수 없는 것으로 본다 (2026-11-03 콘솔 확인). STT 없이도 핵심 흐름이 돌게 할지 정한다. 열리는 시점은 문의 B2 |
 | 음성 안내 | Pleos TextToSpeech `ON_DEVICE` + Fake | STT와 같은 이유 | **재검토**: STT와 같다 |
-| 증상 → 진료 카드 | Claude API, 구조화 출력(JSON 스키마). 진단하지 않고 말한 내용만 정리한다. 카드 생성이 길안내·병원 연결을 막지 않게 뒤에서 따로 돈다 | 정해진 형식으로 증상·복용약·병력만 뽑는다 | **임시: `claude-opus-5-5` (effort `low`). 모델과 AI 범위는 팀 논의 필요** |
+| 증상 → 진료 카드 | Claude API, 구조화 출력(JSON 스키마). 진단하지 않고 말한 내용만 정리한다. 카드 생성이 길안내·병원 연결을 막지 않게 뒤에서 따로 돈다 | 정해진 형식으로 증상·복용약·병력만 뽑는다 | **임시: `claude-opus-5-5` (effort `low`). 모델과 AI 범위는 팀 논의 필요.** **지금(009)은 AI 없이 규칙으로 조합한다**: 등록된 프로필 + 큰 버튼으로 고른 증상(12개 프리셋) → `medicalCardOf`. Claude API는 A1 뒤 |
 | 서버 | **Firebase** (Functions, TypeScript) | AI 키와 장소 검색 키를 앱에 넣지 않는다 (Pleos 보안 가이드: 키 하드코딩 금지, HTTPS·TLS 1.2+). 팀의 웹 경험과 가깝다 | 결정 |
 | 병원 검색 | 카카오 로컬 API (서버를 거쳐서) | 병원 이름·좌표·전화번호 | 결정 |
 | 길안내 | Pleos NaviHelper `requestRoute(RouteInfo)` | 콘솔 "사용 가능" SDK | 결정. `poiId` 없이 좌표만으로 요청되는지는 미확인 |
 | 도착 예정 시간 | NaviHelper `TripInfo.eta`, `DrivingInfo.destination.duration` | navi-data AAR에서 필드 확인 | 결정. 단위(초/분)는 실기기 확인 필요 |
 | 현재 위치 | NaviHelper `getCurrentLocationInfo()` | FusedLocation이 "준비 중"이라 대신 쓴다 | 결정 |
 | 도착 감지 | NaviHelper `onDestinationArrived` | 도착하면 카드 화면으로 넘어간다 | 결정 |
-| 병원 전화 | 안드로이드 다이얼러(`ACTION_DIAL`). 안 되면 번호를 크게 보여준다 | | 미확인 (Pleos 문서에 없음, 에뮬레이터로 시험 불가) |
+| 병원 전화 | 안드로이드 다이얼러(`ACTION_DIAL`, 권한 없음, 걸지 않음). 안 되면 번호를 크게 보여준다 | | 구현함 (009, `data/phone/AndroidPhoneDialer`). Pleos 에뮬레이터에서 "전화" 앱이 열렸지만 번호는 보이지 않았다 ([sdk-notes.md](pleos/sdk-notes.md) "전화" 관찰). 실차는 미확인 (문의 B4). 시연용 번호 `02-0000-0000` |
 | 카드 공유 | MVP: 정차 화면에 크게 보여주기. 나중에 QR·링크 | 서버 작업이 가장 적다 | 결정 |
 | 운전 중 사용 | DO(`distractionOptimized`) 선언. `MainActivity`에 Google 방식 meta-data를 넣었다 (006, 2026-11-05) | 선언이 없으면 주행 중에 시스템 화면이 앱을 가려 주행 화면(남은 시간)이 보이지 않는다 | 결정. Pleos 에뮬레이터에서 동작 확인. 실차·심사 허용은 문의 B1. 안 되면 그 커밋을 revert한다 |
 | 주행/정차 판단 | AAOS `CarUxRestrictionsManager`의 `isRequiresDistractionOptimization` (006) | Pleos·Google 모두 기어·속도가 아니라 규제 값에 반응하라고 한다. 권한이 필요 없다 | 결정. Pleos 에뮬레이터에서 동작 확인 |
@@ -104,19 +104,26 @@ app/src/main/java/com/meongcare/app/
   data/guidance/
     FakeGuidanceSource.kt     시간이 지나면 남은 시간이 줄고 도착한다 (scope·timing·진행 조건 주입)
     RealGuidanceSource.kt     자리표시. 항상 Idle (NaviHelper 구현 예정)
+  domain/pet/                 PetProfile(형식 문서 대응), PetAge(나이 계산, 웹과 같은 규칙), PetProfileSource + PetProfileLoad
+  domain/card/                Symptom(12개 프리셋, 선언 순서 = 화면·카드 순서), MedicalCardSession(고르는 중/카드 있음, 메모리)
+  domain/hospital/            Hospital(길안내 목적지 + 전화번호 + 시연용 여부)
+  domain/phone/               PhoneDialer(전화 앱 열기)
   data/hospital/
-    SampleHospitals.kt        시연용 샘플 병원 1곳 (병원 검색이 붙기 전까지)
+    SampleHospitals.kt        시연용 샘플 병원 1곳과 번호 02-0000-0000 (병원 검색이 붙기 전까지)
+  data/pet/                   SamplePetProfiles("보리", 예시 JSON과 같은 값), FakePetProfileSource
+  data/phone/                 AndroidPhoneDialer (ACTION_DIAL. ACTION_DIAL을 부르는 유일한 파일)
   data/demo/
     FakeTripScenario.kt       FAKE 전용: 안내 시작 → 출발(주행), 도착 → 주차(정차)
   data/vehicle/
     VehicleConnection.kt      Pleos Vehicle initialize/release를 한 곳에서
   ui/theme/                   Color, Type(글자 크기), Dimens(터치 크기), Theme
-  ui/home/                    HomeViewModel, HomeUiState, HomeContent(화면 조합), HomeScreen, ParkedScreen, DrivingScreen
-  ui/guidance/                GuidanceViewModel, GuidanceUiState, ParkedGuidanceSection, ArrivedScreen
+  ui/home/                    HomeViewModel, HomeUiState, HomeContent(1단계 화면 조합), ParkedContent(2단계: 정차 안), HomeScreen, ParkedScreen(처음 화면), DrivingScreen
+  ui/card/                    MedicalCardViewModel, MedicalCardContent(medicalCardOf: 카드 조합), MedicalCardScreen, SymptomPickerScreen, CardTexts, PetVisuals(발바닥·아바타)
+  ui/guidance/                GuidanceViewModel, GuidanceUiState, GuidanceText, SimulatedGuidanceNotice
   ui/debug/                   DebugPanel (상태 없음. 값과 동작은 MainActivity가 넘긴다)
 app/src/test/java/com/meongcare/app/
   testutil/MainDispatcherRule.kt
-  data/driving/, data/guidance/, data/demo/, ui/home/, ui/guidance/   단위 테스트
+  data/driving/, data/guidance/, data/demo/, data/pet/, domain/pet/, domain/card/, ui/home/, ui/guidance/, ui/card/   단위 테스트
 ```
 
 ## 의존 방향
@@ -150,6 +157,9 @@ ui ──▶ domain ◀── data
   - **주행 중에만 남은 시간이 줄어든다** (시연 모드): `FakeGuidanceSource`의 진행 조건(`progressGate`)에 "주행 중인지"를 넘긴다. P에 서 있는 동안에는 남은 시간이 그대로이고, 멈추면 최대 한 단계까지 더 줄고 멈춘다. 실제 내비게이션도 차가 서 있으면 남은 시간이 줄지 않는다. 도메인 인터페이스(`GuidanceSource`)는 바꾸지 않았다.
   - **시연용 표시**: 정차 화면 길안내 카드와 도착 화면에 "시연용 길안내예요. 실제 내비게이션과는 아직 연결되지 않았어요." 한 줄. 주행 화면은 바꾸지 않는다 (규칙 3). 출품 유의사항(제출 서류가 사실과 다르면 선정 취소) 때문에 숨기지 않는다.
 - Fake 주행 상태에서는 Pleos `Vehicle`을 만들지 않는다. 일반 에뮬레이터에는 차량 서비스가 없기 때문이다.
+- **반려견 프로필은 모든 모드에서 Fake("보리")다** (009). 서버(보호자 웹 연결) 구현이 없어서 `SourcePlan`에 칸을 두지 않았다. 화면에 "시연용 샘플 정보"라고 알린다 (`AppContainer.isPetProfileSample`). 서버 구현이 생기면 `SourcePlan`에 칸을 더한다.
+- **전화는 모든 모드에서 Android 전화 앱(`AndroidPhoneDialer`)**이다. 시연용 번호는 걸리지 않는 형식이고, `ACTION_DIAL`은 걸지 않는다.
+- **진료 카드 세션(`MedicalCardSession`)은 `AppContainer`의 메모리 객체**다. Fake 길안내와 같은 프로세스 수명이라 안내 시작부터 도착까지 남는다. 앱 프로세스가 죽으면 사라진다 (알려진 한계).
 - `FakeTripScenario`(주행 상태와 길안내가 모두 Fake일 때)가 Fake 길안내와 Fake 주행 상태를 잇는다: 안내를 시작하면 3초 뒤 주행, 도착하면 5초 뒤 정차. 시연 영상을 찍을 때 debug 패널을 누르지 않아도 되게 하려는 것이다.
   - 두 Fake는 각자 Real과 같은 책임만 진다. Real에서 주행 상태(차량)와 길안내(내비 앱)는 서로 모르는 출처이기 때문이다.
 
@@ -178,13 +188,28 @@ ui ──▶ domain ◀── data
 
 | 주행 \ 안내 | 안내 없음 | 안내 중 | 도착 |
 |---|---|---|---|
-| **정차** | 정차 화면: 샘플 병원 + [병원으로 안내] | 정차 화면: "병원까지 N분"(모르면 "경로를 찾는 중") + 병원 이름 + [안내 취소] | **도착 화면**: "도착했어요" + 병원 이름(다음 줄) + 진료 카드(자리표시) + [닫기] |
+| **정차** | 정차 화면 (아래 2단계 표) | 정차 화면 (아래 2단계 표) | 정차 화면 (아래 2단계 표) |
 | **주행·모름** | 주행 화면: "주행 중" | 주행 화면: 큰 글씨 "병원까지 N분" + 병원 이름. 버튼 없음 | 주행 화면: 큰 글씨 "도착했어요" + "정차하면 진료 카드를 볼 수 있어요". 버튼 없음 |
 
 - 남은 시간은 분 단위로 올림하고, 1분보다 작으면 1분으로 보여준다. "0분"은 보이지 않는다.
+- **2단계: 정차 안에서 (009, `ui/home/ParkedContent.kt`의 `parkedContentOf`)**. 1단계 규칙(주행·모름이면 주행 화면)은 그대로 두고, 정차일 때만 한 번 더 고른다.
+
+  | 안내 \ 카드 세션 | 없음 | 고르는 중 | 카드 있음 |
+  |---|---|---|---|
+  | 안내 없음 | **처음 화면**: 보리 요약 + [진료 카드 만들기] | **증상 고르기**: 12개 큰 버튼 + [취소] [카드 만들기] | **카드** "진료 카드 생성 완료" + [수정] [닫기] / [병원에 전화] [길 안내 시작] |
+  | 안내 중 | **카드** (고른 증상 없음) | 증상 고르기 | **카드** "병원까지 N분" + 병원 이름 + [수정] / [병원에 전화] [안내 취소] |
+  | 도착 | **카드** (고른 증상 없음) | 증상 고르기 | **카드** "도착했어요" + 병원 이름 + [수정] / [병원에 전화] [닫기] |
+
+  - 길안내는 카드의 [길 안내 시작]에서만 시작한다 (사용자 결정 2026-11-05). 정차 첫 화면의 [병원으로 안내]와 메모 칸은 없앴다.
+  - [취소]는 고르기 전으로(카드가 없었으면 처음 화면, 있었으면 그 카드). [수정]은 지금 증상이 선택된 채로 고르기. 안내 전 카드의 [닫기]는 카드를 버린다 (컨셉 그림에 없지만 사용자 결정으로 더함).
+  - 도착 카드 [닫기]는 도착 상태를 지우고(`onDismissArrival`) 카드도 비운다(`onCloseCard`). 이 순서라 중간 프레임이 같은 몸통의 "생성 완료" 카드다.
+  - 고르는 중이나 카드를 보는 중에 주행(또는 모름)이 되면 주행 화면이고, 다시 정차하면 고르던 선택·같은 카드다 (Pleos 에뮬레이터에서 확인).
+  - 시스템 뒤로: 증상 고르기 = [취소], 안내 전 카드 = [수정]. 처음 화면과 안내 중·도착 카드에서는 가로채지 않는다.
+  - 시연용 표시 (주행 화면에는 넣지 않는다): 샘플 반려견 정보, 병원·번호, 길안내.
 - 안내 취소는 정차 중에만 한다 (사용자 결정, 2026-11-05). 주행 중 터치를 줄이고, 확인 팝업은 주행 중 전체 화면 팝업 금지에 걸리기 때문이다. Real에서는 내비 앱에서도 취소할 수 있다.
 - 주행 중에 안내를 시작하는 버튼은 아직 두지 않는다. 문의 B1(주행 중 사용 선언)과 B2(STT) 답을 보고 정한다.
-- 도착 화면은 [닫기]를 누를 때까지 유지한다. 병원에서 진료 카드를 보여 줄 화면이기 때문이다.
+- 도착 카드는 [닫기]를 누를 때까지 유지한다. 병원에서 수의사에게 보여 줄 화면이기 때문이다.
+- 색: 시스템 라이트·다크를 따른다. 다크 배경은 남색(`Navy950`)이고, 카드 몸통은 테마와 상관없이 흰 바탕(`CardColors`, Static Color와 같은 생각)이다.
 
 ## Vehicle SDK 수명주기
 

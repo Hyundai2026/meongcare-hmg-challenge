@@ -451,9 +451,9 @@ Virtual Console 명령은 006 노트의 `vc()` 함수를 쓴다.
 
 ### 필수
 
-- [ ] 0. 이 계획 파일 커밋 → `docs(plans): 009 진료 카드 계획 추가`
+- [x] 0. 이 계획 파일 커밋 → `docs(plans): 009 진료 카드 계획 추가`
 
-- [ ] 1. 반려견 프로필 모델과 출처 (인터페이스와 Fake)
+- [x] 1. 반려견 프로필 모델과 출처 (인터페이스와 Fake)
   - 1-1. → `feat(domain): 반려견 프로필 모델과 나이 계산 추가`
     - `domain/pet/PetProfile.kt` (설계 결정 3), `domain/pet/PetAge.kt` (설계 결정 4)
     - `PetAgeTest`:
@@ -471,7 +471,7 @@ Virtual Console 명령은 006 노트의 `vc()` 함수를 쓴다.
       - `` `값을 바꾸면 새 값을 받고 같은 값은 다시 보내지 않는다`() ``
   - 확인: `testDebugUnitTest` 통과 (185 + 새 테스트)
 
-- [ ] 2. 병원 전화번호 (`[사용자 승인 필요]` 3의 답대로)
+- [x] 2. 병원 전화번호 (`[사용자 승인 필요]` 3의 답대로)
   - 2-1. → `refactor(domain): 병원 정보를 길안내 목적지에서 분리`
     - `domain/hospital/Hospital.kt` (`phoneNumber`는 이 커밋에서 `null`), `SampleHospitals.demo: Hospital(isSample = true)`
     - `AppContainer.sampleHospital: Hospital`, `MainActivity`는 `sampleHospital.destination`을 넘긴다
@@ -480,7 +480,7 @@ Virtual Console 명령은 006 노트의 `vc()` 함수를 쓴다.
     - `SampleHospitals.demo.phoneNumber = "02-0000-0000"` (KDoc: 시연용, 걸리지 않는 형식, 문의 B4)
     - `domain/phone/PhoneDialer.kt`
 
-- [ ] 3. 진료 카드 순수 로직
+- [x] 3. 진료 카드 순수 로직
   - 3-1. → `feat(domain): 증상 프리셋과 진료 카드 세션 추가`
     - `domain/card/Symptom.kt` (`[사용자 승인 필요]` 1의 답), `domain/card/MedicalCardSession.kt` (설계 결정 2)
     - `MedicalCardSessionTest`:
@@ -510,7 +510,7 @@ Virtual Console 명령은 006 노트의 `vc()` 함수를 쓴다.
       - `` `고르는 중이면 안내 상태와 상관없이 증상 고르기다`() ``
       - `` `카드가 있거나 안내 중이거나 도착했으면 카드다`() ``
 
-- [ ] 4. 진료 카드 ViewModel → `feat(ui): 진료 카드 ViewModel 추가`
+- [x] 4. 진료 카드 ViewModel → `feat(ui): 진료 카드 ViewModel 추가`
   - `ui/card/MedicalCardViewModel.kt`:
     - 생성자: `PetProfileSource`, `MedicalCardSession`, `Hospital`, `PhoneDialer`, `clock: Clock = Clock.systemDefaultZone()`
     - `uiState: StateFlow<CardFlowUiState>` = 프로필 + 세션 + 번호 패널을 합친다. `stateIn(WhileSubscribed(5초))`, 처음 값은 프로필 `null`(Loading) + 지금 세션.
@@ -526,7 +526,7 @@ Virtual Console 명령은 006 노트의 `vc()` 함수를 쓴다.
     - `` `프로필이 바뀌면 카드도 바뀐다`() ``
     - `` `카드를 닫으면 세션이 비고 처음 화면이다`() ``
 
-- [ ] 5. 화면 (Fake로 동작)
+- [x] 5. 화면 (Fake로 동작)
   - 5-1. → `feat(ui): 다크 테마를 남색 배경으로 변경` (설계 결정 10)
     - `ui/theme/Color.kt`, `Theme.kt`: 다크 배경·표면 남색, 채움 버튼 파랑. 카드 고정색(흰 바탕, 글자, 칩, 띠)은 `ui/card/CardColors.kt` 또는 `Color.kt`. 대비를 주석으로 적는다.
     - 확인: 기기가 있으면 다크로 주행 화면·정차 화면만 본다.
@@ -553,7 +553,7 @@ Virtual Console 명령은 006 노트의 `vc()` 함수를 쓴다.
     - 쓰이지 않는 문자열: `parked_example_input_label`, `arrival_card_title`, `arrival_card_placeholder`, `guidance_destination_label`, `guidance_start`
     - 확인: `assembleDebug`, `lintDebug`에 새 경고 없음
 
-- [ ] 6. 전화 앱 열기 래퍼 → `feat(data): Android 전화 앱 열기 래퍼 추가`
+- [x] 6. 전화 앱 열기 래퍼 → `feat(data): Android 전화 앱 열기 래퍼 추가`
   - `data/phone/AndroidPhoneDialer.kt` (설계 결정 7), `AppContainer`의 임시 `PhoneDialer { false }`를 바꾼다.
   - JVM 테스트는 없다 (Android `Context`·`Intent`). ViewModel 테스트가 가짜 `PhoneDialer`로 두 경우를 다룬다.
   - 확인: 완료 기준 4의 매니페스트 Grep, P6
@@ -628,6 +628,17 @@ Virtual Console 명령은 006 노트의 `vc()` 함수를 쓴다.
   2. 2a 정차 첫 화면의 [병원으로 안내]를 없애고 카드에서만 안내한다. 2b 안내 전 카드에 [닫기]를 더한다.
   3. 시연용 번호 `02-0000-0000`, 문구 그대로.
   - 두 에뮬레이터(`pleos_connect` = emulator-5554, `my_avd` = emulator-5556)는 이미 켜져 있다.
+- 2026-11-05: 단계 0~6 완료 (`a345e75`..`4b4acd9`). 단위 테스트 226개 통과 (185 + 41). 완료 기준 4 Grep 통과.
+  - Pleos 에뮬레이터(debug Fake, 라이트)에서 HOME → SYMPTOMS(4열) → CARD(넓은 배치)를 먼저 봤다. 컨셉 그림 배치대로 나온다.
 
 ## 결정 / 배운 점
+
+- 아이콘: material3가 이미 `material-icons-core`를 가져와서 새 의존성 없이 `Icons.Filled.Phone`·`Send`·`Check`, `Icons.Outlined.Info`·`FavoriteBorder`·`Warning`·`CheckCircle`을 썼다. 카드 줄 아이콘: 증상 Info, 병력 FavoriteBorder, 알레르기 Warning, 약 CheckCircle.
+- 카드 고정색(`CardColors`)과 채움 버튼색(`ActionBlue`)은 `ui/theme/Color.kt`에 두었다 (계획의 `ui/card/CardColors.kt` 대신).
+- 화면 글자 함수는 `ui/card/CardTexts.kt`, 발바닥·아바타는 `ui/card/PetVisuals.kt`, 버튼 묶음은 `MedicalCardActions`.
+- 미리보기용 보리 값은 `ui/card/MedicalCardScreen.kt`의 `PreviewPet`에 직접 적었다. ui가 `data`(SamplePetProfiles)를 import하면 완료 기준 4에 걸린다.
+- **strings.xml 끝 공백이 사라진다**: `card_list_separator`(", "), `card_chip_separator`(" · ")가 "호흡 곤란,기침"으로 붙어 나왔다. 따옴표로 감쌌다 (`fix(ui)` 커밋).
+- 옛 `ParkedGuidanceSection.kt`는 `SimulatedGuidanceNotice.kt`로 이름을 바꾸고 그 함수만 남겼다. `ArrivedScreen.kt`와 쓰지 않는 문자열 6개(`arrival_close` 포함)를 지웠다.
+- 도착 [닫기]는 `MainActivity`에서 `onDismissArrival()` 다음 `onCloseCard()`를 부른다. 정차 쪽 고르기와 시스템 뒤로는 `HomeScreen`의 `ParkedFlow`가 한다.
+- Pleos 에뮬레이터 시간대가 `America/Los_Angeles`라 정보 갱신일(2026-11-05T00:00Z)이 "11월 4일"로 보인다. 규칙(기기 시간대 날짜)대로다.
 

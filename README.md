@@ -14,12 +14,28 @@
    adb install -r apk/<팀명>_<앱이름>_release.apk
    ```
 
-4. 런처에서 `<앱 이름>`을 실행한다.
+4. 런처에서 `<앱 이름>`을 실행한다. release APK는 **시연 모드**로 켜진다 (아래).
+
+> **길안내는 시연용이다.** Pleos NaviHelper 연동 전이라, 정해진 시간대로 남은 시간이 줄고 도착한다. 병원은 가상의 "시연용 동물병원"이다. 앱 화면에도 "시연용 길안내예요"라고 표시한다.
+> 주행/정차는 차량 기기(Pleos 에뮬레이터)에서 실제 주행 규제 값(AAOS `CarUxRestrictions`)을 따른다.
 
 ## 테스트 환경 및 필요 설정
 
-- Pleos Connect Emulator v2.1.0 (Android API 34)
-- <필요한 Virtual Console 설정, 권한 허용 등>
+- 확인한 환경: Pleos Connect Emulator v2.1.0 (Android API 34), 일반 폰 에뮬레이터 (Android API 34). 그 밖의 환경은 확인하지 않았다.
+- 권한 허용이나 계정 설정은 필요 없다.
+
+### Pleos 에뮬레이터에서 시연하기 (기어로 주행·정차 바꾸기)
+
+1. 에뮬레이터를 **Cold boot**로 켜고 앱을 실행한다. 정차(P) 상태라 정차 화면이 보인다.
+2. Virtual Console을 연다: `adb forward tcp:8088 tcp:8088` → PC 브라우저로 `http://127.0.0.1:8088/` → Emulation Controls → Motion → Gear Selection. ([docs/pleos/emulator-setup.md](docs/pleos/emulator-setup.md) "Virtual Console")
+3. 앱에서 **[병원으로 안내]** → "병원까지 12분". P에 있는 동안에는 남은 시간이 줄지 않는다.
+4. Virtual Console에서 기어를 **D**로 → 앱이 주행 화면으로 바뀌고 남은 시간이 줄어든다. 중간에 P로 바꾸면 멈춘다.
+5. 남은 시간이 다 지나면 주행 화면에 "도착했어요" → 기어를 **P**로 → 도착 화면(진료 카드 자리표시)이 뜬다. [닫기]로 처음 화면에 돌아간다.
+
+### 일반 폰·태블릿 에뮬레이터에서 시연하기
+
+- 차량 기기가 아니라서 주행 상태도 가짜로 흉내 낸다.
+- 앱에서 **[병원으로 안내]**만 누르면 출발(주행 화면) → 남은 시간 감소 → 도착 → 주차(도착 화면)가 저절로 이어진다 (약 30초).
 
 ## APK
 
@@ -46,8 +62,8 @@ Android Studio 없이 Gradle wrapper만으로 빌드된다.
    Windows PowerShell에서는 `.\gradlew.bat`을 쓴다.
 4. debug 빌드는 **Fake 모드**로 시작한다. 차량 없이 가짜 데이터로 동작한다.
    - 화면 아래 debug 패널로 주행 상태(정차/주행/모름)를 바꾼다.
-   - 같은 패널에서 Real 모드로 전환할 수 있다. 앱이 다시 시작된다.
-   - release 빌드는 항상 Real 모드다.
+   - 같은 패널의 버튼을 누를 때마다 Fake → 시연 → Real 모드로 바뀐다. 앱이 다시 시작된다.
+   - release 빌드는 항상 **시연 모드**다. 구성표: [docs/architecture.md](docs/architecture.md) "데이터 모드".
 
 ## 팀
 

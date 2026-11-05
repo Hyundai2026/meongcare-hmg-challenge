@@ -5,6 +5,7 @@ import { BasicInfoTab } from './BasicInfoTab'
 import { EmptyState } from './EmptyState'
 import { Header } from './Header'
 import { LoadErrorState } from './LoadErrorState'
+import { MedicalForm } from './MedicalForm'
 import { MedicalInfoTab } from './MedicalInfoTab'
 import { ProfileCard } from './ProfileCard'
 import { ProfileForm } from './ProfileForm'
@@ -50,6 +51,8 @@ export function App({ repository, now }: Props) {
   let content
   if (editing === 'profile') {
     content = <ProfileForm initial={profile} today={today} now={now} saving={saving} saveError={saveError} onSave={save} onCancel={cancel} />
+  } else if (editing === 'medical' && profile !== null) {
+    content = <MedicalForm profile={profile} now={now} saving={saving} saveError={saveError} onSave={save} onCancel={cancel} />
   } else if (profile === null) {
     content =
       loadError !== null ? (
@@ -62,7 +65,11 @@ export function App({ repository, now }: Props) {
       <>
         <ProfileCard profile={profile} today={today} onEdit={() => edit('profile')} />
         <Tabs tabs={TABS} selected={tab} onSelect={setTab}>
-          {tab === 'medical' ? <MedicalInfoTab medical={profile.medical} /> : <BasicInfoTab profile={profile} today={today} />}
+          {tab === 'medical' ? (
+            <MedicalInfoTab medical={profile.medical} onEdit={() => edit('medical')} />
+          ) : (
+            <BasicInfoTab profile={profile} today={today} />
+          )}
         </Tabs>
       </>
     )

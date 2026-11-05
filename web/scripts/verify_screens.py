@@ -242,6 +242,7 @@ def s04_s05_register(r: Run) -> None:
     r.check(size == (512, 384), f"가로 사진이 512×384로 줄지 않았다: {size}")
     expect(r.page.get_by_role("tab", name="의료정보")).to_have_attribute("aria-selected", "true")
     expect(r.page.get_by_text("등록된 정보 없음")).to_have_count(3)
+    expect(r.page.get_by_role("button", name="+ 의료정보 추가하기")).to_be_visible()
     expect(r.page.get_by_text(STORAGE_NOTICE)).to_be_visible()
     saved = stored_json(r)
     r.check(saved.get("schemaVersion") == 1, f"schemaVersion이 1이 아니다: {saved.get('schemaVersion')!r}")
@@ -284,10 +285,80 @@ def s13_not_a_photo(r: Run) -> None:
     expect(r.page.locator("img.photo-picker__preview")).to_have_count(0)
 
 
+EXAMPLE_JSON = ROOT / "docs" / "data" / "pet-profile.example.json"
+
+
+def fill_bori_medical(r: Run) -> None:
+    """의료정보 탭에서 보리의 의료정보(예시 JSON 값)를 넣는다. 질환에 빈 줄 하나를 더 둔다."""
+    r.page.get_by_role("button", name="+ 의료정보 추가하기").click()
+    expect(r.page.get_by_role("heading", name="의료정보 추가")).to_be_visible()
+    r.page.get_by_label("주요 질환 1", exact=True).fill("심장질환")
+    r.page.get_by_role("button", name="+ 질환 추가").click()
+    r.page.get_by_label("알레르기 1", exact=True).fill("특정 단백질 알레르기")
+    r.page.get_by_label("약 이름 1", exact=True).fill("심장약")
+    r.page.get_by_label("복용법 1", exact=True).fill("1일 1회")
+
+
+def expect_bori_medical(r: Run) -> None:
+    panel = r.page.get_by_role("tabpanel")
+    for text in ["심장질환", "특정 단백질 알레르기", "심장약 (1일 1회)"]:
+        expect(panel.get_by_text(text, exact=True)).to_be_visible()
+    expect(panel.get_by_text("등록된 정보 없음")).to_have_count(0)
+    expect(r.page.get_by_role("button", name="의료정보 수정하기")).to_be_visible()
+
+
+def s08_medical(r: Run) -> None:
+    register_bori(r, photo=FIXTURES.landscape)
+    fill_bori_medical(r)
+    r.check(r.page.get_by_label("주요 질환 2", exact=True).input_value() == "", "빈 줄이 추가되지 않았다")
+    r.shot("medical-form")
+    save_button(r).click()
+    expect_bori_medical(r)
+    example = json.loads(EXAMPLE_JSON.read_text(encoding="utf-8"))
+    medical = stored_json(r).get("medical")
+    r.check(medical == example["medical"], f"저장된 의료정보가 예시 JSON과 다르다: {medical}")
+    check_no_horizontal_scroll(r)
+    r.shot("medical")
+
+
 def s09_reload(r: Run) -> None:
     register_bori(r)
+    fill_bori_medical(r)
+    save_button(r).click()
+    expect_bori_medical(r)
     r.page.reload()
     expect_bori_card(r)
+    expect_bori_medical(r)
+
+
+FILL_STORAGE = """() => {
+  let i = 0
+  for (const size of [1 << 20, 1 << 16, 1 << 10, 64, 1]) {
+    const value = 'x'.repeat(size)
+    try { for (;;) localStorage.setItem('filler-' + i++, value) } catch (e) {}
+  }
+  return i
+}"""
+
+CLEAR_FILLER = """() => {
+  for (const key of Object.keys(localStorage)) if (key.startsWith('filler-')) localStorage.removeItem(key)
+}"""
+
+
+def s11_quota(r: Run) -> None:
+    register_bori(r)
+    r.page.evaluate(FILL_STORAGE)
+    r.page.get_by_role("button", name="프로필 수정").click()
+    r.page.get_by_label("이름").fill("보리는착한강아지")
+    save_button(r).click()
+    expect(r.page.get_by_text("브라우저 저장 공간이 부족해서 저장하지 못했어요")).to_be_visible()
+    expect(r.page.get_by_role("heading", name="프로필 수정")).to_be_visible()
+    r.check(r.page.get_by_label("이름").input_value() == "보리는착한강아지", "저장에 실패했는데 입력값이 지워졌다")
+    r.shot("quota")
+    r.page.evaluate(CLEAR_FILLER)
+    r.check(stored_json(r).get("name") == "보리", "저장에 실패했는데 저장된 이름이 바뀌었다")
+    save_button(r).click()
+    expect(r.page.locator(".profile__name")).to_have_text("보리는착한강아지 ♂")
 
 
 def s15_dark(r: Run) -> None:
@@ -315,8 +386,10 @@ SCENARIOS: list[Scenario] = [
     Scenario("S05", "보리 등록 → 프로필 화면", s04_s05_register, widths=(390, 360)),
     Scenario("S06", "기본정보 탭", s06_basic_tab),
     Scenario("S07", "세로 사진으로 바꾸기", s07_portrait_photo),
+    Scenario("S08", "의료정보 입력", s08_medical, widths=(390, 360)),
     Scenario("S09", "새로고침해도 남는다", s09_reload),
     Scenario("S10", "수정하다 취소", s10_cancel),
+    Scenario("S11", "저장 공간이 가득 찼을 때", s11_quota),
     Scenario("S12", "저장된 정보가 깨졌을 때", s12_corrupted),
     Scenario("S13", "사진이 아닌 파일", s13_not_a_photo),
     Scenario("S15", "폰이 다크 모드일 때", s15_dark, context_options={"color_scheme": "dark"}),

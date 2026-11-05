@@ -377,6 +377,65 @@ select {
   color: var(--color-text-faint);
 }
 
+.medical__edit {
+  margin-top: 20px;
+}
+
+/* 의료정보 폼 */
+.form__lead {
+  margin: calc(var(--space-3) * -1) 0 0;
+  font-size: 15px;
+  color: var(--color-text-sub);
+}
+
+.medical-group {
+  gap: var(--space-2);
+}
+
+.medical-group__add {
+  align-self: flex-start;
+  padding: 0;
+}
+
+.medical-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.medical-row__line {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.medication-inputs {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: var(--space-2);
+  flex: 1;
+  min-width: 0;
+}
+
+.button--icon {
+  flex-shrink: 0;
+  width: var(--touch-min);
+  min-height: var(--touch-min);
+  padding: 0;
+  border-color: var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-faint);
+}
+
+.button--icon svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
 /* 사진 고르기 */
 .photo-picker {
   display: flex;

@@ -149,7 +149,7 @@ vehicle-sdk = { module = "ai.pleos.playground:Vehicle", version.ref = "vehicleSd
 | FusedLocation | 정밀 위치 정보 조회 | 준비 중 |
 | TextToSpeech | TextToSpeech | 준비 중 (문서: Client ID/Secret 필요) |
 | SpeechToText | SpeechToText | 준비 중 (문서: Client ID/Secret 필요) |
-| Vehicle Control | 8개: 도어/트렁크/프렁크 제어, 공조 설정, 주행 정보 설정, EV 충전 설정, 창문 제어, 좌석 제어, 사이드미러 제어, 라이트 제어 | 8개 모두 준비 중 |
+| Vehicle Control | 8개: 도어/트렁크/프렁크 제어, 내부 온도 및 공조 설정, 차량 주행 정보 설정, EV 충전 설정, 창문 상태 제어, 좌석 설정 제어, 사이드미러 제어, 내부/외부 라이트 제어 | 8개 모두 준비 중 (2026-11-05 다시 확인) |
 
 - Vehicle State의 "차량 주행 정보"에도 속도·기어는 없다. 아래 "속도·기어·주행 상태"와 맞는다.
 - NaviHelper 콘솔 항목과 권한의 대응은 콘솔에 적혀 있지 않다. 설명으로 보면 "경로 정보 조회"는 `NAVI_ROUTE`(`get*Info()`), "경로 탐색 설정"은 `NAVI_ROUTE_SEARCH`(`requestRoute()` 등)에 해당하는 것으로 보인다 (추정). `NAVI_CUSTOM_MAP`(`requestNavigationScreen()`)에 해당하는 항목은 없다.
@@ -159,6 +159,11 @@ vehicle-sdk = { module = "ai.pleos.playground:Vehicle", version.ref = "vehicleSd
   > - 상단 바(GNB) 공조는 `ai.umos.applibrary.permission.CONTROL_GNB_HVAC`(`com.android.systemui`, `signature`)로 보호된다.
   > - Pleos의 `pleos.car.permission.CAR_CLIMATE`, `CONTROL_CAR_CLIMATE`, `PRIVATE_CAR_CLIMATE`(정의 패키지 `ai.pleos.playground.service.vehicle`)는 `normal`이다. 에뮬레이터에서는 선언만 하면 허용된다. 그래도 콘솔에서 Vehicle Control이 "준비 중"이고, 승인되지 않은 권한은 심사 탈락 사유이므로 제어 권한은 쓰지 않는다. [sdk-overview]
   > - 시스템 차량 설정 앱 `ai.umos.vehiclecontrol`이 받는 intent action에는 공조 화면을 여는 것이 없다. `android.settings.SOUND_SETTINGS`(소리 설정)는 받는다. 우리 앱에서 보내 보지는 않았다.
+- **제어 함수는 SDK에 이미 들어 있다 (Vehicle 2.3.2 AAR, `javap -v`, 2026-11-05).** "준비 중"은 함수가 없다는 뜻이 아니라, 콘솔에서 사용을 신청할 수 없다는 뜻이다.
+  - 콘솔 Vehicle Control 페이지 설명 (원문, 2026-11-05 사용자 캡처): "Vehicle SDK 연동으로 차량의 도어, 창문, 실내/외 라이트, 실내 온도, 좌석 설정 등을 제어할 수 있습니다. 일부 API는 주행 중 제한될 수 있으며, 사전 승인된 권한이 있어야 합니다." 공조 항목 이름은 "내부 온도 및 공조 설정"이고, 설명은 "차량의 공조를 제어합니다. 온도, 에어컨 및 공기 순환, 팬 방향 등을 제어할 수 있습니다."다.
+  - `HVAC` 인터페이스의 set 함수 13개는 모두 `@RequiresPermission("pleos.car.permission.CONTROL_CAR_CLIMATE")`이다: `setHvacPower`, `setHvacAc`, `setHvacMaxAc`, `setHvacTemperature(SeatArea, float, TemperatureUnit, …)`, `setHvacFanSpeed(SeatArea, int, …)`, `setHvacFanDirection(SeatArea, FanDirectionType, …)`, `setHvacRecirculation`, `setHvacAutoRecirculation`, `setHvacAuto`, `setHvacDual`, `setHvacAirCleaner`, `setHvacDefroster(WindowArea, …)`, `setHvacMaxDefrost`.
+  - get·check·register·unregister 함수는 모두 `pleos.car.permission.CAR_CLIMATE`다. 실내 온도는 `getHvacTemperatureCurrent(SeatArea[, TemperatureUnit], …)`, 변화 구독은 `registerHvacTemperatureCurrent`다.
+  - 에뮬레이터에서 호출해 보지는 않았다. 승인 없이 `CONTROL_CAR_CLIMATE`를 쓰면 심사 탈락 위험이 있다는 점은 그대로다.
 - 상태의 뜻 (문서 원문) [create-project]:
   - 준비 중: "API 제공 준비 중인 상태로 신청 버튼이 나타나지 않습니다." "해당 상태에서는 신청할 수 없으므로 신청 필요 상태로 변경된 후 진행하시기 바랍니다."
   - 사용 가능: "신청 없이 사용 가능한 SDK이거나 신청이 승인되어 사용 가능한 상태입니다." "Vehicle State와 NaviHelper SDK가 이 상태에 해당합니다. 이 두 SDK는 신청 없이 바로 사용 가능합니다."

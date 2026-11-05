@@ -467,10 +467,10 @@ export interface PetProfileRepository {
 
 ### 필수
 
-- [ ] 0. 이 계획 파일 커밋 → `docs(plans): 008 보호자 웹 계획 추가`
+- [x] 0. 이 계획 파일 커밋 → `docs(plans): 008 보호자 웹 계획 추가`
   - 확인: `git log -1 --stat`에 이 파일만 있다.
 
-- [ ] 1. 웹 프로젝트 뼈대와 화면 확인 스크립트
+- [x] 1. 웹 프로젝트 뼈대와 화면 확인 스크립트
   - **`.gitignore`부터 고친다. 그다음에 `npm install`을 한다.** 순서를 바꾸면 `node_modules` 안의 `.xml`·`.properties`가 build-gate의 앱 코드 해시에 들어가 Gradle이 돌고 해시가 느려진다.
     - 더할 줄: `web/node_modules/`, `web/dist/`, `web/.env.local`, `web/.env.*.local`, `*.tsbuildinfo`
   - 참고용으로 스크래치 폴더에 `npm create vite@<고른 버전> <이름> -- --template react-ts`를 만들어 tsconfig·vite.config 형식만 본다. `web/`에는 설계 결정 1의 파일만 손으로 둔다 (템플릿의 ESLint 설정, 예제 이미지, `App.css`는 가져오지 않는다. 3b면 ESLint 설정은 가져온다).
@@ -483,7 +483,7 @@ export interface PetProfileRepository {
     - 1-2. → `chore(web): 폰 크기 화면 확인 스크립트 추가` (`web/scripts/verify_screens.py`. 이 단계에서는 S1의 헤더·`document.title`과 S16만. 시나리오는 화면 단계마다 같은 커밋에서 늘린다)
   - 확인: `npm --prefix web run build` 성공, 설계 결정 9 순서로 스크립트 종료 코드 0, `.claude/.cache/web/s01-*.png`에 헤더가 보인다. 완료 기준 6의 `git ls-files web` 확인.
 
-- [ ] 2. 프로필 형식 문서와 도메인
+- [x] 2. 프로필 형식 문서와 도메인
   - 2-1. → `docs(data): 반려견 프로필 형식 문서와 예시 JSON 추가`
     - `docs/data/pet-profile.md`: 목적(웹·차 앱·서버가 같이 따름), 필드 표(설계 결정 3), 빈 배열의 뜻, 나이 계산 규칙과 예(설계 결정 4), 버전 규칙, 브라우저 저장 위치(키 `owner-web.pet-profile`), Kotlin 대응 표(제안), 나중 후보(체중, 중성화, "없음 확인", `id`, `photoUrl`)
     - `docs/data/pet-profile.example.json` (설계 결정 3의 값)
@@ -509,7 +509,7 @@ export interface PetProfileRepository {
       - `birthDate 형식이 YYYY-MM-DD가 아니면 손상으로 읽지 않는다`
   - 확인: `npm --prefix web run check` 통과. 테스트 수를 진행 로그에 적는다.
 
-- [ ] 3. 저장소 인터페이스와 localStorage 구현 → `feat(web): 프로필 저장소 인터페이스와 localStorage 구현 추가`
+- [x] 3. 저장소 인터페이스와 localStorage 구현 → `feat(web): 프로필 저장소 인터페이스와 localStorage 구현 추가`
   - `domain/petProfileRepository.ts` (설계 결정 5), `data/localStoragePetProfileRepository.ts`, `container.ts` (`window.localStorage` 접근 실패도 감싼다)
   - `data/localStoragePetProfileRepository.test.ts` (가짜 Storage, `DOMException`은 Node 전역에 있다):
     - `저장된 것이 없으면 프로필 없음을 돌려준다`
@@ -523,13 +523,13 @@ export interface PetProfileRepository {
     - `앱 이름과 상관없이 정해진 키 하나에 저장한다`
   - 확인: `npm --prefix web run check` 통과. 완료 기준 4의 `localStorage` Grep.
 
-- [ ] 4. 하네스: build-gate 웹 검사 (`[사용자 승인 필요]` 1이 4a·4b일 때. 4c면 건너뛰고 진행 로그에 적는다)
+- [x] 4. 하네스: build-gate 웹 검사 (`[사용자 승인 필요]` 1이 4a·4b일 때. 4c면 건너뛰고 진행 로그에 적는다)
   - 4-1. → `refactor(harness): build-gate 검사 대상을 목록으로 정리` (동작 변화 없음. 대상별 감시 규칙·해시·작업을 한 표로 묶는다. H1·H2·H5·H12로 확인)
   - 4-2. → `chore(harness): build-gate에 웹 검사 추가` (설계 결정 10의 계약. `.githooks/pre-push` 설명 주석 포함)
   - 확인: 하네스 시나리오 H1~H12 (4b면 H3·H4·H9·H10 제외). 결과를 진행 로그에 적는다. 그다음 실제 저장소에서 `node .claude/hooks/build-gate.mjs pipeline` → 두 대상 모두 돌고 "검증 파이프라인 통과."
   - 주의: 정규식·백슬래시가 들어간 파일은 Write/Edit 도구로 쓴다 (001 노트).
 
-- [ ] 5. 하네스: CI, tester, 권한, 문서 (`[사용자 승인 필요]` 1·2의 답대로)
+- [x] 5. 하네스: CI, tester, 권한, 문서 (`[사용자 승인 필요]` 1·2의 답대로)
   - 5-1. → `ci: 보호자 웹 검사 워크플로 추가` (`.github/workflows/web.yml`. `node-version`은 단계 1에서 정한 메이저. `web/package.json`이 없으면 건너뛴다)
   - 5-2. → `chore(harness): tester와 권한 설정을 보호자 웹에 맞춤` (`.claude/agents/tester.md` 웹 규칙, `.claude/settings.json` 2a)
   - 5-3. → `docs: 검증 파이프라인 설명에 웹 검사 추가` (`docs/conventions/git.md` 파이프라인 설명과 scope `web`, `.claude/skills/ship/SKILL.md`, `CLAUDE.md` "훅", `README.md` 팀원 가이드 "규칙"의 파이프라인 문구)
@@ -665,5 +665,17 @@ export interface PetProfileRepository {
     4. README: **4a** (지금 짧게 넣는다)
     5. 화면 기본안 그대로 (필수는 이름, 탭은 의료정보·기본정보, 진료이력 탭·알림 아이콘 숨김, 저장 위치 안내 문구)
     6. 형식 문서 위치 `docs/data/pet-profile.md` 그대로
+- 2026-11-05: 단계 0~5 완료 (`3f227f4`..`87325c5`).
+  - 고른 버전 (2주 넘은 안정 버전): react·react-dom 19.3.1, vite 8.3.5, @vitejs/plugin-react 6.1.2, typescript 7.0.2, @types/react·@types/react-dom 19.3.0, vitest 5.0.5. Node 요구 `^22.12.0 || ^24.0.0 || >=26.0.0` (vitest 5 기준). CI는 Node 24.
+  - Vitest가 `web/` 밖의 `docs/data/pet-profile.example.json`을 import한다 (대안 불필요). `resolveJsonModule`을 켰다.
+  - 단위 테스트 34개 통과 (age 12, localDate 5, petProfileJson 7, 저장소 10).
+  - 화면 스크립트 S1 두 폭 통과. 헤더 스크린샷 확인.
+  - 하네스 시나리오 17개 통과 (임시 저장소): H1, H1b(웹 없을 때 Android만), H2, H3'(precommit은 웹을 안 돌림), H5, H6, H7, H8, H10'(node_modules의 .xml·.properties 무시), H11, H11b, H12a~c, H13(웹 의존성 없음 → 멈춤, 설치 안 함), H14(웹 실패), H14b(Android 실패면 웹은 안 돔). 실제 저장소 `pipeline` 통과.
 
 ## 결정 / 배운 점
+
+- **파이프라인은 웹 의존성을 자동 설치하지 않는다** (계획의 설계 결정 10과 다름). 사용자가 "npm install·ci는 계속 묻는다"(2a)를 골랐는데, 파이프라인이 `npm ci`를 하면 그 확인을 건너뛴다. 대신 `npm ls --depth=0`으로 설치 상태를 보고, 없거나 `package.json`과 다르면 멈추고 `npm --prefix web ci`를 하라고 알린다. mtime 비교는 체크아웃 때마다 거짓 경보가 나서 쓰지 않았다.
+- **하네스는 refactor 커밋을 따로 두지 않았다.** 4b라 precommit·stop은 그대로여서 바뀐 범위가 작다 (`digestOf`/`changedFiles`로 일반화 + pipeline 분기).
+- `App.tsx`는 계획의 폴더 구조대로 `src/ui/App.tsx`에 두었다 (단계 1 커밋 목록의 `src/App.tsx`가 아님).
+- 날짜 계산은 `domain/localDate.ts`로 따로 뺐다 (`age.ts`가 쓰고, 폼 검증도 쓴다).
+- 형식 문서에 계획에 없던 규칙 둘을 더했다: 글자 수 = 코드 포인트 수, 저장 전 NFC 정규화. 나이 입력은 합쳐서 30세 0개월까지 (30세 11개월은 "30년 전보다 앞이 아님"과 충돌).

@@ -66,6 +66,15 @@ class MedicalCardSession {
         state.copy(draft = draft)
     }
 
+    /**
+     * 고르는 중일 때만: [symptoms]를 선택에 더한다. 이미 고른 것은 그대로 둔다 (풀지 않는다).
+     * 음성 입력이 찾은 증상을 넣을 때 쓴다 (docs/plans 010 "설계 결정 1": 음성은 더하기만 한다).
+     */
+    fun select(symptoms: Set<Symptom>) = _state.update { state ->
+        if (state !is CardSessionState.Picking) return@update state
+        state.copy(draft = state.draft + symptoms)
+    }
+
     /** 고르는 중일 때만: 고른 증상으로 카드를 만든다. */
     fun confirm() = _state.update { state ->
         if (state is CardSessionState.Picking) CardSessionState.Ready(state.draft) else state

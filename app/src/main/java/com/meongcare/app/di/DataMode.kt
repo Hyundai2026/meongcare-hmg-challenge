@@ -18,6 +18,13 @@ enum class DataMode {
     REAL,
 }
 
+/** debug 패널에서 누를 때마다 바뀌는 순서: Fake → 시연 → Real → Fake. */
+fun DataMode.next(): DataMode = when (this) {
+    DataMode.FAKE -> DataMode.DEMO
+    DataMode.DEMO -> DataMode.REAL
+    DataMode.REAL -> DataMode.FAKE
+}
+
 /**
  * 프로세스가 시작될 때 쓸 데이터 모드를 정한다. Android를 모르는 순수 함수다.
  *
@@ -27,13 +34,6 @@ enum class DataMode {
  *
  * @param savedName debug 패널에서 골라 저장한 모드 이름
  */
-/** debug 패널에서 누를 때마다 바뀌는 순서: Fake → 시연 → Real → Fake. */
-fun DataMode.next(): DataMode = when (this) {
-    DataMode.FAKE -> DataMode.DEMO
-    DataMode.DEMO -> DataMode.REAL
-    DataMode.REAL -> DataMode.FAKE
-}
-
 fun resolveDataMode(isDebugBuild: Boolean, savedName: String?): DataMode {
     if (!isDebugBuild) return DataMode.DEMO
     return DataMode.entries.firstOrNull { it.name == savedName } ?: DataMode.FAKE

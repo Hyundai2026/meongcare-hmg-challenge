@@ -8,7 +8,7 @@ import com.meongcare.app.BuildConfig
  * 데이터 모드를 저장하고 읽는다.
  *
  * - debug 빌드: debug 패널에서 고른 값을 쓴다. 고른 적이 없으면 [DataMode.FAKE].
- * - release 빌드: 저장된 값과 상관없이 항상 [DataMode.REAL].
+ * - release 빌드: 저장된 값과 상관없이 항상 [DataMode.DEMO] (시연 모드).
  */
 class DataModeStore(context: Context) {
 

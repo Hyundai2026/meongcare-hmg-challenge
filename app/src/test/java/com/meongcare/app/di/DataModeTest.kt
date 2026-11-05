@@ -34,8 +34,9 @@ class DataModeTest {
     }
 
     @Test
-    fun `release 빌드는 저장된 값과 상관없이 Real이다`() {
-        assertEquals(DataMode.REAL, resolveDataMode(isDebugBuild = false, savedName = null))
-        assertEquals(DataMode.REAL, resolveDataMode(isDebugBuild = false, savedName = "FAKE"))
+    fun `release 빌드는 저장된 값과 상관없이 시연 모드다`() {
+        assertEquals(DataMode.DEMO, resolveDataMode(isDebugBuild = false, savedName = null))
+        assertEquals(DataMode.DEMO, resolveDataMode(isDebugBuild = false, savedName = "FAKE"))
+        assertEquals(DataMode.DEMO, resolveDataMode(isDebugBuild = false, savedName = "REAL"))
     }
 }

@@ -109,6 +109,7 @@ app/src/main/java/com/meongcare/app/
     NaviRouteOnlyGuidanceSource.kt  경로만 차량 내비 (시연 + 차량 기기): 내비 예상 시간에서 시연용 Fake를 시작, 시연 도착 시 내비 경로 종료
     navi/NaviClient.kt        내비 경계 (trip(destination): Flow<NaviEvent>). SDK 타입 없음
     navi/PleosNaviClient.kt   NaviHelper 어댑터. NaviHelper를 부르는 유일한 파일. 안내 한 번마다 연결하고 끝나면 release
+    navi/NaviTiming.kt        내비 남은 초 → 남은 시간 규칙, 안내 시작 대기 30초
   domain/pet/                 PetProfile(형식 문서 대응), PetAge(나이 계산, 웹과 같은 규칙), PetProfileSource + PetProfileLoad
   domain/card/                Symptom(12개 프리셋, 선언 순서 = 화면·카드 순서), MedicalCardSession(고르는 중/카드 있음, 메모리)
   domain/hospital/            Hospital(길안내 목적지 + 전화번호 + 시연용 여부)
@@ -147,7 +148,7 @@ ui ──▶ domain ◀── data
 
 - 모드는 프로세스가 시작될 때 한 번 정한다 (`di/DataMode.kt`의 `resolveDataMode`).
   - debug: debug 패널에서 고른 값. 기본은 Fake다. 패널 버튼을 누를 때마다 Fake → 시연 → Real 순서로 바뀐다.
-  - **release: 시연 모드 고정** (007, 사용자 결정 2026-11-05). 제출 APK로도 심사위원이 병원 길안내 흐름을 보게 하려는 것이다. 모드를 바꾸는 UI는 없다. Real 길안내(NaviHelper)가 생기면 다시 정한다. `feat(di): release 빌드를 시연 모드로 고정` 커밋만 되돌리면 이전(항상 Real)으로 돌아간다.
+  - **release: 시연 모드 고정** (007, 사용자 결정 2026-11-05). 제출 APK로도 심사위원이 병원 길안내 흐름을 보게 하려는 것이다. 모드를 바꾸는 UI는 없다. Real 길안내(NaviHelper)가 생긴 뒤에도 시연 모드로 두고, 차량 기기에서는 경로만 내비로 보내기로 했다 (아래 "차량 내비", 010). `feat(di): release 빌드를 시연 모드로 고정` 커밋만 되돌리면 이전(항상 Real)으로 돌아간다.
   - **차량 내비 (010, 사용자 결정 2026-11-05)**: `di/NaviPlan.kt`의 `naviUseOf`가 `sourcePlanOf`의 길안내 칸보다 앞선다. 007의 구성표와 그 테스트는 그대로다.
 
     | 모드 | 차량 기기 | 길안내 |
@@ -157,7 +158,12 @@ ui ──▶ domain ◀── data
     | 그 밖 (Fake, 일반 폰) | | 지금처럼 (NaviHelper를 만들지 않는다) |
 
     - 시연에서 진짜 도착을 쓰지 않는 이유: Pleos 에뮬레이터에서는 기어·속도·GPS를 바꿔도 내비 속 차가 움직이지 않아 도착이 오지 않는다 (`[obs-navi-emu]`).
-    - 내비가 경로를 계산하고 안내를 시작하기까지 30초까지 기다린다 (에뮬레이터에서 10~20초 걸렸다). 그동안 "경로를 찾는 중". 넘으면 시연 기본값(12분)으로 시작한다.
+    - 내비가 경로를 계산하고 안내를 시작하기까지 30초까지 기다린다 (에뮬레이터에서 10~20초 걸렸다). 그동안 "경로를 찾는 중". 넘으면 시연은 기본값(12분)으로 시작하고, 전부 내비는 안내 없음으로 돌아간다.
+    - 내비 이벤트 처리 (`data/guidance/navi/NaviTiming.kt`와 두 소스의 KDoc):
+      - 남은 시간이 0 이하이거나 하루보다 길면 모름이다. 시연은 기본값으로 시작하고, 전부 내비는 이전 값을 둔다.
+      - 내비 화면에서 경로를 취소하면("안내 종료") 앱도 안내 없음이다 (에뮬레이터 확인).
+      - 내비 오류: 안내 시작 전이면 시연은 바로 기본값으로 시작하고, 전부 내비는 안내 없음이다. 시작 뒤 오류는 무시한다.
+      - 내비에 이전 경로가 남아 있으면 경로 요청 직후 그 경로의 취소가 먼저 온다. 어댑터가 `onRouteStarted` 전의 취소를 거른다 (`[obs-navi-emu]`).
     - [길 안내 시작]을 누르면 내비 앱이 앞에 나와 우리 앱을 가린다. 남은 시간·카드는 GNB의 MeongCare 아이콘으로 돌아와 본다.
 - debug 패널에서 모드를 바꾸면 저장하고 앱을 다시 시작한다. 실행 중에 데이터 소스를 바꾸지 않아서 상태가 꼬이지 않는다.
 - 어떤 구현을 끼울지는 `di/SourcePlan.kt`의 `sourcePlanOf(mode, isAutomotive)`가 정한다. Android를 모르는 순수 함수라 표 전체를 JVM 테스트로 확인한다.

@@ -22,6 +22,8 @@ import kotlinx.coroutines.flow.callbackFlow
  * - 순서는 Pleos 에뮬레이터에서 확인한 대로다: 리스너 등록 → `initialize(onConnected, onFailed)` → 연결되면 `requestRoute`.
  * - 좌표 + 이름만으로 경로를 요청한다 (`poiId`·`address`·`poiSubId`는 빈 문자열). 에뮬레이터에서 됐다 (`[obs-navi-emu]`).
  * - 콜백은 binder 스레드로 온다. `trySend`만 하므로 스레드를 바꾸지 않는다.
+ * - 내비에 이전 경로가 남아 있으면 `requestRoute` 뒤에 그 경로의 `onRouteCancelled`가 먼저 온다. 그래서 `onRouteStarted` 전의
+ *   취소는 보내지 않는다. [NaviEvent.Cancelled]는 언제나 우리가 요청한 경로가 취소됐다는 뜻이다.
  * - 권한: `NAVI_ROUTE_SEARCH`(경로 요청·취소), `NAVI_ROUTE`(조회). 팀 승인 2026-11-03.
  * - 차량 기기에서만 만든다 (`naviUseOf`). 일반 폰에는 내비 서비스가 없다.
  */
@@ -30,9 +32,11 @@ class PleosNaviClient(context: Context) : NaviClient {
 
     override fun trip(destination: Destination): Flow<NaviEvent> = callbackFlow {
         val helper = NaviHelper(appContext)
+        val routeStarted = AtomicBoolean(false)
         val finished = AtomicBoolean(false)
         val listener = object : NaviHelperEventListener {
             override fun onRouteStarted(routeStartInfo: RouteStartInfo) {
+                routeStarted.set(true)
                 trySend(NaviEvent.RouteStarted(routeStartInfo.duration))
             }
 
@@ -46,6 +50,8 @@ class PleosNaviClient(context: Context) : NaviClient {
             }
 
             override fun onRouteCancelled() {
+                // 우리 경로가 시작되기 전의 취소는 내비에 남아 있던 이전 경로의 것이다 (`[obs-navi-emu]`)
+                if (!routeStarted.get()) return
                 finished.set(true)
                 trySend(NaviEvent.Cancelled)
             }

@@ -39,8 +39,8 @@
     <string name="card_value_none_registered">등록된 정보 없음</string>
     <string name="card_value_no_symptoms">고른 증상 없음</string>
     <string name="card_medication_with_dosage">%1$s (%2$s)</string>
-    <string name="card_list_separator">, </string>
-    <string name="card_chip_separator"> · </string>
+    <string name="card_list_separator">", "</string>
+    <string name="card_chip_separator">" · "</string>
     <string name="card_age_years_months">%1$d세 %2$d개월</string>
     <string name="card_age_years">%1$d세</string>
     <string name="card_age_months">%1$d개월</string>

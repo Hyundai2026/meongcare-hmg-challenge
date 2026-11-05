@@ -61,7 +61,7 @@
 | # | 질문 | 공지에서 확인한 것 | "안 된다"면 |
 |---|---|---|---|
 | A1 | Pleos 외 외부 API(Claude API, 카카오 로컬 API)와 자체 서버(Firebase)를 써도 되는가? | FAQ "쓸 수 있는 SDK와 API"에는 Pleos SDK 5개만 있다. 외부 API 언급은 없다 | 카드 정리를 규칙 기반으로, 병원 목록은 미리 넣은 데이터로 바꾼다 |
-| A2 | 2차 PT 현장에 인터넷(Wi-Fi)이 있는가? 노트북을 가져가 화면을 연결하는가? 발표 시간은? 주최측은 제출 APK를 어떤 환경(Pleos 에뮬레이터 버전, 실차 헤드유닛)에서 구동 확인하는가? | 에뮬레이터 구동 화면으로 시연해도 된다. 제출물은 "정상적으로 구동·시연할 수 있는지 확인"한다. 장비·네트워크·시간·확인 환경은 언급 없음 | 오프라인 시연 모드(Fake 데이터)를 준비한다 |
+| A2 | 2차 PT 현장에 인터넷(Wi-Fi)이 있는가? 노트북을 가져가 화면을 연결하는가? 발표 시간은? 주최측은 제출 APK를 어떤 환경(Pleos 에뮬레이터 버전, 실차 헤드유닛)에서 구동 확인하는가? | 에뮬레이터 구동 화면으로 시연해도 된다. 제출물은 "정상적으로 구동·시연할 수 있는지 확인"한다. 장비·네트워크·시간·확인 환경은 언급 없음 | 대비함 (007): release APK는 시연 모드라 네트워크 없이 돌고, Pleos 에뮬레이터·일반 폰 에뮬레이터 어디서든 흐름이 끝까지 돈다 |
 | A3 | AI 코딩 도구로 개발해도 되는가? | "순수 창작물이어야" 한다는 조항만 있다 (표절·기수상작 금지 취지) | 규정에 따른다 |
 | A4 | 오픈소스 라이브러리는 라이선스를 지키면 써도 되는가? | 제3자 권리 침해 금지 조항만 있다 | 라이선스 고지를 추가한다 |
 | A5 | 심사용 GitHub 계정 ID는 언제 공지되는가? | "공지된 심사용 GitHub 계정"이라고만 되어 있고 아직 공지 없음 | |
@@ -83,8 +83,9 @@ app/src/main/java/com/meongcare/app/
   MainActivity.kt             Compose 화면을 띄우고, debug 패널에 AppContainer의 값과 동작을 넘긴다
   di/
     AppContainer.kt           모드에 맞는 구현을 골라 들고 있다 (수동 DI)
-    DataMode.kt               FAKE / REAL
-    DataModeStore.kt          debug에서 고른 모드를 저장 (release는 항상 REAL)
+    DataMode.kt               FAKE / DEMO(시연) / REAL, resolveDataMode(release는 DEMO), next(패널 전환 순서)
+    SourcePlan.kt             모드 × 차량 기기 → 끼울 구현의 구성표 (순수 함수 sourcePlanOf)
+    DataModeStore.kt          debug에서 고른 모드를 저장 (release는 항상 DEMO)
     AppRestarter.kt           모드를 저장하고 앱을 다시 시작 (debug)
   domain/driving/
     DrivingState.kt           PARKED / DRIVING / UNKNOWN
@@ -100,7 +101,7 @@ app/src/main/java/com/meongcare/app/
     CarUxRestrictionsClient.kt  android.car로 규제를 받는 어댑터. android.car를 부르는 유일한 파일
     UxRestrictionsClientFactory.kt  FEATURE_AUTOMOTIVE면 어댑터, 아니면 null
   data/guidance/
-    FakeGuidanceSource.kt     시간이 지나면 남은 시간이 줄고 도착한다 (scope·timing 주입)
+    FakeGuidanceSource.kt     시간이 지나면 남은 시간이 줄고 도착한다 (scope·timing·진행 조건 주입)
     RealGuidanceSource.kt     자리표시. 항상 Idle (NaviHelper 구현 예정)
   data/hospital/
     SampleHospitals.kt        시연용 샘플 병원 1곳 (병원 검색이 붙기 전까지)
@@ -201,7 +202,10 @@ ui ──▶ domain ◀── data
 - **구독할 때 연결하고, 구독이 끝나면 끊는다.** `RealDrivingStateSource`의 `callbackFlow`가 `UxRestrictionsClient.connect()`를 부르고, `awaitClose`에서 닫는다.
   - 구독자는 `HomeViewModel` 하나이고 `WhileSubscribed(5초)`라서, 연결은 "화면이 보이는 동안 + 5초"만 산다. 다시 보이면 새로 연결해 현재 값을 받는다 (Pleos 에뮬레이터에서 확인).
   - 버린 대안: `VehicleConnection`처럼 프로세스 수명주기에 붙인 연결 객체 하나. 공유 상태와 Flow 다리가 따로 필요해 코드가 늘고, 단일 Activity 앱이라 얻는 것이 없다.
-  - 구독자가 둘 이상이 되면 연결도 둘이 된다. 그때 `shareIn`으로 묶는다.
+  - 구독자가 둘 이상이 되면 연결도 둘이 된다.
+    - **시연 모드(차량 기기)에서 안내 중에는 연결이 둘이다**: 화면(`HomeViewModel`)과 길안내 진행 조건(`FakeGuidanceSource`의 "주행 중인지"). 진행 조건 쪽은 안내를 시작할 때 연결하고, 도착·취소하면 닫는다 (007).
+    - Pleos 에뮬레이터에서 두 연결이 같은 순간 같은 값(`DO=true active=0x50` 등)을 받는 것을 확인했다. 도착하면 진행 조건 쪽 연결이 닫혔다.
+    - `shareIn`으로 묶지 않았다. replay가 `HomeViewModel`의 안전 규칙(5초 넘게 화면이 없다가 돌아오면 새 값을 받기 전까지 주행 화면)과 엮여서, 그 테스트를 다시 봐야 하기 때문이다. 구독자가 더 늘면 그때 묶는다.
 - `connect()`마다 새 `Car`를 만든다: `Car.createCar(context, null, CAR_WAIT_TIMEOUT_DO_NOT_WAIT, listener)`. 초기화는 연결 콜백 안에서 한다 (Google 권장). 차량 서비스가 다시 시작되면 같은 콜백이 다시 온다.
 - 상황별 처리 (`CarUxRestrictionsClient`):
 

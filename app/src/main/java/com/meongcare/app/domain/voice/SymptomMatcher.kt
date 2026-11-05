@@ -23,12 +23,13 @@ fun symptomsIn(sentence: String): Set<Symptom> {
 
 /**
  * 증상별 키워드 (공백 없는 형태). planner 기본안이며 의학 검토를 거치지 않았다.
+ * 받아쓰기가 자주 틀리는 형태도 넣는다 (예: Pleos 엔진이 "가쁘게"를 "바쁘게"로 받아썼다, 2026-11-05 기기 관찰).
  * 고칠 문장이 생기면 `app/src/test/resources/voice/symptom-sentences.tsv`에 줄을 더하고 이 표를 고친다.
  * 화면 글자(strings.xml `symptom_*`)와는 따로 둔다. 화면 글자는 표시용, 키워드는 말하는 방식용이다.
  */
 internal val symptomKeywords: Map<Symptom, SymptomKeywords> = mapOf(
     Symptom.BREATHING_DIFFICULTY to SymptomKeywords(
-        plain = listOf("숨을가쁘", "숨이가쁘", "숨가쁘", "숨이차", "숨을헐떡", "헐떡", "호흡곤란", "호흡이힘들", "호흡이어렵", "숨쉬기힘들", "숨쉬기어렵"),
+        plain = listOf("숨을가쁘", "숨이가쁘", "숨가쁘", "숨을바쁘", "숨이바쁘", "숨이차", "숨을헐떡", "헐떡", "호흡곤란", "호흡이힘들", "호흡이어렵", "숨쉬기힘들", "숨쉬기어렵"),
         negativeMeaning = listOf("숨을못쉬", "숨을잘못쉬"),
     ),
     Symptom.SEIZURE to SymptomKeywords(

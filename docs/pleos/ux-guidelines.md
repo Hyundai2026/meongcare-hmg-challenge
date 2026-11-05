@@ -145,7 +145,7 @@ Pleos 문서에는 "속도·기어로 직접 판단하지 말라"는 문장이 �
 - Google 원문: "If an activity in your app is *Resumed* when UX restrictions become active, it is obscured by an activity owned by the OS." [g-parked-aaos]
 - Google 원문 (`isRequiresDistractionOptimization()`): "If the app has a foreground activity that has not been distraction optimized, the app has to switch to another activity that is distraction optimized. Failing that, the system will stop the foreground activity." [g-uxr]
 - 우리 앱에 주는 뜻: `CarUxRestrictions`로 "주행 중" 화면으로 바꾸더라도, Activity가 DO를 선언하지 않았으면 그 화면은 시스템 화면에 가려진다. 주행 중 화면을 실제로 보여 주려면 DO 선언이 필요하다. Pleos 기준 DO 선언 방법은 여전히 미확인이다 (아래 "미확인").
-- 2026-11-05 기준 우리 `AndroidManifest.xml`에는 `distractionOptimized` 선언이 없다.
+- 2026-11-05(006)부터 우리 `MainActivity`에 `distractionOptimized` 선언이 있다 (사용자 결정). 주최측 문의 B1 답이 "안 된다"면 그 커밋을 revert한다.
 
 ### Pleos 에뮬레이터에서 직접 확인한 것 (관찰, 2026-11-05, xxj15 PC)
 
@@ -156,6 +156,11 @@ Pleos 문서에는 "속도·기어로 직접 판단하지 말라"는 문장이 �
 - **DO 선언** (`MainActivity`에 `<meta-data android:name="distractionOptimized" android:value="true" />`를 임시로 넣어 실험, 커밋하지 않고 되돌림): 같은 조건(D, 30km/h)에서 **가려지지 않았다.** 앱 화면이 그대로 보였다.
   - 즉 Pleos 에뮬레이터는 Google 방식의 DO 선언을 그대로 따른다. adb로 설치한 앱도 막지 않는다.
   - 실차와 앱 심사에서 이 선언이 허용되는지, 카테고리에 따라 다른지는 여전히 미확인이다 (주최측 문의 B1).
+- **우리 앱 006 구현으로 다시 본 것 (Real 모드):**
+  - DO 미선언: 기어 D에 **정지(0 km/h)만 해도** 시스템 화면이 앱을 가렸다. 다시 P로 바꾸면 시스템 화면이 사라지고 우리 앱이 정차 화면으로 앞에 왔다.
+  - DO 선언: P → 정차 화면, D 정지·D 30km/h → 우리 주행 화면("주행 중"), 다시 P → 정차 화면. 기어 D 상태에서 앱을 다시 켜도 처음부터 주행 화면이었다.
+  - 앱이 뒤로 가면(다른 앱을 앞에 띄움) 약 5초 뒤 규제 연결을 닫고, 다시 앞에 오면 새로 연결해 현재 값을 받았다.
+  - Pleos에서는 홈 키(`input keyevent HOME`)를 눌러도 우리 앱이 맨 앞에 남아 있었다. 앱을 뒤로 보내려면 다른 앱(예: 설정)을 띄운다.
 - 주행 상태별 규제 값은 [emulator-setup.md](emulator-setup.md#pleos-에뮬레이터에서-직접-해-본-것-관찰-2026-11-05) 표에 있다. 기어 D에 속도 0(Idling)도 규제가 걸린다.
 
 ## 주행 안전 설계 원칙 [driver-distraction]

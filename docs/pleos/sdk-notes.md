@@ -1014,7 +1014,11 @@ fun sendGleoBroadcast(
 - [x] AAOS Car API(`android.car`, `CarPropertyManager`, `CarUxRestrictionsManager`)를 쓰기 위한 Gradle 설정: Google 문서의 `useLibrary("android.car")`. **Pleos 문서와 공식 샘플에는 없다** (2026-11-05) → 위 "주행 규제(주행/정차) 판단은 `CarUxRestrictions`로 한다"
 - [x] `CarUxRestrictionsManager`를 얻는 방법(`Car.createCar` → `getCarManager(Car.CAR_UX_RESTRICTION_SERVICE)`)과 리스너 등록: Google 문서로 확인. 레퍼런스에 권한 표기 없음 (2026-11-05)
 - [ ] 서드파티 앱이 Pleos에서 `Car.PERMISSION_SPEED`(dangerous), `Car.PERMISSION_POWERTRAIN`을 받을 수 있는지, 심사에서 별도 승인이 필요한지. **2026-11-05 재확인: Pleos 문서에 없음** (SDK API 정책, 하드웨어 접근 정책, Vehicle 권한, FAQ, 앱 제출 가이드). Pleos 문의 또는 에뮬레이터에서 권한 부여 여부 관찰이 필요하다.
-- [ ] Pleos 에뮬레이터·실차에서 `Car.createCar()`가 null이 아닌 `Car`를 주는지, `CarUxRestrictionsManager`가 `SecurityException` 없이 동작하는지 (문서 없음, 실행해서 확인)
+- [x] Pleos 에뮬레이터에서 `Car.createCar()`와 `CarUxRestrictionsManager`가 동작하는지 → 동작한다 (2026-11-05 관찰, 우리 앱 006 구현).
+  - 4인자 `createCar(context, null, CAR_WAIT_TIMEOUT_DO_NOT_WAIT, listener)`로 연결했다. 권한 선언 없이 `SecurityException`이 나지 않았다. 매니페스트 `<uses-library android:name="android.car">` 없이도 `NoClassDefFoundError`가 나지 않았다. `useLibrary("android.car")`(compileSdk 35)로 린트 `NewApi` 경고도 없었다.
+  - 앱 로그: 기어 P → `DO=false active=0x0`, 기어 D(정지·30km/h) → `DO=true active=0x50`. `dumpsys`의 값과 같다.
+  - 일반 폰 에뮬레이터(`FEATURE_AUTOMOTIVE` 없음)에서는 `Car`를 부르지 않고 UNKNOWN으로 둔다. 크래시 없음.
+  - 실차는 미확인.
 - [x] Pleos에서 기어 D + 속도 0(AOSP의 Idling)일 때 규제(DO)가 걸리는지 → 에뮬레이터 덤프로는 걸린다 (2026-11-05, [emulator-setup.md](emulator-setup.md#pleos-에뮬레이터에서-직접-해-본-것-관찰-2026-11-05)). 앱에서 `isRequiresDistractionOptimization()` 값을 직접 찍어 보는 것은 구현 때 확인한다. Pleos 정책표는 Parking/Driving 둘뿐이고 매핑 사양은 비공개다. → [ux-guidelines.md](ux-guidelines.md#미확인)
 - [ ] Android for Cars App Library를 써도 되는지 (허용·금지 모두 문서에 없음)
 - [ ] Pleos가 명시한 "권장" compileSdk/targetSdk/AGP/Kotlin/JDK (문서는 샘플 기준값만 제시)

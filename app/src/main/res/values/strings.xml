@@ -24,6 +24,12 @@
     <string name="card_subtitle_ready_no_pet">고른 증상으로 진료 카드를 준비했어요</string>
     <string name="card_edit">수정</string>
     <string name="card_close">닫기</string>
+    <string name="card_home">홈</string>
+    <!-- 처음 화면에 남은 카드 (009 홈 버튼) -->
+    <string name="home_current_card_title">만든 진료 카드</string>
+    <string name="home_open_card">카드 보기</string>
+    <string name="home_new_card">새로 만들기</string>
+    <string name="home_symptoms_line">주요 증상: %1$s</string>
     <string name="card_row_symptoms">주요 증상</string>
     <string name="card_row_conditions">기존 병력</string>
     <string name="card_row_allergies">알레르기</string>

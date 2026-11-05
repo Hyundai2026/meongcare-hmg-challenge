@@ -57,6 +57,9 @@ class MainActivity : ComponentActivity() {
                         onCloseCard = cardViewModel::onCloseCard,
                         onCallHospital = cardViewModel::onCallHospital,
                         onDismissPhoneNumber = cardViewModel::onDismissPhoneNumber,
+                        onGoHome = cardViewModel::onGoHome,
+                        onOpenCard = cardViewModel::onOpenCard,
+                        onStartNewCard = cardViewModel::onStartNewCard,
                     )
                 }
 

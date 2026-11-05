@@ -624,7 +624,7 @@ export interface PetProfileRepository {
     - "테스트 환경": 웹을 확인한 환경 (Chromium, 폰 크기 390×844·360×800). Safari·실제 폰은 확인한 경우에만 적는다.
   - 확인: 완료 기준 7
 
-- [ ] 12. 개발 노트 작성 (`docs/notes/`)
+- [x] 12. 개발 노트 작성 (`docs/notes/`)
   - `docs/notes/xxj15/YYYY-MM-DD-owner-web.md`. 형식은 `docs/notes/README.md` 템플릿.
     - 무엇을 했나 (보호자 관점 1~3줄)
     - 결정: localStorage 먼저 + 인터페이스, 스키마 버전, 형식 문서를 기준으로 둔 이유, 의존성 최소, 화면 확인 방식, 하네스 변경 (승인 결과)

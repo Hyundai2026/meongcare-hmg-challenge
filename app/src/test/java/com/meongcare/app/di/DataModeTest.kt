@@ -22,6 +22,18 @@ class DataModeTest {
     }
 
     @Test
+    fun `debug 빌드는 저장된 시연 모드를 쓴다`() {
+        assertEquals(DataMode.DEMO, resolveDataMode(isDebugBuild = true, savedName = "DEMO"))
+    }
+
+    @Test
+    fun `모드 전환은 Fake, 시연, Real 순서로 돈다`() {
+        assertEquals(DataMode.DEMO, DataMode.FAKE.next())
+        assertEquals(DataMode.REAL, DataMode.DEMO.next())
+        assertEquals(DataMode.FAKE, DataMode.REAL.next())
+    }
+
+    @Test
     fun `release 빌드는 저장된 값과 상관없이 Real이다`() {
         assertEquals(DataMode.REAL, resolveDataMode(isDebugBuild = false, savedName = null))
         assertEquals(DataMode.REAL, resolveDataMode(isDebugBuild = false, savedName = "FAKE"))

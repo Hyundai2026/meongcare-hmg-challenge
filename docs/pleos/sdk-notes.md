@@ -160,6 +160,7 @@ vehicle-sdk = { module = "ai.pleos.playground:Vehicle", version.ref = "vehicleSd
   - 신청 필요: "신청해야 사용 가능한데 아직 신청하지 않는 상태입니다."
 - **해석 (2026-11-03 팀 판단): "준비 중"인 SDK는 지금 쓸 수 없는 것으로 본다.** `ON_DEVICE`가 앱 등록 없이 동작한다는 STT/TTS 문서의 문장은 사용 허가가 아니다. 열리는 시점은 주최측에 묻는다 ([architecture.md](../architecture.md#pleos주최측에-문의할-것) B2).
   - 기술적으로는 STT `ON_DEVICE`가 지금도 Pleos 에뮬레이터에서 동작한다 (2026-11-05 관찰, 아래 "STT `ON_DEVICE` 실행 확인"). 써도 되는지(허가)는 여전히 B2 답에 달렸다.
+  - **결정 변경 (2026-11-05 사용자 결정): STT는 `ON_DEVICE`로 쓴다.** 근거는 대회 FAQ의 사용 가능 SDK 목록에 STT가 있는 것, 운영사무국의 "따로 신청받는 절차는 없다"는 답 ([architecture.md](../architecture.md#pleos주최측에-문의할-것) B2), 에뮬레이터 동작 확인이다. 대신 음성은 추가 입력 수단으로만 둔다. 증상 버튼 흐름은 그대로 두어서 음성이 안 되거나 쓰지 말라는 답이 와도 앱이 돈다. TTS는 시험하지 않았으므로 이 결정에 들어가지 않는다.
 
 - 그 밖의 SDK는 사용 신청이 필요하고, 일부는 제휴 계약이 필요하다.
 - **"준비 중"인 SDK에 핵심 기능을 걸지 않는다.** 기획 전에 콘솔에서 상태를 다시 확인한다.
@@ -985,7 +986,15 @@ xxj15 Mac(M4 Pro), AVD `pleos_connect`(arm64, Cold boot). 문서가 아니라 �
   - 결과: 넣기 시작한 지 약 1초 뒤부터 `onUpdated(completed=false)`로 글자가 점점 늘었다. 그 뒤 `onEndedRecognition`, `onUpdated(completed=true, "강아지가 갑자기 토하고 숨을 가쁘게 쉬어요")`가 왔다. 넣은 문장과 글자가 똑같다.
   - 부분 결과마다 `onStartedRecognition`이 다시 온다. 한 번만 오는 이벤트로 다루면 안 된다.
   - `initialize` 성공까지 약 20ms 걸렸다. 네트워크·앱 등록 호출은 없었다.
-- **마이크 입력 (`request`)**: `onReady`까지 오고, 음성 서비스 로그에 16 kHz 녹음 시작(`AudioRecorderImpl start`)이 찍힌다. 에뮬레이터가 Mac 마이크 소리를 받지 못해 인식 결과까지는 확인하지 못했다 → 미확인. 에뮬레이터 Extended Controls > Microphone을 켜고 사람이 직접 말해 확인한다.
+- **마이크 입력 (`request`)**: 된다. `onReady` 뒤 음성 서비스가 16 kHz로 녹음을 시작하고(`AudioRecorderImpl start`), 말하면 부분 결과와 최종 결과가 온다.
+  - 에뮬레이터에 Mac 마이크 소리가 들어오게 하는 방법은 [emulator-setup.md](emulator-setup.md#에뮬레이터-마이크-mac) "에뮬레이터 마이크 (Mac)".
+  - Mac `say`를 스피커로 틀어 마이크로 넣은 결과:
+    - "강아지가 다리를 절어요" → "강아지가 다리를…" (Yuna, 여자 목소리)
+    - "샤갈! 내일 금요일이에요! 내일 토요일이었음 좋겠어요" → "치아가 내일 금요일이에요 내일 토요일이었으면 좋겠어요". 두 문장이 결과 하나로 이어졌다. "샤갈" 같은 낯선 고유명사는 틀린다.
+    - "샤갈샤갈 내일 왜 금요일이야" (Reed, 남자 목소리) → "야간 예약을 위해 금요일이야". 여자 목소리보다 결과가 나빴다. 스피커→마이크를 거치며 소리가 나빠진 영향과 섞여 있어 목소리 탓인지는 모른다.
+  - 부분 결과는 약 0.4초마다 오고, 말이 끝나면 약 0.1~0.3초 뒤에 최종 결과가 온다.
+  - **문장 중간에 잠깐 쉬면(느낌표 뒤 등) 거기서 인식이 끝난다** (`onEndedRecognition`). 이어서 말한 부분은 `request()`를 다시 부르기 전까지 버려진다. 한 번에 한 문장을 받는 흐름으로 설계한다.
+  - 사람 목소리가 작게 들어오면(음량 `rms` 약 500~1,100) 아무 결과도 오지 않았다. `say`는 약 10,000이었다.
 - **`RECORD_AUDIO`**: AAOS 앱은 운전자 계정 **user 10**에서 돈다. `adb shell pm grant`는 기본이 user 0이라 `--user 10`을 붙여야 한다.
   - 앱에 권한이 없을 때: 서비스 로그 `callerIdentityForRecordAudio(...) mode=1`. 녹음은 음성 서비스(`ai.pleos.playground.caas`) 이름으로 시작됐다.
   - 권한이 있을 때: `mode=0`이고 녹음이 우리 앱 이름으로 시작됐다.
@@ -1312,7 +1321,7 @@ fun sendGleoBroadcast(
 
 - [x] STT/TTS 생성자, 모드 지정, `setLocale`과 지원 언어(`ko-KR` 포함), 결과 리스너, 앱 등록 방법 → 위 TextToSpeech / SpeechToText 절
 - [x] NaviHelper 목적지 요청(`requestRoute(RouteInfo)`), 도착 이벤트(`onDestinationArrived`), 권한별 API → 위 NaviHelper 절
-- [x] Pleos 에뮬레이터에서 STT `ON_DEVICE`가 Client ID/Secret 없이 동작하는지 → 동작한다 (PCM 입력으로 한국어 인식 확인, 2026-11-05). 마이크 입력은 결과까지 미확인. 위 "STT `ON_DEVICE` 실행 확인"
+- [x] Pleos 에뮬레이터에서 STT `ON_DEVICE`가 Client ID/Secret 없이 동작하는지 → 동작한다 (PCM 입력과 마이크 입력 모두 한국어 인식 확인, 2026-11-05). 위 "STT `ON_DEVICE` 실행 확인"
 - [ ] 콘솔에서 "준비 중"인 STT/TTS를 `ON_DEVICE` 모드로 심사 제출 앱에서 써도 되는지. `STT_SERVICE`/`TTS_SERVICE` 권한에 사전 승인이 필요한지. (문서에 없음. Pleos 문의 필요)
 - [ ] Pleos 에뮬레이터에 On-device STT/TTS 엔진이 있어 실제로 인식·합성되는지 (GPU PC에서 직접 실행해 확인)
 - [x] `Mode.ON_DEVICE` 상수 이름 → `HYBRID`, `SERVER`, `ON_DEVICE` 확인 (AAR `javap`, 2026-11-03)

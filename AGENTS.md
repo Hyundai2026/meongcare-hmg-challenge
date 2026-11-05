@@ -23,7 +23,7 @@
 - AGP 8.8.2, Gradle wrapper 8.10.2 (Pleos 요구는 8.0 이상), JDK 17 이상 (소스·타깃은 17)
 - 단일 `app` 모듈, MVVM (ViewModel + StateFlow), 수동 DI. 구조와 결정 근거: [docs/architecture.md](docs/architecture.md)
 - 서비스 기능 스택: Room(암호화), Pleos STT/TTS `ON_DEVICE`, Pleos NaviHelper, Firebase 서버(Functions), Claude API(임시 Opus, 팀 논의 중), 카카오 로컬 API. 표와 승인된 Pleos 권한: [docs/architecture.md](docs/architecture.md) "서비스 기능 스택"
-- applicationId `com.meongcare.app` (앱 이름 "멍케어"는 임시)
+- applicationId `com.meongcare.app`, 앱 이름 **MeongCare** (2026-11-05 사용자 결정). 이름은 Android `strings.xml`의 `app_name`과 `web/src/config.ts`의 `APP_NAME` 두 곳에 있다
 - Pleos Maven: `https://nexus-playground.pleos.ai/repository/maven-releases/`
 - Vehicle SDK: `ai.pleos.playground:Vehicle:2.3.2`
 - 그 밖의 SDK 좌표, API, 권한: [docs/pleos/sdk-notes.md](docs/pleos/sdk-notes.md)

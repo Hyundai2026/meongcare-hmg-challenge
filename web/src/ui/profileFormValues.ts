@@ -135,9 +135,13 @@ function birthFromAge(values: ProfileFormValues, base: PetProfile | null, today:
   if (years * 12 + months > LIMITS.maxAgeYears * 12) return { error: 'age-too-old' }
 
   // 나이를 바꾸지 않았으면 예전에 추정한 생년월일을 그대로 둔다 (저장할 때마다 날짜가 밀리지 않게).
+  // 단, 시간이 흘러 30년 전보다 앞서게 됐으면 오늘 기준으로 다시 추정한다 (날짜 모드와 같은 제한).
   const before = base === null ? null : estimatedAgeOf(base, today)
   if (base !== null && before !== null && before.years === years && before.months === months) {
-    return { birthDate: base.birthDate, estimated: true }
+    const kept = base.birthDate === null ? null : parseLocalDate(base.birthDate)
+    if (kept !== null && compareLocalDate(kept, earliestBirthDate(today)) >= 0) {
+      return { birthDate: base.birthDate, estimated: true }
+    }
   }
   return { birthDate: formatLocalDate(birthDateFromAge(years, months, today)), estimated: true }
 }

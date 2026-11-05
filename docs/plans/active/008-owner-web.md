@@ -535,7 +535,7 @@ export interface PetProfileRepository {
   - 5-3. → `docs: 검증 파이프라인 설명에 웹 검사 추가` (`docs/conventions/git.md` 파이프라인 설명과 scope `web`, `.claude/skills/ship/SKILL.md`, `CLAUDE.md` "훅", `README.md` 팀원 가이드 "규칙"의 파이프라인 문구)
   - 확인: `web.yml` 문법은 push 뒤 CI에서만 확인된다. 이 단계에서는 YAML을 다시 읽어 `android.yml`과 같은 트리거·건너뛰기 방식인지 본다. dev push 뒤 CI 결과는 `/ship` 보고에 적는다.
 
-- [ ] 6. 화면 상태, 빈 화면, 프로필 등록·수정, 프로필 보기 (`[사용자 승인 필요]` 5의 답대로)
+- [x] 6. 화면 상태, 빈 화면, 프로필 등록·수정, 프로필 보기 (`[사용자 승인 필요]` 5의 답대로)
   - 6-1. → `feat(web): 화면 상태 관리와 빈 화면·읽기 실패 화면 추가`
     - `ui/profileScreenReducer.ts`(순수), `ui/usePetProfile.ts`, `Header`, `EmptyState`, `LoadErrorState`, `StorageNotice`
     - `ui/profileScreenReducer.test.ts`:
@@ -565,7 +565,7 @@ export interface PetProfileRepository {
     - 스크립트: S4(사진 빼고), S5(프로필 카드 부분만. 사진은 단계 7, 의료정보 탭 내용과 버튼은 단계 8), S6, S9(프로필만), S14(S1·S5만), S15
   - 확인: `npm --prefix web run check`, 스크립트 종료 코드 0, 스크린샷 S1·S5·S6을 Read로 본다.
 
-- [ ] 7. 사진 → `feat(web): 사진을 긴 변 512px JPEG로 줄여 저장`
+- [x] 7. 사진 → `feat(web): 사진을 긴 변 512px JPEG로 줄여 저장`
   - `photo/fitWithin.ts`, `photo/resizePhoto.ts`, `PhotoPicker.tsx` (설계 결정 7)
   - `photo/fitWithin.test.ts`:
     - `가로가 긴 사진은 가로를 최대 길이에 맞춘다`
@@ -576,7 +576,7 @@ export interface PetProfileRepository {
   - 스크립트: S4·S5의 사진 확인, S7, S13
   - 확인: `check` 통과, 스크립트 0, S5 스크린샷에서 사진이 보이고 흐릿한지 본다 (설계 결정 7의 768px 판단을 진행 로그에 적는다).
 
-- [ ] 8. 의료정보 → `feat(web): 의료정보 탭과 의료정보 입력 추가`
+- [x] 8. 의료정보 → `feat(web): 의료정보 탭과 의료정보 입력 추가`
   - `ui/medicalForm.ts`(순수), `MedicalInfoTab.tsx`, `MedicalForm.tsx`
   - `ui/medicalForm.test.ts`:
     - `빈 줄은 저장하지 않는다`
@@ -671,8 +671,19 @@ export interface PetProfileRepository {
   - 단위 테스트 34개 통과 (age 12, localDate 5, petProfileJson 7, 저장소 10).
   - 화면 스크립트 S1 두 폭 통과. 헤더 스크린샷 확인.
   - 하네스 시나리오 17개 통과 (임시 저장소): H1, H1b(웹 없을 때 Android만), H2, H3'(precommit은 웹을 안 돌림), H5, H6, H7, H8, H10'(node_modules의 .xml·.properties 무시), H11, H11b, H12a~c, H13(웹 의존성 없음 → 멈춤, 설치 안 함), H14(웹 실패), H14b(Android 실패면 웹은 안 돔). 실제 저장소 `pipeline` 통과.
+- 2026-11-05: 단계 6~8 완료 (`40a4a28`..`8739735`).
+  - 단위 테스트 86개 통과 (화면 상태 12, 프로필 폼 18, 프로필 문구 5, 사진 크기 5, 의료정보 폼 12 추가).
+  - 화면 스크립트 16개 통과 (S1·S5·S8은 390·360 두 폭): S1, S2, S3, S5(S4 포함), S6, S7, S8, S9, S10, S11, S12, S13, S15. S14(가로 스크롤 없음)는 S1·S5·S8 안에서 확인, S16(콘솔 에러·밖으로 가는 요청 0건)은 모든 시나리오에서 확인.
+  - S11: Chromium에서 다른 키로 localStorage를 채워 실제 `QuotaExceededError`를 일으켰다 (단위 테스트로만 확인하는 대안 불필요).
+  - 사진 512px: 화면에서 128px(2배 화면이면 256px)로 보여 흐리지 않다. 768px로 올리지 않는다.
 
 ## 결정 / 배운 점
+
+- **폼 순수 로직 파일 이름을 바꿨다**: 계획의 `ui/profileForm.ts`·`ui/medicalForm.ts` → `ui/profileFormValues.ts`·`ui/medicalFormValues.ts` (테스트도 `*Values.test.ts`). Windows·macOS 파일 시스템은 대소문자를 구분하지 않아 `profileForm.ts`와 `ProfileForm.tsx`가 같은 이름으로 잡혀 `import './ProfileForm'`이 깨졌다.
+- 화면 문구 순수 함수를 `ui/profileText.ts`로 뺐다 (부제, 생년월일 문구, 약 표시, 첫 글자). 테스트 `profileText.test.ts`.
+- 의료정보 폼은 비어 있는 묶음을 빈 줄 하나로 연다. 줄을 20개까지만 늘릴 수 있다 (그래도 저장할 때 20개 검사를 한다).
+- 나이로 입력한 프로필을 나이를 바꾸지 않고 다시 저장하면 예전 추정 생년월일을 그대로 둔다. 저장할 때마다 날짜가 밀리지 않게 하려는 것이다.
+- 읽기 실패 화면에서 [새로 등록하기] → [취소]하면 다시 읽기 실패 화면이다 (빈 화면이 아니다). `unavailable`이면 새로 등록하지 않는다.
 
 - **파이프라인은 웹 의존성을 자동 설치하지 않는다** (계획의 설계 결정 10과 다름). 사용자가 "npm install·ci는 계속 묻는다"(2a)를 골랐는데, 파이프라인이 `npm ci`를 하면 그 확인을 건너뛴다. 대신 `npm ls --depth=0`으로 설치 상태를 보고, 없거나 `package.json`과 다르면 멈추고 `npm --prefix web ci`를 하라고 알린다. mtime 비교는 체크아웃 때마다 거짓 경보가 나서 쓰지 않았다.
 - **하네스는 refactor 커밋을 따로 두지 않았다.** 4b라 precommit·stop은 그대로여서 바뀐 범위가 작다 (`digestOf`/`changedFiles`로 일반화 + pipeline 분기).

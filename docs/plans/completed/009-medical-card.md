@@ -558,7 +558,7 @@ Virtual Console 명령은 006 노트의 `vc()` 함수를 쓴다.
   - JVM 테스트는 없다 (Android `Context`·`Intent`). ViewModel 테스트가 가짜 `PhoneDialer`로 두 경우를 다룬다.
   - 확인: 완료 기준 4의 매니페스트 Grep, P6
 
-- [ ] 7. 경계 테스트 (`tester`) → `test: 진료 카드 경계 테스트 추가`
+- [x] 7. 경계 테스트 (`tester`) → `test: 진료 카드 경계 테스트 추가`
   - 메인이 `tester`에게 **이 계획 파일 경로와 대상만** 넘긴다. 구현 설명은 넘기지 않는다.
     - 대상: `ageInMonths`·`ageLabelOf`, `MedicalCardSession`, `medicalCardOf`, `parkedContentOf`, `MedicalCardViewModel`, `FakePetProfileSource`, 그리고 `homeContentOf` + `parkedContentOf`를 합친 화면 조합
     - 대상 아님: `AndroidPhoneDialer`, composable, `AppContainer`, `MainActivity`
@@ -567,7 +567,7 @@ Virtual Console 명령은 006 노트의 `vc()` 함수를 쓴다.
   - tester가 찾은 버그는 메인이 프로덕션 코드에서 `fix:` 커밋으로 따로 고친다.
   - 확인: `.\gradlew.bat testDebugUnitTest` 통과. 통과 수를 진행 로그에 적는다.
 
-- [ ] 8. 전체 검증 (`/verify`). 커밋은 없다. 고친 게 있으면 `fix(...)` 커밋으로 낸다.
+- [x] 8. 전체 검증 (`/verify`). 커밋은 없다. 고친 게 있으면 `fix(...)` 커밋으로 낸다.
   - `node .claude/hooks/build-gate.mjs pipeline` → "검증 파이프라인 통과."
   - `.\gradlew.bat assembleRelease` 성공
   - 완료 기준 3의 `git diff`, 완료 기준 4의 Grep
@@ -575,7 +575,7 @@ Virtual Console 명령은 006 노트의 `vc()` 함수를 쓴다.
   - `pleos_connect`: 확인 절차 D1~D9
   - 기기가 없으면 멈추고 사용자에게 Cold boot를 요청한다. 확인하지 못한 것은 그대로 적는다.
 
-- [ ] 9. 문서 맞추기
+- [x] 9. 문서 맞추기
   - `docs/architecture.md`:
     - "서비스 기능 스택": "증상 → 진료 카드" 행에 "지금(009)은 규칙으로 조합, AI 없음. Claude API는 A1 뒤 팀 논의". "병원 전화" 행에 구현됨과 D3 관찰. "의료 프로필 저장" 행에 "지금은 기기에 저장하지 않는다 (Fake). 서버 연동 때 정한다".
     - "패키지 구조": `domain/pet/`, `domain/card/`, `domain/hospital/`, `domain/phone/`, `data/pet/`, `data/phone/`, `ui/card/`, `ui/home/ParkedContent.kt`. 지운 `ParkedGuidanceSection`, `ArrivedScreen` 줄을 고친다.
@@ -587,7 +587,7 @@ Virtual Console 명령은 006 노트의 `vc()` 함수를 쓴다.
   - `docs/pleos/sdk-notes.md` "전화": D3 결과를 "관찰 (2026-11-0X, Pleos 에뮬레이터 v2.1.0, 실차 아님)"으로. `docs/pleos/ux-guidelines.md`: D7에서 반쪽 창을 띄웠으면 방법과 창 크기를 관찰로 → `docs(pleos): Pleos 에뮬레이터 전화 앱·반쪽 창 관찰 기록`
   - 확인: 완료 기준 7
 
-- [ ] 10. 개발 노트 작성 (`docs/notes/`)
+- [x] 10. 개발 노트 작성 (`docs/notes/`)
   - `docs/notes/xxj15/YYYY-MM-DD-medical-card.md`. 형식은 `docs/notes/README.md` 템플릿.
     - 사용한 API: 새 Pleos SDK 없음, 새 권한 없음. Android `ACTION_DIAL`(권한 없음).
     - 결정: 화면 조합 두 단계, 세션 위치, 프로필은 모든 모드 Fake, 증상 순서, 카드 규칙, 전화 대비책, 시연 표시, 색
@@ -630,8 +630,18 @@ Virtual Console 명령은 006 노트의 `vc()` 함수를 쓴다.
   - 두 에뮬레이터(`pleos_connect` = emulator-5554, `my_avd` = emulator-5556)는 이미 켜져 있다.
 - 2026-11-05: 단계 0~6 완료 (`a345e75`..`4b4acd9`). 단위 테스트 226개 통과 (185 + 41). 완료 기준 4 Grep 통과.
   - Pleos 에뮬레이터(debug Fake, 라이트)에서 HOME → SYMPTOMS(4열) → CARD(넓은 배치)를 먼저 봤다. 컨셉 그림 배치대로 나온다.
+- 2026-11-05: 단계 7~10 완료 (`9d5de18`..). 
+  - tester 경계 테스트 80개. 버그 1건(프로필 첫 값이 늦는 출처에서 `combine`이 멈춤) → `fix(ui)` (`onStart { emit(null) }`). **단위 테스트 306개 통과.**
+  - 검증 파이프라인 통과 (Android + 웹), `assembleRelease` 성공. 완료 기준 3의 `git diff` 비어 있음, 기존 테스트 파일 수정·삭제 없음. 완료 기준 4 Grep 통과.
+  - Pleos 에뮬레이터 (D): D1 HOME, D2 SYMPTOMS 4열·CARD 넓은 배치, D3 `ACTION_DIAL` → "전화" 앱이 열리지만 번호는 안 보임 (sdk-notes 관찰), 돌아오면 같은 카드, D4 고르는 중 D → 주행 화면 → P → 선택 그대로, D5 [길 안내 시작] → D → 주행, D6 도착 → P → "도착했어요" 카드(같은 증상), D8 [닫기] → HOME, D9 에러 로그 없음. **D7(반쪽 창)은 확인하지 못했다.**
+  - 일반 폰 (P): P1~P4, P6(구글 전화 앱에 `0200000000`이 채워져 열림), 다크 모드 좁은 배치(남색 배경, 흰 카드). P7(전화 앱 끄기), P11(닫기 연속 캡처), P13(뒤로 키)은 기기에서 따로 보지 않았다 (P11·P13 동작은 JVM 흐름 테스트로만).
+  - release를 기기에 설치해 다시 보지는 않았다 (빌드만 확인).
 
 ## 결정 / 배운 점
+
+- tester 버그 1: `PetProfileSource`에 "구독 즉시 값을 내보낸다"를 못 박는 대신 ViewModel을 고쳤다. 나중 서버 구현은 첫 값이 늦을 수 있기 때문이다.
+- 알려진 한계: 폰 세로 + debug 패널에서는 아래 버튼 영역이 커서 카드가 짧게 보인다 (스크롤). 칩 "골든리트/리버"처럼 한국어가 낱말 중간에서 줄바꿈된다 (007과 같은 문제).
+- Pleos 전화 앱이 번호를 보여 주지 않아서, 실차에서도 그렇다면 카드에 병원 번호를 늘 보이게 하는 편이 낫다. 지금은 시연 안내 줄에 번호가 보인다. B4 답을 보고 정한다.
 
 - 아이콘: material3가 이미 `material-icons-core`를 가져와서 새 의존성 없이 `Icons.Filled.Phone`·`Send`·`Check`, `Icons.Outlined.Info`·`FavoriteBorder`·`Warning`·`CheckCircle`을 썼다. 카드 줄 아이콘: 증상 Info, 병력 FavoriteBorder, 알레르기 Warning, 약 CheckCircle.
 - 카드 고정색(`CardColors`)과 채움 버튼색(`ActionBlue`)은 `ui/theme/Color.kt`에 두었다 (계획의 `ui/card/CardColors.kt` 대신).

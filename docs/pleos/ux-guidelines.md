@@ -5,7 +5,7 @@
 - 확인하지 못한 것은 맨 아래 "미확인"에 둔다. 추측으로 채우지 않는다.
 - SDK 좌표·API·권한은 [sdk-notes.md](sdk-notes.md)에 둔다.
 
-마지막 갱신: 2026-11-03
+마지막 갱신: 2026-11-05
 
 ## 화면 구성
 
@@ -85,7 +85,7 @@
 ```
 
   - Google 문서 원문: "Current foreground activity can continue to run only when it is tagged as Distraction Optimized in the manifest." 플랫폼은 매니페스트 선언만 확인한다. [aaos-dd]
-  - Pleos 에뮬레이터/실차에서 이 선언이 그대로 동작하는지는 Pleos 문서로 확인하지 못했다 → 미확인.
+  - Pleos 문서로는 확인하지 못했다. **에뮬레이터에서는 이 선언이 동작했다** (아래 "Pleos 에뮬레이터에서 직접 확인한 것", 2026-11-05). 실차·앱 심사는 미확인.
   - 2026-11-03 재확인: 주행 규제 개발 가이드, 지역별 주행 규제 정책, CCP 개발 가이드, Maps/Navigation·Music/Audio 앱 개발 가이드 어디에도 `distractionOptimized`나 선언 방법이 없다. 주행 규제 개발 가이드에는 "DO 미선언 앱의 상황별 사용 가능 여부는 지역별 주행 규제 정책을 참조하세요."만 있다. [driving-restriction-dev] [driving-policy] [ccp-guide] [navi-app-guide] [music-app-guide]
   - 앱 카테고리에 따라 DO 선언이 허용·거부되는지도 문서에 없다 → 미확인.
 
@@ -126,6 +126,37 @@ if (mCurrentCarUxRestrictions.isRequiresDistractionOptimization()
 ```
 
 - Vehicle SDK의 DrivingMode는 주행/정차 상태가 아니라 "드라이브 모드, 크루즈 컨트롤 정보 조회"다. 속도·기어는 AAOS Car API로 읽는다. 자세한 내용은 [sdk-notes.md](sdk-notes.md#속도기어주행-상태)에 있다.
+- 주행 규제 개발 가이드는 Google 레퍼런스 두 개를 링크한다: "AAOS CarUxRestrictionsManager"(`developer.android.com/reference/android/car/drivingstate/CarUxRestrictionsManager`), "CarUxRestrictions"(`.../CarUxRestrictions`). 페이지 제목은 "CarUxRestrictions 연동", "샘플 코드", "UX 규제 항목과 CarUxRestrictions 매핑"이다. [driving-restriction-dev]
+- **Gradle 설정, `Car.createCar`, 리스너 등록 코드, 권한은 Pleos 문서에 없다** (2026-11-05, 한글판·영문판 모두 확인). Google 문서 기준의 구현 방법은 [sdk-notes.md](sdk-notes.md#pleos-문서에는-구현-방법이-없다-2026-11-05-조사)에 정리했다.
+
+### 주행 상태가 아니라 규제 값에 반응한다 (Google 문서, 2026-11-05)
+
+Pleos 문서에는 "속도·기어로 직접 판단하지 말라"는 문장이 없다. Google 문서에는 있다.
+
+- "Don't attempt to determine the UX restriction state from other hardware state such as gear or speed, because UX restrictions may vary from display to display within a vehicle." [g-parked-aaos]
+- "Since the restrictions could vary depending on the market, apps are expected to react to the restriction information and not to the absolute driving state." [g-uxr]
+- "When there are no restrictions in place, for example when the car is parked, isRequiresDistractionOptimization() returns false." [g-uxr]
+- Pleos 쪽 근거도 같은 방향이다: "주행 규제는 차량의 속도·기어·브레이크 등 하드웨어 신호와 지역별 안전 규정에 따라 적용됩니다." [driving-policy], "플랫폼이 지역별 규제 사양에 맞는 ActiveRestrictions를 내려주므로" 앱은 받은 값만 반영한다 [driving-restriction-dev].
+- AOSP 기본 설정에서는 기어 P = Parked, 기어 P 아님 + 속도 0 = Idling, 기어 P 아님 + 속도 > 0 = Moving이다. 기본 예시 XML은 Idling에서도 `requiresDistractionOptimization="true"`다. 이것은 AOSP 예시이고 Pleos 설정은 비공개다. [aosp-uxr] [driving-restriction-dev]
+
+### DO를 선언하지 않은 화면은 주행 중에 시스템이 가린다
+
+- Pleos: DO 미선언 앱은 Driving 상태에서 "사용 불가". [driving-policy]
+- Google 원문: "If an activity in your app is *Resumed* when UX restrictions become active, it is obscured by an activity owned by the OS." [g-parked-aaos]
+- Google 원문 (`isRequiresDistractionOptimization()`): "If the app has a foreground activity that has not been distraction optimized, the app has to switch to another activity that is distraction optimized. Failing that, the system will stop the foreground activity." [g-uxr]
+- 우리 앱에 주는 뜻: `CarUxRestrictions`로 "주행 중" 화면으로 바꾸더라도, Activity가 DO를 선언하지 않았으면 그 화면은 시스템 화면에 가려진다. 주행 중 화면을 실제로 보여 주려면 DO 선언이 필요하다. Pleos 기준 DO 선언 방법은 여전히 미확인이다 (아래 "미확인").
+- 2026-11-05 기준 우리 `AndroidManifest.xml`에는 `distractionOptimized` 선언이 없다.
+
+### Pleos 에뮬레이터에서 직접 확인한 것 (관찰, 2026-11-05, xxj15 PC)
+
+문서가 아니라 실행해서 본 결과다. 실차·앱 심사에서도 같은지는 모른다.
+
+- 환경: Pleos 에뮬레이터 (`ro.build.type` = `user`), 우리 debug APK를 adb로 설치 (`installer=null`). `CarPackageManagerService` 덤프에 `mEnableActivityBlocking:true`.
+- **DO 미선언** (지금 매니페스트): Virtual Console로 기어 D, 시속 30km를 만들자 우리 앱 위에 시스템 화면이 덮였다. 문구: **"주행 중에는 사용할 수 없습니다."** (스크린샷 `.claude/.cache/p07-vc-drive-30.png`, 커밋하지 않음)
+- **DO 선언** (`MainActivity`에 `<meta-data android:name="distractionOptimized" android:value="true" />`를 임시로 넣어 실험, 커밋하지 않고 되돌림): 같은 조건(D, 30km/h)에서 **가려지지 않았다.** 앱 화면이 그대로 보였다.
+  - 즉 Pleos 에뮬레이터는 Google 방식의 DO 선언을 그대로 따른다. adb로 설치한 앱도 막지 않는다.
+  - 실차와 앱 심사에서 이 선언이 허용되는지, 카테고리에 따라 다른지는 여전히 미확인이다 (주최측 문의 B1).
+- 주행 상태별 규제 값은 [emulator-setup.md](emulator-setup.md#pleos-에뮬레이터에서-직접-해-본-것-관찰-2026-11-05) 표에 있다. 기어 D에 속도 0(Idling)도 규제가 걸린다.
 
 ## 주행 안전 설계 원칙 [driver-distraction]
 
@@ -306,6 +337,7 @@ Maps/Navigation 카테고리 앱 대상 문서다 ("Pleos Connect의 Maps/Naviga
 - 최소 폰트 크기 12sp (Android 접근성 기준). 실제 픽셀 높이 "약 18~20px 정도의 높이를 확보하는 것이 안전합니다.", "실제 픽셀 기준 최소 높이: 18px 이상". [design-typography]
 - 가독성을 위해 "1.5배 이상" 배율을 권장한다 (어느 속성인지 본문에 명시 없음). [design-typography]
 - Headline/Title/Body/Label 타입 스케일 수치는 SVG 이미지에만 있다 → 미확인. [design-typography]
+- > **관찰 (2026-11-05, Pleos 에뮬레이터 2560×1440, 160dpi):** 휴대폰 에뮬레이터(420dpi)에서 적당해 보이던 우리 글자(`ui/theme/Type.kt`, 제목 30sp·본문 22sp)와 버튼(64dp)이, Pleos 화면에서는 시스템 UI(상단 시계, 하단 아이콘, Driving view 글자)보다 작아 보였다. 앱 영역이 넓어서 내용이 왼쪽 위에 몰리고 대부분이 비었다. 공식 타입 스케일을 확인한 뒤 크기를 다시 정한다.
 
 ### 색상과 테마 [design-intro] [design-colors]
 
@@ -352,10 +384,11 @@ dialog.show()
 - [ ] 디스플레이별 해상도(px), 밀도(dpi), dp 기준 window 크기 (Display Layout, Window Policy, 폼팩터 테스트 가이드 모두 수치 없음)
 - [ ] 최소 터치 타깃 크기와 버튼 치수 (Basic Button 페이지의 이미지에만 있음)
 - [ ] 타입 스케일 수치, 색상값, 기본 테마가 다크인지
-- [ ] Pleos 문서 기준의 DO 선언 방법. Google 방식(`distractionOptimized` meta-data)이 Pleos에서 그대로 동작하는지
+- [ ] Pleos 문서 기준의 DO 선언 방법. Google 방식(`distractionOptimized` meta-data)이 실차와 앱 심사에서도 허용되는지 (에뮬레이터에서는 동작함, 2026-11-05 관찰)
 - [ ] 한국(`KOR`)에 적용되는 주행 규제 열 (표에는 북미/유럽/그 외 지역만 있음)
 - [ ] 주행 중 스크롤·리스트 길이 제한, 주행 판정 속도 임계값
-- [ ] Virtual Console에서 기어/속도를 바꾸면 `CarUxRestrictions`가 바뀌는지 (테스트 방법)
+- [ ] Virtual Console에서 기어/속도를 바꾸면 `CarUxRestrictions`가 바뀌는지 (테스트 방법). **2026-11-05 재확인: Pleos 문서에 그런 문장이 없다.** Gear Selection 카드 설명은 "기어 변경에 따른 앱의 상태 전환을 확인할 수 있습니다."뿐이고 `CarUxRestrictions`를 말하지 않는다. 일반 차량 속도 카드도 없다. 실행해서 확인해야 한다 → [emulator-setup.md](emulator-setup.md#virtual-console-차량-데이터-시뮬레이션)
+- [x] Pleos에서 기어 D + 속도 0(AOSP의 Idling)일 때 규제가 걸리는지 → 에뮬레이터에서는 걸린다 (DO: true, 2026-11-05 관찰). 실차는 미확인. Pleos 정책표는 Parking/Driving 둘뿐이고 매핑 사양은 공개하지 않는다. [driving-policy] [driving-restriction-dev]
 - [ ] Window Policy의 두 가지 앱 실행 정책 중 현재 적용되는 것
 - [ ] Lifestyle, Mobility Services 등 Maps/Navigation·Music/Audio 외 카테고리의 매니페스트 선언 값과 주행 중 허용 범위 (2026-11-03 조사, 문서에 없음)
 - [ ] Maps/Navigation 앱이 아닌 앱도 주행 중 "음성 입력"이 허용되는지 (허용 목록은 Maps/Navigation 앱 가이드에만 있음)
@@ -400,3 +433,8 @@ dialog.show()
 - [review-privacy] https://document.pleos.ai/docs/pleos-only/distribute/app-review-guide/review-user-privacy-security
 - Pleos 외 출처 (Pleos [driver-distraction]이 직접 링크한 Google 공식 문서):
   - [aaos-dd] https://source.android.com/docs/automotive/driver_distraction/guidelines?hl=ko
+- Pleos 외 출처 (Pleos [driving-restriction-dev]가 직접 링크한 Google 공식 문서, 2026-11-05 확인):
+  - [g-uxr] https://developer.android.com/reference/android/car/drivingstate/CarUxRestrictions
+- Pleos 외 출처 (Pleos가 링크하지 않은 Google·AOSP 공식 문서, 2026-11-05 확인):
+  - [g-parked-aaos] https://developer.android.com/training/cars/parked/automotive-os
+  - [aosp-uxr] https://source.android.com/docs/automotive/driver_distraction/car_uxr

@@ -590,7 +590,7 @@ export interface PetProfileRepository {
   - 스크립트: S5(의료정보 탭의 빈 표와 [+ 의료정보 추가하기]), S8, S9(의료정보 포함), S11, S14(S8 화면)
   - 확인: `check` 통과, 스크립트 0, S8 스크린샷을 "디자인 참고"와 비교한다.
 
-- [ ] 9. 경계 테스트 (`tester`) → `test(web): 프로필 형식·나이·저장소·폼 경계 테스트 추가`
+- [x] 9. 경계 테스트 (`tester`) → `test(web): 프로필 형식·나이·저장소·폼 경계 테스트 추가`
   - 메인이 `tester`에게 **이 계획 파일 경로와 대상만** 넘긴다. 구현 설명은 넘기지 않는다.
     - 대상: `web/src/domain/`, `web/src/data/localStoragePetProfileRepository.ts`, `web/src/photo/fitWithin.ts`, `web/src/ui/profileScreenReducer.ts`, `web/src/ui/profileForm.ts`, `web/src/ui/medicalForm.ts`
     - 대상 아님: React 컴포넌트, `resizePhoto.ts`, `container.ts`, `main.tsx` (브라우저 필요. 화면 스크립트가 본다)
@@ -600,14 +600,14 @@ export interface PetProfileRepository {
   - tester가 찾은 버그는 메인이 `fix(web): ...` 커밋으로 따로 고친다.
   - 확인: `npm --prefix web run check` 통과. 통과·실패 수를 진행 로그에 적는다.
 
-- [ ] 10. 전체 확인. 커밋은 없다. 고친 게 있으면 `fix(web): ...`로 낸다.
+- [x] 10. 전체 확인. 커밋은 없다. 고친 게 있으면 `fix(web): ...`로 낸다.
   - `npm --prefix web ci` (깨끗한 설치) → `npm --prefix web run check`
   - (4a·4b) `node .claude/hooks/build-gate.mjs pipeline` → "검증 파이프라인 통과."
   - 화면 스크립트 S1~S16 전부, 두 폭. 스크린샷을 모두 Read로 본다.
   - 완료 기준 4·5·6의 Grep과 `git diff`
   - 확인하지 못한 것(Safari, 실제 폰 사진 회전·HEIC 등)은 그대로 적는다.
 
-- [ ] 11. 문서 맞추기
+- [x] 11. 문서 맞추기
   - 11-1. → `docs: AGENTS.md에 보호자 웹 추가`
     - 프로젝트: "보호자용 웹(`web/`)이 함께 있다. 보호자가 폰 브라우저에서 반려견 의료정보를 등록한다."
     - 기술 스택: "보호자 웹: React + Vite + TypeScript, Vitest. 버전은 `web/package.json`에 정확히 고정. 저장은 지금 브라우저 localStorage, 나중에 Firebase. 자세히: docs/architecture.md '보호자 웹'". Node 요구 메이저.
@@ -676,8 +676,17 @@ export interface PetProfileRepository {
   - 화면 스크립트 16개 통과 (S1·S5·S8은 390·360 두 폭): S1, S2, S3, S5(S4 포함), S6, S7, S8, S9, S10, S11, S12, S13, S15. S14(가로 스크롤 없음)는 S1·S5·S8 안에서 확인, S16(콘솔 에러·밖으로 가는 요청 0건)은 모든 시나리오에서 확인.
   - S11: Chromium에서 다른 키로 localStorage를 채워 실제 `QuotaExceededError`를 일으켰다 (단위 테스트로만 확인하는 대안 불필요).
   - 사진 512px: 화면에서 128px(2배 화면이면 256px)로 보여 흐리지 않다. 768px로 올리지 않는다.
+- 2026-11-05: 단계 9~11 완료 (`0097776`..`e845120`). 단계 12와 "있으면 좋음" A~E는 하지 않고 마무리한다.
+  - tester: 경계 테스트 130개 (`*.boundary.test.ts` 10개 파일). 버그 2건을 짚었고 고쳤다:
+    - `fix(web): updatedAt은 ISO 8601 UTC 시각만 읽는다` (`Date.parse`가 `"1"`, `"2026-02-30T…"`도 읽어서, 차 앱 `Instant.parse`와 결과가 달라질 수 있었다). 형식 문서의 읽는 쪽 규칙도 고쳤다.
+    - `fix(web): 나이를 그대로 다시 저장해도 30년 범위를 지킨다` (예전 추정 생년월일을 유지하는 분기가 30년 경계를 보지 않았다).
+  - 전체 확인: `npm --prefix web ci`(깨끗한 설치) → `check` 통과, 테스트 **216개** 통과. `pipeline` 통과 (Android + 웹). 화면 스크립트 `--all-widths`로 13개 시나리오 × 두 폭 = **26건 통과**. 완료 기준 4·5·6의 Grep·diff 통과.
+  - 확인하지 못한 것: Safari(WebKit), 실제 폰(사진 회전·HEIC, 한국어 입력 중 글자 수), Firefox의 실제 저장 공간 초과 예외(가짜 `DOMException`으로만), `container.ts`의 `window.localStorage` 접근 실패(단위 테스트 대상 아님), 다른 시간대의 `localDateOf`.
 
 ## 결정 / 배운 점
+
+- Windows에서 미리보기 서버를 백그라운드로 띄우고 멈춰도 자식 `vite` 프로세스가 남아 rolldown 바이너리를 잡는다. 그 상태로 `npm ci`를 하면 `EPERM`이다. 4173 포트를 쓰는 node 프로세스만 찾아 끄고 다시 했다 (`web/README.md`에 적음).
+- 화면 스크립트에 `--all-widths`를 더했다. 평소에는 S1·S5·S8만 두 폭, 전체 확인 때 모두 두 폭.
 
 - **폼 순수 로직 파일 이름을 바꿨다**: 계획의 `ui/profileForm.ts`·`ui/medicalForm.ts` → `ui/profileFormValues.ts`·`ui/medicalFormValues.ts` (테스트도 `*Values.test.ts`). Windows·macOS 파일 시스템은 대소문자를 구분하지 않아 `profileForm.ts`와 `ProfileForm.tsx`가 같은 이름으로 잡혀 `import './ProfileForm'`이 깨졌다.
 - 화면 문구 순수 함수를 `ui/profileText.ts`로 뺐다 (부제, 생년월일 문구, 약 표시, 첫 글자). 테스트 `profileText.test.ts`.

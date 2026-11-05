@@ -79,6 +79,7 @@ class Scenario:
     title: str
     run: Callable[[Run], None]
     widths: tuple[int, ...] = (390,)
+    context_options: dict = field(default_factory=dict)
 
 
 # ---------------------------------------------------------------- 시나리오
@@ -171,6 +172,48 @@ def s10_cancel(r: Run) -> None:
     r.check(r.stored_raw() == before, "취소했는데 저장된 값이 바뀌었다")
 
 
+def expect_bori_card(r: Run) -> None:
+    expect(r.page.locator(".profile__name")).to_have_text("보리 ♂")
+    expect(r.page.locator(".profile__sub")).to_have_text("골든리트리버 · 12세 3개월")
+    expect(r.page.get_by_role("button", name="프로필 수정")).to_be_visible()
+
+
+def s04_s05_register(r: Run) -> None:
+    register_bori(r)
+    expect_bori_card(r)
+    expect(r.page.get_by_role("tab", name="의료정보")).to_have_attribute("aria-selected", "true")
+    expect(r.page.get_by_text("등록된 정보 없음")).to_have_count(3)
+    expect(r.page.get_by_text(STORAGE_NOTICE)).to_be_visible()
+    saved = stored_json(r)
+    r.check(saved.get("schemaVersion") == 1, f"schemaVersion이 1이 아니다: {saved.get('schemaVersion')!r}")
+    r.check(saved.get("birthDate") == "2014-08-01" and saved.get("sex") == "male", f"저장된 값이 다르다: {saved}")
+    check_no_horizontal_scroll(r)
+    r.shot("profile")
+
+
+def s06_basic_tab(r: Run) -> None:
+    register_bori(r)
+    r.page.get_by_role("tab", name="기본정보").click()
+    panel = r.page.get_by_role("tabpanel")
+    for text in ["보리", "골든리트리버", "수컷", "2014년 8월 1일생", "12세 3개월"]:
+        expect(panel.get_by_text(text, exact=True)).to_be_visible()
+    r.shot("basic-tab")
+
+
+def s09_reload(r: Run) -> None:
+    register_bori(r)
+    r.page.reload()
+    expect_bori_card(r)
+
+
+def s15_dark(r: Run) -> None:
+    register_bori(r)
+    bg = r.page.evaluate("() => getComputedStyle(document.body).backgroundColor")
+    r.check(bg == "rgb(243, 246, 252)", f"다크 설정에서 배경이 바뀌었다: {bg}")
+    expect_bori_card(r)
+    r.shot("dark")
+
+
 def s12_corrupted(r: Run) -> None:
     r.open()
     r.page.evaluate(f"() => localStorage.setItem({STORAGE_KEY!r}, '{{broken')")
@@ -185,8 +228,12 @@ SCENARIOS: list[Scenario] = [
     Scenario("S01", "빈 화면", s01_empty, widths=(390, 360)),
     Scenario("S02", "이름 없이 저장", s02_name_required),
     Scenario("S03", "글자 수·날짜·나이 범위", s03_limits),
+    Scenario("S05", "보리 등록 → 프로필 화면", s04_s05_register, widths=(390, 360)),
+    Scenario("S06", "기본정보 탭", s06_basic_tab),
+    Scenario("S09", "새로고침해도 남는다", s09_reload),
     Scenario("S10", "수정하다 취소", s10_cancel),
     Scenario("S12", "저장된 정보가 깨졌을 때", s12_corrupted),
+    Scenario("S15", "폰이 다크 모드일 때", s15_dark, context_options={"color_scheme": "dark"}),
 ]
 
 
@@ -204,6 +251,7 @@ def run_scenario(browser: Browser, scenario: Scenario, width: int, base_url: str
         has_touch=True,
         locale="ko-KR",
         device_scale_factor=2,
+        **scenario.context_options,
     )
     context.set_default_timeout(TIMEOUT_MS)
     page = context.new_page()

@@ -1,12 +1,24 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { localDateOf } from '../domain/localDate'
 import type { PetProfileRepository } from '../domain/petProfileRepository'
+import { BasicInfoTab } from './BasicInfoTab'
 import { EmptyState } from './EmptyState'
 import { Header } from './Header'
 import { LoadErrorState } from './LoadErrorState'
+import { MedicalInfoTab } from './MedicalInfoTab'
+import { ProfileCard } from './ProfileCard'
 import { ProfileForm } from './ProfileForm'
 import { StorageNotice } from './StorageNotice'
+import { Tabs, type TabItem } from './Tabs'
 import { usePetProfile } from './usePetProfile'
+
+type TabKey = 'medical' | 'basic'
+
+/** 이 웹의 목적이 의료정보 등록이라 의료정보 탭이 먼저다. */
+const TABS: TabItem<TabKey>[] = [
+  { key: 'medical', label: '의료정보' },
+  { key: 'basic', label: '기본정보' },
+]
 
 interface Props {
   repository: PetProfileRepository
@@ -16,6 +28,7 @@ interface Props {
 
 export function App({ repository, now }: Props) {
   const { state, edit, cancel, save } = usePetProfile(repository)
+  const [tab, setTab] = useState<TabKey>('medical')
   const editing = state.kind === 'ready' ? state.editing : null
 
   // 화면이 바뀌면 맨 위부터 보이게 한다.
@@ -45,14 +58,13 @@ export function App({ repository, now }: Props) {
         <EmptyState onRegister={() => edit('profile')} />
       )
   } else {
-    // 프로필 화면은 다음 커밋에서 만든다.
     content = (
-      <section className="card">
-        <h1 className="empty__title">{profile.name}</h1>
-        <button type="button" className="button button--pill" onClick={() => edit('profile')}>
-          프로필 수정
-        </button>
-      </section>
+      <>
+        <ProfileCard profile={profile} today={today} onEdit={() => edit('profile')} />
+        <Tabs tabs={TABS} selected={tab} onSelect={setTab}>
+          {tab === 'medical' ? <MedicalInfoTab medical={profile.medical} /> : <BasicInfoTab profile={profile} today={today} />}
+        </Tabs>
+      </>
     )
   }
 

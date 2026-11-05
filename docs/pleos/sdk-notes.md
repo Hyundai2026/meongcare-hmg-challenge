@@ -480,11 +480,34 @@ implementation("ai.pleos.playground:NaviHelper:3.0.5")
 
 > **불일치:** 공식 navi 샘플의 매니페스트는 위 3개 외에 `pleos.car.permission.NAVI_CUSTOM_ROUTE`, `pleos.car.permission.NAVI_CUSTOM_ETC`도 선언한다. 문서에는 이 두 권한이 없다. [gh-navi-src]
 
+**보호 수준과 런타임 요청 (2026-11-05 조사, 010 계획 R5)** [navi-perm] [gh-navi-src]
+
+- **문서에 없음 → 미확인.** 권한 페이지(한글판·영문판)에는 protectionLevel(normal/dangerous), 런타임 요청 필요 여부, 권한이 없을 때의 동작이 없다.
+  - 페이지에 있는 것은 이 두 문장과 위 표, 매니페스트 예시뿐이다.
+    - "NaviHelper API는 기능에 따라 Android 퍼미션을 요구합니다."
+    - "API별 정확한 요구 퍼미션은 API Reference의 `@RequiresPermission`에서 확인할 수 있습니다."
+  - 대조: FusedLocation 권한 페이지는 `dangerous`라고 명시한다 [fused-perm]. NaviHelper 페이지에는 그런 문장이 없다.
+  - API Reference 상세 페이지는 본문이 비어 있어 `@RequiresPermission`도 볼 수 없다 (아래 "API Reference 목차" 참고).
+- 오류 처리 페이지의 점검 항목 (원문): "사용하는 API에 필요한 퍼미션을 선언했는지" [navi-error]. "선언"만 말하고 런타임 허용은 말하지 않는다.
+- 공식 샘플 (참고, 보호 수준의 근거는 아니다) [gh-navi-src]:
+  - 런타임 권한 요청 코드가 없다. `MainActivity.kt`, `NaviSdkScreen.kt`, `MyApplication.kt` 어디에도 `requestPermissions`, `ActivityResultContracts`, `checkSelfPermission`이 없다.
+  - 매니페스트에는 `uses-permission` 5줄만 있고 XML 주석이 없다. vehicle 샘플의 "protectionLevel="normal"" 같은 주석이 없다.
+  - API 호출 예외는 `catch (e: Exception)`으로 잡고, `SecurityException`은 따로 표시한다: `is SecurityException -> "SecurityException: ${message.orEmpty()}"`
+
+**이벤트 수신에 필요한 권한 (2026-11-05 조사, 010 계획 R6)** [navi-perm] [navi-events]
+
+- **문서에 없음 → 미확인.** 권한 표는 요청 메서드만 다룬다. `addListener()`와 콜백(`onTripInfo`, `onDrivingInfo`, `onDestinationArrived`, `onRouteCancelled` 등)에 필요한 권한은 권한 페이지에도 이벤트 리스너 페이지(한글판·영문판)에도 없다.
+- 관련 원문: "정보 조회 API는 값을 직접 반환하지 않으며, 대응하는 이벤트 콜백에서 결과를 처리합니다." [navi-dest]
+  - `get*Info()` 요청에는 `NAVI_ROUTE`가 필요하다 (위 표). 요청 없이 Navigation 앱이 보내는 이벤트에도 권한이 필요한지는 문서에 없다.
+
 #### 호환성 [api-compat]
 
 - API 호환성 표 원문: NaviHelper SDK는 "내비게이션이 탑재된 차량에 한해 전체 호환".
 - 내비게이션 탑재 여부를 확인하는 공개 API는 없다 (위 [faq] 항목 참고).
 - 공식 샘플 README의 요구 사항: Pleos 내비게이션 서비스를 쓸 수 있는 기기 또는 에뮬레이터, 호환되는 내비게이션 앱이 설치되어 기본 내비게이션 앱으로 설정되어 있을 것. 샘플은 내비게이션 응답을 직접 만들지 않는다. [gh-navi-src]
+- **AAR의 minSdk와 라이브러리가 스스로 넣는 매니페스트 항목 (010 계획 R4): 문서에 없음 → 미확인** (2026-11-05). [navi-import] [navi-perm] [navi-intro]
+  - Importing 페이지에는 Maven 저장소와 `implementation("ai.pleos.playground:NaviHelper:3.0.5")`뿐이다. minSdk, 전이 의존성, 라이브러리가 넣는 `uses-permission`·`<queries>`, 필요한 내비 서비스 버전이 없다.
+  - 공식 navi 샘플은 `minSdk = 33`이다 (근처에 주석 없음). 매니페스트에 `<queries>`, `<uses-sdk>`, `tools:overrideLibrary`가 없다. 그래서 샘플만으로는 AAR의 minSdk를 알 수 없다. [gh-navi-src]
 
 #### 생성과 초기화 [navi-init] [gh-navi-src]
 
@@ -501,6 +524,58 @@ helper.addListener(this)
 helper.removeListener(this)
 helper.release()
 ```
+
+**`initialize` 두 형태 (2026-11-05 조사, 010 계획 R1)** [navi-init] [navi-error] [sdk-release-note]
+
+- 전체 클래스 이름: `ai.pleos.playground.navi.helper.NaviHelper`. 문서 예시의 import와 샘플의 import가 같다. [navi-init] [gh-navi-src]
+- 문서 예시 (원문 Kotlin. 줄바꿈은 복원한 것) [navi-init]:
+
+```kotlin
+import ai.pleos.playground.navi.helper.NaviHelper
+val naviHelper = NaviHelper(applicationContext)
+naviHelper.initialize(
+    onConnected = {
+        // 최초 서비스 연결이 성공했습니다. 리스너를 등록하고 API를 호출합니다.
+    },
+    onFailed = { throwable ->
+        // 초기 연결 재시도가 모두 실패했습니다.
+    })
+```
+
+- 문서 예시 (원문 Java) [navi-init]:
+
+```java
+import ai.pleos.playground.navi.helper.NaviHelper;
+import kotlin.Unit;
+NaviHelper naviHelper = new NaviHelper(getApplicationContext());
+naviHelper.initialize(
+    () -> {
+        // 최초 서비스 연결이 성공했습니다. 리스너를 등록하고 API를 호출합니다.
+        return Unit.INSTANCE;
+    },
+    throwable -> {
+        // 초기 연결 재시도가 모두 실패했습니다.
+        return Unit.INSTANCE;
+    });
+```
+
+- 예시로 알 수 있는 것: `onConnected`는 인자가 없고, `onFailed`는 인자 하나를 받는다 (예시의 이름은 `throwable`). Java 예시가 `kotlin.Unit`을 반환하므로 두 인자는 Kotlin 함수 타입으로 보인다 (추정).
+- **문서에 없음 → 미확인:** `onFailed` 인자의 정확한 타입, `initialize`의 반환형, 재시도 횟수·간격, 콜백이 오는 스레드. API Reference의 `initialize` 페이지는 본문이 비어 있다. [navi-api-ref]
+- 두 형태의 차이 (원문) [navi-init]:
+  - `initialize(onConnected, onFailed)`: "서비스 연결 결과를 콜백으로 받습니다. 최초 서비스 연결이 성공하면 `onConnected`가, 초기 연결 재시도가 모두 실패하면 `onFailed`가 호출됩니다."
+  - `initialize()`: "인자 없이 SDK를 초기화합니다."
+  - "초기화가 수행되어야 다른 API들이 정상 동작합니다."
+  - "연결 상태에 대한 콜백을 제공하는 API 사용을 권장합니다."
+- 콜백 형태는 v3.0.5에서 추가됐다. 릴리스 노트 New API 원문: "초기화 결과 콜백 지원 추가(initialize(onConnected, onFailed))" [sdk-release-note]
+- 오류가 오는 경로 (원문) [navi-error]:
+  - "NaviHelper에서는 초기 서비스 연결 실패와 Navigation 앱의 요청 처리 오류가 서로 다른 경로로 전달됩니다."
+  - "초기 연결 결과가 필요하면 `initialize()`에 콜백을 전달합니다."
+  - "Navigation 앱에서 발생한 오류는 `NaviHelperEventListener.onError()`로 전달됩니다."
+  - 오류 처리 페이지 예시의 `onFailed` 주석: "// 연결 실패 원인을 기록하거나 사용자에게 안내합니다."
+- 공식 샘플은 문서 권장과 다르게 인자 없는 `initialize()`를 쓴다 [gh-navi-src]:
+  - `onConnected`를 기다리지 않고 바로 `addListener(this)`를 부른다.
+  - 생성·초기화·등록 전체를 `try { ... } catch (e: Exception)`으로 감싼다. 실패하면 `runCatching { helper?.release() }`를 부른다.
+  - 해제는 `removeListener(this)` → `release()` 순서다.
 
 #### 목적지·경로 요청 (원문 코드) [navi-dest] [navi-routes]
 
@@ -529,9 +604,31 @@ naviHelper.cancelRoute()
 ```
 
 - 목적지를 다시 설정할 때도 `requestRoute()`를 부른다. [navi-dest]
-- **Java 생성자는 경도를 먼저 받는다:** `new RouteInfo(127.03636666, 37.48544722, null, null, "42dot", "36khp37hh8gqcm5nqhe5", "서울시 강남구 남부순환로 2621", "0", RouteOption.RECOMMENDED)` (경도, 위도, 표시용 경도, 표시용 위도, poiName, poiId, address, poiSubId, RouteOption 순). [navi-dest]
+- > **불일치 (2026-11-05): Java 생성자의 위경도 순서.** 페이지마다 예시가 다르다. Kotlin은 이름 인자(`latitude = ...`)로 쓰면 이 문제가 없다.
+  > - Destinations, Waypoints 페이지: 경도 먼저, 인자 9개 [navi-dest] [navi-waypoints]
+  >   `new RouteInfo(127.03636666, 37.48544722, null, null, "42dot", "36khp37hh8gqcm5nqhe5", "서울시 강남구 남부순환로 2621", "0", RouteOption.RECOMMENDED)`
+  > - Route requests with waypoints 페이지: 위도 먼저, 인자 8개 (`RouteOption` 없음) [navi-route-wp]
+  >   `new RouteInfo(37.48544722, 127.03636666, null, null, "42dot", "36khp37hh8gqcm5nqhe5", "서울시 강남구 남부순환로 2621", "0")`
+  > - SDK 릴리스 노트 NaviHelper v3.0.5 Breaking change (원문): "데이터 모델 생성자의 좌표 인자 순서 변경(longitude, latitude → latitude, longitude; BookmarkInfo, CurrentLocationInfo, DestinationInfo, RecentDestinationInfo, RequestWaypointInfo, RouteInfo, WaypointInfo)" [sdk-release-note]
+  > - 릴리스 노트로 보면 3.0.5는 위도가 먼저이고, 경도가 먼저인 두 페이지는 바뀌기 전 예시로 보인다 (추정). `RequestWaypointInfo`의 Java 예시도 같은 식으로 갈린다. 실제 순서는 AAR(`javap`)로 확인한다.
 - 공식 샘플은 `displayLatitude`/`displayLongitude`를 생략하고 `latitude`, `longitude`, `poiId`, `poiName`, `poiSubId`, `address`만 넘긴다. [gh-navi-src]
-- `poiId`/`poiSubId`가 필수인지, 외부 장소 검색 결과(좌표만 있는 경우)로 경로를 요청할 때 어떤 값을 넣어야 하는지는 문서에 없다 → 미확인.
+
+**`RouteInfo` 인자의 nullable 여부와 기본값 (2026-11-05 조사, 010 계획 R3)** [navi-dest] [navi-waypoints] [navi-route-wp] [navi-error] [gh-navi-src]
+
+문서와 샘플 어디에도 생성자 선언이 없다. API Reference의 `RouteInfo` 페이지와 생성자 페이지(`.../route-info/-route-info`)는 본문이 비어 있다 [navi-api-ref]. 아래는 공식 예시가 실제로 넘기는 값이다.
+
+| 인자 | Destinations·Waypoints (Kotlin) | Route with waypoints (Kotlin) | 공식 샘플 (3.0.5) | Java 예시 | 문서에서 알 수 있는 것 |
+|---|---|---|---|---|---|
+| `displayLatitude`, `displayLongitude` | `null` | 생략 | 생략 | `null, null` | `null`을 넘기는 예시가 있다. Kotlin에서 생략하는 예시도 있다. 기본값은 문서에 없다 |
+| `poiName` | `"42dot"` | `"42dot"` | `"42dot"` | 값 | 항상 값을 넘긴다 |
+| `poiId` | `"36khp37hh8gqcm5nqhe5"` | 같음 | 같음 | 같음 | 항상 값을 넘긴다. nullable 여부·기본값은 문서에 없다 |
+| `poiSubId` | `"0"` | `"0"` | `"0"` | `"0"` | 위와 같다 |
+| `address` | 주소 문자열 | 같음 | 같음 | 같음 | 위와 같다 |
+| `RouteOption` | 생략 | 생략 | 생략 | `RouteOption.RECOMMENDED` (9개 인자 예시) / 없음 (8개 인자 예시) | Kotlin 예시는 모두 생략한다. 기본값은 문서에 없다 |
+
+- **좌표와 이름만으로 경로를 요청할 수 있는지: 문서에 없음 → 미확인.** 모든 예시가 실제 POI ID(`36khp37hh8gqcm5nqhe5`)를 넘긴다.
+  - 관련 문장은 오류 처리 페이지의 점검 항목 하나다 (원문): "좌표, POI ID 및 경유지 인덱스가 올바른지" [navi-error]
+- 외부 장소 검색 결과로 경로를 요청할 때 `poiId`/`poiSubId`에 무엇을 넣어야 하는지도 문서에 없다 → 미확인.
 - 경로 옵션: `naviHelper.changeRouteOption(RouteOption.HIGHWAY)`, 결과는 `onRouteOptionChanged(routeOption: RouteOption)`. 재탐색: `naviHelper.requestReRoute()`. [navi-routes]
   - `RouteOption` 값: `RECOMMENDED`, `SHORT_DISTANCE`, `SHORT_TIME`, `FREE`, `HIGHWAY`, `COMFORTABLE`, `SCHOOL_ZONE` [navi-routes]
   - 원문: "경로 옵션 변경과 재탐색은 활성 경로가 있는 상태에서 요청합니다. 처리 결과와 실제로 전달되는 콜백은 Navigation 앱의 상태에 따라 달라질 수 있습니다." [navi-routes]
@@ -557,6 +654,17 @@ val tripRequest = TripRequest(
 
 - 패키지: `ai.pleos.playground.navi.constants`, `ai.pleos.playground.navi.data`, `ai.pleos.playground.navi.helper`, `ai.pleos.playground.navi.helper.listener` [navi-api-ref]
 - 개별 메서드·데이터 클래스 페이지는 클라이언트 렌더링이라 본문이 비어 있다 (`.../route-state-info/entry`, `.../trip-info/entry`, `.../driving-info/entry`, `.../destination-arrived-info/entry` 확인).
+  - **2026-11-05 재확인: 여전히 비어 있다.** 시도한 페이지:
+    - `.../ai.pleos.playground.navi.helper/navi-helper/entry`, `.../navi-helper/initialize`, `.../navi-helper/request-route`
+    - `.../ai.pleos.playground.navi.data/route-info/entry`, `.../route-info/-route-info` (생성자)
+    - `.../ai.pleos.playground.navi.constants/navi-error-code/entry`, `.../navigation-status/entry`
+    - `.../ai.pleos.playground.navi.helper.listener/navi-helper-event-listener/entry`, `.../navi-helper-event-listener/on-destination-arrived`
+    - 영문판 `/en/docs/...`의 `initialize`
+  - 옛 경로 `/en/api-reference/connect-sdk-pleos/NaviHelper/...`는 404다.
+- 패키지별 타입 목록 (패키지 목차 페이지) [navi-api-ref]:
+  - `navi.helper`: `NaviHelper` 하나. `navi.helper.listener`: `NaviHelperEventListener` 하나.
+  - `navi.constants` (15개): `BookmarkType`, `CameraType`, `CautionPointType`, `NaviErrorCode`, `NavigationStatus`, `NaviMode`, `RouteOption`, `RoutePointPoiType`, `RoutePointSettingType`, `RoutePointType`, `TrafficCongestionType`, `TrafficEventType`, `TurnType`, `WaypointCmdType`, `WaypointIndex`
+  - `navi.data` (31개): `BookmarkInfo`, `CameraAlert`, `CautionPoint`, `ChargerOperator`, `ChargingPlan`, `CurrentLocationInfo`, `DestinationArrivedInfo`, `DestinationInfo`, `DrivingInfo`, `DrivingState`, `NavigationScreenRequest`, `RecentDestinationInfo`, `RequestWaypointInfo`, `RouteInfo`, `RouteOverviewShowInfo`, `RoutePointInfo`, `RouteStartInfo`, `RouteStateInfo`, `RouteWithWaypointsRequest`, `TBTInfo`, `TrafficCongestionInfo`, `TrafficCongestionSummary`, `TrafficEventInfo`, `TrafficInfo`, `TrafficStatus`, `TripInfo`, `TripRequest`, `TripSummary`, `WaypointArrivedInfo`, `WaypointChangedInfo`, `WaypointInfo`
 
 #### `NaviHelperEventListener` 콜백 (공식 샘플 원문 시그니처) [gh-navi-src] [navi-events]
 
@@ -595,6 +703,68 @@ override fun onTripInfo(tripInfo: TripInfo)
 - 데이터 클래스 import 경로: `ai.pleos.playground.navi.data.*`, 상수: `ai.pleos.playground.navi.constants.NaviErrorCode`, `NavigationStatus`, `RouteOption`, `WaypointIndex` [gh-navi-src]
 - 문서 원문: "Navigation 앱의 구현 시나리오에 따라 전달되는 이벤트가 달라질 수 있습니다." [navi-events]
 - **도착 이벤트:** `onDestinationArrived(DestinationArrivedInfo)`가 있다. 실제로 언제 오는지는 Navigation 앱 구현에 따른다.
+
+**기본 구현과 콜백 스레드 (2026-11-05 조사, 010 계획 R2)** [navi-events] [gh-navi-src]
+
+- 문서 원문: "필요한 콜백만 재정의하고, SDK 초기화 후 리스너를 등록합니다." (영문판: "Override only the callbacks your app needs, and register the listener after initializing the SDK.")
+- 문서 예시는 Kotlin(`object : NaviHelperEventListener { ... }`)과 Java(`new NaviHelperEventListener() { ... }`) 모두 26개 중 3개만 재정의한다: `onRouteStarted`, `onRoutingCompleted`, `onError`.
+- 그러나 "기본 구현(빈 메서드)이 있다"는 문장은 없다. 공식 샘플은 26개를 모두 재정의한다 (`onCleared`를 빼고 `override fun on...` 26개). → 기본 구현이 있는지는 AAR(`javap`)로 확정한다.
+- **콜백이 오는 스레드: 문서에 없음 → 미확인.** 한글판·영문판 모두 스레드 언급이 없다.
+  - 샘플도 스레드를 바꾸지 않는다. 콜백에서 `MutableStateFlow.update {}`만 부른다 (`Dispatchers`, `Handler`, `Looper`, `launch`, `withContext` 없음). 그래서 샘플에서도 스레드를 알 수 없다.
+- 해제 원문: "리스너가 더 이상 필요하지 않거나 SDK를 해제하기 전에, 등록할 때 사용한 동일한 리스너 인스턴스를 제거합니다." [navi-events]
+
+**이벤트 분류 (이벤트 리스너 페이지 표 원문)** [navi-events]
+
+| 분류 | 콜백 |
+|---|---|
+| 경로 탐색 | `onRouteStarted()`, `onRoutingCompleted()`, `onRouteCancelled()`, `onReRouteEnded()`, `onRouteOptionChanged()` |
+| 목적지와 경유지 | `onDestinationChanged()`, `onDestinationArrived()`, `onWaypointChanged()`, `onWayPointArrived()` |
+| 정보 조회 | `onBookmarkInfo()`, `onBookMarkChanged()`, `onRecentDestinationInfo()`, `onCurrentLocationInfo()`, `onDestinationInfo()`, `onWayPointInfo()`, `onRouteStateInfo()`, `onTBTInfo()`, `onChargerOperatorInfo()`, `onTripInfo()`, `onNavigationStatus()`, `onDrivingInfo()`, `onCurrentRoadSpeedLimit()`, `onCameraAlert()`, `onCautionPointInfo()` |
+| 오류 | `onError()` |
+
+- 이 표에는 설명 열이 없다. `onRouteEnded()`는 표에 없다.
+
+**경로 요청 결과 콜백 (Destinations 페이지 표 원문)** [navi-dest]
+
+| 콜백 | 설명 |
+|---|---|
+| `onRouteStarted(routeStartInfo)` | Navigation 앱이 경로 탐색을 시작하면 호출됩니다. |
+| `onRoutingCompleted()` | 경로 탐색이 완료되면 호출됩니다. |
+| `onDestinationChanged()` | 목적지가 설정되거나 제거되면 호출됩니다. |
+| `onError(errorCode)` | 경로 요청을 처리하는 중 오류가 발생하면 호출됩니다. |
+
+- 같은 페이지 원문: "`requestRoute()` 호출이 정상적으로 수행되더라도 경로 탐색 완료를 의미하지 않습니다." "최종 결과는 이벤트 콜백으로 확인합니다."
+- `cancelRoute()` 뒤에 어떤 콜백이 오는지는 문서에 없다. `onRouteCancelled()`는 "경로 탐색" 분류에 이름만 있고 설명이 없다.
+
+**도착과 경로 종료 (2026-11-05 조사, 010 계획 R8)** [navi-dest] [navi-events] [navi-waypoints] [sdk-release-note]
+
+- **`onRoutingCompleted`의 뜻: 확인됨.** 경로 탐색(계산)이 끝났다는 알림이다.
+  - 원문: "경로 탐색이 완료되면 호출됩니다." [navi-dest] 이벤트 리스너 예시 주석: "// 경로 탐색 완료를 처리합니다." [navi-events]
+  - 릴리스 노트 v3.0.5 Deprecated API (원문): "경로 탐색 완료 콜백 사용 중단 예정(onRouteEnded → onRoutingCompleted 사용 권장)" [sdk-release-note]
+    - 릴리스 노트는 `onRouteEnded`를 "경로 탐색 완료 콜백"이라고 부른다. `onRoutingCompleted`는 그 대체다.
+  - 릴리스 노트 New API (원문): "내비 이벤트 리스너 확장(onCautionPointInfo, onRoutingCompleted, onTripInfo)" [sdk-release-note]
+  - 도착이나 안내 종료를 뜻한다는 문장은 어디에도 없다.
+- **`onDestinationArrived`가 오는 조건: 문서에 없음 → 미확인.** "목적지와 경유지" 분류에 이름만 있다. [navi-events]
+  - 경유지 쪽에만 문장이 있다 (원문): "경유지에 도착하면 `onWayPointArrived()`가 호출될 수 있습니다." ("수 있습니다"다) [navi-waypoints]
+- **도착하면 경로가 저절로 끝나는지: 문서에 없음 → 미확인.** 도착 뒤에 `onRouteCancelled`나 `onDestinationChanged`가 이어서 오는지도 문서에 없다. spike에서 관찰해야 한다.
+
+**`NaviErrorCode`, `NavigationStatus`, `RouteStartInfo` (2026-11-05 조사, 010 계획 R7)** [navi-error] [sdk-release-note] [navi-api-ref]
+
+- `NaviErrorCode` (오류 처리 페이지 표 원문) [navi-error]:
+
+| 값 | 설명 |
+|---|---|
+| `CAUSE_LOW_BATTERY` | 배터리가 부족합니다. |
+| `CAUSE_SEARCH_ROUTE_OVER_DISTANCE` | 경로 탐색 가능 거리를 초과했습니다. |
+| `CAUSE_SEARCH_ROUTE_TOO_SHORT_DISTANCE` | 현재 위치와 목적지 사이의 거리가 너무 짧습니다. |
+| `CAUSE_SEARCH_ROUTE` | 경로 탐색 서버에서 오류가 발생했습니다. |
+
+  - 원문: "오류 코드의 최신 목록은 NaviHelper API Reference에서 확인합니다." 그런데 API Reference의 `NaviErrorCode` 페이지는 본문이 비어 있다. **위 4개 말고 다른 값이 있는지는 미확인이다.**
+  - 오류 처리 페이지의 점검 항목 (원문): "SDK 연결이 완료된 후 API를 호출했는지", "사용하는 API에 필요한 퍼미션을 선언했는지", "좌표, POI ID 및 경유지 인덱스가 올바른지", "현재 Navigation 앱 상태에서 요청을 처리할 수 있는지"
+- **`NavigationStatus` 값: 문서에 없음 → 미확인.** API Reference 페이지 본문이 비어 있다. 샘플도 `toString()`으로 로그만 찍는다.
+  - 릴리스 노트 v3.0.5 (원문): Breaking change "내비 상태 콜백 인자 타입 및 상태 값 변경(onNavigationStatus: RouteDriving → NavigationStatus)", Changed API "상수/Enum 추가 및 변경(CameraType, CautionPointType, NavigationStatus, RoutePointType)" [sdk-release-note]
+- **`RouteStartInfo` 필드: 문서에 없음 → 미확인.** API Reference 페이지 본문이 비어 있다. 샘플은 `onRouteStarted`에서 `$routeStartInfo`를 로그로 찍기만 한다. [gh-navi-src] `navi-data` AAR을 `javap`로 확인한다.
+- 같은 릴리스 노트의 다른 데이터 변경 (원문): "목적지/경유지 데이터 필드명 변경(DestinationInfo, WaypointInfo: totalDistance/totalTime → remainDistance/remainTime)" [sdk-release-note]
 - **ETA·남은 거리:** 이름이 관련 있어 보이는 `RouteStateInfo`(`getRouteStateInfo()`/`onRouteStateInfo`), `TripInfo`(`onTripInfo`), `DrivingInfo`(`onDrivingInfo`), `TBTInfo`가 있지만, **필드 정의는 확인하지 못했다.** 공식 샘플도 객체를 `toString()`으로 로그에 찍기만 하고 필드에 접근하지 않는다. → 미확인.
   - **산출물로 확인 (2026-11-03)** [aar-navi-data]: 데이터 클래스는 `NaviHelper:3.0.5`가 아니라 전이 의존성 `ai.pleos.playground:navi-data:3.0.4`의 `ai.pleos.playground.navi.data` 패키지에 있다. getter 목록 (`javap`):
     - `TripInfo`: `getDistance(): Int`, **`getEta(): Int`**, `getEstimatedSocAtDest(): Int`, `getEnergyConsumption(): Double`, `getSummary(): TripSummary`
@@ -606,6 +776,27 @@ override fun onTripInfo(tripInfo: TripInfo)
   - **값의 단위(초/분, 미터)는 문서에도 클래스에도 없다.** → 미확인. 실제 값을 찍어 봐야 한다.
   - 참고: `NaviHelper` 3.0.5의 전이 의존성은 `navi-data:3.0.4`, `navi-aidl:3.0.1`, `kotlin-stdlib:1.9.25`, `core-ktx:1.8.0`, `kotlinx-coroutines-android:1.6.3`이다 (pom).
 - 현재 위치: `getCurrentLocationInfo()` → `onCurrentLocationInfo(CurrentLocationInfo)` (권한 `NAVI_ROUTE`, `get*Info()`). 필드 정의는 미확인.
+
+#### AAR에서 직접 확인한 것 (2026-11-05, `NaviHelper-3.0.5.aar`, `navi-data-3.0.4.aar`를 Pleos Maven에서 받아 javap) [aar-navi]
+
+- `NaviHelper(Context)`. `initialize()`와 `initialize(onConnected: () -> Unit, onFailed: (Throwable) -> Unit)` 둘 다 반환형 `void`. `release()`, `addListener`/`removeListener`, `requestRoute(RouteInfo)`, `cancelRoute()`, `requestReRoute()`, `getRouteStateInfo()`, `getCurrentLocationInfo()`, `getDestinationInfo()` 등. **`getTripInfo()`·`getDrivingInfo()`는 없다** (이벤트로만 온다).
+- `NaviHelperEventListener`는 interface이고 **26개 메서드가 모두 `default`(빈 구현)**다. 필요한 콜백만 재정의하면 된다.
+- `RouteInfo` Kotlin 생성자 (이름과 null 여부, `@Nullable`/`@NotNull` 기준): `latitude: Double`, `longitude: Double`, `displayLatitude: Double?`, `displayLongitude: Double?`, `poiName: String`, `poiId: String`, `address: String`, `poiSubId: String`, `routeOption: RouteOption`, `poiProvider: String`, `isMobileRequest: Boolean`. 기본값 생성자가 있지만 **`poiId`, `address`, `poiSubId`에는 기본값이 없다** (컴파일러가 값을 요구했다). 위도가 먼저다.
+- `TripInfo(distance: Int, eta: Int, estimatedSocAtDest: Int, energyConsumption: Double, summary: TripSummary)`.
+- AAR 매니페스트: `minSdkVersion 23`(navi-data, navi-aidl도 23). **`pleos.car.permission`을 스스로 넣지 않는다.** `<queries><intent><action android:name="ai.pleos.playground.intent.action.NAVI_START"/></intent></queries>`와 서비스 버전 meta-data(`min_version_name 2.0.1` 등)를 넣는다.
+
+#### Pleos 에뮬레이터에서 관찰한 것 (2026-11-05, v2.1.0, 실차 아님. 010 spike) [obs-navi-emu]
+
+debug 빌드의 임시 수신기에서 application context로 `NaviHelper`를 만들고 adb로 명령을 보냈다. 권한은 `NAVI_ROUTE_SEARCH`, `NAVI_ROUTE` 두 개만 선언했다 (`dumpsys package`에 `NAVI_ROUTE_SEARCH: granted=true`, 런타임 요청 UI 없음).
+
+- `initialize(onConnected, onFailed)` → **약 120ms 뒤 `onConnected`가 main 스레드로** 왔다. 리스너 콜백은 **binder 스레드**(`binder:<pid>_N`)로 온다.
+- 처음 상태: `RouteStateInfo(termsAgreement=true, naviMode=SAFE_GUIDING, isRouting=false, …)`. 현재 위치 `37.4127212, 127.094681` ("수정구 시흥동", 한국).
+- **`poiId`·`address`·`poiSubId`를 빈 문자열로 두고 좌표(시연 병원 37.48544722, 127.03636666) + `poiName`만으로 `requestRoute` → 됐다.** 내비 앱이 앞으로 나와 우리 앱을 가리고, "시연용 동물병원" 경로 3개(추천 35분·12km)와 "③ 안내 시작" 카운트다운을 보인 뒤 저절로 안내를 시작했다.
+- 그때 콜백 순서: `onRouteStarted(RouteStartInfo(duration=2100, distance=12000, tollFare=700, name=시연용 동물병원, …))` → `onRouteEnded` → `onNavigationStatus(ROUTE_DRIVE)` → `onRouteStateInfo(naviMode=ROUTE_GUIDING, isRouting=false)`. **`duration`은 초(2100 = 35분), `distance`는 미터(12000 = 12km)**다 (내비 화면의 "35분 · 12km"와 같다). `onRouteStarted`는 카운트다운이 끝나 안내가 시작될 때 왔다. `onTripInfo`는 오지 않았다.
+- `onDrivingInfo(DrivingInfo(destination=DrivingState(name=…, duration=2100, distance=12000, …)))`가 안내 중에 왔다 (같은 단위로 보인다).
+- **차가 움직이지 않는다**: Virtual Console로 기어 D + 속도 80을 주거나 `adb emu geo fix`로 위치를 병원 쪽으로 옮겨도, 내비의 현재 위치와 남은 시간·거리(2100초·12000m)는 그대로였다. 그래서 **에뮬레이터에서는 남은 시간 감소와 `onDestinationArrived`를 볼 수 없었다.** 내비 화면에 모의 주행 기능이 있는지는 보지 않았다.
+- `cancelRoute()` → `onDrivingInfo(duration=0, distance=0)` → `onRouteCancelled` → `onNavigationStatus(FREE_DRIVE)` → `naviMode=SAFE_GUIDING`. 내비 화면에서 경로가 사라졌다.
+- 이 동안 `logcat *:E`에 우리 앱의 크래시나 `SecurityException`은 없었다.
 
 ### FusedLocation SDK [fused-intro] [fused-setup] [fused-perm]
 
@@ -1045,7 +1236,7 @@ fun sendGleoBroadcast(
 - [ ] Android 표준 `LocationManager`(`ACCESS_FINE_LOCATION`) 위치를 Pleos에서 받을 수 있는지
 - [x] NaviHelper 데이터 클래스 필드 → NaviHelper 절 "산출물로 확인" (`TripInfo.eta`, `DrivingState.duration/distance`, `CurrentLocationInfo` 좌표). 단위는 미확인 (2026-11-03)
 - [ ] `TripInfo.eta`가 "도착까지 남은 시간"인지 "도착 예정 시각"인지, `DrivingInfo.destination.duration`과 무엇이 다른지. getter 이름만 있고 뜻을 설명하는 문서·클래스 주석이 없다 (2026-11-05, Fake 길안내 계획 005에서 정리). 우리 앱은 남은 시간을 `Duration`으로 받아 변환을 Real 래퍼 안에 가둔다.
-- [ ] `RouteInfo`의 `poiId`/`poiSubId`가 필수인지, 외부 장소 검색 결과(좌표+이름)만으로 경로를 요청할 수 있는지
+- [ ] `RouteInfo`의 `poiId`/`poiSubId`가 필수인지, 외부 장소 검색 결과(좌표+이름)만으로 경로를 요청할 수 있는지. **2026-11-05 재확인: 여전히 문서에 없음** → 아래 010 R3
 - [ ] `requestTrip(TripRequest)`의 동작 (설명 문서 없음)
 - [ ] 샘플 매니페스트의 `NAVI_CUSTOM_ROUTE`, `NAVI_CUSTOM_ETC`가 어느 API에 필요한지
 - [ ] Pleos 에뮬레이터에서 NaviHelper 요청을 받는 기본 Navigation 앱이 동작하는지
@@ -1055,6 +1246,22 @@ fun sendGleoBroadcast(
 - [ ] Gleo Action의 extra 형식: 본문(key별 `putExtra`)과 코드(`ACTION_PARAM` JSON 하나)가 다르다 (불일치)
 - [ ] App Schema의 `invokeWord` 필드 정의 (예시에만 있음)
 - [ ] `component`="service"일 때 `<receiver>` 선언 방법, `android:exported` 값, 응답 broadcast(`APP_ACTION_RESPONSE`)에 필요한 권한
+
+### 010 진짜 길안내 관련 (2026-11-05 조사, 계획 `docs/plans/active/010-real-navi-guidance.md` R1~R8)
+
+문서와 공식 샘플로 조사한 결과다. API Reference 상세 페이지는 모두 본문이 비어 있어서, 남은 것은 AAR(`javap`, 매니페스트)과 에뮬레이터 관찰로 확인해야 한다. 자세한 내용은 위 NaviHelper 절에 있다.
+
+- [x] R1 일부: 전체 클래스 이름 `ai.pleos.playground.navi.helper.NaviHelper`, 문서 예시의 Kotlin/Java 호출 형태, 두 형태의 차이 (문서 원문) → "`initialize` 두 형태"
+- [ ] R1 나머지: `onFailed` 인자의 정확한 타입, `initialize`의 반환형, 재시도 횟수·간격. 문서에 없음 → AAR
+- [ ] R2: `NaviHelperEventListener` 기본 구현. 문서는 "필요한 콜백만 재정의하고"라고 쓰고 예시에서 3개만 재정의하지만, 기본 구현이 있다고 쓴 문장은 없다 → AAR. 콜백 스레드는 문서·샘플 모두에 없다 → 관찰
+- [ ] R3: `poiId`/`poiSubId`/`address`의 nullable 여부와 기본값, `displayLatitude`/`displayLongitude`·`RouteOption`의 기본값. 문서에 없음 → AAR. Java 위치 인자 순서는 페이지마다 다르다 (불일치, 릴리스 노트는 3.0.5부터 위도 먼저). 좌표와 이름만으로 경로 요청이 되는지는 문서에 없음 → spike
+- [ ] R4: AAR의 minSdk, 라이브러리가 스스로 넣는 권한·`<queries>`·서비스 버전 meta-data. 문서에 없음 → AAR
+- [ ] R5: `NAVI_ROUTE`/`NAVI_ROUTE_SEARCH`의 protectionLevel, 런타임 요청 필요 여부. 문서에 없음. 공식 샘플에는 런타임 요청 코드가 없다 → 에뮬레이터 관찰
+- [ ] R6: 이벤트 수신(`addListener`, `onTripInfo`/`onDrivingInfo`/`onDestinationArrived`/`onRouteCancelled`)에 필요한 권한. 문서에 없음 → AAR(`@RequiresPermission`)·관찰
+- [x] R7 일부: `NaviErrorCode` 문서 값 4개 (`CAUSE_LOW_BATTERY`, `CAUSE_SEARCH_ROUTE_OVER_DISTANCE`, `CAUSE_SEARCH_ROUTE_TOO_SHORT_DISTANCE`, `CAUSE_SEARCH_ROUTE`) [navi-error]
+- [ ] R7 나머지: `NaviErrorCode` 전체 목록 (문서는 "최신 목록은 API Reference"라고 하지만 그 페이지가 비어 있다), `NavigationStatus` 값, `RouteStartInfo` 필드. 문서에 없음 → AAR
+- [x] R8 일부: `onRoutingCompleted`는 "경로 탐색이 완료되면 호출됩니다". v3.0.5에서 `onRouteEnded`("경로 탐색 완료 콜백")를 대체한다 [navi-dest] [sdk-release-note]
+- [ ] R8 나머지: `onDestinationArrived`가 오는 조건, 도착하면 경로가 저절로 끝나는지 (뒤이어 `onRouteCancelled`/`onDestinationChanged`가 오는지). 문서에 없음 → spike 관찰
 
 ## 출처
 
@@ -1085,7 +1292,7 @@ fun sendGleoBroadcast(
 - [constant-control] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/Vehicle/vehicle/ai.pleos.playground.vehicle.constant.control/entry
 - [constant-pkg] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/Vehicle/vehicle/ai.pleos.playground.vehicle.constant/entry (2026-11-05 확인)
 - [listener-pkg] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/Vehicle/vehicle/ai.pleos.playground.vehicle.listener/entry (2026-11-05 확인)
-- [sdk-release-note] https://document.pleos.ai/docs/pleos-only/release-note/sdk-release-note (Vehicle SDK v2.3.2, 2026-10-19 릴리스. 2026-11-05 확인)
+- [sdk-release-note] https://document.pleos.ai/docs/pleos-only/release-note/sdk-release-note (Vehicle SDK v2.3.2, 2026-10-19 릴리스. 2026-11-05 확인. 같은 페이지의 "NaviHelper v3.0.5" 절도 2026-11-05 확인)
 - [navi-intro] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/NaviHelper/intro
 - [navi-import] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/NaviHelper/importing-sdk
 - [navi-perm] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/NaviHelper/declaring-permissions
@@ -1114,7 +1321,11 @@ fun sendGleoBroadcast(
 - [navi-events] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/NaviHelper/event-listeners
 - [navi-dest] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/NaviHelper/destinations
 - [navi-routes] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/NaviHelper/routes
-- [navi-api-ref] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/NaviHelper/entry (하위: `.../navi-helper/ai.pleos.playground.navi.helper/navi-helper/entry`, `.../ai.pleos.playground.navi.data/entry`)
+- [navi-api-ref] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/NaviHelper/entry (하위: `.../navi-helper/ai.pleos.playground.navi.helper/navi-helper/entry`, `.../ai.pleos.playground.navi.data/entry`, `.../ai.pleos.playground.navi.constants/entry`, `.../ai.pleos.playground.navi.helper.listener/entry`. 2026-11-05 재확인)
+- [navi-error] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/NaviHelper/error-handling (2026-11-05 확인)
+- [navi-waypoints] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/NaviHelper/waypoint-settings (2026-11-05 확인)
+- [navi-route-wp] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/NaviHelper/route-with-waypoints (2026-11-05 확인)
+- [navi-events], [navi-perm]은 2026-11-05에 영문판(`https://document.pleos.ai/en/docs/pleos-only/connect-sdk-pleos/NaviHelper/...`)과 대조했다. 내용이 같다.
 - [api-compat] https://document.pleos.ai/docs/pleos-only/vehicle-app-planning-guide/api-compatibility-availability
 - [navi-app-guide] https://document.pleos.ai/docs/pleos-only/vehicle-app-developer-guide/navigation-app-development-guide
 - [audio-focus] https://document.pleos.ai/docs/pleos-only/vehicle-app-developer-guide/audio-focus-development-guide/audio-focus-development
@@ -1139,6 +1350,7 @@ fun sendGleoBroadcast(
   - [gh-fused] https://github.com/Pleos-Playground/pleos-sample-fusedlocation-app (`app/build.gradle.kts`, `gradle/libs.versions.toml`)
   - [gh-vehicle-src] https://github.com/Pleos-Playground/pleos-sample-vehicle-app (`app/src/main/java/.../MainViewModel.kt`, `.../vehicle/VehicleClient.kt`, 커밋 959981d)
   - [gh-navi-src] https://github.com/Pleos-Playground/pleos-sample-navi-app (`README.md`, `app/src/main/AndroidManifest.xml`, `app/src/main/java/ai/pleos/playground/navidevapp/screen/vm/NaviHelperViewModel.kt`, `.../data/model/SdkApi.kt`, `.../data/sample/NaviTestData.kt`, main 브랜치, 2026-11-03)
+    - 2026-11-05 추가 확인: `MainActivity.kt`, `MyApplication.kt`, `screen/NaviSdkScreen.kt`, `screen/vm/NaviSdkBaseViewModel.kt`, `app/build.gradle.kts`, `gradle/libs.versions.toml` (`pleosNaviHelperVersion = "3.0.5"`). 저장소의 커밋은 `76ed592` ("Initial commit", 2026-10-16) 하나뿐이다.
   - 조직 저장소는 5개다: vehicle, fusedlocation, navi 샘플과 `pleos-guide`, `pleos-playground-api`. **STT/TTS 공식 샘플은 없다.** (2026-11-03)
   - [gh-org] https://github.com/Pleos-Playground (GitHub API `orgs/Pleos-Playground/repos`로 2026-11-05 재확인: 여전히 5개. `pleos-guide`는 빈 저장소)
   - [gh-vehicle-catalog] https://github.com/Pleos-Playground/pleos-sample-vehicle-app (`app/src/main/java/ai/pleos/playground/sample/vehicle/explorer/PublicApiPolicy.kt`, `.../explorer/VehicleDomain.kt`, main 브랜치, 2026-11-05)

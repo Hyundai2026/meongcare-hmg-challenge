@@ -15,11 +15,11 @@ class DataModeStore(context: Context) {
     private val prefs = context.applicationContext
         .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-    fun read(): DataMode {
-        if (!BuildConfig.DEBUG) return DataMode.REAL
-        val saved = prefs.getString(KEY_DATA_MODE, null)
-        return DataMode.entries.firstOrNull { it.name == saved } ?: DataMode.FAKE
-    }
+    /** 규칙은 [resolveDataMode]에 있다. */
+    fun read(): DataMode = resolveDataMode(
+        isDebugBuild = BuildConfig.DEBUG,
+        savedName = prefs.getString(KEY_DATA_MODE, null),
+    )
 
     /** 바꾼 값은 앱을 다시 시작해야 적용된다. */
     @SuppressLint("ApplySharedPref")

@@ -8,3 +8,16 @@ enum class DataMode {
     /** 실제 차량(또는 Pleos 에뮬레이터). release 빌드는 항상 이 모드다. */
     REAL,
 }
+
+/**
+ * 프로세스가 시작될 때 쓸 데이터 모드를 정한다. Android를 모르는 순수 함수다.
+ *
+ * - debug 빌드: 저장된 이름이 [DataMode] 값이면 그것, 없거나 모르는 값이면 [DataMode.FAKE].
+ * - release 빌드: 저장된 값과 상관없이 [DataMode.REAL].
+ *
+ * @param savedName debug 패널에서 골라 저장한 모드 이름
+ */
+fun resolveDataMode(isDebugBuild: Boolean, savedName: String?): DataMode {
+    if (!isDebugBuild) return DataMode.REAL
+    return DataMode.entries.firstOrNull { it.name == savedName } ?: DataMode.FAKE
+}

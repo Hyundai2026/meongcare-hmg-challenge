@@ -12,6 +12,7 @@
   - **11/15 접수 마감**
   - 11/23 서류 결과
   - **12/03~04 PT** (동작하는 앱 필수)
+- 보호자용 웹(`web/`)이 함께 있다. 보호자가 폰 브라우저에서 반려견 의료정보를 등록한다. 차 앱과는 아직 연결되지 않았다.
 - 필수 제출물은 기획서 DOCX 하나다. 코드, APK, 시연 영상은 가산점이다. 우선순위를 판단할 때 이걸 기준으로 삼는다.
 - 요구사항, 심사 기준, 제출 체크리스트: [docs/contest/requirements.md](docs/contest/requirements.md)
 
@@ -27,6 +28,7 @@
 - Vehicle SDK: `ai.pleos.playground:Vehicle:2.3.2`
 - 그 밖의 SDK 좌표, API, 권한: [docs/pleos/sdk-notes.md](docs/pleos/sdk-notes.md)
 - 에뮬레이터: [docs/pleos/emulator-setup.md](docs/pleos/emulator-setup.md). GPU 필수이고 **Cold boot로만** 켠다.
+- 보호자 웹: React + Vite + TypeScript, 테스트는 Vitest. Node 22.12 이상. 버전은 `web/package.json`에 정확히 고정한다 (`^`, `~` 없음). 저장은 지금 브라우저 localStorage, 나중에 Firebase. 자세히: [docs/architecture.md](docs/architecture.md) "보호자 웹"
 
 ## 명령어
 
@@ -39,7 +41,11 @@ Windows에서는 `gradlew.bat`을 쓴다. Bash에서는 `./gradlew`.
 | 린트 | `./gradlew lintDebug` |
 | 설치 | `adb install -r app/build/outputs/apk/debug/app-debug.apk` |
 | 빌드→실행→스크린샷 확인 | `/verify` 스킬 |
-| 검증 파이프라인 (CI와 같음) | `node .claude/hooks/build-gate.mjs pipeline` |
+| 검증 파이프라인 (CI와 같음, Android + 웹) | `node .claude/hooks/build-gate.mjs pipeline` |
+| 웹 의존성 설치 | `npm --prefix web ci` |
+| 웹 검사 (타입·빌드·테스트) | `npm --prefix web run check` |
+| 웹 개발 서버 | `npm --prefix web run dev` |
+| 웹 화면 확인 | `build` → `preview` → `python web/scripts/verify_screens.py` ([web/README.md](web/README.md)) |
 | dev에 반영 | `/ship` 스킬 |
 | main에 반영 (요청할 때만) | `/promote` 스킬 |
 | 제출용 APK | `/release-apk` 스킬 |
@@ -56,6 +62,8 @@ Windows에서는 `gradlew.bat`을 쓴다. Bash에서는 `./gradlew`.
 - `Vehicle`의 `initialize()`/`release()`는 한 곳에서만 관리한다: `data/vehicle/VehicleConnection` (REAL 모드에서만, 프로세스 수명주기에 맞춰).
   - 차량 기능 래퍼는 `VehicleConnection.vehicle`을 쓴다. `Vehicle`을 직접 만들지 않는다.
 - `secrets.properties`가 없어도 빌드는 되게 한다 (빈 값을 기본값으로). 그래야 CI와 새 팀원 PC에서 깨지지 않는다.
+- 보호자 웹 화면은 `PetProfileRepository`(인터페이스)만 쓴다. localStorage는 `web/src/data/`와 `web/src/container.ts`에서만 쓴다.
+- 반려견 프로필 형식의 기준은 [docs/data/pet-profile.md](docs/data/pet-profile.md)다. 웹과 차 앱이 같이 따른다.
 
 ## 규칙
 
@@ -87,6 +95,8 @@ Windows에서는 `gradlew.bat`을 쓴다. Bash에서는 `./gradlew`.
 |---|---|
 | `app/` | Android 앱 모듈 (`com.meongcare.app`). 패키지 구조: [docs/architecture.md](docs/architecture.md) |
 | `apk/` | 제출용 release APK (`<팀명>_<앱이름>_release.apk`) |
+| `web/` | 보호자 웹 (React). 실행 방법: [web/README.md](web/README.md) |
+| `docs/data/` | 웹·차 앱·서버가 같이 따르는 데이터 형식 (반려견 프로필 등) |
 | `docs/contest/` | 대회 요구사항 |
 | `docs/pleos/` | Pleos SDK와 에뮬레이터에 대해 검증된 사실 |
 | `docs/product/` | 기획 (문제, 차량특화성, 사업성). 기획서 DOCX의 원천 |

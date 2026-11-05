@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "name": "보리",
+  "breed": "골든리트리버",
+  "sex": "male",
+  "birthDate": "2014-08-01",
+  "birthDateIsEstimated": false,
+  "photoDataUrl": null,
+  "medical": {
+    "conditions": ["심장질환"],
+    "allergies": ["특정 단백질 알레르기"],
+    "medications": [{ "name": "심장약", "dosage": "1일 1회" }]
+  },
+  "updatedAt": "2026-11-05T00:00:00.000Z"
+}

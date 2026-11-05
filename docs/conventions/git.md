@@ -35,6 +35,7 @@
   - 커밋 메시지 요약을 "그리고" 없이 한 줄로 쓸 수 없으면 쪼갠다.
 - **커밋할 때마다 빌드가 통과해야 한다.**
   - 앱 코드가 들어간 커밋은 훅이 `assembleDebug`를 먼저 돌린다.
+  - 보호자 웹(`web/`)은 커밋할 때 훅이 검사하지 않는다. 커밋 전에 `npm --prefix web run build`를 직접 돌린다. dev에 들어갈 때는 검증 파이프라인이 검사한다.
 - 크기 기준: diff 200줄 이하를 권장한다. 생성된 코드와 리소스는 줄 수에서 빼고 센다.
 - 쪼개는 기준:
   - 리팩터링과 기능 변경을 섞지 않는다. 동작은 그대로 두고 구조만 바꾼 건 `refactor:`로 먼저 커밋한다.
@@ -69,7 +70,7 @@
   | `ci` | GitHub Actions |
   | `chore` | 그 밖의 것 (하네스 설정 등) |
 
-- **scope**: 선택. `data`, `ui`, `domain`, `vehicle`, `harness`, `notes`, `plans` 등. 바뀐 영역을 한 단어로 쓴다.
+- **scope**: 선택. `data`, `ui`, `domain`, `vehicle`, `web`, `harness`, `notes`, `plans` 등. 바뀐 영역을 한 단어로 쓴다.
 - **요약**: 한국어 50자 이내. 마침표 없이, "~ 추가", "~ 수정"처럼 명사형으로 끝낸다.
   - 예: `feat(vehicle): 차속 Flow 래퍼 추가`
 - 본문에는 "무엇"보다 "왜"를 쓴다. 관련 계획이 있으면 경로를 적는다.
@@ -102,7 +103,8 @@
 
 1. **최신 dev 위로 rebase**: `git fetch origin && git rebase origin/dev`
 2. **검증 파이프라인**: `node .claude/hooks/build-gate.mjs pipeline`
-   - CI와 같은 작업(`assembleDebug testDebugUnitTest lintDebug`)이다.
+   - CI와 같은 작업이다: Android `assembleDebug testDebugUnitTest lintDebug` + 보호자 웹 `npm --prefix web run check`
+   - 웹 의존성이 설치되지 않았으면 멈추고 `npm --prefix web ci`를 하라고 알린다. 자동으로 설치하지 않는다.
    - 1에서 rebase했으므로 여기서 검증한 코드가 그대로 dev에 들어간다.
 3. **로컬 merge**:
 

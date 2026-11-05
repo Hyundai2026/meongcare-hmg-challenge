@@ -1,0 +1,38 @@
+name: Web CI
+
+# 보호자 웹(web/) 검사. 로컬 검증 파이프라인(.claude/hooks/build-gate.mjs의 WEB_CHECK)과 같은 작업을 돈다.
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: check
+        run: |
+          if [ -f web/package.json ]; then
+            echo "has_web=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "web/package.json 없음: 보호자 웹이 없어 검사를 생략한다."
+          fi
+
+      - if: steps.check.outputs.has_web == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - if: steps.check.outputs.has_web == 'true'
+        working-directory: web
+        run: npm ci
+
+      - if: steps.check.outputs.has_web == 'true'
+        working-directory: web
+        run: npm run check

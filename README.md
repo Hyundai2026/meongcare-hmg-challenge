@@ -37,6 +37,25 @@
 - 차량 기기가 아니라서 주행 상태도 가짜로 흉내 낸다.
 - 앱에서 **[병원으로 안내]**만 누르면 출발(주행 화면) → 남은 시간 감소 → 도착 → 주차(도착 화면)가 저절로 이어진다 (약 30초).
 
+## 보호자 웹 (선택)
+
+보호자가 폰 브라우저에서 반려견 프로필과 의료정보(주요 질환, 알레르기, 복용 약)를 미리 등록하는 웹이다. 소스는 [`web/`](web/)에 있다.
+
+> **정보는 그 브라우저에만 저장되고, 차 앱과는 아직 연결되지 않았다.** 서버 연동은 대회 규정(외부 서버 사용 가능 여부) 확인 뒤에 한다. 웹 화면에도 그렇게 표시한다.
+
+1. Node.js 22.12 이상을 설치한다.
+2. 저장소 루트에서:
+
+   ```
+   npm --prefix web ci
+   npm --prefix web run dev
+   ```
+
+3. 브라우저로 `http://localhost:5173`을 연다. 폰 크기로 보려면 개발자 도구(F12)의 기기 모드를 켠다.
+
+- 확인한 환경: Chromium (Playwright), 폰 크기 390×844·360×800. Safari와 실제 폰은 확인하지 않았다.
+- 자세한 실행·확인 방법: [web/README.md](web/README.md)
+
 ## APK
 
 - [`apk/<팀명>_<앱이름>_release.apk`](apk/)
@@ -145,7 +164,8 @@ Android Studio 없이 Gradle wrapper만으로 빌드된다.
 
 - main과 dev에는 직접 커밋하지 않는다. 작업 브랜치는 원격에 push하지 않는다.
 - PR은 쓰지 않는다.
-  - 대신 검증 파이프라인(`assembleDebug testDebugUnitTest lintDebug`)을 통과해야 dev나 main에 push된다.
+  - 대신 검증 파이프라인(Android `assembleDebug testDebugUnitTest lintDebug` + 보호자 웹 `npm --prefix web run check`)을 통과해야 dev나 main에 push된다.
+  - 보호자 웹 의존성이 없으면 파이프라인이 멈춘다. `npm --prefix web ci`를 한 번 실행한다.
   - `--no-verify`와 force push는 쓰지 않는다.
 - 커밋은 작게, 한 커밋에 한 가지 이유만 담는다.
   - 메시지 형식은 `type(scope): 요약`이다. 예: `feat(vehicle): 차속 Flow 래퍼 추가`

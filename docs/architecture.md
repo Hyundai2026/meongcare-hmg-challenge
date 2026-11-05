@@ -39,6 +39,7 @@
 | 카드 공유 | MVP: 정차 화면에 크게 보여주기. 나중에 QR·링크 | 서버 작업이 가장 적다 | 결정 |
 | 운전 중 사용 | DO(`distractionOptimized`) 선언. `MainActivity`에 Google 방식 meta-data를 넣었다 (006, 2026-11-05) | 선언이 없으면 주행 중에 시스템 화면이 앱을 가려 주행 화면(남은 시간)이 보이지 않는다 | 결정. Pleos 에뮬레이터에서 동작 확인. 실차·심사 허용은 문의 B1. 안 되면 그 커밋을 revert한다 |
 | 주행/정차 판단 | AAOS `CarUxRestrictionsManager`의 `isRequiresDistractionOptimization` (006) | Pleos·Google 모두 기어·속도가 아니라 규제 값에 반응하라고 한다. 권한이 필요 없다 | 결정. Pleos 에뮬레이터에서 동작 확인 |
+| 보호자 등록 웹 | React + Vite + TypeScript (`web/`). 저장은 브라우저 localStorage 먼저 (008) | 보호자가 집에서 폰으로 의료정보를 미리 등록해서, 차에서는 글자를 입력하지 않게 한다 (AGENTS.md 규칙 3). 서버 없이 먼저 만들고, 저장소 인터페이스로 Firebase를 끼울 자리를 둔다 | 결정. 서버 연동·차 앱 연결은 문의 A1 뒤. 아래 "보호자 웹" |
 
 ### 사용하기로 한 Pleos 권한 (AGENTS.md 규칙 2, 2026-11-03 팀 승인)
 
@@ -60,7 +61,7 @@
 
 | # | 질문 | 공지에서 확인한 것 | "안 된다"면 |
 |---|---|---|---|
-| A1 | Pleos 외 외부 API(Claude API, 카카오 로컬 API)와 자체 서버(Firebase)를 써도 되는가? | FAQ "쓸 수 있는 SDK와 API"에는 Pleos SDK 5개만 있다. 외부 API 언급은 없다 | 카드 정리를 규칙 기반으로, 병원 목록은 미리 넣은 데이터로 바꾼다 |
+| A1 | Pleos 외 외부 API(Claude API, 카카오 로컬 API)와 자체 서버(Firebase)를 써도 되는가? | FAQ "쓸 수 있는 SDK와 API"에는 Pleos SDK 5개만 있다. 외부 API 언급은 없다 | 카드 정리를 규칙 기반으로, 병원 목록은 미리 넣은 데이터로 바꾼다. 보호자 웹은 브라우저 저장만 쓰고, 차 앱으로 정보를 옮기는 방법을 다시 정한다 |
 | A2 | 2차 PT 현장에 인터넷(Wi-Fi)이 있는가? 노트북을 가져가 화면을 연결하는가? 발표 시간은? 주최측은 제출 APK를 어떤 환경(Pleos 에뮬레이터 버전, 실차 헤드유닛)에서 구동 확인하는가? | 에뮬레이터 구동 화면으로 시연해도 된다. 제출물은 "정상적으로 구동·시연할 수 있는지 확인"한다. 장비·네트워크·시간·확인 환경은 언급 없음 | 대비함 (007): release APK는 시연 모드라 네트워크 없이 돌고, Pleos 에뮬레이터·일반 폰 에뮬레이터 어디서든 흐름이 끝까지 돈다 |
 | A3 | AI 코딩 도구로 개발해도 되는가? | "순수 창작물이어야" 한다는 조항만 있다 (표절·기수상작 금지 취지) | 규정에 따른다 |
 | A4 | 오픈소스 라이브러리는 라이선스를 지키면 써도 되는가? | 제3자 권리 침해 금지 조항만 있다 | 라이선스 고지를 추가한다 |
@@ -219,6 +220,65 @@ ui ──▶ domain ◀── data
 - **일반 폰에서 죽지 않게**: `uxRestrictionsClientOrNull`이 `FEATURE_AUTOMOTIVE`를 먼저 확인하고, 없으면 `android.car` 클래스를 아예 건드리지 않는다 (일반 폰 에뮬레이터에서 확인).
 - 권한을 선언하지 않는다. `pleos.car.permission.*`도 `android.car.permission.*`도 필요 없었다 (Pleos 에뮬레이터에서 `SecurityException` 없음).
 - Gradle: `useLibrary("android.car")` (컴파일용). 매니페스트 `<uses-library>`는 필요 없었다 (Pleos 에뮬레이터에서 `NoClassDefFoundError` 없음).
+
+## 보호자 웹 (008, 2026-11-05)
+
+보호자가 폰 브라우저에서 반려견 1마리의 프로필(사진, 이름, 품종, 생년월일 또는 나이, 성별)과 의료정보(주요 질환, 알레르기, 복용 약)를 등록하고 보고 고친다. 차 앱의 진료 카드가 이 정보를 쓸 예정이다.
+
+- 실행·확인 방법: [web/README.md](../web/README.md)
+- 프로필 형식 (웹·차 앱·서버 공통): [docs/data/pet-profile.md](data/pet-profile.md)
+
+### 결정
+
+| 항목 | 결정 | 근거 | 버린 대안 |
+|---|---|---|---|
+| 위치 | 같은 저장소 `web/` (사용자 결정) | 심사위원이 저장소 하나에서 앱과 웹을 본다. 프로필 형식을 문서 하나로 맞춘다 | 별도 저장소 |
+| 기술 | React + Vite + TypeScript, 테스트는 Vitest (`environment: 'node'`) | 웹팀이 React를 안다. 의존성은 이 6개뿐이고 버전은 정확히 고정한다 | ESLint (사용자 결정으로 넣지 않음. TypeScript strict가 대신), 라우터·상태 관리·폼·스키마 라이브러리, jsdom |
+| 저장 | 브라우저 localStorage, 키 `owner-web.pet-profile` (사용자 결정) | 서버 규정(A1) 답을 기다리지 않고 만든다. 키는 앱 이름과 묶지 않아 이름이 바뀌어도 데이터가 남는다 | 처음부터 Firebase |
+| 저장소 인터페이스 | `PetProfileRepository` (`load`/`save`, `Promise`, 실패는 결과 값) | localStorage 구현이 앱의 Fake 자리, Firebase 구현이 Real 자리다. 바꿔 끼워도 화면 코드가 그대로다 | 화면에서 localStorage 직접 호출 |
+| 스키마 버전 | `schemaVersion: 1`. 모르는 버전은 읽지 않는다 | localStorage 데이터는 코드보다 오래 남는다. 차 앱이 짐작해서 약 정보를 틀리게 보여 주면 안 된다 | |
+| 사진 | 브라우저에서 긴 변 512px JPEG(품질 0.8)로 줄여 data URL로 저장 | 한 키에 넣어도 용량이 작다. 캔버스로 다시 그려 EXIF(촬영 위치)가 빠진다 | 원본 저장 |
+| 화면 | 탭 의료정보·기본정보 (의료정보가 먼저). 진료이력 탭·알림 아이콘은 두지 않는다 (사용자 결정) | 기능이 없는 버튼을 보이지 않는다 | 진료이력 탭을 "준비 중"으로 보이기 |
+| 화면 확인 | `web/scripts/verify_screens.py` (Python Playwright, Chromium, 날짜 2026-11-05 고정) | `/verify`는 Android용이다. 폰 크기 두 폭으로 시나리오를 돌리고, 콘솔 에러와 밖으로 가는 요청이 있으면 실패다 | React 컴포넌트 단위 테스트 (jsdom 의존성) |
+| 하네스 | 검증 파이프라인·pre-push·CI(`web.yml`)만 웹을 검사한다. 커밋 직전·턴 종료는 Android만 (사용자 결정 4b) | 팀이 같이 쓰는 dev를 지키면서 하네스 변경을 줄인다 | 커밋 직전·턴 종료까지 검사 |
+
+### 폴더와 의존 방향
+
+```
+web/src/
+  main.tsx, config.ts (APP_NAME), container.ts (저장소 구현 고르기)
+  domain/   PetProfile 타입, 날짜·나이 계산, JSON 읽기·쓰기, 저장소 인터페이스 (React·브라우저 모름)
+  data/     localStorage 구현
+  photo/    사진 크기 계산(순수), 캔버스로 줄이기(브라우저)
+  ui/       화면. 순수 로직(*Values.ts, profileScreenReducer.ts, profileText.ts)과 컴포넌트(*.tsx)
+```
+
+- `ui`는 `domain`·`photo`만 import한다. `data`는 `main.tsx`·`container.ts`만 안다 (앱의 `ui → domain ← data`와 같다).
+- 앱 이름은 `web/src/config.ts` 한 곳에 있다. 정해지면 이 파일과 Android `strings.xml`을 바꾼다.
+
+### 저장과 개인정보
+
+- 지금 의료정보와 사진은 **보호자 브라우저의 localStorage에 평문으로** 있다.
+  - 같은 출처의 스크립트는 모두 읽을 수 있다. 그래서 외부 스크립트(분석 도구, CDN, 웹폰트)를 넣지 않고 `dangerouslySetInnerHTML`을 쓰지 않는다. 화면 확인 스크립트가 밖으로 가는 요청 0건을 확인한다.
+  - 브라우저가 지울 수 있다 (방문 기록 삭제, 시크릿 모드). 서버가 생기기 전까지 백업이 없다.
+  - 같은 폰·브라우저를 쓰는 다른 사람이 볼 수 있다.
+  - 브라우저 안에서 암호화해도 키가 같은 브라우저에 있어 실익이 적다. 서버로 옮길 때 접근 규칙으로 지킨다.
+  - Pleos 보안 가이드의 "기기에 저장하는 민감정보는 암호화"는 차 앱 대상이다 ([ux-guidelines.md](pleos/ux-guidelines.md)). 웹은 Pleos 앱이 아니지만, 심사·PT에서 설명할 때 이 차이를 알고 있어야 한다.
+- 의료정보를 로그에 남기지 않는다 (`console.log` 0건).
+- 반려동물 의료정보의 법적 분류는 확인하지 않았다. 민감정보처럼 다룬다. 보호자 이름·연락처 같은 사람 정보는 받지 않는다.
+- 화면 아래에 "이 정보는 지금 쓰는 브라우저에만 저장돼요. 차 앱과의 연결은 준비 중이에요."를 보인다 (출품 유의사항: 제출 내용이 사실과 다르면 선정 취소).
+
+### Firebase로 옮길 때 할 일 (문의 A1 이후)
+
+- Firebase Auth로 보호자를 구분하고, Firestore 보안 규칙으로 자기 문서만 읽고 쓰게 한다. 규칙 없는 테스트 모드로 배포하지 않는다.
+- `PetProfileRepository`의 Firebase 구현을 `web/src/data/`에 더하고 `container.ts`에서 고른다. 실패 이유에 `'network'`를 더한다.
+- 수집 항목·목적·보유 기간을 알리고 동의 버튼을 둔다. 개인정보처리방침 URL을 만든다 (Pleos 앱 제출 폼 필수 항목).
+- 브라우저에 있던 데이터는 보호자가 동의한 뒤 한 번 올리고, 올린 뒤 브라우저에서 지운다.
+- 사진은 Firestore 문서가 아니라 Storage에 두고 `photoUrl`로 가리킨다 (형식 v2).
+- 보호자가 자기 데이터를 지울 수 있게 한다.
+- 차 앱이 웹 페이지를 연결하면 도메인 등록 증빙이 필요하다 ([ux-guidelines.md](pleos/ux-guidelines.md) "외부 서버·네트워크").
+- 비밀값: Firebase 웹 설정은 `web/.env.local`(gitignore)의 `VITE_FIREBASE_*`로 받는다. 값이 없으면 localStorage 구현을 쓰고 빌드는 그대로 된다. 그때 `web/.env.example`을 같이 만든다.
+  - `VITE_`로 시작하는 값은 번들에 들어가 누구나 볼 수 있다. **Claude API 키, 카카오 키는 웹에 절대 넣지 않는다** (서버에만).
 
 ## 테스트 전략
 

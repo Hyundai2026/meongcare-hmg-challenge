@@ -20,17 +20,25 @@
 //
 // 직접 실행 / git 훅
 //   pipeline  (/ship 스킬) 검증 파이프라인(CI와 같은 작업)을 돌리고, 통과하면 기록한다.
+//             - Android: gradlew assembleDebug testDebugUnitTest lintDebug (gradlew가 있을 때)
+//             - 보호자 웹: npm --prefix web run check (web/package.json이 있을 때)
+//               웹 의존성이 설치되지 않았거나 package.json과 다르면 멈추고 npm --prefix web ci를 하라고 알린다.
+//               설치는 자동으로 하지 않는다 (패키지 설치 스크립트가 돌기 때문. 사람이 확인하고 한다).
 //   prepush   (git pre-push 훅: .githooks/pre-push) dev·main에 push할 때 검사한다.
 //             - main·dev 브랜치를 지우는 push는 막는다.
 //             - main push는 PROMOTE_MAIN=1이어야 하고, origin/dev에 이미 있는 커밋이어야 한다.
 //             - 검증 파이프라인 통과를 확인한다.
 //             - 아래 경우에는 막는다. 검증한 대상과 push하는 대상이 달라지기 때문이다.
-//               - 커밋 안 된 앱 코드가 있을 때
+//               - 커밋 안 된 앱 코드나 웹 파일이 있을 때
 //               - push할 커밋이 체크아웃돼 있지 않을 때
 //             - pipeline으로 이미 통과한 상태면 다시 돌리지 않는다.
 //
+// 웹 파일(web/, docs/data/)은 pipeline과 prepush에서만 검사한다. precommit·stop은 Android 앱 코드만 본다
+// (008 사용자 결정: 웹은 dev에 들어갈 때만 검사).
+//
 // 해시는 커밋 여부와 상관없이 "작업 트리에 있는 앱 코드 전체의 내용"으로 만든다.
 // 그래서 턴 중에 커밋해도 Stop 검사를 건너뛰지 않는다.
+// 파이프라인 통과 기록은 앱 코드 해시와 웹 파일 해시를 합친 값이다. 웹만 바뀌어도 다시 돈다.
 //
 // Stop의 무한 루프 방지:
 //   - 실패한 뒤 아무것도 고치지 않고 다시 멈추면 놓아준다.
@@ -45,9 +53,12 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const STATE_DIR = join(ROOT, '.claude', '.cache');
 const STATE_FILE = join(STATE_DIR, 'build-gate.json');
 const WATCH = /\.(kt|kts|java|xml|gradle|toml|pro|properties)$/i;
-const IGNORE = /^(\.claude|docs|apk)\//;
+const IGNORE = /^(\.claude|docs|apk|web)\//;
 const TASKS = ['assembleDebug'];
 const PIPELINE = ['assembleDebug', 'testDebugUnitTest', 'lintDebug']; // .github/workflows/android.yml과 같게 유지
+const WEB_DIR = 'web';
+const WEB_FILES = /^(web|docs\/data)\//; // 웹 테스트가 docs/data/의 예시 JSON을 읽는다
+const WEB_CHECK = ['--prefix', WEB_DIR, 'run', 'check']; // .github/workflows/web.yml과 같게 유지
 const MAX_FAILS = 3;
 const RELEASE_BRANCHES = ['main', 'master']; // /promote로만 바뀐다
 const INTEGRATION_BRANCH = 'dev'; // /ship이 merge한다
@@ -103,6 +114,10 @@ function git(...args) {
 }
 
 const isAppCode = (f) => WATCH.test(f) && !IGNORE.test(f);
+const isWebFile = (f) => WEB_FILES.test(f);
+const isPipelineFile = (f) => isAppCode(f) || isWebFile(f);
+const hasGradle = existsSync(join(ROOT, 'gradlew'));
+const hasWeb = existsSync(join(ROOT, WEB_DIR, 'package.json'));
 
 if (mode === 'precommit') {
   const branch = git('symbolic-ref', '--short', '-q', 'HEAD')?.trim();
@@ -146,20 +161,25 @@ if (mode === 'prepush') {
   }
 }
 
-if (!existsSync(join(ROOT, 'gradlew'))) {
-  // Android 프로젝트가 아직 없음
-  if (mode === 'pipeline' || mode === 'prepush') say('[build-gate] gradlew가 없어 검증 파이프라인을 건너뛴다.');
+const isPipelineMode = mode === 'pipeline' || mode === 'prepush';
+if (!hasGradle && !(isPipelineMode && hasWeb)) {
+  // Android 프로젝트가 아직 없음 (pipeline·prepush는 웹이 있으면 웹만 검사한다)
+  if (isPipelineMode) say('[build-gate] gradlew와 web/package.json이 없어 검증 파이프라인을 건너뛴다.');
   done();
 }
 
-// 작업 트리(추적 중인 파일 + gitignore되지 않은 새 파일)에 있는 앱 코드 전체의 내용 해시.
-// gitignore 대상(secrets.properties, local.properties, build/ 등)은 읽지 않는다.
+// 작업 트리(추적 중인 파일 + gitignore되지 않은 새 파일)에서 조건에 맞는 파일 전체의 내용 해시.
+// gitignore 대상(secrets.properties, local.properties, build/, web/node_modules/ 등)은 읽지 않는다.
 // 줄바꿈(CRLF/LF)은 무시한다. Windows(autocrlf)에서는 브랜치 전환이나 merge 때 git이 파일을 CRLF로 다시 써서,
 // 내용이 같아도 해시가 바뀌어 빌드·파이프라인을 다시 돌리게 되기 때문이다.
 function appCodeDigest() {
+  return digestOf(isAppCode);
+}
+
+function digestOf(predicate) {
   const out = git('ls-files', '-z', '--cached', '--others', '--exclude-standard');
   if (out === null) return null;
-  const files = [...new Set(out.split('\0').filter((f) => f && isAppCode(f)))].sort();
+  const files = [...new Set(out.split('\0').filter((f) => f && predicate(f)))].sort();
   const h = createHash('sha256');
   for (const f of files) {
     h.update(`${f}\0`);
@@ -174,6 +194,10 @@ function appCodeDigest() {
 
 // HEAD 대비 바뀐 앱 코드 파일 (스테이징 여부 무관, 새 파일 포함)
 function changedAppFiles() {
+  return changedFiles(isAppCode);
+}
+
+function changedFiles(predicate) {
   const out = git('status', '--porcelain', '-z', '--untracked-files=all');
   if (out === null) return [];
   const entries = out.split('\0').filter(Boolean);
@@ -183,7 +207,7 @@ function changedAppFiles() {
     files.push(entries[i].slice(3));
     if (status.includes('R') || status.includes('C')) i++; // -z에서는 rename 원본 경로가 다음 항목
   }
-  return files.filter(isAppCode);
+  return files.filter(predicate);
 }
 
 function stagedAppFiles() {
@@ -223,8 +247,28 @@ function build(tasks) {
   return { ok: run.status === 0, tail, error: run.error?.message };
 }
 
+function npm(args) {
+  const opts = { cwd: ROOT, timeout: 570_000, maxBuffer: 32 * 1024 * 1024 };
+  // Windows: npm은 npm.cmd라서 셸로 실행한다.
+  const run = spawnSync('npm', args, process.platform === 'win32' ? { ...opts, shell: true } : opts);
+  const tail = `${decode(run.stdout)}\n${decode(run.stderr)}`.trim().split(/\r?\n/).slice(-80).join('\n');
+  return { ok: run.status === 0, tail, error: run.error?.message };
+}
+
+// 웹 의존성이 package.json과 맞게 설치돼 있는지 먼저 본다 (npm ls는 없거나 버전이 다르면 실패한다).
+function webCheck() {
+  const installed = npm(['--prefix', WEB_DIR, 'ls', '--depth=0']);
+  if (!installed.ok) {
+    return {
+      ...installed,
+      hint: `웹 의존성이 설치되지 않았거나 web/package.json과 다르다. npm --prefix ${WEB_DIR} ci를 실행한 뒤 다시 하라 (설치는 자동으로 하지 않는다).`,
+    };
+  }
+  return npm(WEB_CHECK);
+}
+
 const ENV_HINT =
-  '코드로 고칠 수 없는 환경 문제(Android SDK 미설치, 네트워크, Pleos 저장소 접근 등)라면 고치려 하지 말고 사용자에게 원인을 보고하고 멈춰라.';
+  '코드로 고칠 수 없는 환경 문제(Android SDK 미설치, Node 미설치, 네트워크, Pleos 저장소 접근 등)라면 고치려 하지 말고 사용자에게 원인을 보고하고 멈춰라.';
 
 const digest = appCodeDigest();
 
@@ -243,30 +287,39 @@ if (mode === 'pipeline' || mode === 'prepush') {
           `검증은 작업 트리 기준이라, git switch ${off.branch} 후 push한다.`,
       );
     }
-    if (changedAppFiles().length > 0) {
-      block('[build-gate] 커밋 안 된 앱 코드 변경이 있다. 검증 대상과 push 대상이 달라지므로 커밋하거나 치운 뒤 push한다.');
+    if (changedFiles(isPipelineFile).length > 0) {
+      block('[build-gate] 커밋 안 된 앱 코드나 웹 파일 변경이 있다. 검증 대상과 push 대상이 달라지므로 커밋하거나 치운 뒤 push한다.');
     }
   }
-  if (digest !== null && digest === state.pipelineDigest) {
+  const webDigest = hasWeb ? digestOf(isWebFile) : 'no-web';
+  const pipelineDigest = digest === null || webDigest === null ? null : `${hasGradle ? digest : 'no-gradle'}|${webDigest}`;
+  if (pipelineDigest !== null && pipelineDigest === state.pipelineDigest) {
     say('[build-gate] 이 상태는 이미 검증 파이프라인을 통과했다.');
     process.exit(0);
   }
-  say(`[build-gate] 검증 파이프라인 실행: gradlew ${PIPELINE.join(' ')}`);
-  const result = build(PIPELINE);
-  if (result.ok) {
-    save({ pipelineDigest: digest, okDigest: digest });
-    say('[build-gate] 검증 파이프라인 통과.');
-    process.exit(0);
+  const steps = [hasGradle && `gradlew ${PIPELINE.join(' ')}`, hasWeb && `npm ${WEB_CHECK.join(' ')}`].filter(Boolean);
+  say(`[build-gate] 검증 파이프라인 실행: ${steps.join(' + ')}`);
+  const failed = (part, result) =>
+    block(
+      [
+        `[build-gate] 검증 파이프라인 실패 (${part}).${mode === 'prepush' ? ' push하지 않았다.' : ''} 아래 에러를 고친 뒤 다시 실행하라.`,
+        result.hint ?? ENV_HINT,
+        result.error ? `실행 오류: ${result.error}` : '',
+        '',
+        result.tail,
+      ].join('\n'),
+    );
+  if (hasGradle) {
+    const result = build(PIPELINE);
+    if (!result.ok) failed('Android', result);
   }
-  block(
-    [
-      `[build-gate] 검증 파이프라인 실패.${mode === 'prepush' ? ' push하지 않았다.' : ''} 아래 에러를 고친 뒤 다시 실행하라.`,
-      ENV_HINT,
-      result.error ? `실행 오류: ${result.error}` : '',
-      '',
-      result.tail,
-    ].join('\n'),
-  );
+  if (hasWeb) {
+    const result = webCheck();
+    if (!result.ok) failed('보호자 웹', result);
+  }
+  save({ pipelineDigest, ...(hasGradle ? { okDigest: digest } : {}) });
+  say('[build-gate] 검증 파이프라인 통과.');
+  process.exit(0);
 }
 
 if (mode === 'precommit') {

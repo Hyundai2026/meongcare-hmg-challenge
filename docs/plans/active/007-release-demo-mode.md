@@ -293,10 +293,10 @@ class FakeGuidanceSource(
 
 ### 필수
 
-- [ ] 0. 이 계획 파일 커밋 → `docs(plans): 007 release 시연 모드 계획 추가`
+- [x] 0. 이 계획 파일 커밋 → `docs(plans): 007 release 시연 모드 계획 추가`
   - 확인: `git log -1 --stat`에 이 파일만 있다.
 
-- [ ] 1. 모드 결정 규칙을 순수 함수로 분리 (동작 변화 없음) → `refactor(di): 데이터 모드와 소스 구성 결정을 순수 함수로 분리`
+- [x] 1. 모드 결정 규칙을 순수 함수로 분리 (동작 변화 없음) → `refactor(di): 데이터 모드와 소스 구성 결정을 순수 함수로 분리`
   - `di/DataMode.kt`: `resolveDataMode(isDebugBuild, savedName)` (release는 아직 `REAL`)
   - `di/SourcePlan.kt`: `SourceKind`, `SourcePlan`, `sourcePlanOf(mode, isAutomotive)`. 이 단계에는 FAKE·REAL 행만 있다 (설계 결정 1 표의 첫·마지막 행).
   - `di/DataModeStore.kt`: `read()`가 `resolveDataMode`를 부른다.
@@ -313,7 +313,7 @@ class FakeGuidanceSource(
       - `` `Fake 길안내를 쓰면 시연용 표시를 한다`() ``, `` `Real 길안내면 시연용 표시를 하지 않는다`() ``
   - 확인: `testDebugUnitTest` 통과 (121 + 새 테스트). 기기가 있으면 debug Fake 시연이 005 그대로인지만 본다.
 
-- [ ] 2. Fake 길안내의 진행 조건 (`[사용자 승인 필요]` 2가 **2a**일 때만) → `feat(data): Fake 길안내가 진행 조건이 참일 때만 남은 시간을 줄이게 한다`
+- [x] 2. Fake 길안내의 진행 조건 (`[사용자 승인 필요]` 2가 **2a**일 때만) → `feat(data): Fake 길안내가 진행 조건이 참일 때만 남은 시간을 줄이게 한다`
   - `data/guidance/FakeGuidanceSource.kt`: 생성자 인자 `progressGate: Flow<Boolean>? = null` (설계 결정 3의 계약). KDoc에 계약과 "Real NaviHelper도 차가 서 있으면 남은 시간이 줄지 않는다"는 근거를 적는다.
   - `FakeGuidanceSourceProgressGateTest` (`runTest` + `backgroundScope`, 진행 조건은 `MutableStateFlow<Boolean>`, 짧은 timing):
     - `` `진행 조건이 거짓이어도 경로 계산은 끝나 처음 남은 시간을 보여준다`() ``
@@ -327,7 +327,7 @@ class FakeGuidanceSource(
   - 확인: `FakeGuidanceSourceTest`, `FakeGuidanceSourceBoundaryTest`, 새 테스트 모두 통과. 기존 Fake 테스트 파일은 고치지 않는다.
   - 2b·2c를 골랐으면 이 단계를 건너뛰고 진행 로그에 적는다. 2c면 단계 3에서 DEMO용 `FakeGuidanceTiming`만 넘긴다.
 
-- [ ] 3. 시연 모드 추가와 debug 패널 전환
+- [x] 3. 시연 모드 추가와 debug 패널 전환
   - 3-1. → `feat(di): 시연(DEMO) 데이터 모드 추가`
     - `DataMode.DEMO` (KDoc: 주행 상태는 차량 기기면 Real·아니면 Fake 시나리오, 길안내는 Fake, 제출 APK용)
     - `sourcePlanOf`에 DEMO 두 행 (설계 결정 1 표). `[사용자 승인 필요]` 1의 답이 1b·1c면 그 답대로 한 행으로 만든다.
@@ -348,7 +348,7 @@ class FakeGuidanceSource(
     - `assembleDebug`, 테스트 통과
     - 기기가 있으면: 확인 절차 P1~P3 (`my_avd`). `pleos_connect`가 켜져 있으면 D1~D4만 먼저 본다. 실패를 일찍 찾기 위해서다. 전체 확인은 단계 7에서 한다.
 
-- [ ] 4. 시연용 표시 (`[사용자 승인 필요]` 3의 답대로. 아래는 3a) → `feat(ui): 시연용 길안내 안내 문구 표시`
+- [x] 4. 시연용 표시 (`[사용자 승인 필요]` 3의 답대로. 아래는 3a) → `feat(ui): 시연용 길안내 안내 문구 표시`
   - `strings.xml`에 `guidance_simulated_notice`
   - `HomeScreen`에 `isGuidanceSimulated: Boolean` 인자 → `ParkedScreen` → `ParkedGuidanceSection` (안내 없음·안내 중), `ArrivedScreen`
   - `DrivingScreen`은 바꾸지 않는다 (완료 기준 3의 `git diff`)
@@ -357,7 +357,7 @@ class FakeGuidanceSource(
   - 확인: `assembleDebug`. 기기가 있으면 `/verify`로 정차(안내 없음·안내 중)·도착 화면을 세로·가로·다크로 본다.
   - 3b면 `HomeScreen`의 바깥 `Box`에 배지를 둔다. 완료 기준 3에서 `DrivingScreen.kt` 줄을 빼고, 주행 화면 UI 트리에서 배지가 클릭 불가인지 본다.
 
-- [ ] 5. release를 시연 모드로 (`[사용자 승인 필요]` 4가 **4a**일 때)
+- [x] 5. release를 시연 모드로 (`[사용자 승인 필요]` 4가 **4a**일 때)
   - 5-1. → `feat(di): release 빌드를 시연 모드로 고정`
     - `resolveDataMode`의 release 분기를 `DEMO`로 바꾼다
     - `DataModeTest`의 release 테스트를 `` `release 빌드는 저장된 값과 상관없이 시연 모드다`() ``로 바꾼다
@@ -454,7 +454,19 @@ class FakeGuidanceSource(
     - 단위 테스트 121개.
     - `keystore.properties` 없음 → release는 unsigned APK.
 
+- 2026-11-05: 단계 0~5 완료 (`539b7ea`, `f5ea3eb`, `93d51a2`, `a98a760`, `aeab752`, `5938d57`, `a9334b5`, `4ac09df`, `68eaf5c`).
+  - 단계 1: `DataModeTest` 4, `SourcePlanTest` 4 → 전체 129 통과.
+  - 단계 2: `FakeGuidanceSourceProgressGateTest` 7 통과. 기존 Fake 길안내·시나리오 테스트 그대로 통과.
+  - 단계 3: `SourcePlanTest` DEMO 4개 더함, `DataModeTest` 2개 더함 → 142 통과.
+    - Pleos 에뮬레이터 빠른 확인 (debug 시연, "DEBUG · 시연 (주행 Real)"): D1 정차 화면, D2 [병원으로 안내] → "병원까지 12분", **D3 P인 채로 8초 → 12분 그대로**, D4 기어 D → 3초 뒤 10분, 7초 뒤 7분. 로그에 차량 연결 두 개(화면, 진행 조건)가 같은 순간 같은 `DO=true active=0x50`을 받았다. 이어서 D에서 도착하고 P로 바꾸자 도착 화면이 떴다.
+  - 단계 4: Pleos에서 정차(안내 중) 카드 아래 시연 문구 확인. `DrivingScreen.kt`의 `git diff dev` 0줄.
+  - 단계 5: release → DEMO. `4ac09df`는 단계 3-2에서 `next()`를 `resolveDataMode`의 KDoc과 함수 사이에 넣어 설명이 엉뚱하게 붙은 것을 바로잡은 커밋이다.
+
 ## 결정 / 배운 점
+
+- `DataMode.next()`를 넣을 때 `resolveDataMode`의 KDoc과 함수 사이에 끼워 넣는 실수를 했다 (KDoc이 `next()`에 붙음). 별도 `refactor` 커밋으로 바로잡았다.
+- debug 패널의 다음 모드 라벨은 받침에 맞춰 "시연으로 전환" / "Real로 전환" / "Fake로 전환"이다.
+
 - 2026-11-05: 사용자 결정 (`[사용자 승인 필요]` 1~5 모두 권장안).
   - 1 → **1a**: 시연 모드의 주행 상태는 차량 기기면 Real, 아니면 Fake + 시나리오.
   - 2 → **2a**: 주행 중일 때만 남은 시간이 준다 (단계 2를 한다).

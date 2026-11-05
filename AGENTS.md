@@ -49,8 +49,9 @@ Windows에서는 `gradlew.bat`을 쓴다. Bash에서는 `./gradlew`.
 - Pleos SDK와 AAOS Car API는 `data/` 아래 래퍼 클래스에서만 호출한다. UI와 도메인은 `domain/`의 인터페이스(예: `DrivingStateSource`)만 의존한다.
 - SDK 래퍼마다 **Fake 구현을 같이 만든다.**
   - 쓰임: GPU 없는 PC에서 개발, 단위 테스트, 시연 영상 촬영.
-  - `AppContainer`가 데이터 모드에 따라 Fake나 Real을 끼운다.
-  - debug 빌드는 화면 아래 debug 패널에서 모드를 바꾼다 (재시작하면 적용). release는 항상 Real이다.
+  - `AppContainer`가 데이터 모드(Fake / 시연 / Real)에 따라 구현을 끼운다. 구성표: [docs/architecture.md](docs/architecture.md) "데이터 모드".
+  - debug 빌드는 화면 아래 debug 패널에서 모드를 바꾼다 (재시작하면 적용).
+  - **release는 시연 모드다**: 주행 상태는 차량 기기면 Real, 아니면 Fake 시나리오. 길안내는 시연용 Fake이고 화면에 그렇게 알린다. Real 길안내가 생기면 다시 정한다.
 - SDK의 콜백 API(`onComplete`/`onFailed`)는 래퍼 안에서 `suspend` 함수나 `Flow`로 감싼다.
 - `Vehicle`의 `initialize()`/`release()`는 한 곳에서만 관리한다: `data/vehicle/VehicleConnection` (REAL 모드에서만, 프로세스 수명주기에 맞춰).
   - 차량 기능 래퍼는 `VehicleConnection.vehicle`을 쓴다. `Vehicle`을 직접 만들지 않는다.

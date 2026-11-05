@@ -16,6 +16,7 @@ import com.meongcare.app.ui.guidance.GuidanceUiState
  *
  * 전환 애니메이션은 넣지 않는다 (주행 중 움직이는 요소를 줄인다).
  *
+ * @param isGuidanceSimulated 길안내가 시연용이면 정차·도착 화면에 그 사실을 알린다. 주행 화면은 바꾸지 않는다.
  * @param bottomBar 화면 아래에 붙는 영역. debug 빌드의 개발자 패널이 들어간다.
  */
 @Composable
@@ -25,6 +26,7 @@ fun HomeScreen(
     onStartGuidance: () -> Unit,
     onCancelGuidance: () -> Unit,
     onDismissArrival: () -> Unit,
+    isGuidanceSimulated: Boolean,
     modifier: Modifier = Modifier,
     bottomBar: @Composable () -> Unit = {},
 ) {
@@ -36,10 +38,12 @@ fun HomeScreen(
                         guidanceUiState = guidanceUiState,
                         onStartGuidance = onStartGuidance,
                         onCancelGuidance = onCancelGuidance,
+                        isGuidanceSimulated = isGuidanceSimulated,
                     )
                     HomeContent.ARRIVAL -> ArrivedScreen(
                         destinationName = guidanceUiState.destinationName,
                         onDismiss = onDismissArrival,
+                        showsSimulatedNotice = isGuidanceSimulated,
                     )
                     HomeContent.DRIVING -> DrivingScreen(guidanceUiState)
                 }

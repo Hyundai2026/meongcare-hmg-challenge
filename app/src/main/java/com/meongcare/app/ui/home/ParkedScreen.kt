@@ -39,6 +39,7 @@ fun ParkedScreen(
     onStartGuidance: () -> Unit,
     onCancelGuidance: () -> Unit,
     modifier: Modifier = Modifier,
+    isGuidanceSimulated: Boolean = false,
 ) {
     var memo by rememberSaveable { mutableStateOf("") }
 
@@ -57,6 +58,7 @@ fun ParkedScreen(
             uiState = guidanceUiState,
             onStartGuidance = onStartGuidance,
             onCancelGuidance = onCancelGuidance,
+            showsSimulatedNotice = isGuidanceSimulated,
         )
         OutlinedTextField(
             value = memo,

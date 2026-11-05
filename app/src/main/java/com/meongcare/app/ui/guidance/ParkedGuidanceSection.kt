@@ -24,6 +24,8 @@ import com.meongcare.app.ui.theme.MeongCareTheme
  * - 안내 없음: 병원 이름 + [병원으로 안내]
  * - 안내 중: 남은 시간 + 병원 이름 + [안내 취소]. 안내 취소는 정차 중에만 한다 (주행 화면에는 버튼이 없다).
  * - 도착: 이 영역 대신 도착 화면이 보이므로 아무것도 그리지 않는다.
+ *
+ * @param showsSimulatedNotice 길안내가 시연용이면 그 사실을 작은 글씨로 알린다 (숨기지 않는다).
  */
 @Composable
 fun ParkedGuidanceSection(
@@ -31,6 +33,7 @@ fun ParkedGuidanceSection(
     onStartGuidance: () -> Unit,
     onCancelGuidance: () -> Unit,
     modifier: Modifier = Modifier,
+    showsSimulatedNotice: Boolean = false,
 ) {
     if (uiState is GuidanceUiState.Arrived) return
 
@@ -70,8 +73,20 @@ fun ParkedGuidanceSection(
                 }
                 is GuidanceUiState.Arrived -> Unit
             }
+            if (showsSimulatedNotice) SimulatedGuidanceNotice()
         }
     }
+}
+
+/** "시연용 길안내예요…" 한 줄. 정차 화면 카드와 도착 화면이 같이 쓴다. 움직임과 터치는 없다. */
+@Composable
+fun SimulatedGuidanceNotice(modifier: Modifier = Modifier) {
+    Text(
+        text = stringResource(R.string.guidance_simulated_notice),
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = modifier,
+    )
 }
 
 @Preview(widthDp = 480)
@@ -86,6 +101,11 @@ private fun ParkedGuidanceSectionIdlePreview() {
 @Composable
 private fun ParkedGuidanceSectionGuidingPreview() {
     MeongCareTheme {
-        ParkedGuidanceSection(GuidanceUiState.Guiding("시연용 동물병원", 12), onStartGuidance = {}, onCancelGuidance = {})
+        ParkedGuidanceSection(
+            GuidanceUiState.Guiding("시연용 동물병원", 12),
+            onStartGuidance = {},
+            onCancelGuidance = {},
+            showsSimulatedNotice = true,
+        )
     }
 }

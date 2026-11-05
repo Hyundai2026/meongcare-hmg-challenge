@@ -18,6 +18,8 @@
     <string name="guidance_finding_route">경로를 찾는 중</string>
     <string name="guidance_arrived">도착했어요</string>
     <string name="guidance_arrived_driving_hint">정차하면 진료 카드를 볼 수 있어요</string>
+    <!-- 시연용 길안내 안내 (정차 화면 카드·도착 화면). 출품 유의사항: 시연용임을 숨기지 않는다 -->
+    <string name="guidance_simulated_notice">시연용 길안내예요. 실제 내비게이션과는 아직 연결되지 않았어요.</string>
 
     <!-- 도착 화면 (정차 중) -->
     <string name="arrival_card_title">진료 카드</string>

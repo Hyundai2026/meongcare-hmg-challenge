@@ -23,11 +23,11 @@ import kotlin.time.Duration.Companion.seconds
  * | Updated(완료 아님) | Partial |
  * | Updated(완료), 글자 있음 | Final → 끝 |
  * | Updated(완료), 비었거나 공백뿐 | Failed(NO_SPEECH) → 끝 |
- * | Ended | 없음. [finalAfterEndedTimeout] 안에 최종 결과가 없으면 Failed(NO_SPEECH) |
+ * | Ended | 없음. 그때부터 [finalAfterEndedTimeout] 안에 최종 결과가 없으면 Failed(NO_SPEECH) |
  * | Error TIMEOUT | Failed(NO_SPEECH) |
  * | Error MIC_ERROR·AUDIO_ERROR | Failed(MIC) |
  * | 그 밖의 Error, InitFailed | Failed(UNAVAILABLE) (오류 종류가 늘 수 있어서 기본 분기를 둔다, Pleos 문서 권장) |
- * | [initTimeout] 동안 Ready·Updated가 없음 | Failed(UNAVAILABLE) (음성 서비스가 없는 기기에서 콜백이 안 올 때) |
+ * | 시작 후 [initTimeout] 동안 Ready·Updated·Ended가 없음 (Started만 와도) | Failed(UNAVAILABLE) (음성 서비스가 없는 기기에서 콜백이 안 올 때) |
  * | 시작 후 [maxListen] | Failed(NO_SPEECH) |
  * | 끝난 뒤 오는 이벤트 | 무시 |
  * | client.start가 예외 | Failed(UNAVAILABLE) |
@@ -63,19 +63,46 @@ class RealVoiceInput(
         }
     }
 
-    /** 끝(Final·Failed)이 나올 때까지 중간 이벤트를 [out]으로 넘기고, 끝 이벤트를 돌려준다. */
+    /**
+     * 끝(Final·Failed)이 나올 때까지 중간 이벤트를 [out]으로 넘기고, 끝 이벤트를 돌려준다.
+     * 시간은 이벤트가 올 때마다 다시 재지 않는다. 시작한 때부터 [initTimeout], 인식이 끝난 때부터 [finalAfterEndedTimeout]을 한 번씩 잰다.
+     */
     private suspend fun relay(events: ReceiveChannel<SttEvent>, out: SendChannel<VoiceEvent>): VoiceEvent {
+        val relay = Relay(events, out)
+        // 1. 첫 응답: Ready·Updated나 인식 끝. Started만 오는 것은 응답으로 치지 않는다.
+        val first = withTimeoutOrNull(initTimeout) { Waited(relay.receiveUntil { responded || ended }) }
+            ?: return VoiceEvent.Failed(VoiceFailure.UNAVAILABLE)
+        first.end?.let { return it }
+        // 2. 인식이 끝날 때까지. 상한은 바깥의 maxListen이다.
+        relay.receiveUntil { ended }?.let { return it }
+        // 3. 인식이 끝난 뒤 최종 결과
+        return withTimeoutOrNull(finalAfterEndedTimeout) { relay.receiveUntil { false } }
+            ?: VoiceEvent.Failed(VoiceFailure.NO_SPEECH)
+    }
+
+    /** [withTimeoutOrNull]의 null(시간 초과)과 "끝 이벤트 없이 조건을 채움"을 가르는 상자. */
+    private class Waited(val end: VoiceEvent?)
+
+    /** SDK 이벤트를 하나씩 받아 표대로 바꾼다. 받은 것의 상태(응답했는지, 인식이 끝났는지)를 들고 있다. */
+    private class Relay(
+        private val events: ReceiveChannel<SttEvent>,
+        private val out: SendChannel<VoiceEvent>,
+    ) {
         var responded = false
+            private set
         var ended = false
-        while (true) {
-            val wait = when {
-                ended -> finalAfterEndedTimeout
-                !responded -> initTimeout
-                else -> Duration.INFINITE
+            private set
+
+        /** [done]이 참이 될 때까지 받는다. 그 사이에 끝 이벤트가 오면 그것을 돌려주고, 아니면 null. */
+        suspend fun receiveUntil(done: Relay.() -> Boolean): VoiceEvent? {
+            while (!done()) {
+                handle(events.receive())?.let { return it }
             }
-            val event = if (wait.isInfinite()) events.receive() else withTimeoutOrNull(wait) { events.receive() }
+            return null
+        }
+
+        private suspend fun handle(event: SttEvent): VoiceEvent? {
             when (event) {
-                null -> return VoiceEvent.Failed(if (ended || responded) VoiceFailure.NO_SPEECH else VoiceFailure.UNAVAILABLE)
                 SttEvent.Ready -> {
                     responded = true
                     out.send(VoiceEvent.Ready)
@@ -92,6 +119,7 @@ class RealVoiceInput(
                 is SttEvent.Error -> return VoiceEvent.Failed(failureOf(event.name))
                 is SttEvent.InitFailed -> return VoiceEvent.Failed(VoiceFailure.UNAVAILABLE)
             }
+            return null
         }
     }
 }

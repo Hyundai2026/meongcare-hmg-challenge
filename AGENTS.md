@@ -25,7 +25,7 @@
 - 서비스 기능 스택: Room(암호화), Pleos STT/TTS `ON_DEVICE`, Pleos NaviHelper, Firebase 서버(Functions), Claude API(임시 Opus, 팀 논의 중), 카카오 로컬 API. 표와 승인된 Pleos 권한: [docs/architecture.md](docs/architecture.md) "서비스 기능 스택"
 - applicationId `com.meongcare.app`, 앱 이름 **MeongCare** (2026-11-05 사용자 결정). 이름은 Android `strings.xml`의 `app_name`과 `web/src/config.ts`의 `APP_NAME` 두 곳에 있다
 - Pleos Maven: `https://nexus-playground.pleos.ai/repository/maven-releases/`
-- Vehicle SDK: `ai.pleos.playground:Vehicle:2.3.2`
+- Vehicle SDK: `ai.pleos.playground:Vehicle:2.3.2`, NaviHelper SDK: `ai.pleos.playground:NaviHelper:3.0.5` (권한 `NAVI_ROUTE_SEARCH`, `NAVI_ROUTE`)
 - 그 밖의 SDK 좌표, API, 권한: [docs/pleos/sdk-notes.md](docs/pleos/sdk-notes.md)
 - 에뮬레이터: [docs/pleos/emulator-setup.md](docs/pleos/emulator-setup.md). GPU 필수이고 **Cold boot로만** 켠다.
 - 보호자 웹: React + Vite + TypeScript, 테스트는 Vitest. Node 22.12 이상. 버전은 `web/package.json`에 정확히 고정한다 (`^`, `~` 없음). 저장은 지금 브라우저 localStorage, 나중에 Firebase. 자세히: [docs/architecture.md](docs/architecture.md) "보호자 웹"

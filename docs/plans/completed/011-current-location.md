@@ -480,7 +480,7 @@ fun currentLocationKindOf(mode: DataMode, isAutomotive: Boolean): SourceKind
     - 확인: `testDebugUnitTest`. Pleos L1~L4, 일반 폰 P3.
     - L1에서 `SecurityException`이 보이면 멈추고 사용자에게 보고한다 ("확인 필요" 참고).
 
-- [ ] 5. 경계 테스트 (`tester`) → `test: 현재 위치 경계 테스트 추가`
+- [x] 5. 경계 테스트 (`tester`) → `test: 현재 위치 경계 테스트 추가`
   - 메인이 `tester`에게 **이 계획 파일 경로와 대상만** 넘긴다. 구현 설명은 넘기지 않는다.
     - 대상: `NaviCurrentLocationSource`(`currentLocationOf` 포함), `FakeCurrentLocationSource`, `currentLocationKindOf`, `DebugLocationViewModel`, `debugLocationText`
     - 대상 아님: `PleosNaviClient`, `AppContainer`, `MainActivity`, `DebugPanel`(Compose). SDK, Context, Compose가 필요하다.
@@ -499,7 +499,7 @@ fun currentLocationKindOf(mode: DataMode, isAutomotive: Boolean): SourceKind
   - tester가 찾은 버그는 메인이 `fix:` 커밋으로 따로 고친다.
   - 확인: `.\gradlew.bat testDebugUnitTest` 통과. 통과 수와 실패 수를 진행 로그에 적는다.
 
-- [ ] 6. 전체 검증 (`/verify`, 두 에뮬레이터). 커밋은 없다. 고친 게 있으면 `fix(...)` 커밋으로 낸다.
+- [x] 6. 전체 검증 (`/verify`, 두 에뮬레이터). 커밋은 없다. 고친 게 있으면 `fix(...)` 커밋으로 낸다.
   - `node .claude/hooks/build-gate.mjs pipeline` → "검증 파이프라인 통과."
   - `.\gradlew.bat assembleRelease` 성공
   - 완료 기준 3·4·5의 `git diff`와 Grep을 모두 돌린다 (`$BASE = e57a61f`).
@@ -510,7 +510,7 @@ fun currentLocationKindOf(mode: DataMode, isAutomotive: Boolean): SourceKind
     - O1·O4가 실패하면 → `fix(ui): 안내 중에는 debug 위치 묻기를 막음` (결정 3의 F1). L5를 다시 본다.
   - 기기가 꺼져 있으면 멈추고 사용자에게 Cold boot를 요청한다. 확인하지 못한 것은 그대로 적는다.
 
-- [ ] 7. 문서 맞추기
+- [x] 7. 문서 맞추기
   - `docs/pleos/sdk-notes.md` → `docs(pleos): 에뮬레이터 현재 위치 관찰 기록`
     - "Pleos 에뮬레이터에서 관찰한 것" `[obs-navi-emu]` 절에 011 관찰을 더한다 (날짜, 에뮬레이터 버전, 실차 아님): O1~O4의 결과. 응답 시간(ms), 주소 값, 길안내 중 동시 연결의 결과.
     - 단계 1에서 더한 "미확인" 두 줄을 관찰 결과로 체크하거나 덧붙인다.
@@ -521,7 +521,7 @@ fun currentLocationKindOf(mode: DataMode, isAutomotive: Boolean): SourceKind
   - `AGENTS.md`, `README.md`는 고치지 않는다. NaviHelper를 부르는 파일은 여전히 하나이고, debug 전용 기능이라 시연 방법이 바뀌지 않는다.
   - 확인: 완료 기준 8
 
-- [ ] 8. 개발 노트 작성 (`docs/notes/`)
+- [x] 8. 개발 노트 작성 (`docs/notes/`)
   - 010이 이미 dev에 들어갔으면 **노트를 쓰기 전에** "dev 반영 순서" 3을 먼저 한다. rebase로 커밋 해시가 바뀌어 노트의 범위가 틀려지지 않게 하려는 것이다. 아직이면 노트의 "커밋"에 해시 대신 커밋 메시지 범위를 적는다.
   - `docs/notes/xxj15/YYYY-MM-DD-current-location.md`. 형식은 `docs/notes/README.md` 템플릿을 따른다.
     - 사용한 Pleos SDK와 권한: NaviHelper 3.0.5 `getCurrentLocationInfo()`, `onCurrentLocationInfo`, `onError`, 권한 `NAVI_ROUTE` (새 권한 없음)
@@ -564,4 +564,28 @@ fun currentLocationKindOf(mode: DataMode, isAutomotive: Boolean): SourceKind
   - 정적 검사: `import ai.pleos.playground.navi`·`NaviHelper(`·`getCurrentLocationInfo`는 `PleosNaviClient.kt`에만 있다. 병합 매니페스트의 `pleos.car.permission`은 2건.
   - 해석 층에 `timeSource` 인자를 더했다 (테스트가 가상 시간으로 걸린 시간을 재게). 내비 쪽에서 난 `CancellationException`은 부른 쪽이 살아 있으면 모름으로 본다 (`ensureActive`).
 
+- 2026-11-05: 단계 5~8.
+  - 단계 5 tester: 경계 테스트 66개(6개 파일) 추가. 전체 **420개 통과**, 계약 위반 없음. `test:` 커밋.
+  - 단계 6:
+    - 검증 파이프라인 통과, `assembleRelease` 성공. 완료 기준 3·4·5의 diff·Grep 통과 (`$BASE = e57a61f`).
+    - Grep에서 `di/LocationPlan.kt` KDoc의 `getCurrentLocationInfo`가 걸려서 `fix(di)`로 주석을 고쳤다.
+    - Pleos `emulator-5554` (010 세션이 확인을 끝낸 뒤):
+      - L1 처음 두 번은 5초 시간 초과였다. 원인: 에뮬레이터 framework가 17:57쯤 다시 시작된 뒤 내비 지도가 준비되지 않았다 (`navi not ready`, `mapStatus=MapInitComplete`). 내비 앱을 한 번 띄우자(`MapComplete`) 209ms에 "37.41272, 127.09468 · 수정구 시흥동".
+      - L2 통과 (두 번 눌러 로그 1줄, 한 번 더 눌러 1줄). L3 통과 (D에서 줄 없음, `EditText` 0, P에서 마지막 결과 그대로). L4 Real 통과.
+      - L5 통과: 길안내 중 위치 82ms, 위치 쪽 release 뒤에도 내비 경로 그대로, 앱 [안내 취소]로 경로가 사라졌다. F1은 필요 없다.
+      - L6: 앱을 다시 띄운 뒤 263ms, 다음 83ms. 3배여도 5초보다 작아서 `DEFAULT_TIMEOUT`은 그대로 둔다.
+      - L7 통과: `*:E`에 크래시·`SecurityException` 없음, 우리 pid 로그의 좌표 0건.
+      - Fake 모드(Pleos에서): "위치(Fake): …" 바로 나옴, NaviHelper 호출 없음, [주행]이면 줄 숨김, 다크 모드 이상 없음.
+      - 끝나고 시연 모드·기어 P·경로 없음·다크 꺼짐으로 되돌렸다.
+    - O1 됨, O2 64~263ms, O3 주소는 매번 "수정구 시흥동"(null·빈 값 없음), O4 됨.
+    - **일반 폰 `emulator-5556`은 꺼져 있어서 P1~P4를 그 기기로 보지 못했다.** Fake 모드 동작은 Pleos에서 대신 봤고, P3는 `LocationPlanTest`로만 확인했다. 세로 화면도 보지 못했다.
+  - 단계 7: sdk-notes(관찰 절, 미확인 3줄), architecture.md(서비스 기능 스택, 패키지 구조, 데이터 모드) 커밋.
+  - 단계 8: 노트 `docs/notes/xxj15/2026-11-05-current-location.md`. 010이 아직 dev에 없어서 커밋 범위는 메시지로 적었다.
+
 ## 결정 / 배운 점
+
+- **내비 지도가 준비되기 전에는 위치 요청이 조용히 버려진다** (Pleos 에뮬레이터). 콜백도 `onError`도 오지 않는다. 그래서 시간 초과로 "모름"을 내는 설계가 필요했다. 시연 준비에 "내비 화면을 한 번 띄운다"를 넣었다 (architecture.md, 노트).
+- tester가 짚은 두 가지는 지금 동작대로 정했다:
+  - 부른 쪽이 취소하면 로그를 남기지 않는다. 취소는 결과가 아니다. "한 번 물을 때 한 줄"은 결과가 나온 호출에 대한 말로 본다.
+  - `Error` 계열(`LinkageError` 등)은 잡지 않는다. `CurrentLocationSource` KDoc의 "예외를 던지지 않는다"는 `Exception`을 말한다.
+- 해석 층에 `timeSource` 인자를 더했다 (테스트에서 가상 시간으로 걸린 시간을 재게). 계획의 블록과 다른 점이다.

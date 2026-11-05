@@ -446,11 +446,11 @@ sdk-notes에 없는 것들이다. 문서에 없으면 Pleos Maven의 `NaviHelper
 
 ### 필수
 
-- [ ] 0. 이 계획 파일 커밋 → `docs(plans): 010 Real 길안내(NaviHelper) 계획 추가`
+- [x] 0. 이 계획 파일 커밋 → `docs(plans): 010 Real 길안내(NaviHelper) 계획 추가`
   - `.\gradlew.bat testDebugUnitTest`를 돌려 기존 테스트 통과 수를 진행 로그에 적는다 (완료 기준 3의 기준값).
   - 확인: `git log -1 --stat`에 이 파일만 있다.
 
-- [ ] 1. `[선행: pleos-docs-researcher]` spike: 에뮬레이터에서 NaviHelper 확인 (0.5일 이내, **앱 코드 커밋 없음**) → `docs(pleos): Pleos 에뮬레이터 NaviHelper 시험 결과 기록`
+- [x] 1. `[선행: pleos-docs-researcher]` spike: 에뮬레이터에서 NaviHelper 확인 (0.5일 이내, **앱 코드 커밋 없음**) → `docs(pleos): Pleos 에뮬레이터 NaviHelper 시험 결과 기록`
   - 1-1. 임시 코드 (**커밋하지 않는다**):
     - `gradle/libs.versions.toml`과 `app/build.gradle.kts`에 `ai.pleos.playground:NaviHelper:3.0.5`를 넣는다.
     - `AndroidManifest.xml`에 승인된 권한을 넣는다. 처음엔 `NAVI_ROUTE_SEARCH`만 넣고, O2를 본 뒤 `NAVI_ROUTE`를 더한다.
@@ -484,7 +484,7 @@ sdk-notes에 없는 것들이다. 문서에 없으면 Pleos Maven의 `NaviHelper
   - 1-5. 갈래(A/B/C)와 O 요약을 진행 로그에 적는다. U5~U8(+ 생긴 U1~U4)을 사용자에게 한 번에 묻고 답을 진행 로그에 적는다.
   - 확인: 문서 커밋에 앱 코드가 없다 (`git show --stat`).
 
-- [ ] 2. (갈래 A·B) 경계, 남은 시간 변환, 전부 내비 상태 기계
+- [x] 2. (갈래 A·B) 경계, 남은 시간 변환, 전부 내비 상태 기계
   - 2-1. → `feat(data): 내비 연결 경계와 남은 시간 변환 추가`
     - `data/navi/NaviClient.kt` (설계 결정 1의 블록)
     - `data/navi/NaviRemainingTime.kt`: `remainingTimeOf` (O6로 정한 규칙, KDoc에 근거와 sdk-notes 링크)
@@ -516,7 +516,7 @@ sdk-notes에 없는 것들이다. 문서에 없으면 Pleos Maven의 `NaviHelper
     - 갈래 B인데 내비 이벤트가 하나도 오지 않았으면 2-2를 건너뛰고 진행 로그에 적는다.
   - 확인: 두 테스트 클래스 통과, `assembleDebug`.
 
-- [ ] 3. (U5 = 3a, 갈래 A·B) 경로만 내비 → `feat(data): 경로만 내비로 보내는 시연 길안내 추가`
+- [x] 3. (U5 = 3a, 갈래 A·B) 경로만 내비 → `feat(data): 경로만 내비로 보내는 시연 길안내 추가`
   - `data/guidance/NaviRouteOnlyGuidanceSource.kt` (설계 결정 4)
   - `NaviRouteOnlyGuidanceSourceTest` (progress는 짧은 timing의 `FakeGuidanceSource`):
     - `` `상태는 진행 소스를 그대로 따른다`() ``
@@ -530,7 +530,7 @@ sdk-notes에 없는 것들이다. 문서에 없으면 Pleos Maven의 `NaviHelper
   - 3b·3c면 건너뛴다.
   - 확인: 테스트 통과. 기존 `FakeGuidanceSource*Test`가 그대로 통과한다.
 
-- [ ] 4. `[선행: pleos-docs-researcher]` Pleos 어댑터와 Real 모드 연결
+- [x] 4. `[선행: pleos-docs-researcher]` Pleos 어댑터와 Real 모드 연결
   - 4-1. → `feat(data): Pleos NaviHelper 어댑터와 경로 권한 추가`
     - 의존성: `libs.versions.toml`에 `naviHelper = "3.0.5"`와 라이브러리 별칭, `build.gradle.kts`에 `implementation`. git.md 규칙대로 처음 쓰는 이 커밋에 넣는다.
     - `AndroidManifest.xml`에 O2로 정한 승인 권한(`NAVI_ROUTE_SEARCH`, 필요하면 `NAVI_ROUTE`)을 넣는다. 주석에 "2026-11-03 팀 승인, architecture.md"를 적는다.
@@ -555,7 +555,7 @@ sdk-notes에 없는 것들이다. 문서에 없으면 Pleos Maven의 `NaviHelper
     - KDoc만 고친다: `RealGuidanceSource`("차량 기기가 아닌 곳의 Real 모드 자리표시"), `GuidanceSource`, `GuidanceState.Guiding`의 남은 시간 설명(O6 결과), `DataMode.REAL`
     - 확인: `testDebugUnitTest`. Pleos debug Real로 N1~N4·N6 (가능하면 N5·N7), 일반 폰 F3.
 
-- [ ] 5. (U5 = 3a) 시연 모드 차량 기기에서 경로를 내비로
+- [x] 5. (U5 = 3a) 시연 모드 차량 기기에서 경로를 내비로
   - 5-1. → `feat(ui): 경로만 내비로 보낼 때의 안내 문구 추가`
     - `ui/guidance/GuidanceNotice.kt`, `strings.xml` `guidance_route_only_notice` (U6 문구)
     - `SimulatedGuidanceNotice`가 종류를 받는다. `HomeScreen`·`MedicalCardScreen` 인자를 `guidanceNotice`로 바꾸고 미리보기를 고친다.
@@ -577,7 +577,7 @@ sdk-notes에 없는 것들이다. 문서에 없으면 Pleos Maven의 `NaviHelper
     - 5-1의 `ROUTE_ONLY` 문구는 만들지 않는다.
   - **3c면** 단계 5를 건너뛴다.
 
-- [ ] 6. 경계 테스트 (`tester`) → `test: 내비 길안내 매핑과 경로만 내비 시연 경계 테스트 추가`
+- [x] 6. 경계 테스트 (`tester`) → `test: 내비 길안내 매핑과 경로만 내비 시연 경계 테스트 추가`
   - 메인이 `tester`에게 **이 계획 파일 경로와 대상만** 넘긴다. 구현 설명은 넘기지 않는다.
     - 대상: `remainingTimeOf`, `NaviGuidanceSource`, `NaviRouteOnlyGuidanceSource`, `naviUseOf`
     - 대상 아님: `PleosNaviClient`, `NaviClientFactory`, `AppContainer`, `MainActivity`, Compose 화면 (SDK·Context·Compose가 필요하다)
@@ -590,7 +590,7 @@ sdk-notes에 없는 것들이다. 문서에 없으면 Pleos Maven의 `NaviHelper
   - tester가 찾은 버그는 메인이 `fix:` 커밋으로 따로 고친다.
   - 확인: `.\gradlew.bat testDebugUnitTest` 통과. 통과 수와 실패 수를 진행 로그에 적는다.
 
-- [ ] 7. 전체 검증 (`/verify`, 두 에뮬레이터). 커밋은 없다. 고친 게 있으면 `fix(...)` 커밋으로 낸다.
+- [x] 7. 전체 검증 (`/verify`, 두 에뮬레이터). 커밋은 없다. 고친 게 있으면 `fix(...)` 커밋으로 낸다. **일부만 했다** (진행 로그 "확인하지 못한 것")
   - `node .claude/hooks/build-gate.mjs pipeline` → "검증 파이프라인 통과."
   - `.\gradlew.bat assembleRelease` 성공
   - 완료 기준 3의 `git diff`와 완료 기준 4의 Grep을 모두 돌린다.
@@ -600,7 +600,7 @@ sdk-notes에 없는 것들이다. 문서에 없으면 Pleos Maven의 `NaviHelper
   - 새로 알게 된 Pleos 사실이 있으면 sdk-notes에 적는다. 단계 8에서 커밋한다.
   - 기기가 꺼져 있으면 멈추고 사용자에게 Cold boot를 요청한다. 확인하지 못한 것은 그대로 적는다.
 
-- [ ] 8. 문서 맞추기
+- [x] 8. 문서 맞추기
   - `docs/architecture.md`:
     - "서비스 기능 스택"의 길안내, 도착 예정 시간, 도착 감지 행: 상태 칸에 확인한 것과 못 한 것을 적는다. 예: "`poiId` 없이 좌표로 요청됨 (에뮬레이터 관찰)", "단위: …"
     - "데이터 모드": 설계 결정 5의 표(내비 연동). release 문단의 "Real 길안내가 생기면 다시 정한다"를 U5 결정으로 바꾼다.
@@ -619,7 +619,7 @@ sdk-notes에 없는 것들이다. 문서에 없으면 Pleos Maven의 `NaviHelper
     - 단계 7에서 새 사실이 있었으면 `docs(pleos): …`
   - 확인: 완료 기준 7
 
-- [ ] 9. 개발 노트 작성 (`docs/notes/`)
+- [x] 9. 개발 노트 작성 (`docs/notes/`)
   - `docs/notes/xxj15/YYYY-MM-DD-real-navi-guidance.md`. 형식은 `docs/notes/README.md` 템플릿을 따른다.
     - 사용한 Pleos SDK와 권한: NaviHelper 3.0.5 (`requestRoute`, `cancelRoute`, 쓴 콜백들), 선언한 권한
     - 결정: 층 나누기, 안내 한 번에 NaviHelper 하나, 갈래 결과, U5~U7 답, `SourcePlan`을 고치지 않은 이유
@@ -638,7 +638,7 @@ sdk-notes에 없는 것들이다. 문서에 없으면 Pleos Maven의 `NaviHelper
   - 연결 실패나 시간 초과 뒤 카드에 "내비게이션에 연결하지 못했어요" 한 줄을 보인다.
   - 도메인 `GuidanceState`는 바꾸지 않는다. `AppContainer`가 data 쪽의 실패 Flow를 따로 열고, `MainActivity`가 넘긴다.
   - 확인: JVM 테스트, Pleos에서 내비 연결을 막을 방법이 없으면 미리보기로만 본다고 적는다.
-- [ ] B. 경로만 내비에서 처음 남은 시간을 내비의 첫 ETA로 맞추기 (K3) → `feat(data): 시연 길안내 시작 시간을 내비 ETA로 맞추기`
+- [x] B. 경로만 내비에서 처음 남은 시간을 내비의 첫 ETA로 맞추기 (K3) → `feat(data): 시연 길안내 시작 시간을 내비 ETA로 맞추기`
   - `FakeGuidanceSource`에 기본값 있는 시작 값 인자를 더한다. 기존 테스트는 그대로 통과해야 한다.
   - 완료 기준 3의 `FakeGuidanceSource.kt` diff 항목을 이 커밋만큼 예외로 적는다.
 - [ ] C. 앱이 다시 켜질 때 진행 중인 경로 이어받기 → `feat(data): 진행 중인 내비 경로 이어받기`
@@ -656,5 +656,53 @@ sdk-notes에 없는 것들이다. 문서에 없으면 Pleos Maven의 `NaviHelper
     - 데이터 모드는 `sourcePlanOf`로 정한다. release는 시연 모드이고 길안내는 어느 기기에서나 Fake다 (007).
     - `NaviHelper` 의존성과 `pleos.car.permission` 선언은 없다.
     - 에뮬레이터 두 대가 켜져 있다: Pleos `emulator-5554`, 일반 폰 `emulator-5556`.
+  - 기존 테스트 313개 통과 (완료 기준 3의 기준값).
+- 2026-11-05: researcher R1~R8과 spike (단계 1, `bb02679`).
+  - AAR에서 시그니처를 직접 확인했다 (`[aar-navi]`). `RouteInfo`의 `poiId`·`address`·`poiSubId`는 기본값이 없어서 빈 문자열을 넘긴다. `getTripInfo`/`getDrivingInfo`는 없다. 리스너 메서드는 Unit을 돌려준다.
+  - 에뮬레이터 관찰 (`[obs-navi-emu]`): 좌표 + 이름만으로 경로 요청이 된다. 내비 앱이 앞으로 나와 카운트다운 뒤 저절로 안내를 시작한다. `duration`은 초, `distance`는 미터다. `cancelRoute` → `onRouteCancelled`.
+  - **갈래 B**: 에뮬레이터에서는 내비 속 차가 움직이지 않는다. 남은 시간 감소와 `onDestinationArrived`를 볼 수 없다.
+  - spike 임시 코드는 커밋하지 않고 `.claude/.cache/spike-010/`에 옮겼다.
+- 2026-11-05: 사용자 결정.
+  - U5 = **3a "경로만 진짜 내비"**: 시연(= release) 차량 기기는 경로만 내비로 보내고, 앱의 남은 시간과 도착은 시연용이다.
+  - 있으면 좋음 B = **"내비 예상 시간에서 시작"**: 시연 남은 시간을 내비의 `RouteStarted.duration`에서 시작한다.
+  - 시연 도착 때 내비 경로를 취소한다 (U7 기본안).
+- 2026-11-05: 구현 (`e806778`, `936d201`, `974f9cd`, `82222fa`, `e57a61f`). 계획과 달라진 점은 "결정 / 배운 점"에 적었다.
+  - 경로 요청 뒤 내비가 안내를 시작하기까지 10~20초 걸린 적이 있어서, 기다리는 시간을 10초에서 30초로 늘렸다 (`974f9cd`).
+  - Pleos 에뮬레이터가 멈춰서(adb shell 응답 없음) 남은 시간이 33분에서 멈춘 것처럼 보였다. 앱 문제가 아니었다. Cold boot 뒤에는 정상이었다.
+  - Cold boot 뒤 시연 흐름 전체를 확인했다: 카드 → [길 안내 시작] → 내비 경로·자동 안내 시작 → 앱 "경로를 찾는 중" → "병원까지 41분" → 기어 D에서 41 → 31 → 19 → 7분 → 시연 도착 → 내비 경로 취소("어디로 갈까요?") → 앱 "도착했어요" + 경로 안내 문구 → [닫기] → 홈.
+- 2026-11-05: tester 경계 테스트 42개 (`2f4e160`). 처음에 35개 통과, 7개 실패. 버그 6개를 고쳤다 (`501621b`):
+  - B1·B4: 하루보다 긴 남은 시간을 그대로 썼다 → `naviRemainingTimeOf`(0 이하, 하루 초과는 모름)로 두 소스가 같이 쓴다.
+  - B2: 전부 내비가 내비 무응답 때 "경로를 찾는 중"에 계속 머물렀다 → 30초 안에 안내가 시작되지 않으면 안내 없음.
+  - B3: 전부 내비가 안내 시작 뒤의 내비 오류에도 안내를 끝냈다 (경로까지 취소) → 시작 뒤 오류는 무시 (설계 결정 3 기본안).
+  - B5: 경로만 내비가 내비 쪽 취소를 무시했다 → 안내 없음 + 시연 진행 중지.
+  - B6: 경로만 내비가 내비 오류 뒤에도 30초를 다 기다렸다 → 안내 시작 전 오류면 바로 기본 시간으로 시작.
+  - tester가 위험으로 짚은 스레드 안전성: 두 소스 모두 상태와 지금 안내를 잠금 안에서만 바꾸고, 끝난 안내의 늦은 이벤트는 버리게 했다 (`FakeGuidanceSource`와 같은 방식).
+  - 결과: 단위 테스트 368개 모두 통과 (기존 313 + 010 55).
+- 2026-11-05: 에뮬레이터에서 고친 것을 확인하다가 버그를 하나 더 찾았다 (`70282ce`).
+  - 내비 화면에서 "안내 종료"를 누르면 `onRouteCancelled`가 와서 앱도 안내 없음이 된다 (B5 고친 결과 확인).
+  - **내비에 이전 경로가 남은 채로 경로를 요청하면 이전 경로의 `onRouteCancelled`가 먼저 온다** (계획의 O10). B5를 고친 뒤라 앱은 바로 안내를 끝냈는데, 내비는 새 경로를 안내했다. 앱을 `am force-stop`하면 이 상태가 된다.
+  - 어댑터가 `onRouteStarted` 전의 취소를 무시하게 고쳤다. 다시 해 보니 이전 경로의 취소는 무시되고, 약 6초 뒤 새 경로가 시작되어 앱이 "병원까지 40분"을 보였다. 기어 D로 시연 도착까지 가니 "도착했어요"가 되고 `cancelRoute`가 불렸다.
+- 2026-11-05: 다른 세션(011 현재 위치)이 같은 작업 폴더에서 브랜치를 바꿔서, 010 마무리는 worktree(`.claude/.cache/wt-010`)에서 했다.
+- 2026-11-05: 마무리 검증. `node .claude/hooks/build-gate.mjs pipeline` 통과, `assembleRelease` 성공 (서명 없는 사본), 완료 기준 3의 `git diff`와 4의 Grep 통과 (경로는 `data/guidance/navi/`로 바꿔서 봤다).
+  - **확인하지 못한 것**:
+    - Real 모드(전부 내비)를 기기에서 보지 않았다 (N1~N8). 단위 테스트로만 확인했다. 에뮬레이터에서는 도착 이벤트도 볼 수 없다.
+    - 일반 폰 에뮬레이터(`emulator-5556`) F1~F3: 사용자가 꺼서 보지 않았다. 일반 폰에서 내비를 쓰지 않는 규칙은 `naviUseOf` 테스트로만 확인했다.
+    - release APK를 기기에 설치해 보지 않았다 (R1~R3).
+    - 카운트다운 중에 내비에서 취소했을 때 콜백이 오는지 보지 않았다.
+    - 실차.
 
 ## 결정 / 배운 점
+
+- **경계를 `trip(destination): Flow<NaviEvent>` 하나로 바꿨다** (계획: `connect`/`requestRoute`/`close`가 있는 세션 객체).
+  - 구독하면 연결 → 경로 요청, 구독을 끊으면 (도착·취소 전이면) 경로 취소 → 해제. 안내 한 번 = 구독 한 번 = NaviHelper 하나.
+  - 콜백 API를 Flow로 감싸라는 AGENTS 규칙과 맞고, 연결 대기·해제 순서를 어댑터 한 곳에서 지킨다. 상태 기계는 SDK 없이 JVM으로 시험한다.
+  - 연결(`Connected`) 이벤트는 경계에 없다. 연결 시간 초과 대신 "안내 시작(`RouteStarted`)까지 30초"를 기다린다.
+- **위치는 `data/guidance/navi/`** (계획: `data/navi/`). 길안내에만 쓰기 때문이다. `NaviRemainingTime.kt` 대신 `NaviTiming.kt`에 남은 시간 규칙과 30초를 같이 둔다.
+- **`NaviClientFactory`를 만들지 않았다.** `naviUseOf`가 차량 기기가 아니면 `NONE`을 주므로 일반 폰에서는 `PleosNaviClient`를 만들지 않는다. 만들어도 `trip`을 구독하기 전에는 SDK를 부르지 않는다.
+- **경로만 내비의 시작 시간**: `FakeGuidanceSource`를 고치지 않고, 안내마다 `FakeGuidanceTiming.initialRemaining`만 바꾼 Fake를 새로 만든다 (`fakeOf`). 그래서 있으면 좋음 B를 완료 기준 3의 예외 없이 했다.
+- **화면 안내는 enum 대신 `isRouteOnNavi: Boolean`**. 문구 종류가 둘뿐이라 기존 `isGuidanceSimulated` 옆에 하나를 더했다. 문구: "경로는 차량 내비게이션으로 안내해요. 앱의 남은 시간과 도착은 시연용이에요."
+- **`onRouteStarted` 전의 `onRouteCancelled`는 우리 경로의 것이 아닐 수 있다** (에뮬레이터에서 봤다). 어댑터가 거른다. 그래서 `NaviEvent.Cancelled`는 언제나 "우리가 요청한 경로가 취소됐다"는 뜻이다.
+- **안내 시작 뒤의 내비 오류는 무시한다** (설계 결정 3 기본안 그대로). O11은 보지 않았다. 구독을 끊으면 경로까지 취소되므로, 오류 한 번에 안내를 끝내면 잃는 것이 더 크다.
+- 배운 점:
+  - NaviHelper SDK는 logcat에 `[NaviHelper][SDK]` 태그로 콜백과 호출을 남긴다. 앱에 로그를 넣지 않아도 순서를 볼 수 있다.
+  - 단위 테스트가 다 통과해도 SDK의 실제 콜백 순서가 다르면 깨진다. "B5 고침"이 "이전 경로가 남은 상태"와 만나 새 버그가 됐다. 에뮬레이터에서 비정상 상태(강제 종료 뒤 재시작)를 한 번 만들어 보는 것이 쌌다.

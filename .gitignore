@@ -16,6 +16,13 @@ local.properties
 !apk/*.apk
 output-metadata.json
 
+# 보호자 웹 (web/)
+web/node_modules/
+web/dist/
+web/.env.local
+web/.env.*.local
+*.tsbuildinfo
+
 # 비밀값
 secrets.properties
 keystore.properties

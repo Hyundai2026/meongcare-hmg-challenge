@@ -10,6 +10,7 @@ import com.meongcare.app.data.guidance.FakeGuidanceSource
 import com.meongcare.app.data.guidance.RealGuidanceSource
 import com.meongcare.app.data.hospital.SampleHospitals
 import com.meongcare.app.data.pet.FakePetProfileSource
+import com.meongcare.app.data.phone.AndroidPhoneDialer
 import com.meongcare.app.domain.card.MedicalCardSession
 import com.meongcare.app.domain.pet.PetProfileSource
 import com.meongcare.app.domain.phone.PhoneDialer
@@ -74,8 +75,8 @@ class AppContainer(context: Context, val dataMode: DataMode) {
     /** 고른 증상과 진료 카드. Fake 길안내와 같은 프로세스 수명이라 안내 시작부터 도착까지 남는다. */
     val medicalCardSession = MedicalCardSession()
 
-    /** 전화 앱 열기. 다음 커밋에서 Android 구현으로 바꾼다. 지금은 항상 번호를 크게 보여 준다. */
-    val phoneDialer: PhoneDialer = PhoneDialer { false }
+    /** 전화 앱 열기 (모든 데이터 모드). 열지 못하면 화면이 번호를 크게 보여 준다. */
+    val phoneDialer: PhoneDialer = AndroidPhoneDialer(context)
 
     /** Pleos Vehicle 연결. Real 구성에서만 만든다 (Fake에서는 Vehicle을 만들지 않는다). */
     val vehicleConnection: VehicleConnection? =

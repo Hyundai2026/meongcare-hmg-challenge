@@ -82,15 +82,38 @@ class Scenario:
 
 # ---------------------------------------------------------------- 시나리오
 
+STORAGE_NOTICE = "이 정보는 지금 쓰는 브라우저에만 저장돼요. 차 앱과의 연결은 준비 중이에요."
+
+
+def check_no_horizontal_scroll(r: Run) -> None:
+    over = r.page.evaluate("() => document.documentElement.scrollWidth - window.innerWidth")
+    r.check(over <= 0, f"가로 스크롤이 생겼다 ({over}px 넘침)")
+
+
 def s01_empty(r: Run) -> None:
     r.open()
     expect(r.page.locator("header")).to_contain_text(APP_NAME)
     r.check(r.page.title() == APP_NAME, f"document.title이 {APP_NAME!r}가 아니다: {r.page.title()!r}")
+    expect(r.page.get_by_text("아직 등록된 반려견이 없어요")).to_be_visible()
+    expect(r.page.get_by_role("button", name="반려견 등록하기")).to_be_visible()
+    expect(r.page.get_by_text(STORAGE_NOTICE)).to_be_visible()
+    check_no_horizontal_scroll(r)
     r.shot("empty")
 
 
+def s12_corrupted(r: Run) -> None:
+    r.open()
+    r.page.evaluate(f"() => localStorage.setItem({STORAGE_KEY!r}, '{{broken')")
+    r.page.reload()
+    expect(r.page.get_by_text("저장된 정보를 읽지 못했어요")).to_be_visible()
+    expect(r.page.get_by_role("button", name="새로 등록하기")).to_be_visible()
+    r.check(r.stored_raw() == "{broken", "읽기만 했는데 저장된 값이 바뀌었다")
+    r.shot("corrupted")
+
+
 SCENARIOS: list[Scenario] = [
-    Scenario("S01", "빈 화면: 헤더와 제목", s01_empty, widths=(390, 360)),
+    Scenario("S01", "빈 화면", s01_empty, widths=(390, 360)),
+    Scenario("S12", "저장된 정보가 깨졌을 때", s12_corrupted),
 ]
 
 

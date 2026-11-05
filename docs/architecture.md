@@ -88,17 +88,29 @@ app/src/main/java/com/meongcare/app/
   domain/driving/
     DrivingState.kt           PARKED / DRIVING / UNKNOWN
     DrivingStateSource.kt     주행 상태를 Flow로 주는 인터페이스
+  domain/guidance/
+    Destination.kt            길안내 목적지 (이름, 좌표, 주소?)
+    GuidanceState.kt          Idle / Guiding(목적지, 남은 시간: Duration?) / Arrived(목적지)
+    GuidanceSource.kt         길안내 인터페이스 (start / cancel / dismissArrival)
   data/driving/
     FakeDrivingStateSource.kt 손으로 바꾸는 Fake (처음엔 PARKED)
     RealDrivingStateSource.kt 자리표시. UNKNOWN만 낸다 (CarUxRestrictions 구현 예정)
+  data/guidance/
+    FakeGuidanceSource.kt     시간이 지나면 남은 시간이 줄고 도착한다 (scope·timing 주입)
+    RealGuidanceSource.kt     자리표시. 항상 Idle (NaviHelper 구현 예정)
+  data/hospital/
+    SampleHospitals.kt        시연용 샘플 병원 1곳 (병원 검색이 붙기 전까지)
+  data/demo/
+    FakeTripScenario.kt       FAKE 전용: 안내 시작 → 출발(주행), 도착 → 주차(정차)
   data/vehicle/
     VehicleConnection.kt      Pleos Vehicle initialize/release를 한 곳에서
   ui/theme/                   Color, Type(글자 크기), Dimens(터치 크기), Theme
-  ui/home/                    HomeViewModel, HomeUiState, HomeScreen, ParkedScreen, DrivingScreen
+  ui/home/                    HomeViewModel, HomeUiState, HomeContent(화면 조합), HomeScreen, ParkedScreen, DrivingScreen
+  ui/guidance/                GuidanceViewModel, GuidanceUiState, ParkedGuidanceSection, ArrivedScreen
   ui/debug/                   DebugPanel (상태 없음. 값과 동작은 MainActivity가 넘긴다)
 app/src/test/java/com/meongcare/app/
   testutil/MainDispatcherRule.kt
-  data/driving/, ui/home/     단위 테스트
+  data/driving/, data/guidance/, data/demo/, ui/home/, ui/guidance/   단위 테스트
 ```
 
 ## 의존 방향
@@ -120,6 +132,8 @@ ui ──▶ domain ◀── data
   - release: 항상 Real이다.
 - debug 패널에서 모드를 바꾸면 저장하고 앱을 다시 시작한다. 실행 중에 데이터 소스를 바꾸지 않아서 상태가 꼬이지 않는다.
 - Fake 모드에서는 Pleos `Vehicle`을 만들지 않는다. 일반 에뮬레이터에는 차량 서비스가 없기 때문이다.
+- Fake 모드에서만 `FakeTripScenario`가 Fake 길안내와 Fake 주행 상태를 잇는다: 안내를 시작하면 3초 뒤 주행, 도착하면 5초 뒤 정차. 시연 영상을 찍을 때 debug 패널을 누르지 않아도 되게 하려는 것이다.
+  - 두 Fake는 각자 Real과 같은 책임만 진다. Real에서 주행 상태(차량)와 길안내(내비 앱)는 서로 모르는 출처이기 때문이다.
 
 ## 주행 상태와 화면
 
@@ -131,6 +145,20 @@ ui ──▶ domain ◀── data
   - 큰 글씨의 상태 한 줄과 큰 버튼 1개 이하만 둔다.
   - 텍스트 입력, 스크롤, 애니메이션은 두지 않는다.
 - 정차 화면은 일반 기능과 텍스트 입력을 둘 수 있다.
+
+### 주행 상태 × 길안내 상태 화면 조합 (005, 2026-11-05)
+
+주행 상태(`HomeViewModel`)와 길안내 상태(`GuidanceViewModel`)는 따로 받는다. 어느 화면을 보여줄지는 `ui/home/HomeContent.kt`의 `homeContentOf`가 정한다. 주행 상태 쪽 안전 규칙(UNKNOWN·첫 값·5초 뒤 복귀는 주행 화면)은 `HomeViewModel`이 그대로 맡는다.
+
+| 주행 \ 안내 | 안내 없음 | 안내 중 | 도착 |
+|---|---|---|---|
+| **정차** | 정차 화면: 샘플 병원 + [병원으로 안내] | 정차 화면: "병원까지 N분"(모르면 "경로를 찾는 중") + 병원 이름 + [안내 취소] | **도착 화면**: "○○에 도착했어요" + 진료 카드(자리표시) + [닫기] |
+| **주행·모름** | 주행 화면: "주행 중" | 주행 화면: 큰 글씨 "병원까지 N분" + 병원 이름. 버튼 없음 | 주행 화면: 큰 글씨 "도착했어요" + "정차하면 진료 카드를 볼 수 있어요". 버튼 없음 |
+
+- 남은 시간은 분 단위로 올림하고, 1분보다 작으면 1분으로 보여준다. "0분"은 보이지 않는다.
+- 안내 취소는 정차 중에만 한다 (사용자 결정, 2026-11-05). 주행 중 터치를 줄이고, 확인 팝업은 주행 중 전체 화면 팝업 금지에 걸리기 때문이다. Real에서는 내비 앱에서도 취소할 수 있다.
+- 주행 중에 안내를 시작하는 버튼은 아직 두지 않는다. 문의 B1(주행 중 사용 선언)과 B2(STT) 답을 보고 정한다.
+- 도착 화면은 [닫기]를 누를 때까지 유지한다. 병원에서 진료 카드를 보여 줄 화면이기 때문이다.
 
 ## Vehicle SDK 수명주기
 

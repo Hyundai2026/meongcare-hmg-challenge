@@ -446,9 +446,9 @@ Virtual Console 명령은 006 노트의 `vc()` 함수를 쓴다.
 
 ### 필수
 
-- [ ] 0. 이 계획 파일 커밋 → `docs(plans): 010 음성 증상 입력 계획 추가`
+- [x] 0. 이 계획 파일 커밋 → `docs(plans): 010 음성 증상 입력 계획 추가`
 
-- [ ] 1. 음성 입력 인터페이스와 Fake → `feat(data): 음성 입력 인터페이스와 Fake 구현 추가`
+- [x] 1. 음성 입력 인터페이스와 Fake → `feat(data): 음성 입력 인터페이스와 Fake 구현 추가`
   - `domain/voice/VoiceInput.kt` (`VoiceInput`, `VoiceEvent`, `VoiceFailure`. 설계 결정 3)
   - `data/voice/FakeVoiceInput.kt`, `data/voice/SampleVoiceSentences.kt`
   - `FakeVoiceInputTest` (가상 시간):
@@ -456,7 +456,7 @@ Virtual Console 명령은 006 노트의 `vc()` 함수를 쓴다.
     - `` `부를 때마다 다음 예시 문장을 쓰고 끝에서 처음으로 돌아간다`() ``
     - `` `구독을 취소하면 더 내보내지 않는다`() ``
 
-- [ ] 2. 증상 키워드 규칙
+- [x] 2. 증상 키워드 규칙
   - 2-1. → `feat(domain): 받아쓴 문장에서 증상을 찾는 키워드 규칙 추가`
     - `domain/voice/SymptomMatcher.kt` (`symptomsIn`, 키워드 표. 설계 결정 4)
     - `domain/card/Symptom.kt`의 KDoc "음성 입력(STT "준비 중") 대신"을 지금 사실로 고친다. **enum 값과 순서는 바꾸지 않는다.**
@@ -474,7 +474,7 @@ Virtual Console 명령은 006 노트의 `vc()` 함수를 쓴다.
     - `app/src/test/resources/voice/symptom-sentences.tsv` (설계 결정 4 "실제 문장으로 검증하는 방법". 관찰 문장 4개 + 작성 문장 20개 안팎: 증상마다 1개 이상, 부정·오탐 사례 포함)
     - `SymptomSentenceCorpusTest`: `` `문장 모음의 모든 줄이 기대 증상과 같다`() `` (틀린 줄을 모아 한 번에 보인다), `` `문장 모음 파일이 비어 있지 않고 형식이 맞다`() ``
 
-- [ ] 3. 세션·ViewModel·구성표
+- [x] 3. 세션·ViewModel·구성표
   - 3-1. → `feat(domain): 진료 카드 세션에 여러 증상 한 번에 고르기 추가`
     - `MedicalCardSession.select(symptoms)` (설계 결정 9)
     - `MedicalCardSessionSelectTest` (새 파일. 기존 `MedicalCardSessionTest`는 고치지 않는다):
@@ -502,7 +502,7 @@ Virtual Console 명령은 006 노트의 `vc()` 함수를 쓴다.
       - `` `스위치를 끄면 모든 모드와 기기에서 음성 입력이 없다`() ``
       - `` `release 빌드는 차량 기기에서 Real 음성이다`() `` (`resolveDataMode(isDebugBuild = false, ...)`와 함께. 답이 B면 이름과 기대를 바꾼다)
 
-- [ ] 4. 화면 (Fake로 동작)
+- [x] 4. 화면 (Fake로 동작)
   - 4-1. → `feat(ui): 증상 고르기 화면에 음성 입력 영역 추가`
     - `ui/voice/VoicePanel.kt` (설계 결정 1의 표, 시연용 안내), `ui/voice/VoiceActions.kt`
     - `SymptomPickerScreen`: `voice`, `voiceActions` 인자 (기본값이면 지금과 같다). 음성 영역은 제목 아래, 스크롤 안.
@@ -514,7 +514,7 @@ Virtual Console 명령은 006 노트의 `vc()` 함수를 쓴다.
     - `MainActivity`: `SymptomVoiceViewModel` 만들기 (`container.voiceInput`, `container.medicalCardSession`, `container.isVoiceSimulated`)
     - 확인: `/verify`로 P1~P7 (Fake 모드). P5는 화면 전환 멈춤을 기기에서 보는 유일한 확인이다.
 
-- [ ] 5. Real 구현
+- [x] 5. Real 구현
   - 5-1. → `feat(data): 음성 인식 이벤트를 Flow로 바꾸는 Real 구현 추가`
     - `data/voice/SpeechToTextClient.kt` (`SttEvent`, `SpeechToTextClient`), `data/voice/RealVoiceInput.kt` (설계 결정 5의 표)
     - Pleos SDK는 아직 넣지 않는다. 화면에 연결하지 않는다.
@@ -543,7 +543,7 @@ Virtual Console 명령은 006 노트의 `vc()` 함수를 쓴다.
   - (5-3. `[사용자 승인 필요]` 3이 "선언 + 런타임 요청"일 때만) → `feat(ui): 처음 말하기 전에 마이크 권한 요청`
     - 처음 [말로 증상 고르기]에서 `RECORD_AUDIO`를 요청하고, 거부되면 "마이크를 쓸 수 없어요. 버튼으로 골라 주세요". 시연 Fake에서는 요청하지 않는다.
 
-- [ ] 6. 경계 테스트 (`tester`) → `test: 음성 증상 입력 경계 테스트 추가`
+- [x] 6. 경계 테스트 (`tester`) → `test: 음성 증상 입력 경계 테스트 추가`
   - 메인이 `tester`에게 **이 계획 파일 경로와 대상만** 넘긴다. 구현 설명은 넘기지 않는다.
     - 대상: `symptomsIn`(키워드 표·정규화·부정 규칙), `FakeVoiceInput`, `RealVoiceInput`(가짜 `SpeechToTextClient`로), `MedicalCardSession.select`, `SymptomVoiceViewModel`, `voiceInputKindOf`(+ `resolveDataMode`)
     - 대상 아님: `PleosSpeechToTextClient`, composable, `AppContainer`, `MainActivity`
@@ -552,7 +552,7 @@ Virtual Console 명령은 006 노트의 `vc()` 함수를 쓴다.
   - tester가 찾은 버그는 메인이 프로덕션 코드에서 `fix:` 커밋으로 따로 고친다. 키워드 오탐·누락은 표를 고치는 `fix(domain):` 커밋으로 낸다.
   - 확인: `./gradlew testDebugUnitTest` 통과. 통과 수를 진행 로그에 적는다.
 
-- [ ] 7. 전체 검증 (`/verify`). 커밋은 없다. 고친 게 있으면 `fix(...)` 커밋으로 낸다. D1~D4에서 모은 문장은 TSV에 더해 `test(domain): 기기에서 받아쓴 문장을 문장 모음에 추가`로 낸다.
+- [x] 7. 전체 검증 (`/verify`). 커밋은 없다. 고친 게 있으면 `fix(...)` 커밋으로 낸다. D1~D4에서 모은 문장은 TSV에 더해 `test(domain): 기기에서 받아쓴 문장을 문장 모음에 추가`로 낸다. **일부 확인 못 함: D2·D3·D7·P7·P8, release D1 (진행 로그 "단계 7")**
   - `node .claude/hooks/build-gate.mjs pipeline` → "검증 파이프라인 통과."
   - `./gradlew assembleRelease` 성공
   - 완료 기준 3의 `git diff`, 완료 기준 4의 Grep, `PleosSpeechToTextClient.kt`의 로그 줄 읽기
@@ -561,7 +561,7 @@ Virtual Console 명령은 006 노트의 `vc()` 함수를 쓴다.
   - `pleos_connect`: 확인 절차 D1~D9
   - 기기가 없으면 멈추고 사용자에게 Cold boot를 요청한다. 확인하지 못한 것은 그대로 적는다.
 
-- [ ] 8. 문서 맞추기
+- [x] 8. 문서 맞추기
   - `docs/architecture.md`:
     - "서비스 기능 스택": "음성 → 글자" 행에 "구현함 (010): 정차 중 증상 고르기 화면에서 한 문장 → 키워드 규칙 → 증상 선택에 더함. 주행 중 음성은 B1 뒤". 맨 위 서비스 설명 "운전 중: 음성으로 증상을 말하면…"에 지금 범위를 적는다 (`[사용자 승인 필요]` 1의 답).
     - "패키지 구조": `domain/voice/`, `data/voice/`, `ui/voice/`, `di/VoicePlan.kt`
@@ -572,7 +572,7 @@ Virtual Console 명령은 006 노트의 `vc()` 함수를 쓴다.
   - `README.md`: 시연 방법에 음성 순서 (Pleos 에뮬레이터: 마이크 설정 → [말로 증상 고르기] → 한 문장. 일반 폰: Fake 예시 문장, 시연용 표시) → `docs: README에 음성 입력 시연 방법 추가`
   - 확인: 완료 기준 7
 
-- [ ] 9. 개발 노트 작성 (`docs/notes/`)
+- [x] 9. 개발 노트 작성 (`docs/notes/`)
   - `docs/notes/xxj15/YYYY-MM-DD-voice-input.md`. 형식은 `docs/notes/README.md` 템플릿.
     - 사용한 API: Pleos SpeechToText 3.3.1 `ON_DEVICE` (`SpeechToText`, `initialize`, `addListener`, `setLocale`, `request`, `stop`, `removeListener`, `release`, `ResultListener`), 권한 `pleos.car.permission.STT_SERVICE`(승인됨), `RECORD_AUDIO`(답대로), AAR이 더한 `INTERNET`
     - 결정: 추가 입력 수단, 정차 중에만, 한 문장·더하기만, 키워드 규칙과 검증 방법, 듣기마다 새 객체, 모드별 구성, 빼는 법
@@ -617,6 +617,35 @@ Virtual Console 명령은 006 노트의 `vc()` 함수를 쓴다.
 - 2026-11-05: 단계 1 `074a70d`, 2-1 `bd5118b`, 2-2 `881d880`.
 - 2026-11-05: researcher Q1~Q3 답 — **세 질문의 핵심(포커스 주체, 콜백·호출 스레드, 무음 시간)은 모두 문서에 없다.** 기본안대로 간다 (포커스 요청 안 함, 메인 스레드에서 호출, 시간 값은 D4에서 조정). 새로 확인한 것: `ErrorType`은 늘어날 수 있으니 `when`에 기본 분기를 두라고 권장한다 (설계 결정 5의 "그 밖의 `Error` → UNAVAILABLE"과 맞다). `stop()` 뒤에는 `onEndedRecognition()`이 온다는 문장만 있다. 자세히: sdk-notes "듣는 동안의 오디오 포커스, 콜백 스레드, 끝점 검출".
 
+- 2026-11-05: 단계 3-1 `842c3bb`, 3-2 `ad65fe7`, 3-3 `93a815e`, 4-1 `1a484ba`, 4-2 `f53b051`, 5-1 `f3e2793`, 5-2 `2d6d0c3`. researcher 답 기록 `1a3ebd5`.
+  - P1~P6과 다크 모드는 `my_avd` 대신 Pleos 에뮬레이터(Fake 모드)에서 확인했다.
+  - D1: 실제 마이크로 받아쓰기 → 증상 선택까지 동작. 엔진이 "가쁘게"를 "바쁘게"로 받아써서 키워드를 더했다 (`73bffc1`, TSV `99e06c2`).
+  - 사용자가 `say` 소리가 시끄럽다고 해서 소리를 내는 확인(D2·D3)은 멈췄다.
+- 2026-11-05: 단계 6 tester → 경계 테스트 70개 (`afc8cba`). 처음에 430개 중 6개 실패 → 메인이 고침:
+  - `1dbb419` fix(domain): "토마토를 하나" 오탐(미끼 낱말 가리기), "숨이 가빠"·"못 걸어"·"늘어졌"·"처졌" 누락, "토해서 기운이 없어요"에서 구토 누락("서"에서 끊기, "에서"는 제외)
+  - `8401d8f` fix(data): 초기화·인식 끝 대기 시간을 이벤트마다 다시 재던 것
+  - 고친 뒤 433개 통과.
+- 2026-11-05: 단계 7.
+  - 검증 파이프라인 통과, `assembleRelease` 성공. 완료 기준 3의 `git diff` 모두 비어 있음.
+  - 완료 기준 4의 Grep 통과. `registerApp`은 `PleosSpeechToTextClient.kt`의 주석 한 줄("부르지 않는다")에만 있다. 주석을 지우는 커밋은 되돌리기 단위(설계 결정 8)를 깨서 뺐다.
+  - 병합 매니페스트 권한: `STT_SERVICE`, `INTERNET`(AAR). `RECORD_AUDIO` 없음.
+  - **D4에서 버그 발견 → `f1610b4`**: `stop()` 바로 뒤 `release()`하면 음성 서비스가 녹음을 멈추지 않았다 (SDK의 `stop()`은 코루틴으로 미뤄지고 `release()`는 바로 연결을 끊는다). `stop()` 뒤 인식 끝이나 1초를 기다려 놓도록 고쳤다.
+  - 이 수정이 5-2 파일을 건드려서 되돌리기 단위가 커밋 두 개(`2d6d0c3`, `f1610b4`)가 됐다. 두 커밋을 되돌린 상태에서 `assembleDebug`와 테스트 433개 통과를 확인했다.
+  - 마이크를 끄고 한 확인: D4(무음이면 엔진이 아무 이벤트도 보내지 않음 → 15초 뒤 "말소리를 듣지 못했어요", 녹음 멈춤), D5, D6, D8(`STT_SERVICE granted=true`), D9(에러 없음, 우리 로그에 문장 없음).
+  - 고친 뒤 Fake 모드 P2 다시 확인.
+  - **하지 못한 것**:
+    - D2·D3: 소리
+    - D7
+    - P7: `my_avd`를 켜지 않았다. Pleos 에뮬레이터는 `wm size`로 바꿔도 앱 창이 다시 배치되지 않았다.
+    - P8: `VoicePlanTest`로만
+    - release APK D1
+- 2026-11-05: 단계 8 `3a697e4`(architecture), `51363dc`(sdk-notes), `9bfb4d3`(README). 단계 9 노트 `docs/notes/xxj15/2026-11-05-voice-input.md`.
+  - `docs/pleos/emulator-setup.md`는 다른 작업이 고치는 중이라 건드리지 않았다. 새로 본 것은 sdk-notes에 적었다.
+
 ## 결정 / 배운 점
 
 - 2-1: 절뚝거림 키워드에 "다리를절", "발을절"을 더했다. "다리를 절다가"가 기본안 표(절어·절고)로는 잡히지 않았다.
+- 6: 키워드를 품은 다른 낱말("토마토", "커피")은 키워드를 고치는 대신 정규화한 뒤 가린다 (`DECOY_WORDS`). 키워드를 줄이면 "토를 했어요"를 놓친다.
+- 6: 부정 규칙에 "서"를 더했다. "구토를 집에서 안 했어요" 같은 장소 "에서"는 끊지 않는다. 남은 오탐 가능성: "이 물건"(이물), "땀에 절어"(절뚝거림).
+- 7: SDK 문서는 "`stop()` 뒤 `onEndedRecognition()`이 온다"고 하지만, 에뮬레이터에서는 오지 않았다 (4번). 그래서 1초 대기로 놓는다.
+- 7: 무음이면 엔진은 `TIMEOUT`도 인식 끝도 보내지 않는다. 15초 최대 듣기 시간이 유일한 끝이다. 줄이려면 설계 결정 5의 표에 규칙을 더해야 한다 (하지 않음).

@@ -10,6 +10,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.meongcare.app.di.AppRestarter
 import com.meongcare.app.di.DataMode
+import com.meongcare.app.di.NaviUse
 import com.meongcare.app.di.SourceKind
 import com.meongcare.app.di.SourcePlan
 import com.meongcare.app.di.next
@@ -77,11 +78,13 @@ class MainActivity : ComponentActivity() {
                     },
                     isGuidanceSimulated = container.sourcePlan.isGuidanceSimulated,
                     isPetProfileSample = container.isPetProfileSample,
+                    isRouteOnNavi = container.naviUse == NaviUse.ROUTE_ONLY,
                     bottomBar = {
                         if (BuildConfig.DEBUG) {
                             val fake = container.fakeDrivingStateSource
                             DebugPanel(
-                                modeLabel = debugModeLabel(container.dataMode, container.sourcePlan),
+                                modeLabel = debugModeLabel(container.dataMode, container.sourcePlan) +
+                                    if (container.naviUse != NaviUse.NONE) " · 내비 ${if (container.naviUse == NaviUse.FULL) "전부" else "경로"}" else "",
                                 nextModeLabel = "${container.dataMode.next().debugName()}${
                                     if (container.dataMode.next() == DataMode.DEMO) "으로" else "로"
                                 } 전환",

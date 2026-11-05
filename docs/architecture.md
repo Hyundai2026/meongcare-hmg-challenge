@@ -31,10 +31,10 @@
 | 증상 → 진료 카드 | Claude API, 구조화 출력(JSON 스키마). 진단하지 않고 말한 내용만 정리한다. 카드 생성이 길안내·병원 연결을 막지 않게 뒤에서 따로 돈다 | 정해진 형식으로 증상·복용약·병력만 뽑는다 | **임시: `claude-opus-5-5` (effort `low`). 모델과 AI 범위는 팀 논의 필요.** **지금(009)은 AI 없이 규칙으로 조합한다**: 등록된 프로필 + 큰 버튼으로 고른 증상(12개 프리셋) → `medicalCardOf`. Claude API는 A1 뒤 |
 | 서버 | **Firebase** (Functions, TypeScript) | AI 키와 장소 검색 키를 앱에 넣지 않는다 (Pleos 보안 가이드: 키 하드코딩 금지, HTTPS·TLS 1.2+). 팀의 웹 경험과 가깝다 | 결정 |
 | 병원 검색 | 카카오 로컬 API (서버를 거쳐서) | 병원 이름·좌표·전화번호 | 결정 |
-| 길안내 | Pleos NaviHelper `requestRoute(RouteInfo)` | 콘솔 "사용 가능" SDK | 결정. `poiId` 없이 좌표만으로 요청되는지는 미확인 |
-| 도착 예정 시간 | NaviHelper `TripInfo.eta`, `DrivingInfo.destination.duration` | navi-data AAR에서 필드 확인 | 결정. 단위(초/분)는 실기기 확인 필요 |
+| 길안내 | Pleos NaviHelper `requestRoute(RouteInfo)` (`NaviHelper:3.0.5`) | 콘솔 "사용 가능" SDK | **구현함 (010)**: `data/guidance/navi/PleosNaviClient`. 좌표 + 이름만으로 경로 요청이 된다 (`poiId` 빈 값, Pleos 에뮬레이터 확인). 차량 기기에서만 쓴다 (아래 "데이터 모드") |
+| 도착 예정 시간 | NaviHelper `onRouteStarted`의 `duration`, `onDrivingInfo`의 `destination.duration` | 에뮬레이터에서 값이 내비 화면과 같았다 | **단위는 초** (2100 = 35분, `[obs-navi-emu]`). `onTripInfo`는 오지 않았다 |
 | 현재 위치 | NaviHelper `getCurrentLocationInfo()` | FusedLocation이 "준비 중"이라 대신 쓴다 | 결정 |
-| 도착 감지 | NaviHelper `onDestinationArrived` | 도착하면 카드 화면으로 넘어간다 | 결정 |
+| 도착 감지 | NaviHelper `onDestinationArrived` | 도착하면 카드 화면으로 넘어간다 | Real 모드에서 쓴다. **에뮬레이터에서는 내비 속 차가 움직이지 않아 확인하지 못했다** (JVM 테스트로만) |
 | 병원 전화 | 안드로이드 다이얼러(`ACTION_DIAL`, 권한 없음, 걸지 않음). 안 되면 번호를 크게 보여준다 | | 구현함 (009, `data/phone/AndroidPhoneDialer`). Pleos 에뮬레이터에서 "전화" 앱이 열렸지만 번호는 보이지 않았다 ([sdk-notes.md](pleos/sdk-notes.md) "전화" 관찰). 실차는 미확인 (문의 B4). 시연용 번호 `02-0000-0000` |
 | 카드 공유 | MVP: 정차 화면에 크게 보여주기. 나중에 QR·링크 | 서버 작업이 가장 적다 | 결정 |
 | 운전 중 사용 | DO(`distractionOptimized`) 선언. `MainActivity`에 Google 방식 meta-data를 넣었다 (006, 2026-11-05) | 선언이 없으면 주행 중에 시스템 화면이 앱을 가려 주행 화면(남은 시간)이 보이지 않는다 | 결정. Pleos 에뮬레이터에서 동작 확인. 실차·심사 허용은 문의 B1. 안 되면 그 커밋을 revert한다 |
@@ -86,6 +86,7 @@ app/src/main/java/com/meongcare/app/
     AppContainer.kt           모드에 맞는 구현을 골라 들고 있다 (수동 DI)
     DataMode.kt               FAKE / DEMO(시연) / REAL, resolveDataMode(release는 DEMO), next(패널 전환 순서)
     SourcePlan.kt             모드 × 차량 기기 → 끼울 구현의 구성표 (순수 함수 sourcePlanOf)
+    NaviPlan.kt               모드 × 차량 기기 → 차량 내비 사용 범위 NONE / ROUTE_ONLY / FULL (순수 함수 naviUseOf, 010)
     DataModeStore.kt          debug에서 고른 모드를 저장 (release는 항상 DEMO)
     AppRestarter.kt           모드를 저장하고 앱을 다시 시작 (debug)
   domain/driving/
@@ -103,7 +104,12 @@ app/src/main/java/com/meongcare/app/
     UxRestrictionsClientFactory.kt  FEATURE_AUTOMOTIVE면 어댑터, 아니면 null
   data/guidance/
     FakeGuidanceSource.kt     시간이 지나면 남은 시간이 줄고 도착한다 (scope·timing·진행 조건 주입)
-    RealGuidanceSource.kt     자리표시. 항상 Idle (NaviHelper 구현 예정)
+    RealGuidanceSource.kt     자리표시. 항상 Idle (Real 모드 + 일반 폰에서만 쓰인다)
+    NaviGuidanceSource.kt     전부 차량 내비 (Real + 차량 기기): 남은 시간·도착·취소를 내비 이벤트로
+    NaviRouteOnlyGuidanceSource.kt  경로만 차량 내비 (시연 + 차량 기기): 내비 예상 시간에서 시연용 Fake를 시작, 시연 도착 시 내비 경로 종료
+    navi/NaviClient.kt        내비 경계 (trip(destination): Flow<NaviEvent>). SDK 타입 없음
+    navi/PleosNaviClient.kt   NaviHelper 어댑터. NaviHelper를 부르는 유일한 파일. 안내 한 번마다 연결하고 끝나면 release
+    navi/NaviTiming.kt        내비 남은 초 → 남은 시간 규칙, 안내 시작 대기 30초
   domain/pet/                 PetProfile(형식 문서 대응), PetAge(나이 계산, 웹과 같은 규칙), PetProfileSource + PetProfileLoad
   domain/card/                Symptom(12개 프리셋, 선언 순서 = 화면·카드 순서), MedicalCardSession(고르는 중/카드 있음, 메모리)
   domain/hospital/            Hospital(길안내 목적지 + 전화번호 + 시연용 여부)
@@ -142,7 +148,23 @@ ui ──▶ domain ◀── data
 
 - 모드는 프로세스가 시작될 때 한 번 정한다 (`di/DataMode.kt`의 `resolveDataMode`).
   - debug: debug 패널에서 고른 값. 기본은 Fake다. 패널 버튼을 누를 때마다 Fake → 시연 → Real 순서로 바뀐다.
-  - **release: 시연 모드 고정** (007, 사용자 결정 2026-11-05). 제출 APK로도 심사위원이 병원 길안내 흐름을 보게 하려는 것이다. 모드를 바꾸는 UI는 없다. Real 길안내(NaviHelper)가 생기면 다시 정한다. `feat(di): release 빌드를 시연 모드로 고정` 커밋만 되돌리면 이전(항상 Real)으로 돌아간다.
+  - **release: 시연 모드 고정** (007, 사용자 결정 2026-11-05). 제출 APK로도 심사위원이 병원 길안내 흐름을 보게 하려는 것이다. 모드를 바꾸는 UI는 없다. Real 길안내(NaviHelper)가 생긴 뒤에도 시연 모드로 두고, 차량 기기에서는 경로만 내비로 보내기로 했다 (아래 "차량 내비", 010). `feat(di): release 빌드를 시연 모드로 고정` 커밋만 되돌리면 이전(항상 Real)으로 돌아간다.
+  - **차량 내비 (010, 사용자 결정 2026-11-05)**: `di/NaviPlan.kt`의 `naviUseOf`가 `sourcePlanOf`의 길안내 칸보다 앞선다. 007의 구성표와 그 테스트는 그대로다.
+
+    | 모드 | 차량 기기 | 길안내 |
+    |---|---|---|
+    | 시연 (release) | 예 | **경로만 차량 내비** + 남은 시간·도착은 시연용 (내비 예상 시간에서 시작, 주행 중에만 줄어듦). 시연 도착 시 내비 경로도 취소. 화면 문구 "경로는 차량 내비게이션으로 안내해요. 앱의 남은 시간과 도착은 시연용이에요." |
+    | Real | 예 | **전부 차량 내비** (남은 시간·도착·취소를 내비 이벤트로) |
+    | 그 밖 (Fake, 일반 폰) | | 지금처럼 (NaviHelper를 만들지 않는다) |
+
+    - 시연에서 진짜 도착을 쓰지 않는 이유: Pleos 에뮬레이터에서는 기어·속도·GPS를 바꿔도 내비 속 차가 움직이지 않아 도착이 오지 않는다 (`[obs-navi-emu]`).
+    - 내비가 경로를 계산하고 안내를 시작하기까지 30초까지 기다린다 (에뮬레이터에서 10~20초 걸렸다). 그동안 "경로를 찾는 중". 넘으면 시연은 기본값(12분)으로 시작하고, 전부 내비는 안내 없음으로 돌아간다.
+    - 내비 이벤트 처리 (`data/guidance/navi/NaviTiming.kt`와 두 소스의 KDoc):
+      - 남은 시간이 0 이하이거나 하루보다 길면 모름이다. 시연은 기본값으로 시작하고, 전부 내비는 이전 값을 둔다.
+      - 내비 화면에서 경로를 취소하면("안내 종료") 앱도 안내 없음이다 (에뮬레이터 확인).
+      - 내비 오류: 안내 시작 전이면 시연은 바로 기본값으로 시작하고, 전부 내비는 안내 없음이다. 시작 뒤 오류는 무시한다.
+      - 내비에 이전 경로가 남아 있으면 경로 요청 직후 그 경로의 취소가 먼저 온다. 어댑터가 `onRouteStarted` 전의 취소를 거른다 (`[obs-navi-emu]`).
+    - [길 안내 시작]을 누르면 내비 앱이 앞에 나와 우리 앱을 가린다. 남은 시간·카드는 GNB의 MeongCare 아이콘으로 돌아와 본다.
 - debug 패널에서 모드를 바꾸면 저장하고 앱을 다시 시작한다. 실행 중에 데이터 소스를 바꾸지 않아서 상태가 꼬이지 않는다.
 - 어떤 구현을 끼울지는 `di/SourcePlan.kt`의 `sourcePlanOf(mode, isAutomotive)`가 정한다. Android를 모르는 순수 함수라 표 전체를 JVM 테스트로 확인한다.
 

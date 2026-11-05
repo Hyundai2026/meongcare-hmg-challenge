@@ -7,6 +7,10 @@ import com.meongcare.app.data.driving.FakeDrivingStateSource
 import com.meongcare.app.data.driving.RealDrivingStateSource
 import com.meongcare.app.data.driving.uxRestrictionsClientOrNull
 import com.meongcare.app.data.guidance.FakeGuidanceSource
+import com.meongcare.app.data.guidance.FakeGuidanceTiming
+import com.meongcare.app.data.guidance.NaviGuidanceSource
+import com.meongcare.app.data.guidance.NaviRouteOnlyGuidanceSource
+import com.meongcare.app.data.guidance.navi.PleosNaviClient
 import com.meongcare.app.data.guidance.RealGuidanceSource
 import com.meongcare.app.data.hospital.SampleHospitals
 import com.meongcare.app.data.pet.FakePetProfileSource
@@ -34,11 +38,13 @@ import kotlinx.coroutines.flow.map
  */
 class AppContainer(context: Context, val dataMode: DataMode) {
 
+    private val isAutomotive = context.packageManager.hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE)
+
     /** 이 프로세스에서 끼울 구현의 구성. */
-    val sourcePlan: SourcePlan = sourcePlanOf(
-        mode = dataMode,
-        isAutomotive = context.packageManager.hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE),
-    )
+    val sourcePlan: SourcePlan = sourcePlanOf(mode = dataMode, isAutomotive = isAutomotive)
+
+    /** 차량 내비(NaviHelper)를 길안내에 쓰는 범위 (010). [sourcePlan]의 길안내 칸보다 앞선다. */
+    val naviUse: NaviUse = naviUseOf(mode = dataMode, isAutomotive = isAutomotive)
 
     /** 프로세스와 수명이 같은 코루틴 범위. Fake 길안내의 시간 흐름과 시연 시나리오가 여기서 돈다. */
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -52,12 +58,28 @@ class AppContainer(context: Context, val dataMode: DataMode) {
         SourceKind.REAL -> RealDrivingStateSource(uxRestrictionsClientOrNull(context))
     }
 
-    val guidanceSource: GuidanceSource = when (sourcePlan.guidance) {
-        SourceKind.FAKE -> FakeGuidanceSource(
+    val guidanceSource: GuidanceSource = when (naviUse) {
+        // Real + 차량 기기: 전부 차량 내비
+        NaviUse.FULL -> NaviGuidanceSource(applicationScope, PleosNaviClient(context))
+        // 시연 + 차량 기기: 경로만 차량 내비, 남은 시간(내비 예상 시간에서 시작)과 도착은 시연용
+        NaviUse.ROUTE_ONLY -> NaviRouteOnlyGuidanceSource(
             scope = applicationScope,
-            progressGate = if (sourcePlan.guidanceWaitsForDriving) isDrivingFlow() else null,
+            navi = PleosNaviClient(context),
+            fakeOf = { initial ->
+                FakeGuidanceSource(
+                    scope = applicationScope,
+                    timing = FakeGuidanceTiming().let { if (initial != null) it.copy(initialRemaining = initial) else it },
+                    progressGate = if (sourcePlan.guidanceWaitsForDriving) isDrivingFlow() else null,
+                )
+            },
         )
-        SourceKind.REAL -> RealGuidanceSource()
+        NaviUse.NONE -> when (sourcePlan.guidance) {
+            SourceKind.FAKE -> FakeGuidanceSource(
+                scope = applicationScope,
+                progressGate = if (sourcePlan.guidanceWaitsForDriving) isDrivingFlow() else null,
+            )
+            SourceKind.REAL -> RealGuidanceSource()
+        }
     }
 
     /** 병원 (길안내 목적지 + 전화번호). 병원 검색이 붙기 전까지 시연용 샘플 병원 1곳을 쓴다. */

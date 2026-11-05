@@ -3,6 +3,9 @@
 
     <!-- pleos.car.permission.* 권한은 사용자 승인 없이 추가하지 않는다 (AGENTS.md 규칙 2). -->
 
+    <uses-permission android:name="pleos.car.permission.NAVI_ROUTE_SEARCH" />
+    <uses-permission android:name="pleos.car.permission.NAVI_ROUTE" />
+
     <application
         android:name=".MeongCareApplication"
         android:allowBackup="false"

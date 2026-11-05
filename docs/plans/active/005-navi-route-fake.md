@@ -289,10 +289,10 @@ Real 길안내 계획을 쓸 때 `[선행: pleos-docs-researcher]`로 확인한�
 
 ### 필수
 
-- [ ] 0. 이 계획 파일 커밋 → `docs(plans): 005 길안내 Fake 계획 추가`
+- [x] 0. 이 계획 파일 커밋 → `docs(plans): 005 길안내 Fake 계획 추가`
   - 확인: `git log -1 --stat`에 이 파일만 있다.
 
-- [ ] 1. 길안내 인터페이스와 Fake
+- [x] 1. 길안내 인터페이스와 Fake
   - `domain/guidance/Destination.kt`, `GuidanceState.kt`, `GuidanceSource.kt` (결정 1)
     - KDoc에 적을 것:
       - Real은 NaviHelper로 구현한다 (후속 계획).
@@ -313,7 +313,7 @@ Real 길안내 계획을 쓸 때 `[선행: pleos-docs-researcher]`로 확인한�
     - `feat(data): 시간이 지나면 도착하는 Fake 길안내 추가`
   - 확인: `.\gradlew.bat testDebugUnitTest --tests 'com.meongcare.app.data.guidance.FakeGuidanceSourceTest'` 통과
 
-- [ ] 2. Fake 시연 시나리오 (주행 상태 연동) → `feat(data): Fake 길안내에 맞춰 Fake 주행 상태를 바꾸는 시나리오 추가`
+- [x] 2. Fake 시연 시나리오 (주행 상태 연동) → `feat(data): Fake 길안내에 맞춰 Fake 주행 상태를 바꾸는 시나리오 추가`
   - `data/demo/FakeTripScenario.kt` (결정 3)
     - 생성자: `scope`, `GuidanceSource`(구독용), `FakeDrivingStateSource`, timing(`departDelay` 3초, `parkDelay` 5초)
     - `start()`를 부르면 구독을 시작한다. 두 번 불러도 한 번만 구독한다.
@@ -324,7 +324,7 @@ Real 길안내 계획을 쓸 때 `[선행: pleos-docs-researcher]`로 확인한�
     - `` `주행 중에 안내를 취소해도 주행 상태는 그대로다`() ``
   - 확인: `FakeTripScenarioTest` 통과
 
-- [ ] 3. Real 자리표시, 샘플 병원, AppContainer 배선
+- [x] 3. Real 자리표시, 샘플 병원, AppContainer 배선
   - `data/guidance/RealGuidanceSource.kt`
     - `state`는 항상 `Idle`이다. `start`/`cancel`은 `Log.w`만 남긴다. `dismissArrival`은 아무것도 하지 않는다.
     - KDoc: "NaviHelper 구현 전 자리표시, 후속 계획". 위 "후속 계획으로 넘기는 질문"을 가리킨다.
@@ -347,7 +347,7 @@ Real 길안내 계획을 쓸 때 `[선행: pleos-docs-researcher]`로 확인한�
     - `feat(di): 길안내 소스와 시연용 샘플 병원 연결`
   - 확인: `assembleDebug`, `RealGuidanceSourceTest` 통과. 기기가 있으면 실행해서 크래시가 없는지만 본다 (화면은 아직 그대로다).
 
-- [ ] 4. 길안내 ViewModel과 화면 상태 → `feat(ui): 길안내 ViewModel과 화면 상태 추가`
+- [x] 4. 길안내 ViewModel과 화면 상태 → `feat(ui): 길안내 ViewModel과 화면 상태 추가`
   - `ui/guidance/GuidanceUiState.kt`, `GuidanceViewModel.kt`
     - 생성자: `GuidanceSource`, `Destination`(샘플 병원)
     - `uiState`: `stateIn(viewModelScope, WhileSubscribed(5_000), Idle(샘플 병원 이름))`
@@ -365,7 +365,7 @@ Real 길안내 계획을 쓸 때 `[선행: pleos-docs-researcher]`로 확인한�
     - 요청 확인용으로 테스트 안에 기록용 `GuidanceSource`를 둔다. ViewModel 테스트에 Fake의 시간 흐름을 섞지 않는다.
   - 확인: `GuidanceViewModelTest` 통과
 
-- [ ] 5. 화면 (Fake로 동작). 커밋마다 기기가 있으면 `/verify`로 그 화면을 본다.
+- [x] 5. 화면 (Fake로 동작). 커밋마다 기기가 있으면 `/verify`로 그 화면을 본다.
   - 공통 규칙:
     - 주행 화면은 큰 글씨 상태 한 줄 + 작은 줄 1개. 버튼, 텍스트 입력, 스크롤, 애니메이션은 없다 (AGENTS 규칙 3, 결정 4).
     - 크기는 `Dimens`, 글자는 `MaterialTheme.typography` 값만 쓴다.
@@ -473,7 +473,17 @@ Real 길안내 계획을 쓸 때 `[선행: pleos-docs-researcher]`로 확인한�
   - 시작 시점의 코드: 004의 뼈대 (주행/정차 화면, Fake/Real 주행 상태, debug 패널, VehicleConnection). 길안내 관련 코드는 없다.
 - 2026-11-05: "확인 필요" 1~5를 사용자가 모두 기본안으로 승인했다.
   - 주행 중 [안내 취소] 버튼 없음, 샘플 병원 "시연용 동물병원", 주행 중 [병원으로 안내] 버튼 없음, 도착 화면은 [닫기]까지 유지, 시연 속도 기본값.
+- 2026-11-05: 단계 0~5 완료 (커밋 `59bb64d`~`e51b1b4`).
+  - 새 단위 테스트 25개 통과: FakeGuidanceSource 8, FakeTripScenario 4, RealGuidanceSource 2, GuidanceViewModel 8, HomeContent 3.
+  - 기기(`my_avd`)가 연결되지 않아 단계 5의 커밋마다 `/verify`는 하지 못했다. 빌드만 확인했다. 화면은 단계 7에서 몰아서 본다.
 
 ## 결정 / 배운 점
 
-- (구현하면서 위 "결정"과 달라진 것과 그 이유를 적는다)
+- **`FakeGuidanceSource`는 상태 변경을 잠금(`synchronized`) 안에서 한다.**
+  - `start`/`cancel`은 화면 쪽(Main)에서, 안내 진행은 `applicationScope`(Default)에서 상태를 바꾼다.
+  - 잠금이 없으면, 취소한 직후 이전 진행이 `delay`에서 깨어나 상태를 덮어쓸 수 있다. 진행은 잠금 안에서 `ensureActive()`를 확인한 뒤에만 상태를 바꾼다.
+- **`RealGuidanceSource`의 로그 함수는 생성자로 받는다** (기본값 `Log.w`). 테스트는 기록용 함수를 넘긴다. `isReturnDefaultValues`는 켜지 않았다.
+- **`AppContainer`는 `fakeGuidanceSource`를 따로 열어 두지 않았다.** 지금은 debug 패널이 Fake 길안내를 직접 조작하지 않는다. 있으면 좋음 B([도착] 버튼)를 하면 그때 연다.
+- `GuidanceViewModelTest`는 ViewModel을 `by lazy`로 만든다. 테스트 클래스 필드에서 바로 만들면 `MainDispatcherRule`이 Main을 바꾸기 전에 `viewModelScope`가 생길 수 있다.
+- 남은 시간 문구("병원까지 N분" / "경로를 찾는 중")는 정차·주행 화면이 같이 쓰므로 `ui/guidance/GuidanceText.kt`의 `remainingTimeText`로 뺐다.
+- 카드 안쪽 여백용 `Dimens.CardPadding`(24dp)을 더했다.

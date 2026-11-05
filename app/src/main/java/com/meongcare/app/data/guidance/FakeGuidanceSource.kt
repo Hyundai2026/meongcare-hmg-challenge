@@ -51,7 +51,8 @@ data class FakeGuidanceTiming(
  *   - 경로 계산("경로를 찾는 중" → 처음 남은 시간)은 조건과 상관없이 끝난다.
  *   - 간격([FakeGuidanceTiming.tickInterval])을 하나 세기 전에 조건이 `true`가 될 때까지 기다린다.
  *     세는 도중에 `false`가 되면 그 간격은 끝까지 센다. 그래서 멈추면 최대 한 단계까지 더 줄고 멈춘다.
- *   - 도착도 마지막 간격이 지나야 오므로 조건이 `true`일 때만 온다.
+ *   - 도착은 조건이 `true`일 때만 온다. 마지막 간격을 세는 도중에 `false`가 되면 간격은 끝까지 세지만,
+ *     다시 `true`가 될 때까지 도착을 미룬다 (목적지 전에 차를 세웠다면 아직 도착한 게 아니다).
  *   - 안내 한 번(시작 → 도착·취소·다른 목적지로 다시 시작) 동안 조건을 한 번만 구독하고, 끝나면 구독을 끊는다.
  *     간격마다 새로 구독하면 Real 주행 상태는 그때마다 차량 연결을 새로 맺기 때문이다.
  */
@@ -109,6 +110,8 @@ class FakeGuidanceSource(
                 delay(timing.tickInterval)
                 remaining -= timing.remainingStep
             }
+            // 마지막 간격을 세는 도중에 멈췄으면, 다시 주행할 때까지 도착을 미룬다 (도착은 주행 중에만).
+            if (gateSubscription != null) gateOpen.first { it }
             publish(GuidanceState.Arrived(destination))
         } finally {
             // 도착한 뒤에도 구독이 남아 있지 않게 끊는다.

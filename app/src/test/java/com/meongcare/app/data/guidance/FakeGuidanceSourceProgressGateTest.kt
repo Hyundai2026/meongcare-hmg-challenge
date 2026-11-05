@@ -113,6 +113,25 @@ class FakeGuidanceSourceProgressGateTest {
     }
 
     @Test
+    fun `마지막 간격을 세는 도중에 거짓이 되면 다시 참이 될 때까지 도착하지 않는다`() = runTest {
+        val gate = MutableStateFlow(true)
+        val source = newSource(gate)
+        source.start(hospital)
+        advance(25.seconds) // 21초부터 마지막 간격을 세는 중
+
+        gate.value = false
+        advance(6.seconds) // 31초: 마지막 간격은 다 셌다
+        assertEquals("멈춘 채로는 도착하지 않는다", GuidanceState.Guiding(hospital, 1.minutes), source.state.value)
+
+        advance(1.minutes)
+        assertEquals(GuidanceState.Guiding(hospital, 1.minutes), source.state.value)
+
+        gate.value = true
+        runCurrent()
+        assertEquals("다시 주행하면 바로 도착한다", GuidanceState.Arrived(hospital), source.state.value)
+    }
+
+    @Test
     fun `멈춰 있는 동안 안내를 취소하면 안내 없음으로 돌아간다`() = runTest {
         val gate = MutableStateFlow(false)
         val source = newSource(gate)

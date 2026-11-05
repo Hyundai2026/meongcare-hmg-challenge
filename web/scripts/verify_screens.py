@@ -15,7 +15,9 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import struct
 import sys
+import zlib
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable
@@ -43,6 +45,50 @@ APP_NAME = read_app_name()
 
 class ScenarioFailure(Exception):
     pass
+
+
+# ---------------------------------------------------------------- 확인용 사진 (저장소에 이미지를 넣지 않는다)
+
+def write_png(path: Path, width: int, height: int) -> Path:
+    """띠 모양 그러데이션 PNG. 표준 라이브러리(zlib, struct)만 쓴다."""
+    def chunk(kind: bytes, data: bytes) -> bytes:
+        return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data) & 0xFFFFFFFF)
+
+    band_rows = []
+    for band in range(16):
+        row = bytearray([0])  # 필터 없음
+        for x in range(width):
+            row += bytes(((x * 255) // width, (band * 16) % 256, 180))
+        band_rows.append(bytes(row))
+    raw = b"".join(band_rows[(y * 16) // height] for y in range(height))
+    png = b"\x89PNG\r\n\x1a\n"
+    png += chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0))
+    png += chunk(b"IDAT", zlib.compress(raw, 6))
+    png += chunk(b"IEND", b"")
+    path.write_bytes(png)
+    return path
+
+
+@dataclass
+class Fixtures:
+    landscape: Path
+    portrait: Path
+    not_image: Path
+
+
+def make_fixtures(out_dir: Path) -> Fixtures:
+    d = out_dir / "fixtures"
+    d.mkdir(parents=True, exist_ok=True)
+    not_image = d / "not-a-photo.png"
+    not_image.write_text("사진이 아니다", encoding="utf-8")
+    return Fixtures(
+        landscape=write_png(d / "landscape-2000x1500.png", 2000, 1500),
+        portrait=write_png(d / "portrait-1500x2000.png", 1500, 2000),
+        not_image=not_image,
+    )
+
+
+FIXTURES: Fixtures | None = None
 
 
 @dataclass
@@ -122,9 +168,19 @@ def register_bori(r: Run, photo: Path | None = None) -> None:
     r.page.get_by_text("수컷", exact=True).click()
     if photo is not None:
         r.page.get_by_label("사진 선택").set_input_files(str(photo))
-        expect(r.page.locator(".photo-picker__preview img")).to_be_visible()
+        expect(r.page.locator("img.photo-picker__preview")).to_be_visible()
     save_button(r).click()
     expect(r.page.get_by_role("button", name="프로필 수정")).to_be_visible()
+
+
+def stored_photo_size(r: Run) -> tuple[int, int]:
+    """저장된 사진을 페이지에서 열어 실제 크기를 잰다."""
+    url = stored_json(r).get("photoDataUrl")
+    r.check(isinstance(url, str) and url.startswith("data:image/jpeg;base64,"), f"저장된 사진이 JPEG data URL이 아니다: {str(url)[:40]!r}")
+    size = r.page.evaluate(
+        "async (u) => { const i = new Image(); i.src = u; await i.decode(); return [i.naturalWidth, i.naturalHeight] }", url
+    )
+    return size[0], size[1]
 
 
 def stored_json(r: Run) -> dict:
@@ -179,8 +235,11 @@ def expect_bori_card(r: Run) -> None:
 
 
 def s04_s05_register(r: Run) -> None:
-    register_bori(r)
+    register_bori(r, photo=FIXTURES.landscape)
     expect_bori_card(r)
+    expect(r.page.get_by_role("img", name="보리 사진")).to_be_visible()
+    size = stored_photo_size(r)
+    r.check(size == (512, 384), f"가로 사진이 512×384로 줄지 않았다: {size}")
     expect(r.page.get_by_role("tab", name="의료정보")).to_have_attribute("aria-selected", "true")
     expect(r.page.get_by_text("등록된 정보 없음")).to_have_count(3)
     expect(r.page.get_by_text(STORAGE_NOTICE)).to_be_visible()
@@ -198,6 +257,31 @@ def s06_basic_tab(r: Run) -> None:
     for text in ["보리", "골든리트리버", "수컷", "2014년 8월 1일생", "12세 3개월"]:
         expect(panel.get_by_text(text, exact=True)).to_be_visible()
     r.shot("basic-tab")
+
+
+def s07_portrait_photo(r: Run) -> None:
+    register_bori(r, photo=FIXTURES.landscape)
+    r.page.get_by_role("button", name="프로필 수정").click()
+    r.page.get_by_label("사진 선택").set_input_files(str(FIXTURES.portrait))
+    expect(r.page.locator("img.photo-picker__preview")).to_be_visible()
+    r.shot("edit-photo")
+    save_button(r).click()
+    expect(r.page.get_by_role("button", name="프로필 수정")).to_be_visible()
+    size = stored_photo_size(r)
+    r.check(size == (384, 512), f"세로 사진이 384×512로 줄지 않았다: {size}")
+
+
+def s13_not_a_photo(r: Run) -> None:
+    open_register(r)
+    r.page.get_by_label("사진 선택").set_input_files(str(FIXTURES.landscape))
+    expect(r.page.locator("img.photo-picker__preview")).to_be_visible()
+    before = r.page.locator("img.photo-picker__preview").get_attribute("src")
+    r.page.get_by_label("사진 선택").set_input_files(str(FIXTURES.not_image))
+    expect(r.page.get_by_text("이 사진은 열 수 없어요")).to_be_visible()
+    after = r.page.locator("img.photo-picker__preview").get_attribute("src")
+    r.check(before == after, "열 수 없는 파일을 골랐더니 이전 사진이 바뀌었다")
+    r.page.get_by_role("button", name="사진 빼기").click()
+    expect(r.page.locator("img.photo-picker__preview")).to_have_count(0)
 
 
 def s09_reload(r: Run) -> None:
@@ -230,9 +314,11 @@ SCENARIOS: list[Scenario] = [
     Scenario("S03", "글자 수·날짜·나이 범위", s03_limits),
     Scenario("S05", "보리 등록 → 프로필 화면", s04_s05_register, widths=(390, 360)),
     Scenario("S06", "기본정보 탭", s06_basic_tab),
+    Scenario("S07", "세로 사진으로 바꾸기", s07_portrait_photo),
     Scenario("S09", "새로고침해도 남는다", s09_reload),
     Scenario("S10", "수정하다 취소", s10_cancel),
     Scenario("S12", "저장된 정보가 깨졌을 때", s12_corrupted),
+    Scenario("S13", "사진이 아닌 파일", s13_not_a_photo),
     Scenario("S15", "폰이 다크 모드일 때", s15_dark, context_options={"color_scheme": "dark"}),
 ]
 
@@ -295,6 +381,8 @@ def main() -> int:
     base_url = args.base_url.rstrip("/")
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
+    global FIXTURES
+    FIXTURES = make_fixtures(out_dir)
     selected = [s for s in SCENARIOS if not args.only or s.id in {x.upper() for x in args.only}]
 
     failed = 0

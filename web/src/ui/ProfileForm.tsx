@@ -3,6 +3,7 @@ import { earliestBirthDate } from '../domain/age'
 import { formatLocalDate, type LocalDate } from '../domain/localDate'
 import type { PetProfile } from '../domain/petProfile'
 import type { SaveFailure } from '../domain/petProfileRepository'
+import { PhotoPicker } from './PhotoPicker'
 import { SaveErrorBanner } from './SaveErrorBanner'
 import {
   applyProfileForm,
@@ -38,13 +39,11 @@ interface Props {
   now: () => Date
   saving: boolean
   saveError: SaveFailure | null
-  /** 사진 칸 (단계 7). 값과 바꾸는 함수를 받는다 */
-  renderPhoto?: (photoDataUrl: string | null, name: string, onChange: (photo: string | null) => void) => ReactNode
   onSave: (profile: PetProfile) => void
   onCancel: () => void
 }
 
-export function ProfileForm({ initial, today, now, saving, saveError, renderPhoto, onSave, onCancel }: Props) {
+export function ProfileForm({ initial, today, now, saving, saveError, onSave, onCancel }: Props) {
   const [values, setValues] = useState(() => profileFormValuesOf(initial, today))
   const [errors, setErrors] = useState<ProfileFormErrors>({})
 
@@ -76,7 +75,7 @@ export function ProfileForm({ initial, today, now, saving, saveError, renderPhot
       <h1 className="form__title">{initial === null ? '반려견 등록' : '프로필 수정'}</h1>
       {saveError !== null && <SaveErrorBanner reason={saveError} />}
 
-      {renderPhoto?.(values.photoDataUrl, values.name, (photoDataUrl) => update({ photoDataUrl }))}
+      <PhotoPicker photoDataUrl={values.photoDataUrl} name={values.name} onChange={(photoDataUrl) => update({ photoDataUrl })} />
 
       <Field id="pf-name" label="이름" required error={errors.name}>
         <input

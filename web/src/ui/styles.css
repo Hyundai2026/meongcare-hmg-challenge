@@ -377,6 +377,35 @@ select {
   color: var(--color-text-faint);
 }
 
+/* 사진 고르기 */
+.photo-picker {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.photo-picker__preview {
+  width: 96px;
+  height: 96px;
+  font-size: 36px;
+}
+
+.photo-picker__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+}
+
+.photo-picker__choose {
+  position: relative;
+}
+
+.photo-picker__choose:has(input:focus-visible) {
+  outline: 3px solid var(--color-blue-soft);
+  outline-offset: 2px;
+}
+
 /* 저장 실패 띠 */
 .banner {
   margin: 0;

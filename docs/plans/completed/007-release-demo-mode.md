@@ -370,7 +370,7 @@ class FakeGuidanceSource(
       - "데이터 모드" 절: 세 모드, 설계 결정 1의 표, release 고정과 이유, 결정 3(주행 중에만 시간 흐름)
   - 확인: `assembleRelease` 성공. `DataModeTest` 통과.
 
-- [ ] 6. 경계 테스트 (`tester`) → `test: 시연 모드 결정과 Fake 길안내 진행 조건 경계 테스트 추가`
+- [x] 6. 경계 테스트 (`tester`) → `test: 시연 모드 결정과 Fake 길안내 진행 조건 경계 테스트 추가`
   - 메인이 `tester`에게 **이 계획 파일 경로와 대상만** 넘긴다. 구현 설명은 넘기지 않는다.
     - 대상: `resolveDataMode`, `DataMode.next`, `sourcePlanOf`, `FakeGuidanceSource`(진행 조건)
     - 대상 아님: `AppContainer`, `DataModeStore`, `MainActivity`, `DebugPanel` (Android `Context`·Compose 필요)
@@ -382,7 +382,7 @@ class FakeGuidanceSource(
   - tester가 찾은 버그는 메인이 프로덕션 코드에서 `fix:` 커밋으로 따로 고친다.
   - 확인: `.\gradlew.bat testDebugUnitTest` 통과. 통과 수와 실패 수를 진행 로그에 적는다.
 
-- [ ] 7. 전체 검증 (`/verify`). 커밋은 없다. 고친 게 있으면 `fix(...)` 커밋으로 낸다.
+- [x] 7. 전체 검증 (`/verify`). 커밋은 없다. 고친 게 있으면 `fix(...)` 커밋으로 낸다.
   - `node .claude/hooks/build-gate.mjs pipeline` → "검증 파이프라인 통과."
   - `.\gradlew.bat assembleRelease` 성공
   - 완료 기준 3의 `git diff`, 완료 기준 4의 Grep
@@ -395,7 +395,7 @@ class FakeGuidanceSource(
     - 5c: 하지 않았다고 적는다
   - 기기가 없으면 멈추고 사용자에게 Cold boot를 요청한다. 확인하지 못한 것은 그대로 적는다.
 
-- [ ] 8. 문서 맞추기
+- [x] 8. 문서 맞추기
   - `README.md`:
     - "실행 방법": release APK는 시연 모드로 켜진다. Pleos 에뮬레이터는 **Cold boot**로 켠다.
     - "테스트 환경 및 필요 설정":
@@ -414,7 +414,7 @@ class FakeGuidanceSource(
     - `docs(architecture): 시연 모드 패키지와 Car 연결 두 개 기록`
   - 확인: 완료 기준 7
 
-- [ ] 9. 개발 노트 작성 (`docs/notes/`)
+- [x] 9. 개발 노트 작성 (`docs/notes/`)
   - `docs/notes/xxj15/YYYY-MM-DD-release-demo-mode.md`. 형식은 `docs/notes/README.md` 템플릿을 따른다.
     - 사용한 API: 새 Pleos SDK 없음, 새 권한 없음. 006의 `CarUxRestrictions`를 시연 모드에서도 쓴다.
     - 결정: 세 모드와 구성표, 기기에 따라 주행 상태 출처를 고른 이유, 주행 중에만 시간이 흐르게 한 이유, 시연 표시 위치, release 고정
@@ -462,7 +462,30 @@ class FakeGuidanceSource(
   - 단계 4: Pleos에서 정차(안내 중) 카드 아래 시연 문구 확인. `DrivingScreen.kt`의 `git diff dev` 0줄.
   - 단계 5: release → DEMO. `4ac09df`는 단계 3-2에서 `next()`를 `resolveDataMode`의 KDoc과 함수 사이에 넣어 설명이 엉뚱하게 붙은 것을 바로잡은 커밋이다.
 
+- 2026-11-05: 단계 6~9 완료.
+  - 단계 6 (`89add10`): tester가 경계 테스트 42개를 더했다 (`DataModeBoundaryTest` 8, `SourcePlanBoundaryTest` 11, `FakeGuidanceSourceProgressGateBoundaryTest` 15, `FakeGuidanceSourceDemoModeTest` 8). 184개 모두 통과, 계약 위반 버그 없음.
+    - **tester가 짚은 계약 충돌**: "세던 간격은 끝까지 센다"와 "도착은 조건이 참일 때만"이 마지막 간격에서 부딪혔다. 구현은 정차 중에도 도착했다.
+    - 고침 (`58a7cd9`): 도착 쪽을 우선한다. 마지막 간격을 다 센 뒤에도 조건이 거짓이면 다시 참이 될 때까지 도착을 미룬다. 테스트 1개 추가 → 185개 통과.
+  - 단계 7:
+    - 검증 파이프라인 통과, `assembleRelease` 성공.
+    - Pleos 에뮬레이터 (debug 시연, "DEBUG · 시연 (주행 Real)"): D1 정차+시연 문구, D2 "병원까지 12분", **D3 P로 10초 동안 12분 그대로**, D4 D·30km/h → 10분 → 5분 (주행 화면 `EditText` 0), **D5 P → 3초 뒤·9초 뒤 모두 4분**, D6 D → 2분, D7 주행 "도착했어요", D8 P → 도착 화면+시연 문구, D9 [닫기] → D1. 취소 경로: P에서 시작 → 취소 → 10초 뒤에도 처음 화면.
+    - D10 로그: 화면 연결과 진행 조건 연결이 같은 순간 같은 값을 받았다 (`DO=false` 두 번, `DO=true` 두 번 …). 도착(D7) 순간 `주행 규제 연결을 닫았다`(진행 조건 쪽), 그 뒤로는 한 줄씩. 취소해도 진행 조건 쪽 연결이 닫혔다. `SecurityException`·크래시 없음.
+    - 일반 폰 에뮬레이터 (debug 시연, "DEBUG · 시연 (주행 Fake)"): P1 정차+시연 문구. 계획은 "FEATURE_AUTOMOTIVE 없음" 로그를 기대했지만, 이 구성은 주행 상태가 처음부터 Fake라 차량 연결 코드를 부르지 않아 로그가 없다 (설계대로). P2 안내 → 약 3초 뒤 주행, 그때부터 감소. P4 주행 중 [정차] → 8분에서 멈춤(6초 뒤도 같음) → [주행] → 다시 감소. P3 도착 → 도착 화면+시연 문구 → [닫기]. 가로·다크: 정차(안내 중) 화면은 debug 패널 때문에 시연 문구와 [안내 취소]가 아래로 밀린다(005의 알려진 한계, release에는 패널 없음). 도착 화면은 가로·다크에서 문구까지 보인다.
+    - release: 서명 없는 APK 설치 → `INSTALL_PARSE_FAILED_NO_CERTIFICATES`. 결정 5a대로 `zipalign` + `apksigner`(기존 debug 키)로 `.claude/.cache/release-check-debugsigned.apk`를 만들었다 (git 제외, 제출용 아님). `apksigner verify`: CN=Android Debug.
+      - R1: 두 에뮬레이터 모두 `adb uninstall` 후 설치 → 실행 → 크래시 없음, UI 트리 "DEBUG" 0건, 처음부터 시연 모드.
+      - R2 (일반 폰): [병원으로 안내]만 눌러 출발 → 도착 → 도착 화면 → [닫기]까지 저절로.
+      - R3 (Pleos): P에서 12분 유지 → D로 감소 → 도착 → P → 도착 화면 → [닫기].
+      - 고친 경우(마지막 간격 도중 정차)는 기기에서 재현하지 못했다. 간격이 2초라 화면을 읽고 기어를 바꾸는 사이 이미 도착했다. JVM 테스트로만 확인했다.
+    - adb 데몬이 두 번 끊겼다 (`cannot connect to daemon`). 다시 실행해서 이어 갔다.
+  - 단계 8 (`23c014b`, `a9ae36f`): README "실행 방법"·"테스트 환경"(두 에뮬레이터 시연 방법, 시연용 길안내 안내), architecture.md(패키지 구조, Car 연결 두 개, 문의 A2 행).
+  - 단계 9: 노트 `docs/notes/xxj15/2026-11-05-release-demo-mode.md`. 있으면 좋음 A·B는 하지 않았다.
+
 ## 결정 / 배운 점
+
+- **도착은 주행 중에만** (`58a7cd9`): 설계 결정 3의 "세던 간격은 끝까지 센다"를 마지막 간격에서는 "다 세되 도착은 미룬다"로 좁혔다.
+- 일반 폰 시연 구성은 주행 상태가 Fake라 `uxRestrictionsClientOrNull`을 부르지 않는다. 그래서 "FEATURE_AUTOMOTIVE 없음" 로그가 없다.
+- 시연 문구가 휴대폰 세로 화면에서 "아/직"처럼 낱말 중간에서 줄이 바뀐다 (한국어 글자 단위 줄바꿈). 고치지 않았다.
+
 
 - `DataMode.next()`를 넣을 때 `resolveDataMode`의 KDoc과 함수 사이에 끼워 넣는 실수를 했다 (KDoc이 `next()`에 붙음). 별도 `refactor` 커밋으로 바로잡았다.
 - debug 패널의 다음 모드 라벨은 받침에 맞춰 "시연으로 전환" / "Real로 전환" / "Fake로 전환"이다.

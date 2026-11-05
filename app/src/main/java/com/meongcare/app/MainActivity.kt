@@ -17,9 +17,14 @@ import com.meongcare.app.di.next
 import com.meongcare.app.domain.driving.DrivingState
 import com.meongcare.app.ui.card.MedicalCardActions
 import com.meongcare.app.ui.card.MedicalCardViewModel
+import com.meongcare.app.ui.debug.DebugLocationRow
+import com.meongcare.app.ui.debug.DebugLocationUiState
+import com.meongcare.app.ui.debug.DebugLocationViewModel
 import com.meongcare.app.ui.debug.DebugPanel
+import com.meongcare.app.ui.debug.debugLocationText
 import com.meongcare.app.ui.guidance.GuidanceViewModel
 import com.meongcare.app.ui.home.HomeScreen
+import com.meongcare.app.ui.home.HomeUiState
 import com.meongcare.app.ui.home.HomeViewModel
 import com.meongcare.app.ui.theme.MeongCareTheme
 
@@ -82,6 +87,9 @@ class MainActivity : ComponentActivity() {
                     bottomBar = {
                         if (BuildConfig.DEBUG) {
                             val fake = container.fakeDrivingStateSource
+                            val locationViewModel: DebugLocationViewModel =
+                                viewModel(factory = DebugLocationViewModel.factory(container.currentLocationSource))
+                            val locationState by locationViewModel.uiState.collectAsStateWithLifecycle()
                             DebugPanel(
                                 modeLabel = debugModeLabel(container.dataMode, container.sourcePlan) +
                                     if (container.naviUse != NaviUse.NONE) " · 내비 ${if (container.naviUse == NaviUse.FULL) "전부" else "경로"}" else "",
@@ -95,6 +103,16 @@ class MainActivity : ComponentActivity() {
                                 onToggleDataMode = {
                                     AppRestarter.restartWith(this@MainActivity, container.dataMode.next())
                                 },
+                                // 주행 중(모름 포함)에는 위치 줄을 숨긴다. 주행 화면 정보를 늘리지 않는다 (AGENTS.md 규칙 3).
+                                location = if (uiState == HomeUiState.Parked) {
+                                    DebugLocationRow(
+                                        text = debugLocationText(locationState, sourceName = "Fake"),
+                                        isAsking = locationState == DebugLocationUiState.Asking,
+                                    )
+                                } else {
+                                    null
+                                },
+                                onAskLocation = locationViewModel::onAsk,
                             )
                         }
                     },

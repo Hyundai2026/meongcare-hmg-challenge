@@ -13,6 +13,7 @@ import com.meongcare.app.data.guidance.NaviRouteOnlyGuidanceSource
 import com.meongcare.app.data.guidance.navi.PleosNaviClient
 import com.meongcare.app.data.guidance.RealGuidanceSource
 import com.meongcare.app.data.hospital.SampleHospitals
+import com.meongcare.app.data.location.FakeCurrentLocationSource
 import com.meongcare.app.data.pet.FakePetProfileSource
 import com.meongcare.app.data.phone.AndroidPhoneDialer
 import com.meongcare.app.domain.card.MedicalCardSession
@@ -23,6 +24,7 @@ import com.meongcare.app.domain.driving.DrivingState
 import com.meongcare.app.domain.driving.DrivingStateSource
 import com.meongcare.app.domain.guidance.GuidanceSource
 import com.meongcare.app.domain.hospital.Hospital
+import com.meongcare.app.domain.location.CurrentLocationSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -81,6 +83,9 @@ class AppContainer(context: Context, val dataMode: DataMode) {
             SourceKind.REAL -> RealGuidanceSource()
         }
     }
+
+    /** 현재 위치 (011). 모든 데이터 모드에서 Fake(Pleos 에뮬레이터와 같은 시연 위치)다. 지금은 debug 패널만 쓴다. */
+    val currentLocationSource: CurrentLocationSource = FakeCurrentLocationSource()
 
     /** 병원 (길안내 목적지 + 전화번호). 병원 검색이 붙기 전까지 시연용 샘플 병원 1곳을 쓴다. */
     val sampleHospital: Hospital = SampleHospitals.demo

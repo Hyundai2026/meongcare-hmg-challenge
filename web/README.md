@@ -36,3 +36,7 @@ Python Playwright가 필요하다 (`pip install playwright && python -m playwrig
 2. 다른 터미널에서 `npm --prefix web run preview -- --port 4173 --strictPort --host 127.0.0.1`
 3. `python web/scripts/verify_screens.py --base-url http://127.0.0.1:4173 --out .claude/.cache/web`
 4. `.claude/.cache/web/*.png`를 열어 본다. 날짜는 2026-11-05로 고정해서 찍는다.
+
+- 시나리오 일부만: `--only S01 S08`. 모든 시나리오를 390·360 두 폭으로: `--all-widths` (dev에 반영하기 전 전체 확인)
+- 실패하면 어떤 시나리오의 무엇이 틀렸는지 출력하고 종료 코드 1이다. 콘솔 에러나 다른 주소로 가는 요청이 있어도 실패다.
+- Windows에서 미리보기 서버를 끈 뒤에도 vite 프로세스가 남으면 `npm --prefix web ci`가 `EPERM`으로 실패한다. 남은 프로세스를 끄고 다시 한다.

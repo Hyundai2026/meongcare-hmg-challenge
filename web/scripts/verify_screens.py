@@ -449,6 +449,7 @@ def main() -> int:
     parser.add_argument("--base-url", default="http://127.0.0.1:4173")
     parser.add_argument("--out", default=str(ROOT / ".claude" / ".cache" / "web"))
     parser.add_argument("--only", nargs="*", help="이 시나리오만 (예: S01 S05)")
+    parser.add_argument("--all-widths", action="store_true", help="모든 시나리오를 390·360 두 폭으로 돌린다 (전체 확인용)")
     args = parser.parse_args()
 
     base_url = args.base_url.rstrip("/")
@@ -458,11 +459,12 @@ def main() -> int:
     FIXTURES = make_fixtures(out_dir)
     selected = [s for s in SCENARIOS if not args.only or s.id in {x.upper() for x in args.only}]
 
+    widths_of = (lambda s: tuple(VIEWPORTS)) if args.all_widths else (lambda s: s.widths)
     failed = 0
     with sync_playwright() as p:
         browser = p.chromium.launch()
         for scenario in selected:
-            for width in scenario.widths:
+            for width in widths_of(scenario):
                 problems = run_scenario(browser, scenario, width, base_url, out_dir)
                 label = f"{scenario.id} {scenario.title} ({width}px)"
                 if problems:
@@ -474,7 +476,7 @@ def main() -> int:
                     print(f"통과  {label}")
         browser.close()
 
-    total = sum(len(s.widths) for s in selected)
+    total = sum(len(widths_of(s)) for s in selected)
     print(f"\n{total - failed}/{total} 통과. 스크린샷: {out_dir}")
     return 1 if failed else 0
 

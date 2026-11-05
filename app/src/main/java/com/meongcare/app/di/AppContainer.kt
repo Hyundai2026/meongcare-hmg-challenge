@@ -4,6 +4,7 @@ import android.content.Context
 import com.meongcare.app.data.demo.FakeTripScenario
 import com.meongcare.app.data.driving.FakeDrivingStateSource
 import com.meongcare.app.data.driving.RealDrivingStateSource
+import com.meongcare.app.data.driving.uxRestrictionsClientOrNull
 import com.meongcare.app.data.guidance.FakeGuidanceSource
 import com.meongcare.app.data.guidance.RealGuidanceSource
 import com.meongcare.app.data.hospital.SampleHospitals
@@ -31,7 +32,8 @@ class AppContainer(context: Context, val dataMode: DataMode) {
 
     val drivingStateSource: DrivingStateSource = when (dataMode) {
         DataMode.FAKE -> fakeDrivingStateSource
-        DataMode.REAL -> RealDrivingStateSource()
+        // 차량 기기면 주행 규제(CarUxRestrictions)를 받고, 일반 폰이면 UNKNOWN만 낸다.
+        DataMode.REAL -> RealDrivingStateSource(uxRestrictionsClientOrNull(context))
     }
 
     val guidanceSource: GuidanceSource = when (dataMode) {

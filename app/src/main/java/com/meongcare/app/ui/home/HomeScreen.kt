@@ -39,6 +39,7 @@ fun HomeScreen(
     isGuidanceSimulated: Boolean,
     isPetProfileSample: Boolean,
     modifier: Modifier = Modifier,
+    isRouteOnNavi: Boolean = false,
     bottomBar: @Composable () -> Unit = {},
 ) {
     Surface(modifier = modifier.fillMaxSize()) {
@@ -54,6 +55,7 @@ fun HomeScreen(
                         onCloseArrival = onCloseArrival,
                         isGuidanceSimulated = isGuidanceSimulated,
                         isPetProfileSample = isPetProfileSample,
+                        isRouteOnNavi = isRouteOnNavi,
                     )
                     HomeContent.DRIVING -> DrivingScreen(guidanceUiState)
                 }
@@ -74,6 +76,7 @@ private fun ParkedFlow(
     onCloseArrival: () -> Unit,
     isGuidanceSimulated: Boolean,
     isPetProfileSample: Boolean,
+    isRouteOnNavi: Boolean,
 ) {
     when (parkedContentOf(guidanceUiState, cardUiState.session, cardUiState.atHome)) {
         ParkedContent.HOME -> ParkedScreen(
@@ -104,6 +107,7 @@ private fun ParkedFlow(
                 onCloseArrival = onCloseArrival,
                 isPetProfileSample = isPetProfileSample,
                 isGuidanceSimulated = isGuidanceSimulated,
+                isRouteOnNavi = isRouteOnNavi,
             )
         }
     }

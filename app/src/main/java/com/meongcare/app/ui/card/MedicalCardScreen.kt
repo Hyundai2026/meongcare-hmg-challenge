@@ -118,6 +118,7 @@ fun MedicalCardScreen(
     isPetProfileSample: Boolean,
     isGuidanceSimulated: Boolean,
     modifier: Modifier = Modifier,
+    isRouteOnNavi: Boolean = false,
 ) {
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val wide = maxWidth >= WideBreakpoint
@@ -141,6 +142,7 @@ fun MedicalCardScreen(
                         showsPetSample = isPetProfileSample && state.card.pet is PetHeader.Registered,
                         hospitalSamplePhone = state.hospitalPhone.takeIf { state.isHospitalSample },
                         showsGuidanceSimulated = isGuidanceSimulated,
+                        routeOnNavi = isRouteOnNavi,
                     )
                 }
                 ActionArea(
@@ -374,7 +376,7 @@ private fun DisclaimerBand(updatedOn: LocalDate?) {
 
 /** 시연용 표시를 한 상자에 모은다 (출품 유의사항: 사실과 다르면 선정 취소). 주행 화면에는 넣지 않는다. */
 @Composable
-private fun DemoNotices(showsPetSample: Boolean, hospitalSamplePhone: String?, showsGuidanceSimulated: Boolean) {
+private fun DemoNotices(showsPetSample: Boolean, hospitalSamplePhone: String?, showsGuidanceSimulated: Boolean, routeOnNavi: Boolean = false) {
     if (!showsPetSample && hospitalSamplePhone == null && !showsGuidanceSimulated) return
     Row(
         modifier = Modifier
@@ -387,7 +389,7 @@ private fun DemoNotices(showsPetSample: Boolean, hospitalSamplePhone: String?, s
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             if (showsPetSample) Notice(stringResource(R.string.card_sample_pet_notice))
             hospitalSamplePhone?.let { Notice(stringResource(R.string.card_sample_hospital_notice, it)) }
-            if (showsGuidanceSimulated) SimulatedGuidanceNotice()
+            if (showsGuidanceSimulated) SimulatedGuidanceNotice(routeOnNavi = routeOnNavi)
         }
     }
 }

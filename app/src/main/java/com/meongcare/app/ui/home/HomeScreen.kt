@@ -36,7 +36,7 @@ fun HomeScreen(
                         onStartGuidance = onStartGuidance,
                         onCancelGuidance = onCancelGuidance,
                     )
-                    HomeContent.DRIVING -> DrivingScreen()
+                    HomeContent.DRIVING -> DrivingScreen(guidanceUiState)
                 }
             }
             bottomBar()

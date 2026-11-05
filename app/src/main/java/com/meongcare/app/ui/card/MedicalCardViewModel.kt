@@ -14,10 +14,13 @@ import com.meongcare.app.domain.pet.PetProfileSource
 import com.meongcare.app.domain.phone.PhoneDialer
 import java.time.Clock
 import java.time.LocalDate
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 
 /** 진료 카드 흐름(처음 화면·증상 고르기·카드)이 보여 줄 것. */
@@ -50,8 +53,15 @@ class MedicalCardViewModel(
 
     private val shownPhoneNumber = MutableStateFlow<String?>(null)
 
+    /**
+     * 프로필이 아직 오지 않은 동안은 null(불러오는 중)로 시작한다. `combine`은 모든 흐름이 한 번씩 값을 내야
+     * 움직이므로, 이렇게 하지 않으면 첫 프로필이 늦게 오는 출처(나중 서버)에서 버튼을 눌러도 화면이 바뀌지 않는다.
+     */
+    private val profileOrLoading: Flow<PetProfileLoad?> =
+        petProfileSource.profile.map<PetProfileLoad, PetProfileLoad?> { it }.onStart { emit(null) }
+
     val uiState: StateFlow<CardFlowUiState> =
-        combine(petProfileSource.profile, session.state, shownPhoneNumber) { profile, state, shown ->
+        combine(profileOrLoading, session.state, shownPhoneNumber) { profile, state, shown ->
             uiStateOf(profile, state, shown)
         }.stateIn(
             scope = viewModelScope,

@@ -6,7 +6,7 @@
 - 이 파일이나 공식 문서에 없는 API 이름·시그니처·의존성 좌표를 추측해서 코드에 쓰지 않는다.
 - UX·주행 규제·디자인 가이드는 [ux-guidelines.md](ux-guidelines.md)에 둔다.
 
-마지막 갱신: 2026-11-03
+마지막 갱신: 2026-11-05
 
 ## 빌드 설정
 
@@ -264,6 +264,15 @@ door.getCurrentDoorPosition(
     > - `unregisterGearSelection(GearSelectionListener)`
     >
     > 문서에는 없으므로 필요한 권한, `VehicleGear` 값, 지원 여부는 미확인이다. 주행 상태 Real 구현(후속 계획)에서 `CarUxRestrictions`의 대안으로 검토한다.
+    >
+    > **2026-11-05 재확인: 여전히 공식 문서와 공식 샘플 어디에도 Gear가 없다.**
+    > - `vehicle.api` 패키지 목록은 19개 그대로다. `.../ai.pleos.playground.vehicle.api/gear/entry`는 "Page Not Found"(404)다. [vehicle-api]
+    > - `ai.pleos.playground.vehicle.constant` 패키지에는 `ErrorCode`, `PleosPermission` 둘만 있다. `VehicleGear`는 없다. [constant-pkg]
+    > - `ai.pleos.playground.vehicle.listener` 패키지의 리스너 67개에 `GearSelectionListener`가 없다. [listener-pkg]
+    > - SDK 릴리스 노트 v2.3.2(2026-10-19)의 Breaking change / New API / Changed API / Deprecated API / Shutdown API 표 어디에도 Gear가 없다. [sdk-release-note]
+    > - 공식 vehicle 샘플의 API 카탈로그(`VehiclePublicApiCatalog`, `enum class VehicleDomain`)는 19개 도메인만 다루고 Gear가 없다. [gh-vehicle-catalog]
+    > - 샘플 매니페스트에는 `pleos.car.permission.CAR_POWERTRAIN`이 있지만, 이것이 Gear에 쓰인다는 문서·주석은 없다. [gh-vehicle]
+    > - 그래서 Gear는 "문서에 없는 비공개 API"로 본다. 권한·값·지원 여부는 미확인으로 남긴다.
 - 도메인 설명 (원문) [vehicle-intro]:
   - DrivingMode: "드라이브 모드, 크루즈 컨트롤 정보 조회"
   - Brake: "브레이크 페달, 주차 브레이크 상태 조회"
@@ -276,6 +285,11 @@ door.getCurrentDoorPosition(
 - Brake 메서드 이름 [brake-api]: `checkBrakePedalStatusCapabilities`, `getCurrentBrakePedalStatus`, `registerBrakePedalStatus`, `unregisterBrakePedalStatus`
   - > **불일치:** intro는 Brake가 "주차 브레이크 상태 조회"도 한다고 하지만 [vehicle-intro], API Reference 목록에는 브레이크 페달 메서드 4개만 보인다 [brake-api].
 - Odometer는 거리·주행 시간·잔여 거리만 다룬다. 속도 메서드는 없다. [odometer-api]
+- **Vehicle SDK v2.3.2에서 속도 리스너가 삭제되었다.** SDK 릴리스 노트의 "Shutdown API" 표 (원문) [sdk-release-note]:
+  - 대상 API: "VehicleSpeedListener"
+  - 변경 내용: "삭제" / "리스너와 onSpeedUpdated 제거"
+  - 필요한 대응: "해당 타입·콜백을 사용하는 코드 수정"
+  - 이유와 대체 API는 적혀 있지 않다. Vehicle SDK로 속도를 받는 길이 없다는 위 기록과 맞는다.
 
 ### 속도는 AAOS `CarPropertyManager`로 읽는다
 
@@ -290,10 +304,151 @@ door.getCurrentDoorPosition(
 | `PARKING_BRAKE_ON` | `Boolean` | `CHANGE_MODE_ONCHANGE` | "Normal permission Car.PERMISSION_POWERTRAIN to read property." |
 
 - 이 권한들은 `pleos.car.permission.*`이 아니라 AAOS `Car.PERMISSION_*`이다. Pleos에서 서드파티 앱에 허용되는지는 미확인이다.
+- `Car` 클래스의 권한 상수 (원문) [g-car]:
+
+| 상수 | 값 | 설명 (원문) |
+|---|---|---|
+| `Car.PERMISSION_POWERTRAIN` | `"android.car.permission.CAR_POWERTRAIN"` | "Normal permission necessary to access car's powertrain information." |
+| `Car.PERMISSION_SPEED` | `"android.car.permission.CAR_SPEED"` | "Dangerous permission necessary to access car's speed." |
+| `Car.PERMISSION_ENERGY` | `"android.car.permission.CAR_ENERGY"` | "Dangerous permission necessary to access car's energy information." |
+
+- `CarPropertyManager`는 `Car.PROPERTY_SERVICE`(`"property"`, "Service name for CarPropertyManager")로 얻는다. [g-car] Gradle 설정과 `Car` 객체 만들기는 아래 `CarUxRestrictions` 절과 같다.
+- **2026-11-05 재확인: Pleos 문서에 `Car.PERMISSION_POWERTRAIN`·`android.car.permission.*`·`GEAR_SELECTION`을 서드파티 앱이 받을 수 있는지에 대한 문장이 없다.**
+  - 확인한 페이지: SDK API 정책, 하드웨어 접근 정책, Vehicle 권한, FAQ, 앱 제출 가이드, 주행 규제 개발 가이드. [sdk-api-policy] [hw-access] [vehicle-permission] [faq] [app-submission] [driving-restriction-dev]
+  - SDK API 정책에 있는 것은 표의 한 줄뿐이다: 표준 데이터 "속도, 기어 상태, 외기 온도, 연료 레벨 등"은 "AAOS Car API". [sdk-api-policy]
+  - 앱 제출 폼에는 "앱 접근 권한"(필수, "앱이 접근해야 하는 기능이 있는 경우 선택 또는 입력")과 "SDK 추가 권한"(필수, "권한 신청이 필요한 SDK를 사용하는 앱일 경우, My Project > 프로젝트 정보 > 프로젝트 ID를 입력") 항목이 있다. AAOS 권한을 따로 다루는 문장은 없다. [app-submission]
+  - 공식 vehicle 샘플 매니페스트는 `android.car.permission.*`을 하나도 선언하지 않는다. 대신 Pleos Vehicle Service의 `pleos.car.permission.CAR_POWERTRAIN`, `pleos.car.permission.CAR_SPEED`를 선언한다 (주석 "Public read permissions (Vehicle Service protectionLevel="normal")"). 이름이 비슷하지만 AAOS 권한과는 다른 이름공간이다. 어느 API에 쓰이는지는 문서에 없다. [gh-vehicle]
 
 ### 주행 규제(주행/정차) 판단은 `CarUxRestrictions`로 한다
 
 - 앱은 `CarUxRestrictions`로 주행 중 제한 상태를 확인한다. 속도·기어로 직접 판단하라는 문장은 없다. 자세한 내용은 [ux-guidelines.md](ux-guidelines.md#주행-규제-caruxrestrictions)에 있다. [driver-distraction] [driving-restriction-dev]
+
+#### Pleos 문서에는 구현 방법이 없다 (2026-11-05 조사)
+
+- 다음 페이지 어디에도 Gradle 설정(`useLibrary`), `Car.createCar`, `CarUxRestrictionsManager`를 얻는 코드, 리스너 등록 코드, 필요한 권한이 없다:
+  - 주행 규제 개발 가이드 (한글판·영문판) [driving-restriction-dev]
+  - 주행 안전을 고려한 설계 [driver-distraction], FAQ [faq], SDK API 정책 [sdk-api-policy], 하드웨어 접근 정책 [hw-access], Vehicle 권한 [vehicle-permission]
+- 주행 규제 개발 가이드에 있는 것 (원문) [driving-restriction-dev]:
+  - "앱은 AAOS CarUxRestrictionsManager를 통해 CarUxRestrictions 값을 얻어 주행 규제 상태를 확인하고, 사양에 맞게 동작하도록 구현합니다."
+  - "`CarUxRestrictionsManager`에 `registerListener()`를 등록하면 `onUxRestrictionsChanged()` 콜백으로 변경된 `CarUxRestrictions`를 수신합니다."
+  - 동영상 재생 제한 예시 코드 하나 ([ux-guidelines.md](ux-guidelines.md#앱이-주행-규제-상태를-아는-방법-driver-distraction-driving-restriction-dev))
+  - Google 레퍼런스 링크 두 개: "AAOS CarUxRestrictionsManager" → [g-uxr-manager], "CarUxRestrictions" → [g-uxr]
+- 공식 샘플 저장소에도 없다.
+  - vehicle 샘플의 `app/build.gradle.kts`에 `useLibrary`가 없다. 매니페스트에 `android.car.permission.*`과 `<uses-library android:name="android.car">`가 없다. [gh-vehicle]
+  - 조직 저장소는 여전히 5개다. `pleos-guide` 저장소는 비어 있다("This repository is empty."). [gh-org]
+- 그래서 아래 구현 방법은 **Google 공식 문서**를 출처로 적는다.
+
+#### Gradle 설정 (Google 문서) [g-parked-aaos]
+
+- 원문: "To listen to UX restrictions, first add a dependency on the `android.car` library in your app module's `build.gradle` file. This is an extension to the Android SDK that provides APIs that are specific to Android Automotive OS."
+
+```kotlin
+android {
+    ...
+    useLibrary("android.car")
+}
+```
+
+- 이 문서에는 `<uses-library>` 매니페스트 항목이 나오지 않는다. Gradle 한 줄만 있다.
+
+#### `CarUxRestrictionsManager` 얻기와 리스너 등록 (Google 문서 원문 코드) [g-parked-aaos]
+
+```kotlin
+val car = Car.createCar(context) ?: return
+val carUxRestrictionsManager =
+    car.getCarManager(Car.CAR_UX_RESTRICTION_SERVICE) as? CarUxRestrictionsManager ?: return
+
+// You can either read the state directly ...
+val currentUxRestrictions = carUxRestrictionsManager.currentCarUxRestrictions
+
+// or listen to state changes
+carUxRestrictionsManager.registerListener { carUxRestrictions: CarUxRestrictions ->
+    // Handle UX restrictions
+}
+
+// Don't forget to teardown and release resources when they're no longer needed
+carUxRestrictionsManager.unregisterListener()
+car.disconnect()
+```
+
+- 원문: "Use the `CarUxRestrictionsManager` to read UX restriction state. Don't attempt to determine the UX restriction state from other hardware state such as gear or speed, because UX restrictions may vary from display to display within a vehicle." [g-parked-aaos]
+- 원문 (Tip): "You can use a runtime check to support both Android Automotive OS and other form factors with the same code by only calling `Car.createCar()` on Android Automotive OS devices." 같은 페이지의 판별 코드: `val isCar = packageManager.hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE)` [g-parked-aaos]
+- 원문: "The only value provided by `CarUxRestrictions` that your app refers to is the return value of `isRequiresDistractionOptimization`. Other values are only relevant for activities that are marked as distraction optimized." [g-parked-aaos]
+  - 이 문장은 parked 앱(동영상·게임·브라우저) 가이드에 있다. DO를 선언한 앱은 `getActiveRestrictions()`도 봐야 한다는 Pleos 문장과 같은 뜻이다. [driving-restriction-dev]
+
+#### 레퍼런스 시그니처 (원문) [g-car] [g-car-lifecycle] [g-uxr-manager] [g-uxr-listener] [g-uxr]
+
+`android.car.Car`:
+
+```
+public static Car createCar (Context context)
+public static Car createCar (Context context, Handler handler)
+public static Car createCar (Context context, Handler handler, long waitTimeoutMs, Car.CarServiceLifecycleListener statusChangeListener)
+public Object getCarManager (String serviceName)
+public T getCarManager (Class<T> serviceClass)
+public boolean isConnected ()
+public void disconnect ()
+public static final String CAR_UX_RESTRICTION_SERVICE   // "uxrestriction"
+public static final long CAR_WAIT_TIMEOUT_DO_NOT_WAIT   // 0
+public static final long CAR_WAIT_TIMEOUT_WAIT_FOREVER  // -1
+```
+
+- 클래스 설명: "This API works only for devices with PackageManager.FEATURE_AUTOMOTIVE. Calling this API on a device with no such feature will lead to an exception." [g-car]
+  - 우리 앱에 주는 뜻: 일반 폰 에뮬레이터에서 Real 모드로 `Car.createCar()`를 부르면 예외가 난다. `FEATURE_AUTOMOTIVE` 확인을 먼저 한다.
+- `createCar(Context)`, `createCar(Context, Handler)`: "Creates new Car object which connected synchronously to Car Service and ready to use." 반환값 "Car object if operation succeeded, otherwise null." "Instance created with this should be disconnected from car service by calling disconnect() before the passed `Context` is released." `handler`가 null이면 콜백은 앱 메인 스레드에서 실행된다. [g-car]
+- `createCar(Context, ServiceConnection)`과 `createCar(Context, ServiceConnection, Handler)`는 deprecated다. "use createCar(android.content.Context, android.os.Handler) instead." `connect()`도 deprecated다. [g-car]
+- 4인자 `createCar(..., waitTimeoutMs, statusChangeListener)` [g-car]:
+  - "If car service is not ready within the given time, it will return a Car instance in disconnected state."
+  - "Blocking main thread forever can lead into getting ANR (Application Not Responding)"
+  - "it is recommended to implement all car related initialization inside CarServiceLifecycleListener.onLifecycleChanged(Car, boolean)"
+- `Car.CarServiceLifecycleListener`: `public abstract void onLifecycleChanged (Car car, boolean ready)`. "This is always called in the main thread context." `ready`: "when `true`, car service is ready and all accesses are ok Otherwise car service has crashed or killed and will be restarted" [g-car-lifecycle]
+- `getCarManager(String)`: "Matching service manager or null if there is no such service." [g-car]
+- `disconnect()`: "This can be called while disconnected. Once disconnect is called, all Car*Managers from this instance become invalid" [g-car]
+
+`android.car.drivingstate.CarUxRestrictionsManager` (공개 메서드는 이 3개뿐):
+
+```
+public CarUxRestrictions getCurrentCarUxRestrictions ()
+public void registerListener (CarUxRestrictionsManager.OnUxRestrictionsChangedListener listener)
+public void unregisterListener ()
+```
+
+- `registerListener`: "If a listener has already been registered, it has to be unregistered before registering the new one." [g-uxr-manager]
+- `OnUxRestrictionsChangedListener`: `public abstract void onUxRestrictionsChanged (CarUxRestrictions restrictionInfo)`, "Called when the UX restrictions due to a car's driving state changes." [g-uxr-listener]
+
+`android.car.drivingstate.CarUxRestrictions`:
+
+```
+public boolean isRequiresDistractionOptimization ()
+public int getActiveRestrictions ()
+public boolean isSameRestrictions (CarUxRestrictions other)
+```
+
+- 클래스 설명 (원문) [g-uxr]:
+  - "When there are no restrictions in place, for example when the car is parked, isRequiresDistractionOptimization() returns false."
+  - "When the driving state changes, causing the UX restrictions to come in effect, isRequiresDistractionOptimization() returns true."
+  - "for the same driving state of the vehicle, could vary depending on the OEM and the market. For example, when the car is idling, the set of active UX restrictions will depend on the car maker"
+  - "apps are expected to react to the restriction information and not to the absolute driving state."
+- `isRequiresDistractionOptimization()`: "If the app has a foreground activity that has not been distraction optimized, the app has to switch to another activity that is distraction optimized. Failing that, the system will stop the foreground activity." [g-uxr]
+- 상수 값: `UX_RESTRICTIONS_BASELINE` 0, `NO_DIALPAD` 1, `NO_FILTERING` 2, `LIMIT_STRING_LENGTH` 4, `NO_KEYBOARD` 8, `NO_VIDEO` 16, `LIMIT_CONTENT` 32, `NO_SETUP` 64, `NO_TEXT_MESSAGE` 128, `NO_VOICE_TRANSCRIPTION` 256, `FULLY_RESTRICTED` 511 [g-uxr]
+
+#### 권한
+
+- Google 레퍼런스의 `CarUxRestrictionsManager` 공개 메서드 3개에는 권한 표기가 없다. [g-uxr-manager]
+- AOSP 문서의 "APIs available to apps" 표: `CarUxRestrictionsManager`는 "Public APIs to register for UX Restriction changes." 이 페이지에서 권한이 붙은 것은 설정 저장(`Car.PERMISSION_CAR_UX_RESTRICTIONS_CONFIGURATION`)뿐이다. [aosp-uxr]
+- 반대로 절대 주행 상태(`CarDrivingStateManager`)는 "@SystemApis"이고 `android.car.permission.CAR_DRIVING_STATE`로 보호된다. 원문: 앱은 UI·UX에 관한 것은 "monitor restrictions exposed by the CarUxRestrictionsManager and not an absolute driving state exposed by the CarDrivingStateManager" [aosp-consume]
+- Pleos 문서에도 이 API에 권한이나 승인이 필요하다는 문장이 없다.
+- **판단 (2026-11-05):** `CarUxRestrictionsManager`에는 `pleos.car.permission.*`도 `android.car.permission.*`도 선언하지 않는다. Pleos 에뮬레이터에서 `SecurityException`이 나지 않는지 실행해서 확인한다.
+
+#### AOSP 기본 주행 상태와 규제 매핑 (참고, Pleos 설정이 아님) [aosp-uxr]
+
+- 원문: "The state of gear selection and speed is converted to one of three drivingstates":
+  - Parked: "Gear in Park."
+  - Idling: "Gear not in Park and speed is zero."
+  - Moving: "Gear not in Park and speed isn't zero."
+- 쓰는 VHAL 프로퍼티: `PERF_VEHICLE_SPEED`, `GEAR_SELECTION`, `PARKING_BRAKE_ON`
+- 예시 XML: parked는 제한 없음, idling은 `car:requiresDistractionOptimization="true"` `car:uxr="no_video|no_config"`, moving은 `car:uxr="fully_restricted"`. 원문: "The mapping illustrated above is pre-determined and configured as an XML resource."
+- Pleos가 실제로 쓰는 매핑은 공개되지 않았다: "UX 규제 피그마 사양서는 Pleos Playground에 공개하지 않습니다." "플랫폼이 지역별 규제 사양에 맞는 ActiveRestrictions를 내려주므로" 앱은 받은 값만 반영한다. [driving-restriction-dev]
 
 ## 기타 SDK
 
@@ -856,15 +1011,22 @@ fun sendGleoBroadcast(
 - [ ] DrivingMode 메서드 시그니처, `@RequiresPermission`, `DrivingModeType`/`CruiseControl` 상수 값. API Reference 상세 페이지는 클라이언트 렌더링이라 WebFetch로 본문이 비어 있다 (`.../driving-mode/get-current-driving-mode-state`, `.../constant.control/driving-mode-type/entry`, `/en/` 경로 모두). 브라우저로 직접 확인해야 한다.
 - [ ] Brake 도메인의 주차 브레이크 API (intro와 API 목록이 다름)
 - [ ] `PleosPermission` 전체 상수 목록 (`.../constant/pleos-permission/entry`도 본문이 비어 있음). 샘플 매니페스트의 `CAR_SPEED`, `CAR_POWERTRAIN` 등이 어느 API에 쓰이는지.
-- [ ] AAOS Car API(`android.car`, `CarPropertyManager`, `CarUxRestrictionsManager`)를 쓰기 위한 Gradle 설정 (`useLibrary` 등). Pleos 문서에 없다.
-- [ ] 서드파티 앱이 Pleos에서 `Car.PERMISSION_SPEED`(dangerous), `Car.PERMISSION_POWERTRAIN`을 받을 수 있는지, 심사에서 별도 승인이 필요한지
+- [x] AAOS Car API(`android.car`, `CarPropertyManager`, `CarUxRestrictionsManager`)를 쓰기 위한 Gradle 설정: Google 문서의 `useLibrary("android.car")`. **Pleos 문서와 공식 샘플에는 없다** (2026-11-05) → 위 "주행 규제(주행/정차) 판단은 `CarUxRestrictions`로 한다"
+- [x] `CarUxRestrictionsManager`를 얻는 방법(`Car.createCar` → `getCarManager(Car.CAR_UX_RESTRICTION_SERVICE)`)과 리스너 등록: Google 문서로 확인. 레퍼런스에 권한 표기 없음 (2026-11-05)
+- [ ] 서드파티 앱이 Pleos에서 `Car.PERMISSION_SPEED`(dangerous), `Car.PERMISSION_POWERTRAIN`을 받을 수 있는지, 심사에서 별도 승인이 필요한지. **2026-11-05 재확인: Pleos 문서에 없음** (SDK API 정책, 하드웨어 접근 정책, Vehicle 권한, FAQ, 앱 제출 가이드). Pleos 문의 또는 에뮬레이터에서 권한 부여 여부 관찰이 필요하다.
+- [x] Pleos 에뮬레이터에서 `Car.createCar()`와 `CarUxRestrictionsManager`가 동작하는지 → 동작한다 (2026-11-05 관찰, 우리 앱 006 구현).
+  - 4인자 `createCar(context, null, CAR_WAIT_TIMEOUT_DO_NOT_WAIT, listener)`로 연결했다. 권한 선언 없이 `SecurityException`이 나지 않았다. 매니페스트 `<uses-library android:name="android.car">` 없이도 `NoClassDefFoundError`가 나지 않았다. `useLibrary("android.car")`(compileSdk 35)로 린트 `NewApi` 경고도 없었다.
+  - 앱 로그: 기어 P → `DO=false active=0x0`, 기어 D(정지·30km/h) → `DO=true active=0x50`. `dumpsys`의 값과 같다.
+  - 일반 폰 에뮬레이터(`FEATURE_AUTOMOTIVE` 없음)에서는 `Car`를 부르지 않고 UNKNOWN으로 둔다. 크래시 없음.
+  - 실차는 미확인.
+- [x] Pleos에서 기어 D + 속도 0(AOSP의 Idling)일 때 규제(DO)가 걸리는지 → 에뮬레이터 덤프로는 걸린다 (2026-11-05, [emulator-setup.md](emulator-setup.md#pleos-에뮬레이터에서-직접-해-본-것-관찰-2026-11-05)). 앱에서 `isRequiresDistractionOptimization()` 값을 직접 찍어 보는 것은 구현 때 확인한다. Pleos 정책표는 Parking/Driving 둘뿐이고 매핑 사양은 비공개다. → [ux-guidelines.md](ux-guidelines.md#미확인)
 - [ ] Android for Cars App Library를 써도 되는지 (허용·금지 모두 문서에 없음)
 - [ ] Pleos가 명시한 "권장" compileSdk/targetSdk/AGP/Kotlin/JDK (문서는 샘플 기준값만 제시)
 - [ ] 화면 해상도(px)와 밀도(dpi) → [ux-guidelines.md](ux-guidelines.md#미확인)
 - [x] `Vehicle` import 경로와 `initialize()`/`release()` 시그니처, 2.3.2 해결 여부 → 위 "2.3.2 AAR에서 직접 확인한 것" (2026-11-03)
 - [x] 차량 서비스가 없는 기기에서 `initialize()`의 동작 → 위 "차량 서비스가 없는 기기에서의 동작" (관찰, 2026-11-03)
 - [ ] 차량 서비스 연결 실패를 앱이 알 수 있는 방법 (도메인 API `onFailed`로 오는지, 별도 콜백이 있는지)
-- [ ] Gear 도메인(`getGear()`): 필요한 권한, `VehicleGear` 값, 실제 지원 여부. 문서에는 없고 AAR에만 있다.
+- [ ] Gear 도메인(`getGear()`): 필요한 권한, `VehicleGear` 값, 실제 지원 여부. 문서에는 없고 AAR에만 있다. **2026-11-05 재확인: API Reference(패키지 목록, `gear/entry` 404, constant·listener 패키지), SDK 릴리스 노트 v2.3.2, 공식 샘플 카탈로그 모두에 없음.**
 - [ ] 같은 `Vehicle` 인스턴스를 `release()`한 뒤 다시 `initialize()`해도 되는지. 우리 앱은 매번 새로 만들어 이 문제를 피한다.
 
 ### PawCare 기획 관련 (2026-11-03 조사)
@@ -917,6 +1079,9 @@ fun sendGleoBroadcast(
 - [brake-api] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/Vehicle/vehicle/ai.pleos.playground.vehicle.api/brake/entry
 - [odometer-api] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/Vehicle/vehicle/ai.pleos.playground.vehicle.api/odometer/entry
 - [constant-control] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/Vehicle/vehicle/ai.pleos.playground.vehicle.constant.control/entry
+- [constant-pkg] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/Vehicle/vehicle/ai.pleos.playground.vehicle.constant/entry (2026-11-05 확인)
+- [listener-pkg] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/Vehicle/vehicle/ai.pleos.playground.vehicle.listener/entry (2026-11-05 확인)
+- [sdk-release-note] https://document.pleos.ai/docs/pleos-only/release-note/sdk-release-note (Vehicle SDK v2.3.2, 2026-10-19 릴리스. 2026-11-05 확인)
 - [navi-intro] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/NaviHelper/intro
 - [navi-import] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/NaviHelper/importing-sdk
 - [navi-perm] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/NaviHelper/declaring-permissions
@@ -971,6 +1136,8 @@ fun sendGleoBroadcast(
   - [gh-vehicle-src] https://github.com/Pleos-Playground/pleos-sample-vehicle-app (`app/src/main/java/.../MainViewModel.kt`, `.../vehicle/VehicleClient.kt`, 커밋 959981d)
   - [gh-navi-src] https://github.com/Pleos-Playground/pleos-sample-navi-app (`README.md`, `app/src/main/AndroidManifest.xml`, `app/src/main/java/ai/pleos/playground/navidevapp/screen/vm/NaviHelperViewModel.kt`, `.../data/model/SdkApi.kt`, `.../data/sample/NaviTestData.kt`, main 브랜치, 2026-11-03)
   - 조직 저장소는 5개다: vehicle, fusedlocation, navi 샘플과 `pleos-guide`, `pleos-playground-api`. **STT/TTS 공식 샘플은 없다.** (2026-11-03)
+  - [gh-org] https://github.com/Pleos-Playground (GitHub API `orgs/Pleos-Playground/repos`로 2026-11-05 재확인: 여전히 5개. `pleos-guide`는 빈 저장소)
+  - [gh-vehicle-catalog] https://github.com/Pleos-Playground/pleos-sample-vehicle-app (`app/src/main/java/ai/pleos/playground/sample/vehicle/explorer/PublicApiPolicy.kt`, `.../explorer/VehicleDomain.kt`, main 브랜치, 2026-11-05)
 - 산출물:
   - [aar-2.3.2] Pleos Maven `ai.pleos.playground:Vehicle:2.3.2` AAR (`classes.jar`를 `javap`으로, `AndroidManifest.xml`, `proguard.txt`). 2026-11-03 확인.
   - [aar-navi-data] Pleos Maven `ai.pleos.playground:navi-data:3.0.4` AAR과 `NaviHelper:3.0.5` pom (`javap`). 2026-11-03 확인.
@@ -985,3 +1152,14 @@ fun sendGleoBroadcast(
 - Pleos 외 출처 (Pleos [faq]가 직접 링크한 Google 공식 문서):
   - [g-vehicle-property-ids] https://developer.android.com/reference/android/car/VehiclePropertyIds
   - https://developer.android.com/reference/android/car/hardware/property/CarPropertyManager
+- Pleos 외 출처 (Pleos [driving-restriction-dev]가 직접 링크한 Google 공식 문서, 2026-11-05 확인):
+  - [g-uxr-manager] https://developer.android.com/reference/android/car/drivingstate/CarUxRestrictionsManager
+  - [g-uxr] https://developer.android.com/reference/android/car/drivingstate/CarUxRestrictions
+- Pleos 외 출처 (Pleos가 링크하지 않은 Google·AOSP 공식 문서. Pleos 문서에 구현 방법이 없어서 참고했다. 2026-11-05 확인):
+  - [g-uxr-listener] https://developer.android.com/reference/android/car/drivingstate/CarUxRestrictionsManager.OnUxRestrictionsChangedListener
+  - [g-car] https://developer.android.com/reference/android/car/Car
+  - [g-car-lifecycle] https://developer.android.com/reference/android/car/Car.CarServiceLifecycleListener
+  - [g-parked-aaos] https://developer.android.com/training/cars/parked/automotive-os ("Meet driver distraction requirements" > "Listen to user experience restrictions")
+  - [g-emulator] https://developer.android.com/training/cars/testing/emulator ("Simulate driving")
+  - [aosp-uxr] https://source.android.com/docs/automotive/driver_distraction/car_uxr
+  - [aosp-consume] https://source.android.com/docs/automotive/driver_distraction/consume

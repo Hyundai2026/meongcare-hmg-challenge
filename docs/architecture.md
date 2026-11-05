@@ -37,7 +37,8 @@
 | 도착 감지 | NaviHelper `onDestinationArrived` | 도착하면 카드 화면으로 넘어간다 | 결정 |
 | 병원 전화 | 안드로이드 다이얼러(`ACTION_DIAL`). 안 되면 번호를 크게 보여준다 | | 미확인 (Pleos 문서에 없음, 에뮬레이터로 시험 불가) |
 | 카드 공유 | MVP: 정차 화면에 크게 보여주기. 나중에 QR·링크 | 서버 작업이 가장 적다 | 결정 |
-| 운전 중 사용 | DO(`distractionOptimized`) 선언 | 음성 SOS가 운전 중에 동작해야 한다 | Pleos 선언 방법 미확인 (문의) |
+| 운전 중 사용 | DO(`distractionOptimized`) 선언. `MainActivity`에 Google 방식 meta-data를 넣었다 (006, 2026-11-05) | 선언이 없으면 주행 중에 시스템 화면이 앱을 가려 주행 화면(남은 시간)이 보이지 않는다 | 결정. Pleos 에뮬레이터에서 동작 확인. 실차·심사 허용은 문의 B1. 안 되면 그 커밋을 revert한다 |
+| 주행/정차 판단 | AAOS `CarUxRestrictionsManager`의 `isRequiresDistractionOptimization` (006) | Pleos·Google 모두 기어·속도가 아니라 규제 값에 반응하라고 한다. 권한이 필요 없다 | 결정. Pleos 에뮬레이터에서 동작 확인 |
 
 ### 사용하기로 한 Pleos 권한 (AGENTS.md 규칙 2, 2026-11-03 팀 승인)
 
@@ -94,7 +95,10 @@ app/src/main/java/com/meongcare/app/
     GuidanceSource.kt         길안내 인터페이스 (start / cancel / dismissArrival)
   data/driving/
     FakeDrivingStateSource.kt 손으로 바꾸는 Fake (처음엔 PARKED)
-    RealDrivingStateSource.kt 자리표시. UNKNOWN만 낸다 (CarUxRestrictions 구현 예정)
+    RealDrivingStateSource.kt 주행 규제 값 → 주행 상태 (android.car 없음, JVM 테스트)
+    UxRestrictionsClient.kt   주행 규제를 받는 경계 (인터페이스와 이벤트 타입)
+    CarUxRestrictionsClient.kt  android.car로 규제를 받는 어댑터. android.car를 부르는 유일한 파일
+    UxRestrictionsClientFactory.kt  FEATURE_AUTOMOTIVE면 어댑터, 아니면 null
   data/guidance/
     FakeGuidanceSource.kt     시간이 지나면 남은 시간이 줄고 도착한다 (scope·timing 주입)
     RealGuidanceSource.kt     자리표시. 항상 Idle (NaviHelper 구현 예정)
@@ -138,9 +142,17 @@ ui ──▶ domain ◀── data
 ## 주행 상태와 화면
 
 - 주행 상태는 `PARKED` / `DRIVING` / `UNKNOWN` 세 가지다.
-- Real 구현은 AAOS `CarUxRestrictions`를 기준으로 한다 (docs/pleos/ux-guidelines.md). 아직 구현하지 않았다.
+- Real 구현은 차량의 주행 규제(AAOS `CarUxRestrictions`)를 따른다 (006, 2026-11-05):
+
+  | 받은 것 | 주행 상태 |
+  |---|---|
+  | 구독 직후 아직 값 없음, 값을 알 수 없음, 차량 기기가 아님(일반 폰) | `UNKNOWN` |
+  | `isRequiresDistractionOptimization` = true | `DRIVING` |
+  | false | `PARKED` |
+
+  - 기어·속도로 직접 판단하지 않는다. 그래서 **기어 D에 멈춰 있어도(신호 대기) 주행 화면이다** (Pleos 에뮬레이터에서 이때도 규제가 걸린다. 사용자 결정 2026-11-05). 정차 화면은 사실상 P 기어(주차)에서만 보인다.
 - 주행 상태를 모르면(`UNKNOWN`) 안전을 위해 주행 화면을 보여준다.
-  - 앱 아이디어와 DO(주행 중 사용) 선언 여부가 정해지면 다시 정한다.
+- DO를 선언했다 (위 "서비스 기능 스택"). 그래서 주행 중에도 시스템이 앱을 가리지 않고, 주행 중 안전(입력·스크롤 숨김)은 앱이 이 규칙대로 책임진다.
 - 주행 화면 규칙 (AGENTS.md 규칙 3):
   - 큰 글씨의 상태 한 줄과 큰 버튼 1개 이하만 둔다.
   - 텍스트 입력, 스크롤, 애니메이션은 두지 않는다.
@@ -170,8 +182,32 @@ ui ──▶ domain ◀── data
 - `initialize()`가 실패하면(차량 서비스가 없는 기기 등) 로그만 남기고 앱은 계속 돈다.
 - 차량 기능 래퍼는 `VehicleConnection.vehicle`을 쓴다. 도메인 API 콜백을 기다리는 중에 release되지 않게 하는 처리는 래퍼를 만들 때 함께 한다.
 
+## Car(AAOS) 연결 수명주기 (006, 2026-11-05)
+
+`Car`(`android.car`) 연결은 `Vehicle`과 다르게 관리한다. "한 곳에서만 관리"는 Pleos `Vehicle`의 `initialize()/release()`에 대한 규칙이다.
+
+- **구독할 때 연결하고, 구독이 끝나면 끊는다.** `RealDrivingStateSource`의 `callbackFlow`가 `UxRestrictionsClient.connect()`를 부르고, `awaitClose`에서 닫는다.
+  - 구독자는 `HomeViewModel` 하나이고 `WhileSubscribed(5초)`라서, 연결은 "화면이 보이는 동안 + 5초"만 산다. 다시 보이면 새로 연결해 현재 값을 받는다 (Pleos 에뮬레이터에서 확인).
+  - 버린 대안: `VehicleConnection`처럼 프로세스 수명주기에 붙인 연결 객체 하나. 공유 상태와 Flow 다리가 따로 필요해 코드가 늘고, 단일 Activity 앱이라 얻는 것이 없다.
+  - 구독자가 둘 이상이 되면 연결도 둘이 된다. 그때 `shareIn`으로 묶는다.
+- `connect()`마다 새 `Car`를 만든다: `Car.createCar(context, null, CAR_WAIT_TIMEOUT_DO_NOT_WAIT, listener)`. 초기화는 연결 콜백 안에서 한다 (Google 권장). 차량 서비스가 다시 시작되면 같은 콜백이 다시 온다.
+- 상황별 처리 (`CarUxRestrictionsClient`):
+
+  | 상황 | 보내는 값 |
+  |---|---|
+  | 연결됨 | 리스너를 먼저 등록하고 현재 값을 읽어 `Changed(DO)` |
+  | 규제 값이 바뀜 | `Changed(DO)` |
+  | `createCar` 실패, 매니저 없음, 값 없음, `SecurityException`, 차량 서비스 끊김 | `Unavailable` → 주행 상태 `UNKNOWN` |
+  | `close()` | 리스너 해제 → `disconnect()`. 그 뒤 콜백은 무시 |
+
+- **일반 폰에서 죽지 않게**: `uxRestrictionsClientOrNull`이 `FEATURE_AUTOMOTIVE`를 먼저 확인하고, 없으면 `android.car` 클래스를 아예 건드리지 않는다 (일반 폰 에뮬레이터에서 확인).
+- 권한을 선언하지 않는다. `pleos.car.permission.*`도 `android.car.permission.*`도 필요 없었다 (Pleos 에뮬레이터에서 `SecurityException` 없음).
+- Gradle: `useLibrary("android.car")` (컴파일용). 매니페스트 `<uses-library>`는 필요 없었다 (Pleos 에뮬레이터에서 `NoClassDefFoundError` 없음).
+
 ## 테스트 전략
 
 - 단위 테스트(`app/src/test/`)로 Fake 데이터 소스와 ViewModel을 검증한다.
 - 화면은 `/verify` 스킬로 에뮬레이터 스크린샷을 찍어 확인한다.
 - Real 구현은 Pleos 에뮬레이터(GPU PC)에서 확인한다.
+  - `android.car`를 부르는 어댑터는 JVM으로 시험하지 않는다. 판단 로직(`RealDrivingStateSource`)만 가짜 client로 시험한다.
+  - 주행 상태는 Virtual Console HTTP 요청으로 바꾼다 (docs/pleos/emulator-setup.md "Pleos 에뮬레이터에서 직접 해 본 것").

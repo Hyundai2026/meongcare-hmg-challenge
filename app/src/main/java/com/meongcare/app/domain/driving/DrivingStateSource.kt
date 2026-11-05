@@ -10,7 +10,8 @@ import kotlinx.coroutines.flow.Flow
  *
  * 구현:
  * - Fake: debug 패널에서 상태를 바꾼다. GPU 없는 PC 개발, 테스트, 시연 영상용.
- * - Real: AAOS `CarUxRestrictions`를 기준으로 정한다 (docs/pleos/ux-guidelines.md). 구현은 후속 계획이다.
+ * - Real: 차량의 주행 규제(AAOS `CarUxRestrictions`)를 따른다. 주행 최적화가 필요하면 DRIVING,
+ *   필요 없으면 PARKED, 알 수 없거나 차량 기기가 아니면 UNKNOWN (docs/pleos/ux-guidelines.md).
  */
 interface DrivingStateSource {
     val drivingState: Flow<DrivingState>

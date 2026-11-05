@@ -200,7 +200,78 @@ Apple Silicon Mac용이다. 순서는 위 Windows와 같다. SDK 경로는 Andro
   - ADAS: 크루즈 컨트롤 준비/작동 상태, 목표 속도 5.556~27.778m/s. [vc-guide]
   - 그 밖에 도어, 창문, 트렁크, 시트, 조명, 와이퍼, 에너지(잔여 거리, 배터리, 충전), 공조. [vc-overview]
 - > **불일치:** 개요 페이지는 "차량 속도, 도어, 조명 등 차량 상태 변경"이 된다고 하지만 [vc-overview], 상세 가이드에는 일반 차량 속도 카드가 없고 크루즈 목표 속도만 있다 [vc-guide].
-- 기어·속도를 바꿨을 때 `CarUxRestrictions`(주행 규제)가 바뀌는지는 두 페이지 모두 언급이 없다 → 미확인.
+- 기어·속도를 바꿨을 때 `CarUxRestrictions`(주행 규제)가 바뀌는지는 두 페이지 모두 언급이 없다. → 에뮬레이터에서는 바뀌는 것을 관찰했다 (아래 "Pleos 에뮬레이터에서 직접 해 본 것", 2026-11-05).
+
+### 주행 상태 시험에 관한 사실 (2026-11-05 재확인)
+
+- 사용 순서 (원문) [vc-guide]:
+  1. "Pleos Connect Virtual Console에서 **Emulation Controls**를 엽니다."
+  2. "왼쪽 목록에서 테스트할 Domain을 선택하거나 검색창에서 카드 이름을 검색합니다."
+  3. "카드에 차량 영역 선택 항목이 있으면 테스트할 영역을 선택합니다."
+  4. "버튼, 목록 또는 슬라이더로 상태와 값을 변경합니다."
+  5. "Pleos Connect Emulator와 테스트 중인 앱에서 변경 결과를 확인합니다."
+- Motion 탭 카드: Gear Selection, Brake Pedal, Odometer, Steering Angle, Steering Wheel Heat. **일반 차량 속도 카드는 없다.** 속도 관련 카드는 ADAS의 Cruise Target Speed뿐이다. [vc-guide]
+- Gear Selection 카드 설명 (원문 두 문장): "현재 기어를 P, R, N, D 중 하나로 설정합니다." "기어 변경에 따른 앱의 상태 전환을 확인할 수 있습니다." [vc-guide]
+  - "앱의 상태 전환"이 `CarUxRestrictions` 변화를 뜻하는지는 적혀 있지 않다.
+- 기어나 속도가 `CarUxRestrictions`를 바꾼다는 문장은 Pleos 문서 어디에도 없다. 확인한 곳: Virtual Console 셋업·사용 가이드, 에뮬레이터 설정 페이지, 에뮬레이터 릴리스 노트, 주행 규제 개발 가이드. [vc-overview] [vc-guide] [configure] [emulator-release-note] [driving-restriction-dev]
+  - 에뮬레이터 설정 페이지는 Extended Controls를 마이크 설정에서만 말한다. "Car data"(차량 데이터) 패널 언급은 없다. VHAL은 "quick boot로 설정할 경우에는 VHAL을 이용할 수 없습니다."에만 나온다. [configure]
+  - 에뮬레이터 릴리스 노트 v2.1.0: "도메인별 차량 상태/이벤트를 설정하고 앱 반응을 검증할 수 있는 테스트 환경 추가". 주행 규제 언급은 없다. [emulator-release-note]
+
+### Google AAOS 에뮬레이터의 주행 시뮬레이션 (참고. Pleos 에뮬레이터에서 되는지는 미확인)
+
+- Google 원문: "To simulate driving, you should set the *Car speed* to a non-zero value and *Gear* to something other than **P (Park)**. To simulate a parked state, all that is necessary is to set the *Gear* to **P (Park)**." Extended controls의 **Car data**에서 바꾼다. [g-emulator]
+- AOSP 문서의 adb 명령 (원문) [aosp-consume]:
+
+  ```
+  adb shell dumpsys activity service com.android.car inject-vhal-event 0x11600207 0
+  adb shell dumpsys activity service com.android.car inject-vhal-event 0x11400400 4
+  adb shell dumpsys activity service com.android.car inject-vhal-event 0x11400400 8
+  adb shell dumpsys activity service com.android.car inject-vhal-event 0x11600207 30
+  ```
+
+  - `0x11600207`은 속도(m/s), `0x11400400`은 기어(4 = Park, 8 = Drive). 문서 주석상 순서대로 Parked → (기어 D, 속도 0) Idling → (속도 30) Moving이다.
+- 이 두 방법은 Pleos 문서에 없다. adb `inject-vhal-event`는 Pleos 에뮬레이터에서 거절된다 (user 빌드, 아래 관찰). Car data 패널은 확인하지 않았다.
+- **Virtual Console에는 속도 카드가 없으므로**, 기어만 D로 바꾸면 AOSP 기준으로는 Idling이다. AOSP 기본 예시는 Idling도 규제(`requiresDistractionOptimization="true"`)지만, Pleos 설정은 비공개다. [aosp-uxr] [driving-restriction-dev]
+
+### Pleos 에뮬레이터에서 직접 해 본 것 (관찰, 2026-11-05)
+
+xxj15 PC(RTX 4070 Laptop), AVD `pleos_connect`, Cold boot. 문서가 아니라 실행해서 본 결과다.
+
+- **adb `inject-vhal-event`는 안 된다.** `adb shell cmd car_service inject-vhal-event 0x11400400 8` → `SecurityException: The command 'inject-vhal-event' requires non-user build`. 이 에뮬레이터는 `ro.build.type` = `user`다.
+- **Virtual Console 웹 페이지가 쓰는 HTTP 요청으로 기어·속도를 바꿀 수 있다.**
+  - 페이지(`http://127.0.0.1:8088/`)의 스크립트를 읽고 찾은 내부 요청이다. 문서에 없으므로 에뮬레이터 버전이 바뀌면 달라질 수 있다.
+  - 페이지에는 기어 버튼 외에 가속·브레이크 페달과 속도(`speed_kph`) 조작도 있다. 상세 가이드의 카드 목록에 없는 것과는 다르다.
+  - 먼저 브라우저 세션 신호를 보내야 한다. 페이지는 1초마다 보낸다. 신호가 없으면 다른 요청이 `503 {"error":"emulator_inactive"}`로 거절된다.
+
+  ```bash
+  adb forward tcp:8088 tcp:8088
+  VC=http://127.0.0.1:8088
+  curl -X POST "$VC/browser/session?client=test"                        # 세션 신호 (요청 직전에 보낸다)
+  curl -X PUT  "$VC/vehicle/gear?gear=Drive"                            # Park | Reverse | Neutral | Drive
+  curl -X PUT  "$VC/vehicle/controls?speed=30&accelerator=20&brake=0"   # 속도 km/h, 페달 %
+  curl         "$VC/vehicle/state"                                      # 현재 값 (JSON)
+  ```
+
+- **결과: 주행 상태와 주행 규제가 실제로 바뀐다.** `adb shell dumpsys car_service --services CarDrivingStateService` / `CarUxRestrictionsManagerService`로 봤다.
+
+  | 조작 | Driving State | UX 규제 (`DO` = requiresDistractionOptimization) |
+  |---|---|---|
+  | 기어 P | 0 (Parked) | DO: false, 제한 0 |
+  | 기어 D, 0 km/h | 1 (Idling) | DO: true, 제한 0x50 (`NO_VIDEO` + `NO_SETUP`) |
+  | 기어 D, 30 km/h | 2 (Moving) | DO: true, 제한 0x50 |
+  | 다시 D 0 km/h → P | 1 → 0 | DO: false |
+
+  - 덤프의 기본 설정(baseline): unknown은 DO true(제한 0x1ff), parked는 DO false, idling·moving은 DO true(제한 0x50). **Idling(기어 D, 정지)도 규제가 걸린다.**
+- 이 요청들은 시연 영상 촬영과 테스트를 손 조작 없이 재현하는 데 쓸 수 있다.
+
+출처 추가 (2026-11-05):
+- [configure] https://document.pleos.ai/docs/connect/guide/getting-started/application-development/configure-pleos-connect-emulator
+- [emulator-release-note] https://document.pleos.ai/docs/pleos-only/release-note/emulator-release-note
+- [driving-restriction-dev] https://document.pleos.ai/docs/pleos-only/vehicle-app-developer-guide/driving-restriction-development-guide
+- Pleos 외 (Pleos가 링크하지 않은 Google·AOSP 공식 문서):
+  - [g-emulator] https://developer.android.com/training/cars/testing/emulator ("Simulate driving")
+  - [aosp-consume] https://source.android.com/docs/automotive/driver_distraction/consume ("Testing")
+  - [aosp-uxr] https://source.android.com/docs/automotive/driver_distraction/car_uxr
 
 ## 폼팩터 테스트
 

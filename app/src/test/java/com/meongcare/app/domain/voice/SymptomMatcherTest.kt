@@ -52,6 +52,25 @@ class SymptomMatcherTest {
     }
 
     @Test
+    fun `까닭을 잇는 서 뒤의 부정은 앞 증상에 걸리지 않는다`() {
+        assertEquals(setOf(VOMITING, LETHARGY), symptomsIn("토해서 기운이 없어요"))
+        assertEquals(setOf(LIMPING), symptomsIn("다리가 아파서 못 걸어요"))
+    }
+
+    @Test
+    fun `장소를 뜻하는 에서는 문장을 끊지 않는다`() {
+        assertEquals(emptySet<Symptom>(), symptomsIn("구토를 집에서 안 했어요"))
+    }
+
+    @Test
+    fun `키워드를 품은 다른 낱말은 고르지 않는다`() {
+        assertEquals(emptySet<Symptom>(), symptomsIn("토마토를 하나 먹었어요"))
+        assertEquals(emptySet<Symptom>(), symptomsIn("커피가 쏟아졌어요"))
+        assertEquals(emptySet<Symptom>(), symptomsIn("커피나 우유를 핥았어요"))
+        assertEquals(setOf(VOMITING), symptomsIn("토마토를 먹고 토했어요"))
+    }
+
+    @Test
     fun `뜻에 부정이 들어간 증상은 그대로 고른다`() {
         assertEquals(setOf(LETHARGY, NO_APPETITE), symptomsIn("기운이 없고 밥을 안 먹어요"))
         assertEquals(setOf(BREATHING_DIFFICULTY), symptomsIn("숨을 못 쉬어요"))

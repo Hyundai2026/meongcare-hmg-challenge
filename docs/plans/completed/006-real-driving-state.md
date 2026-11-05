@@ -328,7 +328,7 @@ curl -s "$VC/vehicle/state"                             # 현재 값 확인
   - 커밋 본문에 적는다: B1 답이 "안 된다"면 이 커밋을 `git revert`한다.
   - 확인: 병합 매니페스트에 `distractionOptimized` 1건. 1b·1c면 이 단계를 건너뛰고 진행 로그에 적는다.
 
-- [ ] 5. 경계 테스트 (`tester`) → `test: Real 주행 상태 경계 테스트 추가`
+- [x] 5. 경계 테스트 (`tester`) → `test: Real 주행 상태 경계 테스트 추가`
   - 메인이 `tester`에게 **이 계획 파일 경로와 대상만** 넘긴다. 구현 설명은 넘기지 않는다.
     - 대상: `RealDrivingStateSource` (가짜 `UxRestrictionsClient`로)
     - 대상 아님: `CarUxRestrictionsClient`, `uxRestrictionsClientOrNull` (`android.car`·`PackageManager` 필요. JVM으로 시험하지 않는다)
@@ -340,7 +340,7 @@ curl -s "$VC/vehicle/state"                             # 현재 값 확인
   - tester가 찾은 버그는 메인이 프로덕션 코드에서 `fix:` 커밋으로 따로 고친다.
   - 확인: `.\gradlew.bat testDebugUnitTest` 통과. 통과 수와 실패 수를 진행 로그에 적는다.
 
-- [ ] 6. 전체 검증 (`/verify`). 커밋은 없다. 고친 게 있으면 `fix(...)` 커밋으로 낸다.
+- [x] 6. 전체 검증 (`/verify`). 커밋은 없다. 고친 게 있으면 `fix(...)` 커밋으로 낸다.
   - `node .claude/hooks/build-gate.mjs pipeline` → "검증 파이프라인 통과."
   - `.\gradlew.bat assembleRelease` 성공 (완료 기준 2)
   - 완료 기준 4의 Grep을 모두 돌린다.
@@ -350,7 +350,7 @@ curl -s "$VC/vehicle/state"                             # 현재 값 확인
     - 확인이 끝나면 기어를 P로 돌려 둔다.
   - 기기가 없으면 멈추고 사용자에게 Cold boot를 요청한다. 확인하지 못한 건 그대로 적는다.
 
-- [ ] 7. 문서 맞추기
+- [x] 7. 문서 맞추기
   - `docs/architecture.md`:
     - "패키지 구조": `data/driving/`에 `UxRestrictionsClient`, `CarUxRestrictionsClient`, `UxRestrictionsClientFactory`를 넣고, `RealDrivingStateSource` 설명에서 "자리표시"를 지운다.
     - "주행 상태와 화면": Real 구현 완료, 매핑 표, "D 정지도 주행 화면" (결정 3의 답)
@@ -369,7 +369,7 @@ curl -s "$VC/vehicle/state"                             # 현재 값 확인
     - `docs(pleos): Pleos 에뮬레이터에서 앱의 주행 규제 연결 관찰 기록`
   - 확인: 완료 기준 7
 
-- [ ] 8. 개발 노트 작성 (`docs/notes/`)
+- [x] 8. 개발 노트 작성 (`docs/notes/`)
   - `docs/notes/xxj15/YYYY-MM-DD-real-driving-state.md`. 형식은 `docs/notes/README.md` 템플릿을 따른다.
     - 사용한 API: AAOS `Car.createCar`(4인자), `CarUxRestrictionsManager`, `CarUxRestrictions.isRequiresDistractionOptimization`. Gradle `useLibrary("android.car")`. 권한 없음. (DO를 넣었으면 매니페스트 meta-data도)
     - 결정: 세 층 구조, 구독 단위 연결, 규제 값을 따르는 이유(D 정지 = 주행)
@@ -429,4 +429,28 @@ curl -s "$VC/vehicle/state"                             # 현재 값 확인
     - `my_avd`(일반 폰) 확인은 단계 6으로 미뤘다 (에뮬레이터를 하나씩 켠다).
   - 단계 4: 결정 1a대로 DO meta-data를 넣었다. 병합 매니페스트에 `distractionOptimized` 1건.
 
+- 2026-11-05: 단계 5~8 완료.
+  - 단계 5 (`8529ce8`): tester가 경계 테스트 23개를 더했다 (`RealDrivingStateSourceBoundaryTest` 18, `HomeViewModelRealDrivingStateTest` 5). 처음 결과는 121개 중 120 통과, 1 실패.
+    - **찾은 버그**: 규제 값이 구독자가 받기 전에 66개 이상 몰리면 `callbackFlow` 기본 버퍼(64)가 넘쳐 `trySend`가 조용히 실패하고 최신 값이 버려졌다. 실제로는 주행인데 정차로 남을 수 있었다.
+    - 고침 (`eaf9726`): `.conflate()`로 최신 값만 남긴다. 그 뒤 121개 모두 통과.
+  - 단계 6 (`/verify`):
+    - 검증 파이프라인 통과, `assembleRelease` 성공.
+    - Grep: `android.car` import는 `data/driving/CarUxRestrictionsClient.kt` 하나. `ui`의 `data` import 0. `RealDrivingStateSource`의 `Log` 0. 병합 매니페스트에 `pleos.car.permission`·`android.car.permission` 선언 0, `<uses-library>` 0, `distractionOptimized` 1. `HomeViewModel.kt`·`HomeViewModelTest.kt`의 `git diff dev` 비어 있음.
+    - Pleos 에뮬레이터 (DO 선언, debug Real), 표 "DO 선언" 열:
+      - 1 P → 정차 화면, `DO=false`
+      - 2 D 0km/h → 주행 화면 "주행 중", `DO=true active=0x50`. 시스템 화면이 가리지 않는다.
+      - 3 D 30km/h → 주행 화면 그대로. 왼쪽 Driving view(D, 30)와 앱이 맞는다. 주행 화면 `EditText` 0.
+      - 4 P → 정차 화면, `DO=false`
+      - 5 D에서 앱 강제 종료 후 다시 실행 → 처음부터 주행 화면, `DO=true`
+      - 6 Pleos는 홈 키로 앱이 뒤로 가지 않았다(맨 앞에 남음). 대신 설정 앱을 띄워 뒤로 보내자 약 5초 뒤 `주행 규제 연결을 닫았다`, 다시 열자 `DO=false`로 새로 연결하고 정차 화면.
+      - conflate 수정 뒤 1~4를 다시 돌려 같은 결과. 크래시 없음.
+    - 일반 폰 에뮬레이터(`emulator-5556`, `FEATURE_AUTOMOTIVE` 없음): Real 전환 → "주행 중", 로그 `FEATURE_AUTOMOTIVE 없음: 주행 규제를 받지 않는다`, 크래시 없음. Fake 복귀 → 안내 시작 → 주행 "병원까지 10분" → 정차 → 안내 취소까지 005 흐름 그대로.
+  - 단계 7 (`7694555`, `6bb6c4f`): architecture.md("서비스 기능 스택" 두 행, 패키지 구조, 주행 상태 매핑, "Car(AAOS) 연결 수명주기" 새 절, 테스트 전략), sdk-notes 미확인 항목 해결, ux-guidelines 관찰·DO 선언 문장.
+  - 단계 8: 노트 `docs/notes/xxj15/2026-11-05-real-driving-state.md`. 있으면 좋음 A·B는 결정 2a에 따라 하지 않았다.
+
 ## 결정 / 배운 점
+
+- **`RealDrivingStateSource`에 `.conflate()`를 더했다** (계획의 매핑 표에는 없던 것). 상태 값이라 최신 값만 의미가 있다. tester가 찾은 버퍼 넘침 버그 때문이다.
+- Pleos에서는 홈 키로 앱이 뒤로 가지 않는다. 표 6행은 설정 앱을 띄우는 방법으로 확인했다.
+- 단계 3에서 미룬 `my_avd` 확인은 Pleos 에뮬레이터를 끄지 않고 일반 폰 에뮬레이터를 같이 띄워서 했다 (PC 메모리 64GB). `ANDROID_SERIAL`로 기기를 골랐다.
+

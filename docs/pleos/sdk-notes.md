@@ -797,6 +797,12 @@ debug 빌드의 임시 수신기에서 application context로 `NaviHelper`를 �
 - **차가 움직이지 않는다**: Virtual Console로 기어 D + 속도 80을 주거나 `adb emu geo fix`로 위치를 병원 쪽으로 옮겨도, 내비의 현재 위치와 남은 시간·거리(2100초·12000m)는 그대로였다. 그래서 **에뮬레이터에서는 남은 시간 감소와 `onDestinationArrived`를 볼 수 없었다.** 내비 화면에 모의 주행 기능이 있는지는 보지 않았다.
 - `cancelRoute()` → `onDrivingInfo(duration=0, distance=0)` → `onRouteCancelled` → `onNavigationStatus(FREE_DRIVE)` → `naviMode=SAFE_GUIDING`. 내비 화면에서 경로가 사라졌다.
 - 이 동안 `logcat *:E`에 우리 앱의 크래시나 `SecurityException`은 없었다.
+- 앱(010 debug, 시연 모드)으로 더 본 것 (2026-11-05 오후). SDK 자체 로그(`[NaviHelper][SDK]` 태그)가 logcat에 남아서 콜백 순서를 볼 수 있다. 내비 서비스 버전은 `getServiceVersion = 3.0.4`였다.
+  - **내비 화면에서 사용자가 "안내 종료"를 누르면 우리 리스너에 `onRouteCancelled`가 온다.** 앱도 안내 없음으로 돌아갔다.
+  - **내비에 이전 경로가 남은 채로 `requestRoute`를 하면, 약 0.3~0.6초 뒤 이전 경로의 `onRouteCancelled`가 먼저 온다.** 그 뒤 내비는 새 경로를 계산하고, 약 6초 뒤 `onRouteStarted`가 온다.
+    - 재현: 안내 중에 우리 앱을 `am force-stop` → 정리(`cancelRoute`)가 돌지 않아 내비에 경로가 남는다 → 앱을 다시 켜서 안내 시작.
+    - 그래서 어댑터(`PleosNaviClient`)는 `onRouteStarted` 전의 `onRouteCancelled`를 무시한다. 그러지 않으면 앱은 안내를 끝냈는데 내비는 새 경로를 안내하는 어긋남이 생겼다 (실제로 봤다).
+    - 반대로 카운트다운 중에 사용자가 내비에서 취소하면 그 취소도 무시된다. 그때는 전부 내비는 30초 뒤 안내 없음, 경로만 내비는 30초 뒤 시연용 기본 시간으로 시작한다. 카운트다운 중 취소에 콜백이 오는지는 보지 않았다.
 
 ### FusedLocation SDK [fused-intro] [fused-setup] [fused-perm]
 

@@ -17,4 +17,7 @@ object Dimens {
 
     val ScreenPadding = 32.dp
     val ItemSpacing = 24.dp
+
+    /** 카드 안쪽 여백 */
+    val CardPadding = 24.dp
 }

@@ -26,12 +26,15 @@ import com.meongcare.app.ui.theme.MeongCareTheme
  * - 진료 카드 내용은 아직 자리표시다 (진료 카드 기능은 후속 계획).
  * - 병원에서 보여 줄 화면이라 자동으로 닫지 않는다. [닫기]를 눌러야 처음 화면으로 돌아간다.
  * - 정차 화면이므로 세로 스크롤을 둔다 (가로 화면처럼 높이가 낮을 때 대비).
+ *
+ * @param showsSimulatedNotice 길안내가 시연용이면 그 사실을 작은 글씨로 알린다.
  */
 @Composable
 fun ArrivedScreen(
     destinationName: String,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
+    showsSimulatedNotice: Boolean = false,
 ) {
     Column(
         modifier = modifier
@@ -52,6 +55,7 @@ fun ArrivedScreen(
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            if (showsSimulatedNotice) SimulatedGuidanceNotice()
         }
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(
@@ -81,5 +85,5 @@ fun ArrivedScreen(
 @Preview(widthDp = 480, heightDp = 800)
 @Composable
 private fun ArrivedScreenPreview() {
-    MeongCareTheme { ArrivedScreen(destinationName = "시연용 동물병원", onDismiss = {}) }
+    MeongCareTheme { ArrivedScreen(destinationName = "시연용 동물병원", onDismiss = {}, showsSimulatedNotice = true) }
 }

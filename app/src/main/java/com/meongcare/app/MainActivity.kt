@@ -42,6 +42,7 @@ class MainActivity : ComponentActivity() {
                     onStartGuidance = guidanceViewModel::onStartGuidance,
                     onCancelGuidance = guidanceViewModel::onCancelGuidance,
                     onDismissArrival = guidanceViewModel::onDismissArrival,
+                    isGuidanceSimulated = container.sourcePlan.isGuidanceSimulated,
                     bottomBar = {
                         if (BuildConfig.DEBUG) {
                             val fake = container.fakeDrivingStateSource

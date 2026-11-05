@@ -46,9 +46,21 @@ tools: Read, Grep, Glob, Edit, Write, Bash
      - 실패하는 테스트를 그대로 남기고 보고한다.
      - `@Ignore`로 숨기지 않는다.
 
+## 대상이 보호자 웹(`web/`)일 때
+
+위 절차를 따르되 아래가 다르다.
+
+- 기대 동작의 기준: 계획 파일, `docs/data/`의 형식 문서(예: `docs/data/pet-profile.md`), 인터페이스(예: `web/src/domain/petProfileRepository.ts`)의 타입과 주석
+- 위치: 대상 파일 옆 `web/src/**/*.test.ts`. Vitest, `environment: 'node'`다. 브라우저(jsdom)는 없다.
+  - 테스트 이름은 기대 동작을 문장으로 쓴다. 예: `it('저장 공간이 가득 차면 quota로 실패하고 이전 값은 그대로다', ...)`
+  - React 컴포넌트와 캔버스 코드는 단위 테스트하지 않는다. 화면은 `web/scripts/verify_screens.py`가 본다. 필요해 보이면 보고만 한다.
+- 실행: `npm --prefix web test` (저장소 루트에서). 파일 하나만: `npm --prefix web test -- src/domain/age.test.ts`
+- 새 npm 의존성을 더하지 않는다. 필요하면 보고한다.
+- `web/src/` 아래 테스트가 아닌 파일은 고치지 않는다.
+
 ## 하지 않는 것
 
-- `app/src/main/` 아래 프로덕션 코드 수정
+- `app/src/main/`, `web/src/`(테스트 파일 제외) 아래 프로덕션 코드 수정
 - 커밋. 메인 에이전트가 `test:` 커밋으로 나눠서 한다.
 - 통과시키려고 기대값을 구현에 맞춰 바꾸는 것
 

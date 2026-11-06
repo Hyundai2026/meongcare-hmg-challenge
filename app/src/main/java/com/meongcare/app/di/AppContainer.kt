@@ -190,13 +190,16 @@ class AppContainer(context: Context, val dataMode: DataMode) {
      * 병원을 고르고 출발한 뒤의 일 (012): 길안내 시작, 카드·도착 예정 전송, 도착·취소 알림.
      * 로그는 `HospitalTrip` 태그에 결과 종류만 남긴다 (반려견 이름·증상·좌표·병원 이름 없음).
      */
+    private val tripTiming = tripTimingOf(sourcePlan.isGuidanceSimulated)
+
     val hospitalTrip = HospitalTrip(
         guidance = guidanceSource,
         senderFor = ::caseSenderFor,
         scope = applicationScope,
         log = { Log.i(TRIP_LOG_TAG, it) },
-        // 시연 길안내는 2초에 1분씩 줄어서 도착 예정을 몇 초마다 보낸다 (013, [tripTimingOf])
-        etaInterval = tripTimingOf(sourcePlan.isGuidanceSimulated).etaInterval,
+        // 시연 길안내는 2초에 1분씩 줄어서 도착 예정과 병원 확인을 몇 초마다 주고받는다 (013, [tripTimingOf])
+        etaInterval = tripTiming.etaInterval,
+        ackPollInterval = tripTiming.ackPollInterval,
     )
 
     /** Pleos Vehicle 연결. Real 구성에서만 만든다 (Fake에서는 Vehicle을 만들지 않는다). */

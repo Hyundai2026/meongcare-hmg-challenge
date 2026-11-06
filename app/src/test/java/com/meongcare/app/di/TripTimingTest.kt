@@ -17,6 +17,12 @@ class TripTimingTest {
     }
 
     @Test
+    fun `병원 확인은 시연 4초 실제 15초마다 읽는다`() {
+        assertEquals(4.seconds, tripTimingOf(isGuidanceSimulated = true).ackPollInterval)
+        assertEquals(15.seconds, tripTimingOf(isGuidanceSimulated = false).ackPollInterval)
+    }
+
+    @Test
     fun `구성표에서 시연용 길안내인 모드만 짧은 간격이다`() {
         val expected = mapOf(
             (DataMode.FAKE to true) to 4.seconds,

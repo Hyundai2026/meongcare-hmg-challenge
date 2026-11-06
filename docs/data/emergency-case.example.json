@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "createdBy": "anon-uid-example",
+  "createdAt": "2026-11-06T05:00:00Z",
+  "status": "en_route",
+  "remainingMinutes": 12,
+  "etaAt": "2026-11-06T05:12:00Z",
+  "etaUpdatedAt": "2026-11-06T05:00:00Z",
+  "card": {
+    "pet": {
+      "name": "보리",
+      "breed": "골든리트리버",
+      "sex": "male",
+      "birthDate": "2014-08-01",
+      "birthDateIsEstimated": false,
+      "medical": {
+        "conditions": ["심장질환"],
+        "allergies": ["특정 단백질 알레르기"],
+        "medications": [{ "name": "심장약", "dosage": "1일 1회" }]
+      },
+      "updatedAt": "2026-11-05T00:00:00.000Z"
+    },
+    "symptoms": [
+      { "code": "BREATHING_DIFFICULTY", "label": "호흡 곤란" },
+      { "code": "COUGH", "label": "기침" }
+    ]
+  },
+  "acknowledgedAt": null
+}

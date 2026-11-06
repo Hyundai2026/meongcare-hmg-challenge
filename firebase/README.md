@@ -20,7 +20,7 @@
 | 에뮬레이터 켜기 (터미널 하나를 계속 쓴다) | `npm --prefix firebase run emulators` |
 | 시연 병원 5곳 넣기 | `npm --prefix firebase run seed` (`-- --reset`이면 먼저 모두 지운다) |
 | 보안 규칙 점검 R1~R13 | `npm --prefix firebase run check-rules` |
-| **시연 전 점검** PF1~PF5 (차·병원 웹이 같은 서버에 붙을 준비) | `npm --prefix firebase run preflight` |
+| **시연 전 점검** PF1~PF6 (차·병원 웹이 같은 서버에 붙을 준비) | `npm --prefix firebase run preflight` |
 | 에뮬레이터 화면 | http://localhost:4000 (Emulator UI) |
 
 - 에뮬레이터를 끄면 데이터가 사라진다. 다시 켜면 `seed`를 다시 한다.
@@ -39,6 +39,7 @@
 | PF3 | 익명 계정으로 시연 병원 5곳 이상을 읽는다 (차와 같은 방법) | `npm --prefix firebase run seed -- --reset` |
 | PF4 | `[::1]:8080`·`9099`에 **다른** 에뮬레이터가 없다 (응답이 오면 표식 문서·계정으로 같은 서버인지 본다) | 그 에뮬레이터 터미널을 끈다. `netstat -ano \| findstr :8080`로 pid를 찾는다 |
 | PF5 | `adb reverse --list`에 `tcp:8080`·`tcp:9099` | `adb reverse tcp:8080 tcp:8080`, `adb reverse tcp:9099 tcp:9099` (기기가 여럿이면 `ANDROID_SERIAL`) |
+| PF6 | 응급 접수를 받고 대기 정보가 **30분 안**인 병원이 있다. 시드하거나 알린 지 30분이 지나면 차 목록에 1위가 없다 ("대기 정보 지남") | 시연 직전에 병원 웹 [병원 상태 알리기], 또는 `seed -- --reset` (환자 건도 지워진다) |
 
 - 하나라도 실패하면 종료 코드 1이다.
 - 이 스크립트는 웹 환경 파일과 차 앱 설정 파일을 **읽지 않는다**. 대신 눈으로 본다:

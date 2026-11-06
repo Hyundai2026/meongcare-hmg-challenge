@@ -486,16 +486,16 @@ export interface HospitalDesk {
 
 ### 꼭 할 것 A — 11/07~11/08: 영상 촬영 전
 
-- [ ] 0. 이 계획 파일 커밋 → `docs(plans): 013 시연 병원 연결과 길안내 화면 계획 추가`
+- [x] 0. 이 계획 파일 커밋 → `docs(plans): 013 시연 병원 연결과 길안내 화면 계획 추가`
   - `.\gradlew.bat testDebugUnitTest` 통과 수와 `npm --prefix web test` 통과 수를 진행 로그에 적는다 (기준 708 / 321).
   - `git status`에 U3 spike 코드(`MainActivity`의 `SpikeU3`)가 남아 있지 않은지 본다 (메인이 되돌렸다고 했다).
 
-- [ ] 1. U3 관찰 기록 (문서만) → `docs(pleos): 내비 경로 취소 뒤 앱이 돌아오지 못하는 관찰 기록`
+- [x] 1. U3 관찰 기록 (문서만) → `docs(pleos): 내비 경로 취소 뒤 앱이 돌아오지 못하는 관찰 기록`
   - `docs/pleos/sdk-notes.md` `[obs-navi-emu]` 절에 관찰 블록: `cancelRoute`(`RequestRouteCancel`) → 내비 서비스가 내비 `MainActivity`를 START(`BAL_ALLOW_SAW_PERMISSION`) → 14ms 뒤 HOME_SCREEN `hideTask com.meongcare.app` → 우리 `startActivity(REORDER_TO_FRONT|NEW_TASK)` 900ms 뒤 `BAL_BLOCK result code=3`(`callingUidHasAnyVisibleWindow: false`, `LAST_ACTIVITY`) → `moveTaskToFront`는 `REORDER_TASKS` 없어 `SecurityException`. Android 14 (API 34), Pleos 에뮬레이터, 실차 아님.
   - 결론 한 줄: "`cancelRoute`는 내비 앱을 앞으로 띄우고, 앱은 스스로 돌아올 수 없다. 사용자는 GNB의 MeongCare 아이콘으로 돌아온다." `emulator-setup.md` "Pleos 에뮬레이터에서 직접 해 본 것"에 한 줄 링크.
   - 확인: `git show --stat`에 문서만.
 
-- [ ] 2. U2: 시연 도착·[닫기] 때 내비 경로 남기기
+- [x] 2. U2: 시연 도착·[닫기] 때 내비 경로 남기기
   - 2-1. → `feat(data): 경로를 남기고 내비 연결만 놓는 안내 닫기 추가`
     - `NaviClient.kt`: `RouteOnClose`, 기본 구현 있는 2인자 `trip` (설계 결정 2). `PleosNaviClient`: 2인자 구현, 1인자는 CANCEL로 위임. KDoc에 U2·U3 근거.
     - 이 커밋은 동작이 그대로다 (아직 아무도 KEEP을 주지 않는다).
@@ -510,12 +510,12 @@ export interface HospitalDesk {
       - `` `경로를 남긴 뒤 새로 출발하면 내비에 새로 구독한다`() ``
   - 확인: 기존 `NaviRouteOnlyGuidanceSource*Test` 그대로 통과, `assembleDebug`. 기기 확인은 단계 12(S5·S6·S7).
 
-- [ ] 3. 시연 길안내의 도착 예정 갱신 간격 → `feat(di): 시연 길안내의 도착 예정 갱신 간격 단축`
+- [x] 3. 시연 길안내의 도착 예정 갱신 간격 → `feat(di): 시연 길안내의 도착 예정 갱신 간격 단축`
   - `di/TripTiming.kt` (`etaInterval`만. `ackPollInterval`은 단계 5에서 더한다), `AppContainer`가 `HospitalTrip(etaInterval = …)`에 넘긴다.
   - 새 `TripTimingTest`: `` `시연용 길안내는 도착 예정을 4초에 한 번까지 보낸다`() ``, `` `실제 길안내는 1분에 한 번까지 보낸다`() ``, `` `구성표에서 시연용 길안내인 모드만 짧은 간격이다`() `` (`sourcePlanOf` 모든 모드×기기와 함께).
   - 확인: `HospitalTrip*Test` 그대로 통과 (기본값은 60초).
 
-- [ ] 4. 카드 확인과 진행 시작값 (도메인)
+- [x] 4. 카드 확인과 진행 시작값 (도메인)
   - 4-1. → `docs(data): 카드 확인 쓰기 규칙과 시연 갱신 간격 기록`
     - `docs/data/emergency-case.md`: `acknowledgedAt`은 병원 웹 [카드 확인]이 **서버 시각으로 한 번만** 쓴다, 차는 안내 중 자기 건의 이 필드만 읽는다(시연 4초·실제 15초), 도착·취소·확인되면 그만 읽는다. 상태 흐름의 "1분에 1번 이하"를 "실제 길안내 1분, 시연 길안내 4초에 1번 이하"로. "(계획 012 있으면 좋음 A)" 꼬리표를 뺀다. [확인함] → [카드 확인].
     - 확인: `npm --prefix web run check` (docs/data가 웹 검사 대상이다).
@@ -540,16 +540,16 @@ export interface HospitalDesk {
       - `` `로그에 시각과 병원 이름이 없다`() ``
   - 확인: 기존 `HospitalTripTest`·`HospitalTripBoundaryTest` 그대로 통과.
 
-- [ ] 5. 카드 확인 (서버 읽기) → `feat(data): Firestore 환자 건의 확인 시각 읽기 추가`
+- [x] 5. 카드 확인 (서버 읽기) → `feat(data): Firestore 환자 건의 확인 시각 읽기 추가`
   - `FirestoreJson.ackOf`, `FirestoreCaseSender.readAck` (설계 결정 5 표, F3), `TripTiming.ackPollInterval`, `AppContainer` 연결.
   - 새 `FirestoreAckTest`: `` `확인 시각이 있으면 확인됨이다`() ``, `` `확인 시각이 null이거나 없으면 아직이다`() ``, `` `확인 시각 형식이 틀리면 실패다`() ``, `` `404와 403은 건 없음이다`() ``, `` `401과 5xx는 실패다`() ``, `` `네트워크 오류는 실패다`() ``, `` `요청은 자기 건 주소에 acknowledgedAt만 마스크하고 Bearer 토큰을 붙인다`() ``.
   - 단계 3에서 만든 `TripTimingTest`에 더한다 (이 브랜치에서 만든 파일이라 고쳐도 된다): `` `병원 확인은 시연 4초 실제 15초마다 읽는다`() ``.
 
-- [ ] 6. 보안 규칙 → `feat(firebase): 카드 확인 한 번과 서버 시각 규칙 강화`
+- [x] 6. 보안 규칙 → `feat(firebase): 카드 확인 한 번과 서버 시각 규칙 강화`
   - `firestore.rules` (설계 결정 6), `check-rules.mjs` R9~R13 (F4). 머리 주석·README의 R1~R8 → R1~R13.
   - 확인: **사용자 터미널의 에뮬레이터에서** `npm --prefix firebase run check-rules` → R1~R13 PASS (완료 기준 4). R13의 실제 코드(403/404)를 진행 로그와 설계 결정 5에 적는다.
 
-- [ ] 7. 정차 화면의 안내 영역
+- [x] 7. 정차 화면의 안내 영역
   - 7-1. → `feat(ui): 안내 영역 상태 계산 추가`
     - `ui/guidance/TripPanel.kt` (`tripPanelOf`, 설계 결정 7 표).
     - 새 `TripPanelTest`: `` `안내 없음이면 패널이 없다`() ``, `` `도착 예정은 지금에 남은 분을 더한 시각이고 분 아래는 버린다`() `` (23:50 + 15분 → 00:05 포함), `` `진행은 시작 대비 지난 비율이고 0과 1 사이다`() ``, `` `시작이나 남은 분을 모르면 진행 막대가 없다`() ``, `` `서버로 보낸 카드가 확인되면 확인 줄이다`() ``, `` `시연용 전송은 확인 줄이 없다`() ``, `` `대기 정보는 출발할 때 받은 값이다`() ``, `` `도착이면 도착 패널이고 막대와 도착 예정이 없다`() ``, `` `trip이 없으면 전송 줄과 막대가 없다`() ``.
@@ -557,11 +557,11 @@ export interface HospitalDesk {
     - `ui/guidance/GuidancePanel.kt`, `ui/guidance/StaticProgressBar.kt`, `MedicalCardScreen`(머리 "진료 카드", 안내 영역, 도착 문구, 전송·확인 줄을 패널로 옮김), `ParkedScreen`(`CurrentCardPanel`이 같은 패널), `HomeScreen`·`CardExtras.trip`·`MainActivity` 연결, `strings.xml`(새 문구, 안 쓰게 된 문구 삭제), 미리보기 (1682dp·840dp·411dp, 라이트·다크, 안내 중·경로 찾는 중·확인됨·도착).
   - 확인: `assembleDebug lintDebug`. `/verify`(Pleos, debug Fake): 카드 → 출발 → P에서 카드 화면·처음 화면 캡처. 텍스트 입력 0.
 
-- [ ] 8. 주행 화면 → `feat(ui): 주행 화면을 큰 남은 시간과 진행 막대로 변경`
+- [x] 8. 주행 화면 → `feat(ui): 주행 화면을 큰 남은 시간과 진행 막대로 변경`
   - `DrivingScreen(guidanceUiState, modifier, panel: TripPanel? = null)` (설계 결정 7 표). 큰 숫자 크기 이름 붙이기. 안 쓰게 된 `remainingTimeText`·문구 정리.
   - 확인: `/verify`(Pleos debug Fake): 기어 D → UI 트리(완료 기준 9) + 캡처, 다크 캡처. 완료 기준 7의 DrivingScreen Grep.
 
-- [ ] 9. 병원 웹 카드 확인과 새 환자 표시
+- [x] 9. 병원 웹 카드 확인과 새 환자 표시
   - 9-1. → `feat(web): 환자 건 카드 확인 저장 추가`
     - `HospitalDesk.acknowledgeCase` (메모리·Firestore), `caseAck.ts`(`isNewCase`, `newCaseCount`, `pageTitle`, `ackText`).
     - 새 `caseAck.test.ts`: 새 환자 판정(확인됨·취소·읽지 못한 건 제외), 개수, 제목 세 가지, `ackText` 분 버림. 새 `memoryHospitalDesk.ack.test.ts`: 확인하면 `watchCases`에 시각이 오고, 두 번 눌러도 처음 시각 그대로, 없는 건은 `not-found`.
@@ -569,23 +569,23 @@ export interface HospitalDesk {
     - `CasesPanel`(강조, [카드 확인], 확인 시각, 실패 문구), `HospitalApp`(탭 제목), `hospital.css`.
   - 확인: 커밋마다 `npm --prefix web run check`. Playwright 메모리 모드 ("확인 절차" 병원 웹만).
 
-- [ ] 10. 병원 웹 서버 주소와 연결 상태 → `feat(web): 병원 웹의 서버 주소와 연결 상태 표시`
+- [x] 10. 병원 웹 서버 주소와 연결 상태 → `feat(web): 병원 웹의 서버 주소와 연결 상태 표시`
   - `serverInfo.ts`(`serverInfoOf`), `HospitalDesk.server`·`watchConnection`(메모리 `local`, Firestore F5), `HospitalApp` 안내 줄.
   - 새 `serverInfo.test.ts`: 에뮬레이터 주소 문구, IPv6 호스트는 대괄호, `localhost`·`::1`·`[::1]`이면 경고, `127.0.0.1`은 경고 없음, 진짜 프로젝트 문구.
   - 확인: `npm --prefix web run check`, `from 'firebase` Grep (완료 기준 7).
 
-- [ ] 11. 시연 전 점검 → `chore(firebase): 시연 전 서버와 adb reverse 점검 스크립트 추가`
+- [x] 11. 시연 전 점검 → `chore(firebase): 시연 전 서버와 adb reverse 점검 스크립트 추가`
   - `scripts/preflight.mjs`(설계 결정 10), `package.json` 스크립트 `preflight`, `firebase/README.md` 명령 표, (K9) `firebase.json` host 고정(F6).
   - 확인: 완료 기준 5 (사용자 터미널 에뮬레이터 기준). `firebase/scripts`에 `.env`·`secrets.properties` 0건.
 
-- [ ] 12. 처음부터 끝까지 확인 (`/verify` 포함) → **체크포인트 A**
+- [x] 12. 처음부터 끝까지 확인 (`/verify` 포함) → **체크포인트 A**
   - "확인 절차"의 S0~S12, 좁은 배치, 병원 웹만. O1~O4 결과를 진행 로그에 적는다.
   - 고친 것이 있으면 `fix(...)` 커밋. 새로 안 Pleos 사실은 → `docs(pleos): …` (sdk-notes `[obs-navi-emu]`).
   - **여기까지면 차 + 병원 웹 시연 영상을 찍을 수 있다** (진행 로그에 적는다).
 
 ### 꼭 할 것 B — 11/09 (시간이 없으면 토큰 갱신만 11/15 뒤, PT 전으로)
 
-- [ ] 13. 익명 토큰 갱신
+- [x] 13. 익명 토큰 갱신
   - 13-1. → `feat(data): 익명 토큰 갱신 주소 추가`
     - `ServerConfig.refreshUrl`, `serverConfigOf`. 새 `ServerConfigRefreshTest`: `` `에뮬레이터면 9099의 securetoken 주소다`() ``, `` `release는 https securetoken만 쓰고 에뮬레이터 호스트가 없다`() ``, `` `IPv6 에뮬레이터 호스트는 대괄호로 감싼다`() ``.
   - 13-2. → `feat(data): 만료 전 익명 토큰 갱신 추가`
@@ -640,6 +640,23 @@ export interface HospitalDesk {
   - 메인 세션 관찰 (2026-11-06): 관찰 1~7 (Firebase 에뮬레이터 두 벌 IPv4/IPv6, ETA 60초 간격, 내비가 MeongCare를 덮음, 휑한 주행 화면, 안내 영역 없음, 토큰 갱신 없음, 병원 웹 새 환자 표시 없음). IPv6 쪽 에뮬레이터는 메인이 정리했다.
   - U3 spike (메인, 2026-11-06): **안 됨** (위 "사용자·메인 결정" U3). 시험 코드는 되돌렸다. 단계 1에서 기록한다.
   - 기준값: Android 708, 웹 321 (012 끝). 단계 0에서 다시 센다.
+
+- 2026-11-06 (구현, 메인): 단계 0~13 끝. 커밋 `db1947f` ~ `0bb596d`.
+  - 기준값: Android 708, 웹 321 (단계 0). 지금 Android 770, 웹 337. 기존 테스트 파일은 고치지 않았다.
+  - F1·F2 (Auth 에뮬레이터, Python으로 직접): `accounts:signUp` 응답에 `refreshToken`, `expiresIn: "3600"`(문자열). `securetoken.googleapis.com/v1/token` form 몸통 → 200, `id_token`·`refresh_token`·`expires_in: "3600"`·`user_id`(가입 uid와 같다). 틀린 갱신 토큰 → 400 `INVALID_REFRESH_TOKEN`.
+  - F3: 단일 문서 GET + `mask.fieldPaths=acknowledgedAt` → 200 `{"fields": {"acknowledgedAt": {"nullValue": null}}}`. **지운 건을 차가 읽으면 403** (규칙 `Null value error`). → `Gone`.
+  - F4: REST commit `updateTransforms` `REQUEST_TIME`으로 R9·R11 확인. 규칙 파일을 고치면 사용자 터미널 에뮬레이터가 바로 다시 읽었다 (R10·R11은 새 규칙으로만 PASS). R1~R13 모두 PASS, R13 실제 403.
+  - F5: `onSnapshot(..., { includeMetadataChanges: true })`로 "실시간 연결됨"이 뜨는 것은 봤다. **에뮬레이터를 끄고 켤 때 바뀌는 것(S8)은 사용자 에뮬레이터를 끌 수 없어 보지 못했다.**
+  - F6: `firebase.json` host `127.0.0.1` 고정. 사용자 에뮬레이터를 다시 켤 때 적용된다 (지금 것도 이미 127.0.0.1).
+  - O1: U2 뒤 시연 도착·[닫기] 때 MeongCare가 앞에 남았다 (`topResumedActivity` = MeongCare, `RequestRouteCancel` 0건).
+  - O2: 경로를 남긴 뒤 다시 출발 → 이전 경로의 `onRouteCancelled`(13:29:50)를 어댑터가 거르고 6초 뒤 새 경로 `onRouteStarted`, 앱 안내가 이어졌다.
+  - O3: 주행 중 `도착 예정 갱신: 성공`이 정확히 4초 간격 (13:30:22 → 13:30:50). 병원 웹 [카드 확인](Playwright, JS SDK `serverTimestamp`) → 차 로그 `병원 확인: 확인함`까지 4초 안, 주행 화면 "병원이 카드를 확인했어요".
+  - S3 주행 화면 UI 트리 (debug 패널 빼고): `EditText` 0, 클릭 0, 스크롤 0. S12: 우리 앱 pid 로그에 좌표·반려견 이름·증상·토큰 0건, `*:E`에 우리 앱 오류 0건.
+  - S7 [안내 취소] → 내비가 앞에 나온다 (U3 알려진 한계), 병원 웹 "취소됨". S10 다크 모드 카드·주행·도착 화면 이상 없음. S11 debug Fake 모드: 같은 주행 화면·도착 카드, 확인 줄 대신 "시연용: 실제 병원에는 보내지 않았어요".
+  - 확인 중 고친 것: 도착한 뒤에도 "확인을 기다리는 중"이 보였다 (도착하면 확인 읽기를 멈추므로 틀린 말) → 도착 뒤 미확인은 "진료 카드를 병원에 보냈어요" (`DeliveryLine.Sent`, `fix(ui)`).
+  - 확인 중 더한 것: PF6 (응급 접수 + 30분 안 대기 정보가 있는 병원). 시드 뒤 30분이 지나 차 목록에 1위가 없어지는 것을 실제로 겪었다. PT 직전에 잡으려고 더했다. adb가 잠깐 바빠 PF5가 한 번 거짓 실패해서 adb 확인을 한 번 더 시도하게 했다.
+  - **확인하지 못한 것**: S8(에뮬레이터 끄고 켜기), S9(서버 끊김 → 시연 병원 대체: adb reverse를 지워도 이미 열린 keep-alive 연결로 계속 닿아 재현하지 못함. 내장 병원은 확인을 읽지 않는 것은 단위 테스트로 확인), 좁은 세로 배치(일반 폰 에뮬레이터가 꺼져 있음, 미리보기 코드만), PF4의 "다른 에뮬레이터가 있을 때" 실패 경로(에이전트가 에뮬레이터를 띄우지 않는다), 토큰 1시간 만료 실제 경과.
+  - 환경: 사용자 병원 웹 개발 서버(5173)는 에뮬레이터 주소가 `localhost`라서 이번 사고(IPv6 쪽에 붙음)의 원인이었다. 지금은 화면에 경고가 뜬다. 사용자에게 `127.0.0.1`로 바꾸라고 알린다 (에이전트는 그 파일을 읽지 않는다).
 
 ## 결정 / 배운 점
 

@@ -3,7 +3,7 @@ rules_version = '2';
 // MeongCare 제휴 병원·환자 건 보안 규칙 (계획 012 "설계 결정 6").
 // 형식: docs/data/hospital-status.md, docs/data/emergency-case.md
 // 차와 병원 웹 모두 익명 로그인한다. "로그인했는가"만이 아니라 "누구의 문서인가"로 막는다.
-// 점검: npm --prefix firebase run check-rules (R1~R8)
+// 점검: npm --prefix firebase run check-rules (R1~R13)
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -83,8 +83,11 @@ service cloud.firestore {
             && request.resource.data.status in ['en_route', 'arrived', 'cancelled']
             && optionalNullOr(request.resource.data, 'remainingMinutes', 'int')
             && optionalNullOr(request.resource.data, 'etaAt', 'timestamp'))
+          // 병원 [카드 확인] (계획 013): 서버 시각으로, 확인 전인 건에 한 번만
           || (isStaff(hid)
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['acknowledgedAt'])));
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['acknowledgedAt'])
+            && (!('acknowledgedAt' in resource.data) || resource.data.acknowledgedAt == null)
+            && request.resource.data.acknowledgedAt == request.time));
         // [완료]는 병원이 지운다. 보낸 차도 자기 건은 지울 수 있다.
         allow delete: if isStaff(hid) || (signedIn() && resource.data.createdBy == request.auth.uid);
       }

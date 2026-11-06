@@ -19,7 +19,7 @@
 | 처음 한 번 | `npm --prefix firebase ci` |
 | 에뮬레이터 켜기 (터미널 하나를 계속 쓴다) | `npm --prefix firebase run emulators` |
 | 시연 병원 5곳 넣기 | `npm --prefix firebase run seed` (`-- --reset`이면 먼저 모두 지운다) |
-| 보안 규칙 점검 R1~R8 | `npm --prefix firebase run check-rules` |
+| 보안 규칙 점검 R1~R13 | `npm --prefix firebase run check-rules` |
 | 에뮬레이터 화면 | http://localhost:4000 (Emulator UI) |
 
 - 에뮬레이터를 끄면 데이터가 사라진다. 다시 켜면 `seed`를 다시 한다.

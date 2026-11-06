@@ -387,7 +387,7 @@ web/src/
 - 위치: `web/` 안의 둘째 페이지 `/hospital/` (Vite 다중 페이지, `build.rolldownOptions.input`). 라우터를 넣지 않았다. 보호자 페이지 번들에는 Firebase가 들어가지 않는다.
 - 저장소: `HospitalDesk` 인터페이스 (`web/src/domain/hospital/hospitalDesk.ts`). 메모리 구현(서버 없음, 시연 병원 5곳 + 예시 환자 1건)과 Firestore 구현(`web/src/data/firestoreHospitalDesk.ts`). `web/.env.local`의 `VITE_FIREBASE_*`가 있으면 Firestore다.
 - 접근: 링크 `/hospital/?h=<병원 id>&code=<병원 코드>`. 로그인 화면은 없다. 코드가 맞는 브라우저(익명 계정)만 그 병원 직원으로 등록돼 상태를 바꾸고 환자 카드를 읽는다 (사용자 결정 U1).
-- 서버: `firebase/` (에뮬레이터 설정, 보안 규칙 `firestore.rules`, 시드, 규칙 점검 R1~R8). 사용법: [firebase/README.md](../firebase/README.md)
+- 서버: `firebase/` (에뮬레이터 설정, 보안 규칙 `firestore.rules`, 시드, 규칙 점검 R1~R13). 사용법: [firebase/README.md](../firebase/README.md)
 - 데이터 형식: [docs/data/hospital-status.md](data/hospital-status.md), [docs/data/emergency-case.md](data/emergency-case.md)
 - 보관: 병원 [완료]가 환자 건을 지운다. 차는 도착·취소를 상태로 알리고 지우지 않는다. 자동 삭제(Functions)는 없다.
 - 화면에 늘 "시연용 화면이에요. 실제 병원이 아니에요."를 보인다. 메모리 모드면 "서버 없이 이 브라우저에서만 동작해요"를 더한다.

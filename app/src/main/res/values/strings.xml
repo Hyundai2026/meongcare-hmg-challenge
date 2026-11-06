@@ -11,7 +11,6 @@
 
     <!-- 병원 길안내 -->
     <string name="guidance_cancel">안내 취소</string>
-    <string name="guidance_remaining_minutes">병원까지 %1$d분</string>
     <string name="guidance_finding_route">경로를 찾는 중</string>
     <string name="guidance_arrived">도착했어요</string>
     <string name="guidance_arrived_driving_hint">정차하면 진료 카드를 볼 수 있어요</string>
@@ -144,4 +143,6 @@
     <string name="trip_wait_at_departure">출발 때 알린 대기 %1$d분 · %2$s</string>
     <string name="trip_arrived_title">%1$s에 도착했어요</string>
     <string name="trip_arrived_hint">이 카드를 접수처에 보여 주세요</string>
+    <!-- 주행 화면 (013 U4): 확인됐을 때만 한 줄 -->
+    <string name="driving_acknowledged">병원이 카드를 확인했어요</string>
 </resources>

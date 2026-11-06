@@ -92,7 +92,7 @@ fun HomeScreen(
                         panel = panel,
                         onResend = cardExtras.onResend,
                     )
-                    HomeContent.DRIVING -> DrivingScreen(guidanceUiState)
+                    HomeContent.DRIVING -> DrivingScreen(guidanceUiState, panel = panel)
                 }
             }
             bottomBar()

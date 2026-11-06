@@ -128,11 +128,20 @@
     <string name="confirm_deleted">병원 화면에서 진료를 마치고 [완료]를 누르면 지워져요.</string>
     <string name="confirm_without_card">카드 없이 길안내만</string>
     <string name="confirm_depart">출발</string>
-    <!-- 카드의 전송 줄 (012). 주행 화면에는 넣지 않는다 -->
-    <string name="delivery_sent">진료 카드를 병원에 보냈어요</string>
+    <!-- 카드의 전송·확인 줄 (012, 013). 주행 화면에는 확인 한 줄만 넣는다 -->
+    <string name="delivery_sent_waiting">진료 카드를 병원에 보냈어요 · 확인을 기다리는 중</string>
+    <string name="delivery_acknowledged">병원이 진료 카드를 확인했어요 (%1$s)</string>
     <string name="delivery_sending">진료 카드를 보내는 중…</string>
     <string name="delivery_failed">진료 카드를 보내지 못했어요</string>
     <string name="delivery_resend">다시 보내기</string>
     <string name="delivery_sample">시연용: 실제 병원에는 보내지 않았어요</string>
     <string name="delivery_not_sent">카드 없이 출발했어요</string>
+    <!-- 안내 영역 (013): 정차 중 카드·처음 화면 -->
+    <string name="card_title_trip">진료 카드</string>
+    <string name="trip_minutes_unit">분</string>
+    <string name="trip_to_destination">%1$s까지</string>
+    <string name="trip_arrives_at">도착 예정 %1$s</string>
+    <string name="trip_wait_at_departure">출발 때 알린 대기 %1$d분 · %2$s</string>
+    <string name="trip_arrived_title">%1$s에 도착했어요</string>
+    <string name="trip_arrived_hint">이 카드를 접수처에 보여 주세요</string>
 </resources>

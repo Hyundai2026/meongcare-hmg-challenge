@@ -43,7 +43,8 @@ import com.meongcare.app.ui.card.joinedText
 import com.meongcare.app.ui.card.previewCardState
 import com.meongcare.app.ui.card.symptomLabelRes
 import com.meongcare.app.ui.guidance.GuidanceUiState
-import com.meongcare.app.ui.guidance.remainingTimeText
+import com.meongcare.app.ui.guidance.GuidancePanel
+import com.meongcare.app.ui.guidance.TripPanel
 import com.meongcare.app.ui.theme.ActionBlue
 import com.meongcare.app.ui.theme.CardColors
 import com.meongcare.app.ui.theme.Dimens
@@ -55,12 +56,15 @@ private val ContentMaxWidth = 960.dp
  * 정차·주차 중 처음 화면: 반려견 요약 + [진료 카드 만들기].
  *
  * 만든 카드가 있거나 안내 중·도착이면([홈]으로 온 경우) 그 상태와 [카드 보기]를 먼저 보인다.
+ * 안내 중·도착이면 카드 화면과 같은 안내 영역([GuidancePanel], 013)을 위에 둔다.
  * 안내가 없을 때만 [새로 만들기]로 있던 카드를 버리고 다시 만든다.
  *
  * 길안내는 진료 카드의 [길 안내 시작]에서만 시작한다 (사용자 결정 2026-11-05, docs/plans 009).
  * 글자 입력칸은 두지 않는다. 높이가 낮은 화면을 위해 세로 스크롤을 둔다 (스크롤 금지는 주행 화면에만 해당한다).
  *
  * @param isPetProfileSample 반려견 정보가 시연용 샘플이면 그 사실을 알린다
+ * @param panel 안내 영역 (안내 중·도착일 때). null이면 없다
+ * @param onResend 안내 영역의 [다시 보내기]
  */
 @Composable
 fun ParkedScreen(
@@ -69,6 +73,8 @@ fun ParkedScreen(
     actions: MedicalCardActions,
     isPetProfileSample: Boolean,
     modifier: Modifier = Modifier,
+    panel: TripPanel? = null,
+    onResend: () -> Unit = {},
 ) {
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val wide = maxWidth >= 840.dp
@@ -100,7 +106,8 @@ fun ParkedScreen(
 
                 val showsCurrent = card.hasCard || guidance !is GuidanceUiState.Idle
                 if (showsCurrent) {
-                    CurrentCardPanel(card, guidance, actions.onOpenCard)
+                    panel?.let { GuidancePanel(it, onResend, Modifier.widthIn(max = ContentMaxWidth)) }
+                    CurrentCardPanel(card, actions.onOpenCard)
                     if (guidance is GuidanceUiState.Idle) {
                         OutlinedButton(
                             onClick = actions.onStartNewCard,
@@ -124,15 +131,11 @@ fun ParkedScreen(
     }
 }
 
-/** 만든 카드(또는 진행 중인 안내)와 [카드 보기] */
+/** 만든 카드와 [카드 보기]. 안내 중·도착이면 위에 안내 영역이 따로 있다 */
 @Composable
-private fun CurrentCardPanel(card: CardFlowUiState, guidance: GuidanceUiState, onOpenCard: () -> Unit) {
+private fun CurrentCardPanel(card: CardFlowUiState, onOpenCard: () -> Unit) {
     val scale = LocalCardScale.current
-    val title = when (guidance) {
-        is GuidanceUiState.Idle -> stringResource(R.string.home_current_card_title)
-        is GuidanceUiState.Guiding -> remainingTimeText(guidance) + " · " + guidance.destinationName
-        is GuidanceUiState.Arrived -> stringResource(R.string.guidance_arrived) + " · " + guidance.destinationName
-    }
+    val title = stringResource(R.string.home_current_card_title)
     val symptoms = card.card.symptoms
         .takeIf { it.isNotEmpty() }
         ?.let { list -> stringResource(R.string.home_symptoms_line, joinedText(list.map { stringResource(symptomLabelRes(it)) })) }

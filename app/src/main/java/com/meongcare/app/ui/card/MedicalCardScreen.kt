@@ -59,6 +59,7 @@ import com.meongcare.app.domain.pet.Medication
 import com.meongcare.app.domain.pet.PetProfile
 import com.meongcare.app.domain.pet.PetProfileLoad
 import com.meongcare.app.domain.pet.Sex
+import com.meongcare.app.domain.trip.CardDelivery
 import com.meongcare.app.ui.guidance.GuidanceUiState
 import com.meongcare.app.ui.guidance.SimulatedGuidanceNotice
 import com.meongcare.app.ui.guidance.remainingTimeText
@@ -105,6 +106,7 @@ val LocalCardScale = staticCompositionLocalOf { CardScale.Narrow }
  * - 도착: "도착했어요" + 병원 이름 + [홈] [수정] / [병원에 전화] [닫기]
  *
  * [홈]은 카드를 지우지 않고 처음 화면으로 간다 (처음 화면에 [카드 보기]가 있다).
+ * 병원을 고르고 출발했으면 머리 아래에 카드 전송 줄이 있다 (012, [delivery]).
  * 카드 몸통은 세로로 스크롤하고, 아래 버튼 줄은 스크롤 밖에 고정한다 (긴 목록이어도 버튼이 밀려나지 않게).
  */
 @Composable
@@ -119,6 +121,8 @@ fun MedicalCardScreen(
     isGuidanceSimulated: Boolean,
     modifier: Modifier = Modifier,
     isRouteOnNavi: Boolean = false,
+    delivery: CardDelivery? = null,
+    onResend: () -> Unit = {},
 ) {
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val wide = maxWidth >= WideBreakpoint
@@ -134,6 +138,7 @@ fun MedicalCardScreen(
                     verticalArrangement = Arrangement.spacedBy(24.dp),
                 ) {
                     CardHeader(state, guidance, actions, wide)
+                    if (delivery != null && guidance !is GuidanceUiState.Idle) DeliveryLine(delivery, onResend)
                     state.shownPhoneNumber?.let {
                         PhoneNumberPanel(number = it, isSample = state.isHospitalSample, onDismiss = actions.onDismissPhoneNumber)
                     }
@@ -394,9 +399,9 @@ private fun DemoNotices(showsPetSample: Boolean, hospitalSamplePhone: String?, s
     }
 }
 
-/** 전화 앱을 열지 못했을 때: 번호를 크게 보여 준다. 팝업 창이 아니라 화면 안 영역이다. */
+/** 전화 앱을 열지 못했을 때: 번호를 크게 보여 준다. 팝업 창이 아니라 화면 안 영역이다. 병원 확인 화면(012)도 쓴다. */
 @Composable
-private fun PhoneNumberPanel(number: String, isSample: Boolean, onDismiss: () -> Unit) {
+internal fun PhoneNumberPanel(number: String, isSample: Boolean, onDismiss: () -> Unit) {
     Surface(
         shape = RoundedCornerShape(24.dp),
         color = CardColors.Surface,
@@ -413,6 +418,39 @@ private fun PhoneNumberPanel(number: String, isSample: Boolean, onDismiss: () ->
                 colors = ButtonDefaults.buttonColors(containerColor = ActionBlue, contentColor = Color.White),
                 modifier = Modifier.heightIn(min = Dimens.MinTouchTarget).widthIn(min = 160.dp),
             ) { Text(stringResource(R.string.card_phone_panel_ok), style = MaterialTheme.typography.labelLarge) }
+        }
+    }
+}
+
+/** 카드 전송 줄 (012): "진료 카드를 병원에 보냈어요" 등. 실패면 [다시 보내기]. 주행 화면에는 넣지 않는다. */
+@Composable
+private fun DeliveryLine(delivery: CardDelivery, onResend: () -> Unit) {
+    val scale = LocalCardScale.current
+    val (text, color) = when (delivery) {
+        is CardDelivery.Sent -> stringResource(if (delivery.toServer) R.string.delivery_sent else R.string.delivery_sample) to
+            MaterialTheme.colorScheme.onSurface
+        CardDelivery.Sending -> stringResource(R.string.delivery_sending) to MaterialTheme.colorScheme.onSurfaceVariant
+        CardDelivery.Failed -> stringResource(R.string.delivery_failed) to MaterialTheme.colorScheme.error
+        CardDelivery.NotSent -> stringResource(R.string.delivery_not_sent) to MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f), RoundedCornerShape(16.dp))
+            .padding(horizontal = 20.dp, vertical = 12.dp),
+    ) {
+        Icon(
+            if (delivery is CardDelivery.Failed) Icons.Outlined.Warning else Icons.Filled.Send,
+            contentDescription = null,
+            tint = color,
+            modifier = Modifier.size(26.dp),
+        )
+        Spacer(Modifier.width(12.dp))
+        Text(text, style = MaterialTheme.typography.bodyLarge.copy(fontSize = scale.chip), color = color, modifier = Modifier.weight(1f))
+        if (delivery == CardDelivery.Failed) {
+            Spacer(Modifier.width(12.dp))
+            PillButton(text = stringResource(R.string.delivery_resend), icon = null, onClick = onResend)
         }
     }
 }

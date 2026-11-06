@@ -13,6 +13,8 @@ import com.meongcare.app.data.guidance.NaviGuidanceSource
 import com.meongcare.app.data.guidance.NaviRouteOnlyGuidanceSource
 import com.meongcare.app.data.guidance.navi.PleosNaviClient
 import com.meongcare.app.data.guidance.RealGuidanceSource
+import com.meongcare.app.data.hospital.BuiltInHospitalBoardSource
+import com.meongcare.app.data.hospital.FakeCaseSender
 import com.meongcare.app.data.hospital.SampleHospitals
 import com.meongcare.app.data.location.FakeCurrentLocationSource
 import com.meongcare.app.data.location.NaviCurrentLocationSource
@@ -26,6 +28,10 @@ import com.meongcare.app.domain.driving.DrivingState
 import com.meongcare.app.domain.driving.DrivingStateSource
 import com.meongcare.app.domain.guidance.GuidanceSource
 import com.meongcare.app.domain.hospital.Hospital
+import com.meongcare.app.domain.hospital.HospitalBoardSource
+import com.meongcare.app.domain.hospital.HospitalCandidate
+import com.meongcare.app.domain.trip.CaseSender
+import com.meongcare.app.domain.trip.HospitalTrip
 import com.meongcare.app.domain.location.CurrentLocationSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -102,8 +108,22 @@ class AppContainer(context: Context, val dataMode: DataMode) {
         SourceKind.FAKE -> FakeCurrentLocationSource()
     }
 
-    /** 병원 (길안내 목적지 + 전화번호). 병원 검색이 붙기 전까지 시연용 샘플 병원 1곳을 쓴다. */
+    /**
+     * 010의 고정 시연 병원. 012부터 카드의 병원은 병원 찾기에서 고른 곳이고([hospitalTrip]),
+     * 이 값은 고르기 전 길안내 화면의 기본 이름으로만 쓰인다.
+     */
     val sampleHospital: Hospital = SampleHospitals.demo
+
+    /**
+     * 제휴 병원 목록 (012). 지금은 **모든 데이터 모드에서 내장 시연 병원 5곳**이다.
+     * 서버(Firestore)는 계획 012 단계 12에서 데이터 모드에 끼운다 (`di/HospitalPlan.kt`).
+     */
+    val hospitalBoardSource: HospitalBoardSource = BuiltInHospitalBoardSource()
+
+    private val fakeCaseSender = FakeCaseSender()
+
+    /** 병원 출처에 맞는 카드 전송 (012). 내장 시연 병원은 Fake 전송이다 (실제로 보내지 않는다). */
+    private fun caseSenderFor(candidate: HospitalCandidate): CaseSender = fakeCaseSender
 
     /**
      * 반려견 프로필. 서버(보호자 웹 연결)가 생기기 전까지 **모든 데이터 모드에서 Fake("보리")**다.
@@ -119,6 +139,17 @@ class AppContainer(context: Context, val dataMode: DataMode) {
 
     /** 전화 앱 열기 (모든 데이터 모드). 열지 못하면 화면이 번호를 크게 보여 준다. */
     val phoneDialer: PhoneDialer = AndroidPhoneDialer(context)
+
+    /**
+     * 병원을 고르고 출발한 뒤의 일 (012): 길안내 시작, 카드·도착 예정 전송, 도착·취소 알림.
+     * 로그는 `HospitalTrip` 태그에 결과 종류만 남긴다 (반려견 이름·증상·좌표·병원 이름 없음).
+     */
+    val hospitalTrip = HospitalTrip(
+        guidance = guidanceSource,
+        senderFor = ::caseSenderFor,
+        scope = applicationScope,
+        log = { Log.i("HospitalTrip", it) },
+    )
 
     /** Pleos Vehicle 연결. Real 구성에서만 만든다 (Fake에서는 Vehicle을 만들지 않는다). */
     val vehicleConnection: VehicleConnection? =

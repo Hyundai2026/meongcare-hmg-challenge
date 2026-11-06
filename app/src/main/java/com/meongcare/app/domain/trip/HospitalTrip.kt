@@ -2,6 +2,7 @@ package com.meongcare.app.domain.trip
 
 import com.meongcare.app.domain.guidance.GuidanceSource
 import com.meongcare.app.domain.guidance.GuidanceState
+import com.meongcare.app.domain.hospital.Hospital
 import com.meongcare.app.domain.hospital.HospitalCandidate
 import com.meongcare.app.domain.hospital.RankedHospital
 import java.time.Instant
@@ -14,10 +15,13 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -85,6 +89,10 @@ class HospitalTrip(
 
     /** 고른 병원과 카드 전송 상태. 출발 전이면 null */
     val trip: StateFlow<TripState?> = _trip.asStateFlow()
+
+    /** 고른 병원. 카드의 [병원에 전화]가 이 번호로 건다. 출발 전이면 null */
+    val selectedHospital: StateFlow<Hospital?> =
+        _trip.map { it?.candidate?.hospital }.stateIn(scope, SharingStarted.Eagerly, null)
 
     private var job: Job? = null
     private var retry = Channel<Unit>(Channel.CONFLATED)

@@ -17,13 +17,18 @@ import com.meongcare.app.di.next
 import com.meongcare.app.domain.driving.DrivingState
 import com.meongcare.app.ui.card.MedicalCardActions
 import com.meongcare.app.ui.card.MedicalCardViewModel
+import com.meongcare.app.ui.card.PhoneNumberPanel
 import com.meongcare.app.ui.debug.DebugLocationRow
 import com.meongcare.app.ui.debug.DebugLocationUiState
 import com.meongcare.app.ui.debug.DebugLocationViewModel
 import com.meongcare.app.ui.debug.DebugPanel
 import com.meongcare.app.ui.debug.debugLocationText
 import com.meongcare.app.ui.guidance.GuidanceViewModel
+import com.meongcare.app.ui.home.CardExtras
 import com.meongcare.app.ui.home.HomeScreen
+import com.meongcare.app.ui.hospital.HospitalConfirmScreen
+import com.meongcare.app.ui.hospital.HospitalFinderViewModel
+import com.meongcare.app.ui.hospital.HospitalListScreen
 import com.meongcare.app.ui.home.HomeUiState
 import com.meongcare.app.ui.home.HomeViewModel
 import com.meongcare.app.ui.theme.MeongCareTheme
@@ -50,8 +55,12 @@ class MainActivity : ComponentActivity() {
                         session = container.medicalCardSession,
                         hospital = container.sampleHospital,
                         phoneDialer = container.phoneDialer,
+                        selectedHospital = container.hospitalTrip.selectedHospital,
                     ),
                 )
+                val trip = container.hospitalTrip
+                val finder by trip.finder.collectAsStateWithLifecycle()
+                val tripState by trip.trip.collectAsStateWithLifecycle()
                 val cardUiState by cardViewModel.uiState.collectAsStateWithLifecycle()
                 val cardActions = remember(cardViewModel) {
                     MedicalCardActions(
@@ -74,16 +83,49 @@ class MainActivity : ComponentActivity() {
                     guidanceUiState = guidanceUiState,
                     cardUiState = cardUiState,
                     cardActions = cardActions,
-                    onStartGuidance = guidanceViewModel::onStartGuidance,
+                    // 012: 카드의 주 버튼은 [가장 빨리 진료받을 곳 찾기]다. 길안내는 병원 확인 화면의 [출발]이 시작한다.
+                    onFindHospital = trip::openFinder,
                     onCancelGuidance = guidanceViewModel::onCancelGuidance,
                     // 도착 상태를 먼저 지우고 카드를 비운다. 중간 프레임이 "생성 완료" 카드라 거의 보이지 않는다.
                     onCloseArrival = {
                         guidanceViewModel.onDismissArrival()
                         cardViewModel.onCloseCard()
+                        trip.clear()
                     },
                     isGuidanceSimulated = container.sourcePlan.isGuidanceSimulated,
                     isPetProfileSample = container.isPetProfileSample,
                     isRouteOnNavi = container.naviUse == NaviUse.ROUTE_ONLY,
+                    finder = finder,
+                    onFinderBack = trip::back,
+                    hospitalList = {
+                        val finderViewModel: HospitalFinderViewModel = viewModel(
+                            factory = HospitalFinderViewModel.factory(container.hospitalBoardSource, container.currentLocationSource),
+                        )
+                        val finderState by finderViewModel.uiState.collectAsStateWithLifecycle()
+                        HospitalListScreen(
+                            state = finderState,
+                            isLocationSample = container.locationKind == SourceKind.FAKE,
+                            onChoose = trip::choose,
+                            onBack = trip::back,
+                            onRefresh = finderViewModel::onRefresh,
+                            onRelocate = finderViewModel::onRelocate,
+                        )
+                    },
+                    hospitalConfirm = { choice ->
+                        HospitalConfirmScreen(
+                            choice = choice,
+                            onBack = trip::back,
+                            onCall = cardViewModel::onCallNumber,
+                            onDepartWithoutCard = { trip.depart(choice, card = null) },
+                            onDepart = { trip.depart(choice, cardViewModel.caseCard()) },
+                            phoneNumberPanel = {
+                                cardUiState.shownPhoneNumber?.let {
+                                    PhoneNumberPanel(number = it, isSample = choice.hospital.isSample, onDismiss = cardViewModel::onDismissPhoneNumber)
+                                }
+                            },
+                        )
+                    },
+                    cardExtras = CardExtras(delivery = tripState?.delivery, onResend = trip::resend),
                     bottomBar = {
                         if (BuildConfig.DEBUG) {
                             val fake = container.fakeDrivingStateSource

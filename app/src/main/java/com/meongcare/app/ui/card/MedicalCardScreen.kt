@@ -21,6 +21,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.FavoriteBorder
@@ -101,7 +102,7 @@ val LocalCardScale = staticCompositionLocalOf { CardScale.Narrow }
 
 /**
  * 진료 카드 화면 (정차 중에만). 안내 상태에 따라 머리와 버튼이 다르다:
- * - 안내 없음: "진료 카드 생성 완료" + [홈] [수정] / [병원에 전화] [길 안내 시작]
+ * - 안내 없음: "진료 카드 생성 완료" + [홈] [수정] / [가장 빨리 진료받을 곳 찾기] (병원을 고르기 전이라 [병원에 전화]는 없다, 012)
  * - 안내 중: "병원까지 N분" + 병원 이름 + [홈] [수정] / [병원에 전화] [안내 취소]
  * - 도착: "도착했어요" + 병원 이름 + [홈] [수정] / [병원에 전화] [닫기]
  *
@@ -114,7 +115,7 @@ fun MedicalCardScreen(
     state: CardFlowUiState,
     guidance: GuidanceUiState,
     actions: MedicalCardActions,
-    onStartGuidance: () -> Unit,
+    onFindHospital: () -> Unit,
     onCancelGuidance: () -> Unit,
     onCloseArrival: () -> Unit,
     isPetProfileSample: Boolean,
@@ -155,7 +156,7 @@ fun MedicalCardScreen(
                     guidance = guidance,
                     sideBySide = buttonsSideBySide,
                     onCallHospital = actions.onCallHospital,
-                    onStartGuidance = onStartGuidance,
+                    onFindHospital = onFindHospital,
                     onCancelGuidance = onCancelGuidance,
                     onCloseArrival = onCloseArrival,
                 )
@@ -461,7 +462,7 @@ private fun ActionArea(
     guidance: GuidanceUiState,
     sideBySide: Boolean,
     onCallHospital: () -> Unit,
-    onStartGuidance: () -> Unit,
+    onFindHospital: () -> Unit,
     onCancelGuidance: () -> Unit,
     onCloseArrival: () -> Unit,
 ) {
@@ -487,7 +488,7 @@ private fun ActionArea(
         }
         val main: @Composable (Modifier) -> Unit = { modifier ->
             when (guidance) {
-                is GuidanceUiState.Idle -> FilledAction(stringResource(R.string.card_start_guidance), Icons.Filled.Send, onStartGuidance, modifier)
+                is GuidanceUiState.Idle -> FilledAction(stringResource(R.string.card_find_hospital), Icons.Filled.Search, onFindHospital, modifier)
                 is GuidanceUiState.Guiding -> OutlinedButton(
                     onClick = onCancelGuidance,
                     border = BorderStroke(2.dp, MaterialTheme.colorScheme.outline),

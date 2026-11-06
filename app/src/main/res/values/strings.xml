@@ -56,7 +56,6 @@
     <string name="card_pet_not_registered">등록된 반려견 정보가 없어요. 보호자 웹에서 등록할 수 있어요</string>
     <string name="card_pet_unavailable">반려견 정보를 불러오지 못했어요</string>
     <string name="card_call_hospital">병원에 전화</string>
-    <string name="card_start_guidance">길 안내 시작</string>
     <string name="card_phone_panel_title">전화 앱을 열 수 없어요. 이 번호로 전화해 주세요</string>
     <string name="card_phone_panel_sample">시연용 번호</string>
     <string name="card_phone_panel_ok">확인</string>

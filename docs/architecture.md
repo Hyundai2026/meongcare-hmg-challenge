@@ -29,11 +29,11 @@
 | 음성 → 글자 | **Pleos SpeechToText `ON_DEVICE`** (`ko-KR`) + Fake | 네트워크와 앱 등록이 필요 없다. 기술 활용성 점수에 유리하다 | **재검토 (팀 논의)**: 콘솔 "준비 중" = 신청 불가라서 지금은 쓸 수 없는 것으로 본다 (2026-11-03 콘솔 확인). STT 없이도 핵심 흐름이 돌게 할지 정한다. 열리는 시점은 문의 B2 |
 | 음성 안내 | Pleos TextToSpeech `ON_DEVICE` + Fake | STT와 같은 이유 | **재검토**: STT와 같다 |
 | 증상 → 진료 카드 | Claude API, 구조화 출력(JSON 스키마). 진단하지 않고 말한 내용만 정리한다. 카드 생성이 길안내·병원 연결을 막지 않게 뒤에서 따로 돈다 | 정해진 형식으로 증상·복용약·병력만 뽑는다 | **임시: `claude-opus-5-5` (effort `low`). 모델과 AI 범위는 팀 논의 필요.** **지금(009)은 AI 없이 규칙으로 조합한다**: 등록된 프로필 + 큰 버튼으로 고른 증상(12개 프리셋) → `medicalCardOf`. Claude API는 A1 뒤 |
-| 서버 | **Firebase** | AI 키와 장소 검색 키를 앱에 넣지 않는다 (Pleos 보안 가이드: 키 하드코딩 금지, HTTPS·TLS 1.2+). 팀의 웹 경험과 가깝다 | **구현함 (012): Firestore + 익명 Auth, Spark(무료) 요금제, Functions 없음.** 개발·시연은 PC의 Firebase 에뮬레이터 (`firebase/`). 진짜 프로젝트("MeongCare", Spark, Firestore 서울) 연결은 아직이다. Functions(카카오·Claude 키 숨기기)는 Blaze가 필요해 미뤘다 |
+| 서버 | **Firebase** | AI 키와 장소 검색 키를 앱에 넣지 않는다 (Pleos 보안 가이드: 키 하드코딩 금지, HTTPS·TLS 1.2+). 팀의 웹 경험과 가깝다 | **구현함 (012): Firestore + 익명 Auth, Spark(무료) 요금제, Functions 없음.** 익명 토큰은 만료 5분 전에 같은 uid로 미리 갱신한다 (013). 개발·시연은 PC의 Firebase 에뮬레이터 (`firebase/`). 진짜 프로젝트("MeongCare", Spark, Firestore 서울) 연결은 아직이다. Functions(카카오·Claude 키 숨기기)는 Blaze가 필요해 미뤘다 |
 | 병원 목록 | **제휴 병원** (병원 웹으로 대기 시간을 알리는 병원, Firestore `hospitals`). 시연 병원 5곳 | 응급에서 "현실적으로 가장 빨리 진료받을 곳"을 알려면 병원이 알린 대기 시간이 필요하다 (사용자 결정 2026-11-06) | **구현함 (012)**. 카카오 로컬 검색 병원("대기 정보 없음")은 나중에 더한다. 그때 서버 함수가 필요하다 (키 숨기기, 카카오 결과 저장 금지) |
 | 병원 순위 | 이동 어림 + 대기 분이 짧은 순 (`domain/hospital/HospitalRanking.kt`) | 가까운 곳이 가장 빠른 곳은 아니다 | **구현함 (012)**. 대기 정보가 30분보다 오래됐거나 없으면 순위 뒤, 응급 접수 안 하면 따로. 위치를 모르면 대기 시간 순 |
 | 이동 시간 | 직선 거리 어림 (하버사인 × 1.25 ÷ 21km/h, 화면에 "약") | 후보마다 길안내 없이 실제 경로 시간을 받는 Pleos API가 확인되지 않았다 | **구현함 (012)**. 계수는 에뮬레이터 내비 관찰 1건에 맞춘 시연용 가정이다. 출발한 뒤 병원에 보내는 남은 시간은 길안내 값이다 |
-| 진료 카드 전송 | [출발]하면 자동으로 카드 + 도착 예정을 고른 병원에 보낸다. 주행 중 1분에 한 번 이하로 남은 시간 갱신, 도착·취소 알림 (`domain/trip/HospitalTrip.kt`) | 운전자가 따로 조작하지 않는다 (사용자 결정 2026-11-06). 확인 화면에 보내는 것·보내지 않는 것과 [카드 없이 길안내만]을 둔다 (U2) | **구현함 (012)**. 사진과 차 위치는 보내지 않는다 (U3). 형식: [docs/data/emergency-case.md](data/emergency-case.md) |
+| 진료 카드 전송 | [출발]하면 자동으로 카드 + 도착 예정을 고른 병원에 보낸다. 남은 시간 갱신은 실제 길안내 1분, **시연 길안내 4초**에 한 번 이하 (`di/TripTiming.kt`, 013). 도착·취소 알림. **병원이 [카드 확인]을 누르면 차에 "병원이 진료 카드를 확인했어요"** (안내 중에만 자기 건을 시연 4초·실제 15초마다 읽는다, 013 U1) (`domain/trip/HospitalTrip.kt`) | 운전자가 따로 조작하지 않는다 (사용자 결정 2026-11-06). 확인 화면에 보내는 것·보내지 않는 것과 [카드 없이 길안내만]을 둔다 (U2) | **구현함 (012·013)**. 사진과 차 위치는 보내지 않는다 (U3). 내장 시연 병원은 확인을 흉내 내지 않는다. 형식: [docs/data/emergency-case.md](data/emergency-case.md) |
 | 길안내 | Pleos NaviHelper `requestRoute(RouteInfo)` (`NaviHelper:3.0.5`) | 콘솔 "사용 가능" SDK | **구현함 (010)**: `data/guidance/navi/PleosNaviClient`. 좌표 + 이름만으로 경로 요청이 된다 (`poiId` 빈 값, Pleos 에뮬레이터 확인). 차량 기기에서만 쓴다 (아래 "데이터 모드") |
 | 도착 예정 시간 | NaviHelper `onRouteStarted`의 `duration`, `onDrivingInfo`의 `destination.duration` | 에뮬레이터에서 값이 내비 화면과 같았다 | **단위는 초** (2100 = 35분, `[obs-navi-emu]`). `onTripInfo`는 오지 않았다 |
 | 현재 위치 | NaviHelper `getCurrentLocationInfo()` | FusedLocation이 "준비 중"이라 대신 쓴다 | **구현함 (011)**: `data/location/NaviCurrentLocationSource` + `PleosNaviClient.currentLocation`. 물을 때마다 연결하고 답을 받으면 release한다. 병원 목록을 열 때 한 번 묻는다 (012) + debug 패널. Pleos 에뮬레이터에서 64~263ms에 왔다. **내비 화면을 한 번 띄우기 전에는 답이 오지 않는다** (`[obs-navi-emu]`) |
@@ -114,8 +114,8 @@ app/src/main/java/com/meongcare/app/
     FakeGuidanceSource.kt     시간이 지나면 남은 시간이 줄고 도착한다 (scope·timing·진행 조건 주입)
     RealGuidanceSource.kt     자리표시. 항상 Idle (Real 모드 + 일반 폰에서만 쓰인다)
     NaviGuidanceSource.kt     전부 차량 내비 (Real + 차량 기기): 남은 시간·도착·취소를 내비 이벤트로
-    NaviRouteOnlyGuidanceSource.kt  경로만 차량 내비 (시연 + 차량 기기): 내비 예상 시간에서 시연용 Fake를 시작, 시연 도착 시 내비 경로 종료
-    navi/NaviClient.kt        내비 경계 (trip(destination): Flow<NaviEvent>). SDK 타입 없음
+    NaviRouteOnlyGuidanceSource.kt  경로만 차량 내비 (시연 + 차량 기기): 내비 예상 시간에서 시연용 Fake를 시작. 시연 도착·[닫기]는 내비 연결만 놓고 경로는 남긴다 (013 U2)
+    navi/NaviClient.kt        내비 경계 (trip(destination[, onClose]): Flow<NaviEvent>, RouteOnClose = CANCEL/KEEP). SDK 타입 없음
     navi/NaviLocationClient.kt  내비 현재 위치 경계 (currentLocation(): Flow<NaviLocationEvent>). SDK 타입 없음 (011)
     navi/PleosNaviClient.kt   NaviHelper 어댑터. NaviHelper를 부르는 유일한 파일. 안내 한 번, 현재 위치 한 번마다 연결하고 끝나면 release
     navi/NaviTiming.kt        내비 남은 초 → 남은 시간 규칙, 안내 시작 대기 30초
@@ -126,7 +126,7 @@ app/src/main/java/com/meongcare/app/
   domain/card/                Symptom(12개 프리셋, 선언 순서 = 화면·카드 순서), MedicalCardSession(고르는 중/카드 있음, 메모리)
   domain/hospital/            Hospital(길안내 목적지 + 전화번호 + 시연용 여부 + 제휴 병원 id), HospitalStatus·HospitalCandidate(출처),
                               HospitalBoardSource(목록 인터페이스), TravelEstimate(직선 거리 어림), HospitalRanking(순위 규칙) (012)
-  domain/trip/                CaseCard(보낼 카드, 사진 제외)·CaseSender(전송 인터페이스), HospitalTrip(출발·전송·갱신·도착/취소, FinderStep) (012)
+  domain/trip/                CaseCard(보낼 카드, 사진 제외)·CaseSender(전송 + 병원 확인 읽기 AckRead), HospitalTrip(출발·전송·갱신·도착/취소·확인 읽기·진행 시작값, FinderStep) (012·013)
   domain/phone/               PhoneDialer(전화 앱 열기)
   data/hospital/
     SampleHospitals.kt        010의 고정 시연 병원(demo)과 시연용 제휴 병원 5곳(partners, hospitals.sample.json과 같은 값)
@@ -136,19 +136,21 @@ app/src/main/java/com/meongcare/app/
   data/server/                (012) Firebase REST. 런타임 의존성 없음 (HttpURLConnection + 내장 org.json)
     ServerConfig.kt           BuildConfig → 서버 주소 (debug 에뮬레이터 / release HTTPS만 / 설정 없으면 null)
     HttpTransport.kt          HTTP 경계 (fun interface). UrlConnectionHttpTransport.kt가 java.net을 쓰는 유일한 파일
-    AnonymousAuth.kt          익명 가입 한 번, 토큰 재사용
+    AnonymousAuth.kt          익명 가입 한 번, 토큰 재사용, 만료 5분 전 갱신(같은 uid, 거부되면 다시 가입) (013)
     FirestoreJson.kt          Firestore REST 값 ↔ 도메인 (형식 문서 규칙)
-    FirestoreHospitalBoardSource.kt, FirestoreCaseSender.kt  목록 GET / 카드 POST / 갱신·도착·취소는 documents:commit + updateMask
+    FirestoreHospitalBoardSource.kt, FirestoreCaseSender.kt  목록 GET / 카드 POST / 갱신·도착·취소는 documents:commit + updateMask / 확인 읽기는 단건 GET + mask (지운 건 403 = Gone)
   data/pet/                   SamplePetProfiles("보리", 예시 JSON과 같은 값), FakePetProfileSource
   data/phone/                 AndroidPhoneDialer (ACTION_DIAL. ACTION_DIAL을 부르는 유일한 파일)
   data/demo/
     FakeTripScenario.kt       FAKE 전용: 안내 시작 → 출발(주행), 도착 → 주차(정차)
   data/vehicle/
     VehicleConnection.kt      Pleos Vehicle initialize/release를 한 곳에서
-  ui/theme/                   Color, Type(글자 크기), Dimens(터치 크기), Theme
+  di/TripTiming.kt            시연·실제 길안내별 도착 예정 갱신·병원 확인 읽기 간격 (013)
+  ui/theme/                   Color(+ TripColors), Type(글자 크기, DrivingText), Dimens(터치 크기), Theme
   ui/home/                    HomeViewModel, HomeUiState, HomeContent(1단계 화면 조합), ParkedContent(2단계: 정차 안), HomeScreen, ParkedScreen(처음 화면), DrivingScreen
   ui/card/                    MedicalCardViewModel, MedicalCardContent(medicalCardOf: 카드 조합), MedicalCardScreen, SymptomPickerScreen, CardTexts, PetVisuals(발바닥·아바타)
-  ui/guidance/                GuidanceViewModel, GuidanceUiState, GuidanceText, SimulatedGuidanceNotice
+  ui/guidance/                GuidanceViewModel, GuidanceUiState, SimulatedGuidanceNotice,
+                              TripPanel(tripPanelOf: 안내 영역 상태, JVM 테스트), GuidancePanel(정차 중 안내 영역), StaticProgressBar(움직이지 않는 진행 막대) (013)
   ui/hospital/                (012) HospitalFinderViewModel(위치·목록 동시에, 보이는 동안 30초마다 목록), HospitalListScreen, HospitalConfirmScreen, HospitalTexts
   ui/debug/                   DebugPanel (상태 없음. 값과 동작은 MainActivity가 넘긴다), DebugLocationViewModel([위치 묻기] 상태와 문구, debug 빌드에서만 만든다)
 app/src/test/java/com/meongcare/app/
@@ -177,7 +179,7 @@ ui ──▶ domain ◀── data
 
     | 모드 | 차량 기기 | 길안내 |
     |---|---|---|
-    | 시연 (release) | 예 | **경로만 차량 내비** + 남은 시간·도착은 시연용 (내비 예상 시간에서 시작, 주행 중에만 줄어듦). 시연 도착 시 내비 경로도 취소. 화면 문구 "경로는 차량 내비게이션으로 안내해요. 앱의 남은 시간과 도착은 시연용이에요." |
+    | 시연 (release) | 예 | **경로만 차량 내비** + 남은 시간·도착은 시연용 (내비 예상 시간에서 시작, 주행 중에만 줄어듦). 시연 도착·[닫기] 때 **내비 경로는 남긴다** (013 U2: 경로를 취소하면 내비 앱이 앞으로 나와 "도착했어요"를 가린다. 다음 출발이 새 경로로 바꾼다). 앱 [안내 취소]는 경로를 취소하고, 그때는 내비 앱이 앞에 나온다 (앱이 스스로 돌아올 수 없다, U3). 화면 문구 "경로는 차량 내비게이션으로 안내해요. 앱의 남은 시간과 도착은 시연용이에요." |
     | Real | 예 | **전부 차량 내비** (남은 시간·도착·취소를 내비 이벤트로) |
     | 그 밖 (Fake, 일반 폰) | | 지금처럼 (NaviHelper를 만들지 않는다) |
 
@@ -250,7 +252,7 @@ ui ──▶ domain ◀── data
 - 주행 상태를 모르면(`UNKNOWN`) 안전을 위해 주행 화면을 보여준다.
 - DO를 선언했다 (위 "서비스 기능 스택"). 그래서 주행 중에도 시스템이 앱을 가리지 않고, 주행 중 안전(입력·스크롤 숨김)은 앱이 이 규칙대로 책임진다.
 - 주행 화면 규칙 (AGENTS.md 규칙 3):
-  - 큰 글씨의 상태 한 줄과 큰 버튼 1개 이하만 둔다.
+  - 큰 글씨의 상태 한 줄과 큰 버튼 1개 이하만 둔다. 안내 중에는 큰 남은 분·목적지·움직이지 않는 진행 막대·병원 확인 한 줄까지만 (013 U4). 도착 예정 시각·대기 정보·전송 상태·시연용 표시는 정차 화면에만.
   - 텍스트 입력, 스크롤, 애니메이션은 두지 않는다.
 - 정차 화면은 일반 기능과 텍스트 입력을 둘 수 있다.
 
@@ -261,7 +263,7 @@ ui ──▶ domain ◀── data
 | 주행 \ 안내 | 안내 없음 | 안내 중 | 도착 |
 |---|---|---|---|
 | **정차** | 정차 화면 (아래 2단계 표) | 정차 화면 (아래 2단계 표) | 정차 화면 (아래 2단계 표) |
-| **주행·모름** | 주행 화면: "주행 중" | 주행 화면: 큰 글씨 "병원까지 N분" + 병원 이름. 버튼 없음 | 주행 화면: 큰 글씨 "도착했어요" + "정차하면 진료 카드를 볼 수 있어요". 버튼 없음 |
+| **주행·모름** | 주행 화면: "주행 중" | 주행 화면 (013 U4): **아주 큰 남은 분**("15분") + "○○까지" + 움직이지 않는 진행 막대 + 병원이 확인했으면 "병원이 카드를 확인했어요" 한 줄. 버튼 없음 | 주행 화면: 큰 글씨 "도착했어요" + "정차하면 진료 카드를 볼 수 있어요". 버튼 없음 |
 
 - 남은 시간은 분 단위로 올림하고, 1분보다 작으면 1분으로 보여준다. "0분"은 보이지 않는다.
 - **2단계: 정차 안에서 (009, `ui/home/ParkedContent.kt`의 `parkedContentOf`)**. 1단계 규칙(주행·모름이면 주행 화면)은 그대로 두고, 정차일 때만 한 번 더 고른다.
@@ -269,12 +271,14 @@ ui ──▶ domain ◀── data
   | 안내 \ 카드 세션 | 없음 | 고르는 중 | 카드 있음 |
   |---|---|---|---|
   | 안내 없음 | **처음 화면**: 보리 요약 + [진료 카드 만들기] | **증상 고르기**: 12개 큰 버튼 + [취소] [카드 만들기] | **카드** "진료 카드 생성 완료" + [홈] [수정] / [병원에 전화] [길 안내 시작] |
-  | 안내 중 | **카드** (고른 증상 없음) | 증상 고르기 | **카드** "병원까지 N분" + 병원 이름 + [홈] [수정] / [병원에 전화] [안내 취소] |
-  | 도착 | **카드** (고른 증상 없음) | 증상 고르기 | **카드** "도착했어요" + 병원 이름 + [홈] [수정] / [병원에 전화] [닫기] |
+  | 안내 중 | **카드** (고른 증상 없음) | 증상 고르기 | **카드** "진료 카드" + [홈] [수정], 머리 아래 **안내 영역** / [병원에 전화] [안내 취소] |
+  | 도착 | **카드** (고른 증상 없음) | 증상 고르기 | **카드** "진료 카드" + [홈] [수정], 머리 아래 **도착 안내 영역** / [병원에 전화] [닫기] |
+
+  - **안내 영역** (013, `ui/guidance/GuidancePanel.kt`): 파란 고정색 패널. "○○까지", 큰 남은 분, "도착 예정 14:32"(정차 중 30초마다 다시 계산), "출발 때 알린 대기 10분 · 보통", 진행 막대(시작 = 이번 안내에서 본 가장 큰 남은 분, `TripState.startMinutes`), 흰 줄에 전송·확인 상태("진료 카드를 병원에 보냈어요 · 확인을 기다리는 중" → "병원이 진료 카드를 확인했어요 (14:05)", 실패면 [다시 보내기]). 도착이면 초록 패널 "○○에 도착했어요 · 이 카드를 접수처에 보여 주세요". [병원에 전화] [안내 취소]는 화면 아래 고정 줄에 둔다. 처음 화면([홈])도 같은 패널을 쓴다.
 
   - 길안내는 카드의 [길 안내 시작]에서만 시작한다 (사용자 결정 2026-11-05). 정차 첫 화면의 [병원으로 안내]와 메모 칸은 없앴다.
   - [취소]는 고르기 전으로(카드가 없었으면 처음 화면, 있었으면 그 카드). [수정]은 지금 증상이 선택된 채로 고르기.
-  - **[홈]** (2026-11-05 사용자 요청): 카드를 지우지 않고 처음 화면으로 간다 (`MedicalCardSession.atHome`, `parkedContentOf`의 세 번째 인자). 처음 화면에 "만든 진료 카드"(안내 중이면 "병원까지 N분 · 병원", 도착이면 "도착했어요 · 병원") + 주요 증상 + [카드 보기]가 보인다. 안내가 없으면 [새로 만들기](카드를 버리고 빈 선택으로 고르기)도 있다. 고르기를 시작하거나 카드를 비우면 홈 상태가 풀린다.
+  - **[홈]** (2026-11-05 사용자 요청): 카드를 지우지 않고 처음 화면으로 간다 (`MedicalCardSession.atHome`, `parkedContentOf`의 세 번째 인자). 처음 화면에 (안내 중·도착이면 위의 안내 영역 +) "만든 진료 카드" + 주요 증상 + [카드 보기]가 보인다. 안내가 없으면 [새로 만들기](카드를 버리고 빈 선택으로 고르기)도 있다. 고르기를 시작하거나 카드를 비우면 홈 상태가 풀린다.
   - 안내 전 카드 위의 [닫기]는 [홈]과 헷갈려서 뺐다. 카드 버리기는 처음 화면의 [새로 만들기]가 맡는다.
   - 도착 카드 [닫기]는 도착 상태를 지우고(`onDismissArrival`) 카드도 비운다(`onCloseCard`). 이 순서라 중간 프레임이 같은 몸통의 "생성 완료" 카드다.
   - 고르는 중이나 카드를 보는 중에 주행(또는 모름)이 되면 주행 화면이고, 다시 정차하면 고르던 선택·같은 카드다 (Pleos 에뮬레이터에서 확인).
@@ -391,6 +395,9 @@ web/src/
 - 데이터 형식: [docs/data/hospital-status.md](data/hospital-status.md), [docs/data/emergency-case.md](data/emergency-case.md)
 - 보관: 병원 [완료]가 환자 건을 지운다. 차는 도착·취소를 상태로 알리고 지우지 않는다. 자동 삭제(Functions)는 없다.
 - 화면에 늘 "시연용 화면이에요. 실제 병원이 아니에요."를 보인다. 메모리 모드면 "서버 없이 이 브라우저에서만 동작해요"를 더한다.
+- (013) **[카드 확인]**: 오는 중·도착 건에 큰 버튼. `acknowledgedAt` = 서버 시각, 한 번만 (보안 규칙 R9~R13). 확인 전 건은 "새 환자"로 주황 테두리 강조, 탭 제목 "(N) 새 환자 · 병원 · MeongCare 병원". 깜빡임·소리는 없다.
+- (013) **서버 주소와 연결 상태**: 안내 줄 아래 "서버: 에뮬레이터 127.0.0.1:8080 · 프로젝트 … · 실시간 연결됨"(`metadata.fromCache`). 호스트가 `localhost`·`::1`이면 빨간 경고 (012 시연 준비 때 차와 병원 웹이 IPv4·IPv6 서로 다른 에뮬레이터에 붙었다).
+- (013) **시연 전 점검**: `npm --prefix firebase run preflight` (PF1~PF6: 127.0.0.1 응답, 시드, [::1]의 다른 에뮬레이터, adb reverse, 30분 안 대기 정보). [firebase/README.md](../firebase/README.md)
 
 ## 테스트 전략
 

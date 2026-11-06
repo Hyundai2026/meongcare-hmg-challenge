@@ -10,7 +10,8 @@
   "scripts": {
     "emulators": "firebase emulators:start --project demo-meongcare --only auth,firestore",
     "seed": "node scripts/seed.mjs",
-    "check-rules": "node scripts/check-rules.mjs"
+    "check-rules": "node scripts/check-rules.mjs",
+    "preflight": "node scripts/preflight.mjs"
   },
   "devDependencies": {
     "firebase-tools": "15.34.1"

@@ -29,11 +29,14 @@
 | 음성 → 글자 | **Pleos SpeechToText `ON_DEVICE`** (`ko-KR`) + Fake | 네트워크와 앱 등록이 필요 없다. 기술 활용성 점수에 유리하다 | **재검토 (팀 논의)**: 콘솔 "준비 중" = 신청 불가라서 지금은 쓸 수 없는 것으로 본다 (2026-11-03 콘솔 확인). STT 없이도 핵심 흐름이 돌게 할지 정한다. 열리는 시점은 문의 B2 |
 | 음성 안내 | Pleos TextToSpeech `ON_DEVICE` + Fake | STT와 같은 이유 | **재검토**: STT와 같다 |
 | 증상 → 진료 카드 | Claude API, 구조화 출력(JSON 스키마). 진단하지 않고 말한 내용만 정리한다. 카드 생성이 길안내·병원 연결을 막지 않게 뒤에서 따로 돈다 | 정해진 형식으로 증상·복용약·병력만 뽑는다 | **임시: `claude-opus-5-5` (effort `low`). 모델과 AI 범위는 팀 논의 필요.** **지금(009)은 AI 없이 규칙으로 조합한다**: 등록된 프로필 + 큰 버튼으로 고른 증상(12개 프리셋) → `medicalCardOf`. Claude API는 A1 뒤 |
-| 서버 | **Firebase** (Functions, TypeScript) | AI 키와 장소 검색 키를 앱에 넣지 않는다 (Pleos 보안 가이드: 키 하드코딩 금지, HTTPS·TLS 1.2+). 팀의 웹 경험과 가깝다 | 결정 |
-| 병원 검색 | 카카오 로컬 API (서버를 거쳐서) | 병원 이름·좌표·전화번호 | 결정 |
+| 서버 | **Firebase** | AI 키와 장소 검색 키를 앱에 넣지 않는다 (Pleos 보안 가이드: 키 하드코딩 금지, HTTPS·TLS 1.2+). 팀의 웹 경험과 가깝다 | **구현함 (012): Firestore + 익명 Auth, Spark(무료) 요금제, Functions 없음.** 개발·시연은 PC의 Firebase 에뮬레이터 (`firebase/`). 진짜 프로젝트("MeongCare", Spark, Firestore 서울) 연결은 아직이다. Functions(카카오·Claude 키 숨기기)는 Blaze가 필요해 미뤘다 |
+| 병원 목록 | **제휴 병원** (병원 웹으로 대기 시간을 알리는 병원, Firestore `hospitals`). 시연 병원 5곳 | 응급에서 "현실적으로 가장 빨리 진료받을 곳"을 알려면 병원이 알린 대기 시간이 필요하다 (사용자 결정 2026-11-06) | **구현함 (012)**. 카카오 로컬 검색 병원("대기 정보 없음")은 나중에 더한다. 그때 서버 함수가 필요하다 (키 숨기기, 카카오 결과 저장 금지) |
+| 병원 순위 | 이동 어림 + 대기 분이 짧은 순 (`domain/hospital/HospitalRanking.kt`) | 가까운 곳이 가장 빠른 곳은 아니다 | **구현함 (012)**. 대기 정보가 30분보다 오래됐거나 없으면 순위 뒤, 응급 접수 안 하면 따로. 위치를 모르면 대기 시간 순 |
+| 이동 시간 | 직선 거리 어림 (하버사인 × 1.25 ÷ 21km/h, 화면에 "약") | 후보마다 길안내 없이 실제 경로 시간을 받는 Pleos API가 확인되지 않았다 | **구현함 (012)**. 계수는 에뮬레이터 내비 관찰 1건에 맞춘 시연용 가정이다. 출발한 뒤 병원에 보내는 남은 시간은 길안내 값이다 |
+| 진료 카드 전송 | [출발]하면 자동으로 카드 + 도착 예정을 고른 병원에 보낸다. 주행 중 1분에 한 번 이하로 남은 시간 갱신, 도착·취소 알림 (`domain/trip/HospitalTrip.kt`) | 운전자가 따로 조작하지 않는다 (사용자 결정 2026-11-06). 확인 화면에 보내는 것·보내지 않는 것과 [카드 없이 길안내만]을 둔다 (U2) | **구현함 (012)**. 사진과 차 위치는 보내지 않는다 (U3). 형식: [docs/data/emergency-case.md](data/emergency-case.md) |
 | 길안내 | Pleos NaviHelper `requestRoute(RouteInfo)` (`NaviHelper:3.0.5`) | 콘솔 "사용 가능" SDK | **구현함 (010)**: `data/guidance/navi/PleosNaviClient`. 좌표 + 이름만으로 경로 요청이 된다 (`poiId` 빈 값, Pleos 에뮬레이터 확인). 차량 기기에서만 쓴다 (아래 "데이터 모드") |
 | 도착 예정 시간 | NaviHelper `onRouteStarted`의 `duration`, `onDrivingInfo`의 `destination.duration` | 에뮬레이터에서 값이 내비 화면과 같았다 | **단위는 초** (2100 = 35분, `[obs-navi-emu]`). `onTripInfo`는 오지 않았다 |
-| 현재 위치 | NaviHelper `getCurrentLocationInfo()` | FusedLocation이 "준비 중"이라 대신 쓴다 | **구현함 (011)**: `data/location/NaviCurrentLocationSource` + `PleosNaviClient.currentLocation`. 물을 때마다 연결하고 답을 받으면 release한다. 지금은 debug 패널에서만 쓴다 (병원 검색 전). Pleos 에뮬레이터에서 64~263ms에 왔다. **내비 화면을 한 번 띄우기 전에는 답이 오지 않는다** (`[obs-navi-emu]`) |
+| 현재 위치 | NaviHelper `getCurrentLocationInfo()` | FusedLocation이 "준비 중"이라 대신 쓴다 | **구현함 (011)**: `data/location/NaviCurrentLocationSource` + `PleosNaviClient.currentLocation`. 물을 때마다 연결하고 답을 받으면 release한다. 병원 목록을 열 때 한 번 묻는다 (012) + debug 패널. Pleos 에뮬레이터에서 64~263ms에 왔다. **내비 화면을 한 번 띄우기 전에는 답이 오지 않는다** (`[obs-navi-emu]`) |
 | 도착 감지 | NaviHelper `onDestinationArrived` | 도착하면 카드 화면으로 넘어간다 | Real 모드에서 쓴다. **에뮬레이터에서는 내비 속 차가 움직이지 않아 확인하지 못했다** (JVM 테스트로만) |
 | 병원 전화 | 안드로이드 다이얼러(`ACTION_DIAL`, 권한 없음, 걸지 않음). 안 되면 번호를 크게 보여준다 | | 구현함 (009, `data/phone/AndroidPhoneDialer`). Pleos 에뮬레이터에서 "전화" 앱이 열렸지만 번호는 보이지 않았다 ([sdk-notes.md](pleos/sdk-notes.md) "전화" 관찰). 실차는 미확인 (문의 B4). 시연용 번호 `02-0000-0000` |
 | 카드 공유 | MVP: 정차 화면에 크게 보여주기. 나중에 QR·링크 | 서버 작업이 가장 적다 | 결정 |
@@ -88,6 +91,7 @@ app/src/main/java/com/meongcare/app/
     SourcePlan.kt             모드 × 차량 기기 → 끼울 구현의 구성표 (순수 함수 sourcePlanOf)
     NaviPlan.kt               모드 × 차량 기기 → 차량 내비 사용 범위 NONE / ROUTE_ONLY / FULL (순수 함수 naviUseOf, 010)
     LocationPlan.kt           모드 × 차량 기기 → 현재 위치 출처 FAKE / REAL(내비) (순수 함수 currentLocationKindOf, 011)
+    HospitalPlan.kt           모드 × 서버 설정 → 병원 목록 출처 BUILT_IN / SERVER_WITH_FALLBACK / SERVER_ONLY (순수 함수 hospitalSourceKindOf, 012)
     DataModeStore.kt          debug에서 고른 모드를 저장 (release는 항상 DEMO)
     AppRestarter.kt           모드를 저장하고 앱을 다시 시작 (debug)
   domain/driving/
@@ -120,10 +124,21 @@ app/src/main/java/com/meongcare/app/
     NaviCurrentLocationSource.kt  내비 위치 해석: 시간 초과 5초, 값 검사(currentLocationOf), 한 번에 하나, 좌표 없는 로그 (JVM 테스트)
   domain/pet/                 PetProfile(형식 문서 대응), PetAge(나이 계산, 웹과 같은 규칙), PetProfileSource + PetProfileLoad
   domain/card/                Symptom(12개 프리셋, 선언 순서 = 화면·카드 순서), MedicalCardSession(고르는 중/카드 있음, 메모리)
-  domain/hospital/            Hospital(길안내 목적지 + 전화번호 + 시연용 여부)
+  domain/hospital/            Hospital(길안내 목적지 + 전화번호 + 시연용 여부 + 제휴 병원 id), HospitalStatus·HospitalCandidate(출처),
+                              HospitalBoardSource(목록 인터페이스), TravelEstimate(직선 거리 어림), HospitalRanking(순위 규칙) (012)
+  domain/trip/                CaseCard(보낼 카드, 사진 제외)·CaseSender(전송 인터페이스), HospitalTrip(출발·전송·갱신·도착/취소, FinderStep) (012)
   domain/phone/               PhoneDialer(전화 앱 열기)
   data/hospital/
-    SampleHospitals.kt        시연용 샘플 병원 1곳과 번호 02-0000-0000 (병원 검색이 붙기 전까지)
+    SampleHospitals.kt        010의 고정 시연 병원(demo)과 시연용 제휴 병원 5곳(partners, hospitals.sample.json과 같은 값)
+    BuiltInHospitalBoardSource.kt  내장 시연 병원 목록 (알린 시각 = 지금 - N분)
+    FallbackHospitalBoardSource.kt 서버 → 5초 안에 못 받거나 실패하면 내장 (시연 모드)
+    FakeCaseSender.kt         카드를 보내지 않고 메모리에 남긴 뒤 성공 (내장 병원용)
+  data/server/                (012) Firebase REST. 런타임 의존성 없음 (HttpURLConnection + 내장 org.json)
+    ServerConfig.kt           BuildConfig → 서버 주소 (debug 에뮬레이터 / release HTTPS만 / 설정 없으면 null)
+    HttpTransport.kt          HTTP 경계 (fun interface). UrlConnectionHttpTransport.kt가 java.net을 쓰는 유일한 파일
+    AnonymousAuth.kt          익명 가입 한 번, 토큰 재사용
+    FirestoreJson.kt          Firestore REST 값 ↔ 도메인 (형식 문서 규칙)
+    FirestoreHospitalBoardSource.kt, FirestoreCaseSender.kt  목록 GET / 카드 POST / 갱신·도착·취소는 documents:commit + updateMask
   data/pet/                   SamplePetProfiles("보리", 예시 JSON과 같은 값), FakePetProfileSource
   data/phone/                 AndroidPhoneDialer (ACTION_DIAL. ACTION_DIAL을 부르는 유일한 파일)
   data/demo/
@@ -134,6 +149,7 @@ app/src/main/java/com/meongcare/app/
   ui/home/                    HomeViewModel, HomeUiState, HomeContent(1단계 화면 조합), ParkedContent(2단계: 정차 안), HomeScreen, ParkedScreen(처음 화면), DrivingScreen
   ui/card/                    MedicalCardViewModel, MedicalCardContent(medicalCardOf: 카드 조합), MedicalCardScreen, SymptomPickerScreen, CardTexts, PetVisuals(발바닥·아바타)
   ui/guidance/                GuidanceViewModel, GuidanceUiState, GuidanceText, SimulatedGuidanceNotice
+  ui/hospital/                (012) HospitalFinderViewModel(위치·목록 동시에, 보이는 동안 30초마다 목록), HospitalListScreen, HospitalConfirmScreen, HospitalTexts
   ui/debug/                   DebugPanel (상태 없음. 값과 동작은 MainActivity가 넘긴다), DebugLocationViewModel([위치 묻기] 상태와 문구, debug 빌드에서만 만든다)
 app/src/test/java/com/meongcare/app/
   testutil/MainDispatcherRule.kt
@@ -182,9 +198,23 @@ ui ──▶ domain ◀── data
 
     - Fake 값을 에뮬레이터 위치로 한 이유: 두 에뮬레이터가 같은 위치를 쓰게 되어, 나중에 병원 검색 결과가 에뮬레이터마다 달라지지 않는다. 사람의 실제 위치가 아니다.
     - NaviHelper 수명: 물을 때마다 새 NaviHelper를 만들고 답을 받으면 release한다. 한 번에 하나만 묻는다. 길안내 쪽 NaviHelper와 동시에 있어도 됐다 (Pleos 에뮬레이터).
-    - 지금 위치를 쓰는 곳은 debug 패널 [위치 묻기]뿐이다. 정차 중에만 보이고, release 빌드에는 없다. 그래서 release에서는 NaviHelper가 위치용으로 만들어지지 않는다.
+    - 위치를 쓰는 곳: 병원 목록을 열 때 한 번 (012, 정차 중), debug 패널 [위치 묻기]. 위치를 모르면(내비 준비 전) 다른 위치로 대신 계산하지 않고 "대기 시간 순"으로 보인다.
     - 로그(`CurrentLocation` 태그)에는 결과 종류와 걸린 시간만 남긴다. 좌표와 주소는 남기지 않는다.
     - 시연 준비: 에뮬레이터를 켠 뒤 내비 화면을 한 번 띄워 둔다. 그 전에는 내비가 위치 요청에 답하지 않는다.
+  - **병원 목록과 카드 전송 (012)**: `di/HospitalPlan.kt`의 `hospitalSourceKindOf`가 정한다. 007·010·011의 표와 테스트는 그대로다.
+
+    | 모드 | 서버 설정 (`secrets.properties`의 `FIREBASE_*`) | 병원 목록 | 카드 전송 | 목록 위 안내 |
+    |---|---|---|---|---|
+    | Fake | 상관없음 | 내장 시연 병원 5곳 | Fake (보내지 않음) | "시연용 병원 정보예요" |
+    | 시연 (release) | 있음 | 서버 → 5초 안에 못 받거나 실패하면 내장 | 서버에서 온 병원만 서버, 대체된 내장 병원은 Fake | 서버: "병원 웹에서 알린 대기 시간이에요" / 대체: "서버에 연결하지 못해 시연용 병원 정보를 보여 줘요" |
+    | 시연 (release) | 없음 | 내장 | Fake | "시연용 병원 정보예요" |
+    | Real | 상관없음 | 서버만. 실패하면 "병원 정보를 받지 못했어요" + [다시 시도] | 서버 | |
+
+    - **release(시연)는 네트워크 없이도 끝까지 돈다** (문의 A2). 11/15 제출 APK에는 Firebase 설정을 넣지 않는 것을 추천한다 (계획 012 U5, 아직 정하지 않음).
+    - 서버 주소 (`data/server/ServerConfig.kt`): debug이고 `FIREBASE_EMULATOR_HOST`가 있으면 PC 에뮬레이터(평문 HTTP, debug의 network_security_config가 그 주소만 허용). **release는 에뮬레이터 주소를 무시하고 HTTPS만 쓴다.**
+    - BuildConfig의 `FIREBASE_*`는 컴파일 상수가 아니다 (`String.valueOf`). 상수면 secrets.properties만 바꿨을 때 증분 컴파일이 예전 값을 남긴다 (012에서 겪음).
+    - 로그는 `HospitalTrip` 태그 하나에 결과 종류·개수·시간·HTTP 상태만 남긴다. 반려견 이름·증상·좌표·병원 이름·토큰은 남기지 않는다.
+    - 주행 화면은 바꾸지 않았다 (규칙 3). 병원 목록·확인 화면은 정차 중에만 보이고(`parkedContentOf`의 HOSPITALS·CONFIRM_HOSPITAL), 주행이면 주행 화면이 먼저다.
 - debug 패널에서 모드를 바꾸면 저장하고 앱을 다시 시작한다. 실행 중에 데이터 소스를 바꾸지 않아서 상태가 꼬이지 않는다.
 - 어떤 구현을 끼울지는 `di/SourcePlan.kt`의 `sourcePlanOf(mode, isAutomotive)`가 정한다. Android를 모르는 순수 함수라 표 전체를 JVM 테스트로 확인한다.
 
@@ -302,7 +332,7 @@ ui ──▶ domain ◀── data
 | 항목 | 결정 | 근거 | 버린 대안 |
 |---|---|---|---|
 | 위치 | 같은 저장소 `web/` (사용자 결정) | 심사위원이 저장소 하나에서 앱과 웹을 본다. 프로필 형식을 문서 하나로 맞춘다 | 별도 저장소 |
-| 기술 | React + Vite + TypeScript, 테스트는 Vitest (`environment: 'node'`) | 웹팀이 React를 안다. 의존성은 이 6개뿐이고 버전은 정확히 고정한다 | ESLint (사용자 결정으로 넣지 않음. TypeScript strict가 대신), 라우터·상태 관리·폼·스키마 라이브러리, jsdom |
+| 기술 | React + Vite + TypeScript, 테스트는 Vitest (`environment: 'node'`) | 웹팀이 React를 안다. 의존성은 처음 6개에 012에서 `firebase`(13.1.0, 병원 웹만) 하나를 더했다 (사용자 결정 U4). 버전은 정확히 고정한다 | ESLint (사용자 결정으로 넣지 않음. TypeScript strict가 대신), 라우터·상태 관리·폼·스키마 라이브러리, jsdom |
 | 저장 | 브라우저 localStorage, 키 `owner-web.pet-profile` (사용자 결정) | 서버 규정(A1) 답을 기다리지 않고 만든다. 키는 앱 이름과 묶지 않아 이름이 바뀌어도 데이터가 남는다 | 처음부터 Firebase |
 | 저장소 인터페이스 | `PetProfileRepository` (`load`/`save`, `Promise`, 실패는 결과 값) | localStorage 구현이 앱의 Fake 자리, Firebase 구현이 Real 자리다. 바꿔 끼워도 화면 코드가 그대로다 | 화면에서 localStorage 직접 호출 |
 | 스키마 버전 | `schemaVersion: 1`. 모르는 버전은 읽지 않는다 | localStorage 데이터는 코드보다 오래 남는다. 차 앱이 짐작해서 약 정보를 틀리게 보여 주면 안 된다 | |
@@ -348,6 +378,19 @@ web/src/
 - 차 앱이 웹 페이지를 연결하면 도메인 등록 증빙이 필요하다 ([ux-guidelines.md](pleos/ux-guidelines.md) "외부 서버·네트워크").
 - 비밀값: Firebase 웹 설정은 `web/.env.local`(gitignore)의 `VITE_FIREBASE_*`로 받는다. 값이 없으면 localStorage 구현을 쓰고 빌드는 그대로 된다. 그때 `web/.env.example`을 같이 만든다.
   - `VITE_`로 시작하는 값은 번들에 들어가 누구나 볼 수 있다. **Claude API 키, 카카오 키는 웹에 절대 넣지 않는다** (서버에만).
+- (012에서 더함) 진짜 프로젝트로 바꿀 때: 콘솔에서 익명 로그인 켜기, `firebase deploy --only firestore:rules`, 병원 문서·병원 코드 넣기(진짜 코드는 커밋하지 않는다), API 키 제한(웹 도메인·Android 앱), 남은 환자 건 정리 방법, 개인정보처리방침에 "병원에 보내는 진료 카드" 항목. 순서: [firebase/README.md](../firebase/README.md)
+
+## 병원 웹 (012, 2026-11-06)
+
+시연용 병원 화면. 병원 직원이 예상 대기 시간·혼잡도·응급 접수를 알리고, 차에서 보낸 진료 카드와 도착 예정을 실시간으로 본다.
+
+- 위치: `web/` 안의 둘째 페이지 `/hospital/` (Vite 다중 페이지, `build.rolldownOptions.input`). 라우터를 넣지 않았다. 보호자 페이지 번들에는 Firebase가 들어가지 않는다.
+- 저장소: `HospitalDesk` 인터페이스 (`web/src/domain/hospital/hospitalDesk.ts`). 메모리 구현(서버 없음, 시연 병원 5곳 + 예시 환자 1건)과 Firestore 구현(`web/src/data/firestoreHospitalDesk.ts`). `web/.env.local`의 `VITE_FIREBASE_*`가 있으면 Firestore다.
+- 접근: 링크 `/hospital/?h=<병원 id>&code=<병원 코드>`. 로그인 화면은 없다. 코드가 맞는 브라우저(익명 계정)만 그 병원 직원으로 등록돼 상태를 바꾸고 환자 카드를 읽는다 (사용자 결정 U1).
+- 서버: `firebase/` (에뮬레이터 설정, 보안 규칙 `firestore.rules`, 시드, 규칙 점검 R1~R8). 사용법: [firebase/README.md](../firebase/README.md)
+- 데이터 형식: [docs/data/hospital-status.md](data/hospital-status.md), [docs/data/emergency-case.md](data/emergency-case.md)
+- 보관: 병원 [완료]가 환자 건을 지운다. 차는 도착·취소를 상태로 알리고 지우지 않는다. 자동 삭제(Functions)는 없다.
+- 화면에 늘 "시연용 화면이에요. 실제 병원이 아니에요."를 보인다. 메모리 모드면 "서버 없이 이 브라우저에서만 동작해요"를 더한다.
 
 ## 테스트 전략
 

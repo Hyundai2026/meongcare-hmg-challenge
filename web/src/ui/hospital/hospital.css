@@ -1,0 +1,321 @@
+/* 병원 웹 (/hospital/). 색·간격은 styles.css의 :root 값을 쓴다. 병원 PC·태블릿 기준이라 버튼을 크게 둔다. */
+.hospital-page {
+  min-height: 100vh;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 var(--space-5) var(--space-6);
+}
+
+.hospital-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4) 0;
+}
+
+.hospital-header__name {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-navy);
+}
+
+.hospital-header__switch {
+  margin-left: auto;
+}
+
+.hospital-notices {
+  background: var(--color-blue-soft);
+  border-radius: var(--radius-control);
+  padding: var(--space-3) var(--space-4);
+  color: var(--color-navy);
+  font-size: 0.9rem;
+}
+
+.hospital-notices p {
+  margin: 0;
+}
+
+.hospital-content {
+  padding-top: var(--space-5);
+}
+
+.hospital-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-5);
+  font-size: 1.6rem;
+  color: var(--color-navy);
+}
+
+.hospital-muted {
+  margin: 0;
+  color: var(--color-text-sub);
+}
+
+.hospital-chip {
+  display: inline-block;
+  margin-left: var(--space-2);
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--color-blue-soft);
+  color: var(--color-navy);
+  font-size: 0.8rem;
+  font-weight: 600;
+  vertical-align: middle;
+}
+
+.hospital-picker {
+  display: grid;
+  gap: var(--space-3);
+  max-width: 640px;
+  margin-bottom: var(--space-4);
+}
+
+.hospital-picker__item {
+  display: flex;
+  align-items: center;
+  min-height: 72px;
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+  text-align: left;
+  cursor: pointer;
+}
+
+.hospital-picker__item:hover {
+  border-color: var(--color-blue);
+}
+
+.hospital-picker__name {
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.hospital-desk {
+  display: grid;
+  gap: var(--space-5);
+  align-items: start;
+}
+
+@media (min-width: 960px) {
+  .hospital-desk {
+    grid-template-columns: minmax(360px, 5fr) 7fr;
+  }
+}
+
+.hospital-panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-5);
+}
+
+.hospital-panel__title {
+  margin: 0 0 var(--space-4);
+  font-size: 1.2rem;
+  color: var(--color-navy);
+}
+
+.hospital-count {
+  display: inline-block;
+  min-width: 28px;
+  padding: 0 8px;
+  border-radius: var(--radius-pill);
+  background: var(--color-blue);
+  color: #fff;
+  text-align: center;
+  font-size: 0.95rem;
+}
+
+.hospital-current {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  margin-bottom: var(--space-4);
+  border-radius: var(--radius-control);
+  background: var(--color-bg);
+}
+
+.hospital-current p {
+  margin: 0;
+}
+
+.hospital-current__value {
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.hospital-field {
+  border: 0;
+  padding: 0;
+  margin: 0 0 var(--space-5);
+}
+
+.hospital-field legend {
+  margin-bottom: var(--space-3);
+  font-weight: 700;
+}
+
+.hospital-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.hospital-option {
+  min-width: 72px;
+  min-height: 56px;
+  padding: 0 var(--space-4);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  font-size: 1.05rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.hospital-option--wide {
+  flex: 1 1 0;
+}
+
+.hospital-option[aria-pressed='true'] {
+  border-color: var(--color-blue);
+  background: var(--color-blue);
+  color: #fff;
+}
+
+.hospital-wait {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-3);
+}
+
+.hospital-wait__value {
+  min-width: 96px;
+  font-size: 2rem;
+  font-weight: 800;
+  text-align: center;
+  color: var(--color-navy);
+}
+
+.hospital-send {
+  min-height: 64px;
+  font-size: 1.15rem;
+}
+
+.hospital-cases {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hospital-case {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border: 2px solid var(--color-blue);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+}
+
+.hospital-case--arrived {
+  border-color: #1f9d55;
+}
+
+.hospital-case--cancelled {
+  border-color: var(--color-border);
+  opacity: 0.7;
+}
+
+.hospital-case p {
+  margin: 0;
+}
+
+.hospital-case__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.hospital-case__name {
+  font-size: 1.4rem;
+  font-weight: 800;
+}
+
+.hospital-case__sex {
+  color: var(--color-blue);
+}
+
+.hospital-case__eta {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--color-navy);
+}
+
+.hospital-case__symptoms strong {
+  padding: 2px 10px;
+  border-radius: 8px;
+  background: #fff1e0;
+  color: #9a4b00;
+  font-size: 1.1rem;
+}
+
+.hospital-case__rows {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+}
+
+.hospital-case__rows div {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  gap: var(--space-3);
+}
+
+.hospital-case__rows dt {
+  color: var(--color-text-sub);
+}
+
+.hospital-case__rows dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.hospital-case__disclaimer {
+  font-size: 0.8rem;
+  color: var(--color-text-faint);
+}
+
+.hospital-case__confirm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.hospital-badge {
+  flex: none;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--color-blue-soft);
+  color: var(--color-navy);
+  font-weight: 700;
+}
+
+.hospital-badge--arrived {
+  background: #e3f6ea;
+  color: #136c3a;
+}
+
+.hospital-badge--cancelled {
+  background: var(--color-bg);
+  color: var(--color-text-sub);
+}

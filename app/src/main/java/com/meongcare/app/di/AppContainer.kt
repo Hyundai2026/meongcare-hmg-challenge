@@ -61,6 +61,7 @@ import java.security.SecureRandom
 import kotlin.random.asKotlinRandom
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.flowOn
@@ -248,10 +249,13 @@ class AppContainer(context: Context, val dataMode: DataMode) {
     /** 연결된 반려견 정보를 다시 읽는다 ([진료 카드 만들기], 처음 화면이 보이는 동안 1분마다). 연결 전이면 아무 일도 없다 */
     fun refreshPetProfile() = linkedPetProfileSource.refresh()
 
-    /** 반려견 정보가 시연용 샘플인지. 화면에 그 사실을 알린다 (출품 유의사항). 서버 연결로 받은 정보만 샘플이 아니다 */
-    val petProfileIsSample: StateFlow<Boolean> = ownerLink.state
-        .map { petProfileIsSampleOf(petPlan, it) }
-        .stateIn(applicationScope, SharingStarted.Eagerly, petProfileIsSampleOf(petPlan, ownerLink.state.value))
+    /**
+     * 반려견 정보가 시연용 샘플인지. 화면에 그 사실을 알린다 (출품 유의사항). 서버 연결로 받은 정보만 샘플이 아니다.
+     * 연결 직후 서버 응답 전에는 화면에 아직 샘플이 남아 있으므로 그동안도 샘플이다 ([LinkedPetProfileSource.isSample]).
+     */
+    val petProfileIsSample: StateFlow<Boolean> = combine(ownerLink.state, linkedPetProfileSource.isSample) { state, fromSample ->
+        petProfileIsSampleOf(petPlan, state) || fromSample
+    }.stateIn(applicationScope, SharingStarted.WhileSubscribed(5_000), petProfileIsSampleOf(petPlan, ownerLink.state.value))
 
     /** 고른 증상과 진료 카드. Fake 길안내와 같은 프로세스 수명이라 안내 시작부터 도착까지 남는다. */
     val medicalCardSession = MedicalCardSession()

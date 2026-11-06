@@ -40,8 +40,8 @@ class AnonymousAuth(private val config: ServerConfig, private val transport: Htt
         if (!response.isSuccessful) return null
         return try {
             val json = JSONObject(response.body)
-            val token = json.optString("idToken").takeIf { it.isNotEmpty() } ?: return null
-            val uid = json.optString("localId").takeIf { it.isNotEmpty() } ?: return null
+            val token = (json.opt("idToken") as? String)?.takeIf { it.isNotEmpty() } ?: return null
+            val uid = (json.opt("localId") as? String)?.takeIf { it.isNotEmpty() } ?: return null
             AuthSession(token, uid)
         } catch (_: JSONException) {
             null

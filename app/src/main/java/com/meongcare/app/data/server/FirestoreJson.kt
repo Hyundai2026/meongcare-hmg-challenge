@@ -45,7 +45,7 @@ object FirestoreJson {
 
     /** 문서 하나 (`{"name": ".../hospitals/<id>", "fields": {...}}`) → 후보. 틀리면 null. */
     fun hospitalOf(document: JSONObject): HospitalCandidate? {
-        val id = document.optString("name").substringAfterLast('/').takeIf { it.isNotEmpty() } ?: return null
+        val id = (document.opt("name") as? String)?.substringAfterLast('/')?.takeIf { it.isNotEmpty() } ?: return null
         val fields = document.optJSONObject("fields") ?: return null
         if (fields.longOf("schemaVersion") != SCHEMA_VERSION) return null
         val name = fields.stringOf("name")?.takeIf { it.isNotBlank() } ?: return null
@@ -180,7 +180,7 @@ object FirestoreJson {
     private fun JSONObject.value(key: String): JSONObject? = optJSONObject(key)
 
     private fun JSONObject.stringOf(key: String): String? =
-        value(key)?.takeIf { it.has("stringValue") }?.optString("stringValue")
+        value(key)?.takeIf { it.has("stringValue") }?.opt("stringValue") as? String
 
     private fun JSONObject.booleanOf(key: String): Boolean? =
         value(key)?.takeIf { it.has("booleanValue") }?.let { it.opt("booleanValue") as? Boolean }
@@ -188,7 +188,7 @@ object FirestoreJson {
     private fun JSONObject.longOf(key: String): Long? {
         val v = value(key) ?: return null
         return when {
-            v.has("integerValue") -> v.optString("integerValue").toLongOrNull()
+            v.has("integerValue") -> (v.opt("integerValue") as? String)?.toLongOrNull()
             // 정수 값의 doubleValue(예: 10.0)는 정수로 받는다. 소수(10.5)는 틀린 값이다.
             v.has("doubleValue") -> v.optDouble("doubleValue").takeIf { it.isFinite() && it == Math.floor(it) }?.toLong()
             else -> null
@@ -199,13 +199,13 @@ object FirestoreJson {
         val v = value(key) ?: return null
         return when {
             v.has("doubleValue") -> v.optDouble("doubleValue").takeIf { !it.isNaN() }
-            v.has("integerValue") -> v.optString("integerValue").toDoubleOrNull()
+            v.has("integerValue") -> (v.opt("integerValue") as? String)?.toDoubleOrNull()
             else -> null
         }
     }
 
     private fun JSONObject.timestampOf(key: String): Instant? {
-        val text = value(key)?.takeIf { it.has("timestampValue") }?.optString("timestampValue") ?: return null
+        val text = value(key)?.takeIf { it.has("timestampValue") }?.opt("timestampValue") as? String ?: return null
         return try {
             Instant.parse(text)
         } catch (_: DateTimeParseException) {

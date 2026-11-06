@@ -38,7 +38,7 @@ class FirestoreCaseSender(
             ?: return SendResult.Failed("네트워크")
         if (!response.isSuccessful) return SendResult.Failed("HTTP ${response.status}")
         val caseId = try {
-            JSONObject(response.body).optString("name").substringAfterLast('/')
+            (JSONObject(response.body).opt("name") as? String)?.substringAfterLast('/').orEmpty()
         } catch (_: JSONException) {
             ""
         }

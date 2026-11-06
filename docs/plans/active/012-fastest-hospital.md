@@ -654,7 +654,7 @@ ui/card/                   MedicalCardScreen(Idle 버튼, 전송 줄, 고른 병
 
 ### 필수 — 11/07: 병원 웹 → Firebase → 연결
 
-- [ ] 7. 병원 웹 도메인과 메모리 저장소
+- [x] 7. 병원 웹 도메인과 메모리 저장소
   - 7-1. → `feat(web): 병원 상태와 환자 건 형식 읽기·쓰기 추가`
     - `web/src/domain/hospital/` (타입, `*Json.ts`, `etaText.ts`, `caseOrder.ts`, `statusForm.ts`, `hospitalDesk.ts`)
     - Vitest: `hospitalStatusJson.test.ts`(hospitals.sample.json을 읽는다, 범위 밖 대기 → 대기 정보 없음, 모르는 혼잡도 → 대기 정보 없음, 모르는 버전 → 건너뜀), `emergencyCaseJson.test.ts`(emergency-case.example.json, 사진 필드가 없다, `label` 없으면 `code`), `etaText.test.ts`(`도착 예정 14:32 · 약 12분 후`, 지난 시각 → `곧 도착`, `null` → `경로를 찾는 중`), `caseOrder.test.ts`(도착 예정 순, 취소는 맨 아래), `statusForm.test.ts`(−5·+5가 0~600을 넘지 않는다)
@@ -662,7 +662,7 @@ ui/card/                   MedicalCardScreen(Idle 버튼, 전송 줄, 고른 병
     - `memoryHospitalDesk.ts`, `sampleHospitals.ts` + `sampleHospitals.test.ts`(docs JSON과 같다), 예시 환자 1건
   - 확인: `npm --prefix web run check`.
 
-- [ ] 8. 병원 웹 화면
+- [x] 8. 병원 웹 화면
   - 8-1. → `feat(web): 병원 웹 페이지(/hospital/)와 병원 고르기 추가`
     - `web/hospital/index.html`, `vite.config.ts` 다중 입력 (F6), `web/src/hospital/main.tsx`·`container.ts`(이 커밋은 메모리만), 병원 고르기, 시연 안내
   - 8-2. → `feat(web): 병원 상태 입력 화면 추가`
@@ -673,7 +673,7 @@ ui/card/                   MedicalCardScreen(Idle 버튼, 전송 줄, 고른 병
   - `verify_screens.py`에 H01~H05 (설계 결정 7). 화면 확인용 빌드가 `.env.local`을 무시하는 방법을 정해 web/README.md에 적는다.
   - 확인: 완료 기준 4.
 
-- [ ] 10. Firebase 에뮬레이터 구성
+- [x] 10. Firebase 에뮬레이터 구성
   - 10-1. → `chore(firebase): Firebase 에뮬레이터 구성과 보안 규칙 추가`
     - `firebase/` (설계 결정 9의 파일 중 package.json, .npmrc, firebase.json, .firebaserc, firestore.rules, firestore.indexes.json, README.md), `.gitignore`
     - F1 확인 결과를 README와 진행 로그에.
@@ -681,11 +681,11 @@ ui/card/                   MedicalCardScreen(Idle 버튼, 전송 줄, 고른 병
     - `seed/join-codes.emulator.json`, `scripts/seed.mjs`(F3·F5), `scripts/check-rules.mjs`(R1~R8)
   - 확인: 완료 기준 5. 규칙 점검이 실패하면 규칙을 고치고 같은 단계에서 다시 커밋한다.
 
-- [ ] 11. 병원 웹 Firestore 연결 → `feat(web): 병원 웹 Firestore 저장소 추가`
+- [x] 11. 병원 웹 Firestore 연결 → `feat(web): 병원 웹 Firestore 저장소 추가`
   - `web/package.json`에 `firebase` (정확한 버전), `firestoreHospitalDesk.ts`(익명 로그인 → `open`에서 직원 등록 → `onSnapshot` 두 개 → `serverTimestamp()`로 상태 쓰기 → [완료] 삭제), `container.ts`가 `VITE_FIREBASE_*`로 고른다, `web/.env.example`, `vite-env.d.ts` 타입.
   - 확인: `npm --prefix web run check` (설정 없이 → 메모리). 에뮬레이터로 E1·E9를 웹만으로 본다 (Emulator UI에서 문서가 바뀐다). 브라우저 콘솔 에러 0.
 
-- [ ] 12. 차 앱 서버 연결 (REST)
+- [x] 12. 차 앱 서버 연결 (REST)
   - 12-1. → `feat(data): 서버 설정과 Firestore REST 값 변환 추가`
     - `ServerConfig.kt`, `HttpTransport.kt`, `FirestoreJson.kt`, BuildConfig 3개(release는 에뮬레이터 주소를 빈 값으로), `secrets.properties.example`
     - `ServerConfigTest`: `` `프로젝트 ID가 없으면 서버를 쓰지 않는다`() ``, `` `debug에서 에뮬레이터 주소가 있으면 에뮬레이터로 간다`() ``, `` `release는 에뮬레이터 주소를 무시한다`() ``, `` `release에서 API 키가 없으면 서버를 쓰지 않는다`() ``
@@ -769,6 +769,20 @@ ui/card/                   MedicalCardScreen(Idle 버튼, 전송 줄, 고른 병
     - `*:E`에 우리 앱 크래시·`SecurityException` 없음. 우리 앱 pid 로그에서 좌표·"보리"·증상 0건.
     - **확인하지 못한 것**: 좁은(세로) 배치. Pleos 에뮬레이터는 회전하면 시스템 화면이 세로를 지원하지 않아 앱 창이 잘린다 (011과 같음). 일반 폰 에뮬레이터(`emulator-5556`)가 꺼져 있어 P1~P4는 아직이다. 미리보기(411dp)는 있다.
     - 6-2: Fake 길안내는 이제 목록의 이동 어림에서 시작한다 (차량 기기 시연은 내비 예상 시간이 앞선다).
+  - 단계 7~12 완료 (2026-11-06 오전). 단위 테스트 562개, 웹 250개 통과.
+  - 단계 7·8 병원 웹 (메모리 모드, Playwright로 확인): 병원 고르기 → 상태 알리기(30분·혼잡·안 받음 → "방금") → 예시 환자 카드 → [완료] → 빈 목록, 390px 한 줄 배치, 보호자 페이지 그대로, 콘솔 오류 0. 기존 `verify_screens.py` 26/26.
+    - Vite 8 다중 페이지 설정 이름은 `build.rolldownOptions.input`이다 (`rollupOptions`는 deprecated, F6). 경로는 web/ 기준 상대 경로 (`@types/node`가 없어 `node:url`을 쓰지 않았다).
+    - 병원 번들에만 Firebase가 들어간다 (hospital-*.js 575KB, 보호자 main-*.js 24KB 그대로).
+  - **단계 9는 잘랐다** (잘라낼 수 있음 3번). 대신 위 Playwright 스크린샷으로 확인했다 (`.claude/.cache/web/h0*.png`, `f0*.png`).
+  - 단계 10: `firebase-tools` **15.34.1** (2026-10-21, MIT), 웹 `firebase` **13.1.0** (2026-10-21, Apache-2.0). 최신(15.35.0, 13.2.0)은 나온 지 며칠이라 2주 넘은 버전으로 고정했다. npm 11은 설치 스크립트를 기본으로 돌리지 않는다 (`allow-scripts` 경고). 그래도 CLI·에뮬레이터는 동작한다.
+    - F1: **JDK 21로 Firestore 에뮬레이터가 돈다.** F2: Auth 에뮬레이터 `accounts:signUp?key=아무값` 된다. F3: `Authorization: Bearer owner`로 규칙을 건너뛰어 시드가 된다. F5: `DELETE /emulator/v1/projects/<id>/databases/(default)/documents`로 비운다.
+    - 규칙 점검 R1~R8 모두 PASS (처음 한 번에).
+    - **이 PC의 Claude Code 실행 환경(샌드박스)은 IPv4 주소로 서버를 열지 못한다** (`listen EFAULT ... 127.0.0.1:4000`, 미리보기도 `[::1]`에만 열림). 샌드박스를 끄는 실행은 거부됐다. 그래서 확인은 scratchpad의 임시 설정(`host: "::1"`, UI 끔)으로 했다. 사람 터미널에서는 기본 설정(127.0.0.1)으로 켠다.
+  - 단계 11: 병원 웹 ↔ 에뮬레이터 (Playwright): 코드 없이 열면 "병원용 링크(코드 포함)로 열어 주세요", 코드로 열면 시드 상태, 상태 알리기는 서버 시각, **REST로 보낸 환자 건이 새로 고침 없이 바로 뜬다**, [완료] → 문서 삭제. 콘솔 오류 0.
+  - 단계 12: 차 앱 REST. `HttpURLConnection`은 PATCH를 못 보내서 갱신·도착·취소는 `documents:commit` + `updateMask`로 한다. 정적 검사(완료 기준 7) 모두 맞음.
+    - **BuildConfig 함정**: `secrets.properties`만 바꿔 다시 빌드하면 Kotlin 증분 컴파일이 `AppContainer`를 다시 컴파일하지 않아 예전 빈 값(상수 인라인)이 남았다 → 서버 설정이 있는데 "시연용 병원 정보예요"(내장)가 나왔다. Firebase 필드를 `String.valueOf("...")`(상수 아님)로 바꿔 고쳤다 (`fix(build)`). javap로 `getstatic BuildConfig.FIREBASE_*` 확인.
+    - E10 확인 (Pleos 에뮬레이터, debug 시연, 서버 설정 있음 + PC 에뮬레이터에 닿지 않음): "서버에 연결하지 못해 시연용 병원 정보를 보여 줘요", 로그 `병원 목록: 서버 실패 (익명 로그인 실패, 2119ms)` → `내장 시연 (서버 실패: 익명 로그인 실패)`.
+    - O1·E1~E9(차 ↔ 서버 ↔ 병원 웹)는 **아직 확인하지 못했다**: 차 에뮬레이터가 닿으려면 PC 에뮬레이터가 IPv4(127.0.0.1)로 열려야 해서 사람 터미널에서 켜야 한다. `adb reverse tcp:8080 tcp:8080`, `tcp:9099`는 걸어 두었다.
 
 ## 결정 / 배운 점
 

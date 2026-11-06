@@ -303,6 +303,20 @@ check(
   `claim 없음 ${readerWithoutClaim.status}, 다른 차 ${readerOtherCar.status}, 다른 보호자 ${readerByOwner2.status}, 코드 ${linked.made.status}, batch ${linked.batch.status}`,
 )
 
+// R19b: 같은 차를 허가가 남은 채로 다시 연결해도 된다 (보호자 웹은 허가를 set으로 쓴다)
+const againCode = newCode()
+madeCodes.push(againCode)
+await createCode(carC.idToken, againCode, { carUid: carC.localId })
+const relinkSame = await commit(owner.idToken, [
+  claimWrite(againCode, owner.localId),
+  {
+    update: { name: `${DOC_NAME}/petProfiles/${owner.localId}/readers/${carC.localId}`, fields: toFields({ linkCode: againCode }) },
+    updateTransforms: [serverTime('createdAt')],
+  },
+])
+check('R19b', '같은 차를 다시 연결하면 남은 허가를 같은 조건으로 덮어쓴다', relinkSame.status === 200, `HTTP ${relinkSame.status}`)
+await firestore('DELETE', `/linkCodes/${againCode}`, { token: carC.idToken })
+
 // R20
 const carReads = await firestore('GET', profilePath, { token: carC.idToken })
 const carPhoto = await firestore('GET', photoPath, { token: carC.idToken })

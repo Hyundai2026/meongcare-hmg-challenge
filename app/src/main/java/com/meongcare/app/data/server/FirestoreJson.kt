@@ -158,7 +158,7 @@ object FirestoreJson {
     }
 
     private val ISO_DATE = Regex("""\d{4}-\d{2}-\d{2}""")
-    private val ISO_UTC = Regex("""\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z""")
+    private val ISO_UTC = Regex("""\d{4}-\d{2}-\d{2}T(\d{2}):(\d{2}):(\d{2})(\.\d+)?Z""")
 
     /** `YYYY-MM-DD`이고 있는 날짜만 (2023-02-30은 null) */
     private fun localDateOf(text: String): LocalDate? {
@@ -170,9 +170,14 @@ object FirestoreJson {
         }
     }
 
-    /** pet-profile.md: `YYYY-MM-DDTHH:mm:ssZ`(UTC, 초 뒤 소수 있어도 됨)만 */
+    /**
+     * pet-profile.md: `YYYY-MM-DDTHH:mm:ssZ`(UTC, 초 뒤 소수 있어도 됨)만. 없는 시각(24시, 60초 윤초)은 손상이다
+     * (`Instant.parse`는 받아 주지만 보호자 웹의 읽는 쪽 규칙과 맞춘다).
+     */
     private fun utcInstantOf(text: String): Instant? {
-        if (!ISO_UTC.matches(text)) return null
+        val match = ISO_UTC.matchEntire(text) ?: return null
+        val (hour, minute, second) = match.destructured
+        if (hour.toInt() > 23 || minute.toInt() > 59 || second.toInt() > 59) return null
         return try {
             Instant.parse(text)
         } catch (_: DateTimeParseException) {

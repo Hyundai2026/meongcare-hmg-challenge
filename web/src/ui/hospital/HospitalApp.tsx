@@ -6,6 +6,7 @@
  */
 import { useEffect, useState } from 'react'
 import { APP_NAME } from '../../config'
+import { newCaseCount, pageTitle } from '../../domain/hospital/caseAck'
 import type { CaseView } from '../../domain/hospital/emergencyCase'
 import type { DeskFailure, HospitalDesk } from '../../domain/hospital/hospitalDesk'
 import type { HospitalSummary } from '../../domain/hospital/hospitalStatus'
@@ -137,6 +138,19 @@ function HospitalDeskView({
   const [hospital, setHospital] = useState<HospitalSummary | null | undefined>(undefined)
   const [cases, setCases] = useState<CaseView[]>([])
   const current = useNow(now)
+  const newCount = newCaseCount(cases)
+  const hospitalName = opened === 'open' && hospital != null ? hospital.name : null
+
+  // 탭 제목에 새 환자 수를 보인다 (다른 탭을 보고 있어도 알 수 있게, 계획 013). 화면을 떠나면 원래 제목으로
+  useEffect(() => {
+    const original = document.title
+    return () => {
+      document.title = original
+    }
+  }, [])
+  useEffect(() => {
+    document.title = pageTitle(APP_NAME, hospitalName, newCount)
+  }, [hospitalName, newCount])
 
   useEffect(() => {
     let alive = true

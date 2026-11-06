@@ -90,6 +90,18 @@ export function createMemoryHospitalDesk(now: () => Date): HospitalDesk {
       return ok(undefined)
     },
 
+    async acknowledgeCase(hospitalId, caseId) {
+      const list = casesOf(hospitalId)
+      const target = list.find((c) => c.id === caseId)
+      if (target === undefined) return { ok: false, reason: 'not-found' }
+      // 이미 확인된 건은 처음 시각을 지킨다 (서버 보안 규칙과 같다)
+      if (target.acknowledgedAt !== null) return ok(undefined)
+      const updated = list.map((c) => (c.id === caseId ? { ...c, acknowledgedAt: now() } : c))
+      cases.set(hospitalId, updated)
+      emit(caseListeners, hospitalId, [...updated])
+      return ok(undefined)
+    },
+
     async completeCase(hospitalId, caseId) {
       const list = casesOf(hospitalId).filter((c) => c.id !== caseId)
       cases.set(hospitalId, list)

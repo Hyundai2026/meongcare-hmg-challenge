@@ -25,4 +25,9 @@ export interface HospitalDesk {
   updateStatus(hospitalId: string, input: StatusInput): Promise<DeskResult<void>>
   /** [완료]: 환자 건을 지운다 */
   completeCase(hospitalId: string, caseId: string): Promise<DeskResult<void>>
+  /**
+   * [카드 확인] (계획 013 U1): acknowledgedAt = 서버 시각. 이미 확인된 건은 처음 시각 그대로 둔다.
+   * 차는 안내 중에 이 시각을 읽어 "병원이 진료 카드를 확인했어요"를 보인다.
+   */
+  acknowledgeCase(hospitalId: string, caseId: string): Promise<DeskResult<void>>
 }

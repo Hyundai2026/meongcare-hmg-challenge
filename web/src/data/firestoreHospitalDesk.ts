@@ -153,5 +153,9 @@ export function createFirestoreHospitalDesk(config: FirebaseWebConfig): Hospital
       ),
 
     completeCase: (hospitalId, caseId) => attempt(() => deleteDoc(doc(db, 'hospitals', hospitalId, 'cases', caseId))),
+
+    // 보안 규칙이 "서버 시각으로, 확인 전인 건에 한 번만"을 지킨다 (firestore.rules, 계획 013)
+    acknowledgeCase: (hospitalId, caseId) =>
+      attempt(() => updateDoc(doc(db, 'hospitals', hospitalId, 'cases', caseId), { acknowledgedAt: serverTimestamp() })),
   }
 }

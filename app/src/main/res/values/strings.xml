@@ -59,7 +59,7 @@
     <string name="card_phone_panel_sample">시연용 번호</string>
     <string name="card_phone_panel_ok">확인</string>
     <!-- 시연용 표시 (출품 유의사항: 사실과 다르면 선정 취소). 주행 화면에는 넣지 않는다 -->
-    <string name="card_sample_pet_notice">시연용 샘플 정보예요. 보호자 웹과는 아직 연결되지 않았어요.</string>
+    <string name="card_sample_pet_notice">시연용 샘플 정보예요. 보호자 웹에서 등록한 정보가 아니에요.</string>
     <string name="card_sample_hospital_notice">병원과 전화번호(%1$s)는 시연용이에요. 실제로 걸리지 않아요.</string>
 
     <!-- 정차 첫 화면 (009) -->

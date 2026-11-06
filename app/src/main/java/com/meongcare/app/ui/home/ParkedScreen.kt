@@ -22,7 +22,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -57,6 +56,7 @@ import com.meongcare.app.ui.theme.Dimens
 import com.meongcare.app.ui.theme.MeongCareTheme
 
 private val ContentMaxWidth = 960.dp
+private val DialogButtonMinWidth = 160.dp
 
 /**
  * 정차·주차 중 처음 화면: 반려견 요약 + [진료 카드 만들기].
@@ -213,20 +213,32 @@ private fun LinkRowPanel(row: LinkRow, petName: String?, onOpenLink: () -> Unit,
                     style = MaterialTheme.typography.bodyLarge.copy(fontSize = scale.row),
                 )
             },
+            // 차 화면은 팔을 뻗어 누르므로 대화 상자 버튼도 크게 둔다
             confirmButton = {
-                TextButton(
+                Button(
                     onClick = {
                         confirming = false
                         onUnlink()
                     },
-                    modifier = Modifier.heightIn(min = Dimens.MinTouchTarget),
+                    colors = ButtonDefaults.buttonColors(containerColor = ActionBlue, contentColor = Color.White),
+                    shape = RoundedCornerShape(20.dp),
+                    modifier = Modifier.heightIn(min = scale.buttonHeight).widthIn(min = DialogButtonMinWidth),
                 ) {
                     Text(stringResource(R.string.link_unlink_do), style = MaterialTheme.typography.labelLarge.copy(fontSize = scale.button))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { confirming = false }, modifier = Modifier.heightIn(min = Dimens.MinTouchTarget)) {
-                    Text(stringResource(R.string.link_cancel), style = MaterialTheme.typography.labelLarge.copy(fontSize = scale.button))
+                OutlinedButton(
+                    onClick = { confirming = false },
+                    border = BorderStroke(2.dp, MaterialTheme.colorScheme.outline),
+                    shape = RoundedCornerShape(20.dp),
+                    modifier = Modifier.heightIn(min = scale.buttonHeight).widthIn(min = DialogButtonMinWidth),
+                ) {
+                    Text(
+                        stringResource(R.string.link_cancel),
+                        style = MaterialTheme.typography.labelLarge.copy(fontSize = scale.button),
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
                 }
             },
         )

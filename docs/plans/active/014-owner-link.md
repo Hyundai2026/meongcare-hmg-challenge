@@ -411,12 +411,12 @@ web/src/ui/            ConsentScreen, LinkCarScreen(+ linkScreenReducer.ts), 안
     - 새 `ParkedContentLinkTest`: `` `연결 단계면 연결 화면이다`() ``, `` `증상을 고르는 중이면 연결보다 고르기가 먼저다`() ``, `` `안내 중에는 연결 화면을 보이지 않는다`() ``, `` `연결 단계여도 주행이면 주행 화면이다`() `` (`homeContentOf`와 함께)
   - 확인: `assembleDebug lintDebug`. `/verify` 일반 폰 Fake (P1). Pleos 에뮬레이터가 켜져 있으면 Fake 모드로 L4의 D/P도 본다.
 
-- [ ] 4. 보안 규칙 → `feat(firebase): 보호자 프로필과 차 연결 보안 규칙 추가`
+- [x] 4. 보안 규칙 → `feat(firebase): 보호자 프로필과 차 연결 보안 규칙 추가`
   - `firestore.rules` (설계 4절), `check-rules.mjs` R14~R24 (머리 주석·마지막 출력 R1~R24), `firebase/README.md` "보안 규칙 요약"·명령 표.
   - F1·F2·F3·F4를 규칙 점검으로 확인하고 결과를 진행 로그에 적는다. 안 되면 표의 "안 되면"대로 규칙·설계를 고친다.
   - 확인: **사용자 터미널의 에뮬레이터에서** `npm --prefix firebase run check-rules` → R1~R24 PASS (완료 기준 4). 규칙 파일을 고치면 에뮬레이터가 바로 다시 읽는다 (013 F4).
 
-- [ ] 5. 웹 도메인 (순수) → `feat(web): 연결 코드 입력과 보호자 서버 문서 규칙 추가`
+- [x] 5. 웹 도메인 (순수) → `feat(web): 연결 코드 입력과 보호자 서버 문서 규칙 추가`
   - `web/src/domain/owner/` (`linkCode.ts`, `ownerProfileDoc.ts`, `ownerNotice.ts`, `consent.ts`, `migration.ts`, `ownerAccount.ts` 인터페이스)
   - `petProfileRepository.ts`의 실패 이유에 `'network'`, `messages.ts` 문구, `profileScreenReducer.ts`: 읽기가 `'network'`면 새로 등록을 막는다.
   - 새 Vitest:
@@ -426,7 +426,7 @@ web/src/ui/            ConsentScreen, LinkCarScreen(+ linkScreenReducer.ts), 안
     - `migration.test.ts`: 브라우저만 있으면 올리고 지움, 서버에 이미 있으면 덮어쓰지 않음, 올리기 실패면 브라우저 그대로, 둘 다 없으면 할 일 없음
     - (`profileScreenReducer`의 `'network'` 새로 등록 막기는 새 파일 `profileScreenReducer.network.test.ts`)
 
-- [ ] 6. 웹 Firestore와 화면
+- [x] 6. 웹 Firestore와 화면
   - 6-1. → `feat(web): 보호자 프로필 Firestore 저장소 추가`
     - `web/src/data/firestoreOwnerStore.ts` (기억한 익명 계정 확인, 동의 → 익명 가입 + 동의 문서, 프로필·사진 batch 저장, 읽기(사진 합치기), 코드 읽기 → claim + 허가 batch(F1)), `container.ts` 동적 import(U8) + `emulatorHostFor`, `main.tsx` 비동기 시작.
     - 확인: `npm --prefix web run check`, W1·W2.
@@ -437,11 +437,11 @@ web/src/ui/            ConsentScreen, LinkCarScreen(+ linkScreenReducer.ts), 안
     - 새 `linkScreenReducer.test.ts`: 형식이 틀리면 보내지 않음, 보내는 중 두 번 눌러도 한 번, 성공·코드 없음·네트워크·프로필 없음 상태
   - 확인: 커밋마다 `npm --prefix web run check`. W3~W5 (사용자 에뮬레이터에 붙은 개발 서버, Playwright).
 
-- [ ] 7. 차: 서버 클라이언트 정리 → `refactor(di): 서버 클라이언트를 병원과 반려견이 같이 쓰게 정리`
+- [x] 7. 차: 서버 클라이언트 정리 → `refactor(di): 서버 클라이언트를 병원과 반려견이 같이 쓰게 정리`
   - 동작 그대로. 전송·익명 계정을 `serverConfig != null && mode != FAKE`일 때 한 번 만든다. 병원 쪽 구성표(`hospitalSourceKindOf`)와 결과는 그대로.
   - 확인: 기존 테스트 모두 통과, `HospitalPlan.kt` diff 없음.
 
-- [ ] 8. 차: 서버 연결 (REST)
+- [x] 8. 차: 서버 연결 (REST)
   - 8-1. → `feat(data): Firestore 반려견 프로필 읽기 추가`
     - `FirestoreJson.petProfileOf`, `FirestorePetProfileSource` (구독 중 60초마다, `refresh` 트리거, 403·404 구분은 F4)
     - 새 `FirestorePetProfileJsonTest`: `` `예시 프로필을 읽으면 샘플 보리와 같다`() `` (예시 JSON을 REST 형식으로 바꿔서), `` `형식 버전이 1이 아니면 읽지 않는다`() ``, `` `필수 필드가 없거나 타입이 틀리면 손상이다`() ``, `` `없는 날짜의 생년월일은 손상이다`() ``, `` `updatedAt이 UTC 형식이 아니면 손상이다`() ``, `` `빈 배열은 values 없이 와도 읽는다`() ``, `` `모르는 필드는 무시한다`() ``, `` `정수 doubleValue 형식 버전도 읽는다`() ``
@@ -451,7 +451,7 @@ web/src/ui/            ConsentScreen, LinkCarScreen(+ linkScreenReducer.ts), 안
     - 새 `FirestoreOwnerLinkTest`: `` `코드 문서는 서버 시각과 빈 보호자로 새로 만든다`() ``, `` `코드가 이미 있으면 새 코드로 다시 만들고 세 번까지 한다`() ``, `` `보호자가 claim하면 연결됨이고 코드 문서를 지운다`() ``, `` `claim 전이면 기다림이다`() ``, `` `연결을 끊으면 허가 문서를 지우고 연결 전이다`() ``, `` `새로 연결하면 이전 허가를 먼저 지운다`() ``, `` `토큰은 헤더에만 있고 URL에 없다`() ``, `` `로그에 코드와 uid가 없다`() ``
   - 확인: 서버 설정 없이 `assembleDebug assembleRelease`, 완료 기준 6의 Android Grep. P3.
 
-- [ ] 9. 처음부터 끝까지 확인 (`/verify` 포함) → **체크포인트 A**
+- [x] 9. 처음부터 끝까지 확인 (`/verify` 포함) → **체크포인트 A**
   - "확인 절차"의 L1~L12, P1~P3, W1~W5. O1·O4를 진행 로그에 적는다.
   - 고친 것이 있으면 `fix(...)` 커밋.
   - **여기까지면 11/15 시연 영상을 찍을 수 있다** (진행 로그에 적는다). 영상 순서 제안 (기획 담당에게 노트로 전달): 폰 크기 보호자 웹에서 콩이 등록(동의) → 차(정차) [보호자 웹과 연결] → 웹에 코드 입력 → 차 "콩이 보호자와 연결했어요" → 진료 카드에 콩이의 의료정보 → 병원 찾기·출발 → 병원 웹에 콩이 카드 → 주행 화면 → [카드 확인].
@@ -529,6 +529,23 @@ web/src/ui/            ConsentScreen, LinkCarScreen(+ linkScreenReducer.ts), 안
   - 프로필 다시 읽기: `LinkedPetProfileSource.refresh()`. 처음 화면이 보이는 동안(`repeatOnLifecycle(STARTED)`) 60초마다 + [진료 카드 만들기] 때. 구독이 없으면 5초 뒤 멈춘다 (`shareIn WhileSubscribed`).
   - Pleos 에뮬레이터 Fake 확인: 처음 화면 연결 줄 → 코드 화면("YK9 GCA", 10분 안에) → 주행: 주행 화면만, `EditText` 0, 클릭은 debug 패널뿐 → 정차: 같은 코드 → debug [가짜 보호자 코드 입력] → "보리 보호자와 연결했어요" → [확인] → "보호자 웹과 연결됨" + [연결 끊기] → 확인 대화 → [끊기] → 연결 전. 다크 모드 코드 화면 이상 없음. 오류 로그 없음.
   - 확인 중 고친 것: 샘플 안내가 "보호자 웹과는 아직 연결되지 않았어요"라 Fake 연결 뒤 "연결됨"과 어긋났다 → "보호자 웹에서 등록한 정보가 아니에요". 확인 대화 버튼이 작은 글자 버튼이었다 → 160dp × 카드 버튼 높이.
+- 2026-11-06: 단계 4~9 완료 (`427f82e`~`a0012b4`) → **체크포인트 A: 11/15 영상을 찍을 수 있다.** Android 883 → 911, 웹 371 → 407.
+  - 보안 규칙 R1~R24 + R19b 모두 PASS (사용자 터미널 에뮬레이터). F1 batch에서 `getAfter`로 claim을 본다: 된다. F2 같은 코드 다시 만들기: **409**. F3 `createdAt + duration.value(10, 'm')`: 된다 (11분 전 코드는 읽기·claim 403). F4 허가는 있고 프로필이 없으면 **404**, 허가가 없으면 403, 지운 코드 읽기 403.
+  - 바꾼 것: 같은 차를 허가가 남은 채 다시 연결하면 웹의 `set`이 update가 되어 거부됐다 → readers에 같은 조건의 `update` 허용 (R19b).
+  - 이름: 차 `FirestorePetProfileSource` → `FirestorePetProfileReader`(`LinkedProfileReader`). 웹 `ownerAccount.ts`에 `OwnerServer`(계정 + 저장소 + emulator). 보호자 웹 Firebase 앱 이름 `owner`.
+  - W1 서버 설정 없이 빌드: `verify_screens.py --all-widths` 26/26 (안내 문구만 browser-only로). W2 보호자 `main-*.js`에 Firebase 없음, `index.html` modulepreload에도 없음 (`firestoreOwnerStore`·Firebase는 별도 청크, 설정이 있을 때만 내려받음).
+  - 끝까지 (debug 시연 + PC Firebase 에뮬레이터 + 폰 크기 Chromium, 웹 개발 서버는 `.env.example`의 에뮬레이터 값):
+    - L1~L3 브라우저의 콩이 → 동의 → "옮겼어요", 브라우저 키 없음, 새로 고쳐도 서버의 콩이 + [차와 연결], 안내 "(시연용 로컬 서버)". 콘솔 오류 0, 가로 넘침 0.
+    - L5 웹에 `dpr-vfx` 입력 → "연결했어요…'콩이'" → 차 "콩이 보호자와 연결했어요"(웹 제출 후 약 2초, O1) → 코드 문서 404(지워짐) → 처음 화면 콩이, 샘플 안내 없음, "보호자 웹과 연결됨".
+    - L6 [진료 카드 만들기] 때 다시 읽음(로그) → 카드에 슬개골 탈구·닭고기·관절약 → 1위 병원 [출발] → 서버 환자 건 `card.pet` = 콩이·닭고기, 사진 없음.
+    - L7 웹에서 알레르기 "닭고기, 소고기" 저장 → 차 처음 화면에 들어올 때 다시 읽음 → 새 카드에 반영.
+    - L8 틀린 코드·쓴 코드·차에서 [닫기]로 지운 코드 → 모두 "코드를 찾지 못했거나 만료됐어요…". W4 `?code=k7p-3qx` → `K7P3QX`.
+    - L9 차 [연결 끊기] → 확인 → 보리 + 샘플 안내, 서버 readers·linkCodes 비었음.
+    - L11 강제 종료 후 다시 켜면 연결 전(보리). L12 우리 앱 pid 로그 123줄에 반려견 이름·의료정보·uid·토큰·코드 0건, 오류·`SecurityException` 0.
+    - 확인 중 고친 것: [새로 만들기]는 프로필을 다시 읽지 않았다 → [진료 카드 만들기]와 같이 다시 읽는다.
+  - **확인하지 못한 것**: L10 서버에 닿지 못할 때 "불러오지 못했어요"(보리 아님) — `adb reverse`를 지워도 열린 keep-alive 연결로 계속 닿았다 (013과 같음). 단위 테스트(`LinkedPetProfileSourceTest`, `FirestorePetProfileReaderTest`)로만. L4 시연 모드에서 기어 D(Virtual Console)는 보지 않았다 (Fake 모드에서 D/P 확인함). P1~P3 일반 폰 에뮬레이터는 꺼져 있었다. release APK 설치 확인은 안 했다 (`assembleRelease` 성공).
+  - 알려진 한계: 앱을 다시 켜면 차의 익명 uid가 바뀌어 이전 허가 문서가 서버에 남는다 (차는 읽지 못한다). 웹 "연결된 차"(필수 B)에서 지울 수 있게 한다.
+  - 다음: 필수 B(10·11)는 새 계획(015)으로 넘기고 12(tester) → 13(문서) → 14(노트) → `/ship` (범위 절의 규칙대로. 영상 촬영 준비를 먼저 dev에 올린다).
 
 ## 결정 / 배운 점
 

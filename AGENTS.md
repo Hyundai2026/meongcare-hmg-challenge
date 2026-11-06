@@ -13,7 +13,7 @@
   - 11/23 서류 결과
   - **12/03~04 PT** (동작하는 앱 필수)
 - 웹(`web/`)이 함께 있다.
-  - 보호자 웹(`/`): 보호자가 폰 브라우저에서 반려견 의료정보를 등록한다. 차 앱과는 아직 연결되지 않았다.
+  - 보호자 웹(`/`): 보호자가 폰 브라우저에서 반려견 의료정보를 등록한다. 서버 저장에 동의하면 차 화면의 연결 코드로 차와 연결된다 (014). 서버 설정이 없으면 브라우저에만 저장한다.
   - 병원 웹(`/hospital/`, 시연용, 012): 제휴 병원이 대기 시간을 알리고, 차에서 보낸 진료 카드를 실시간으로 본다. Firebase로 차 앱과 연결된다.
 - 필수 제출물은 기획서 DOCX 하나다. 코드, APK, 시연 영상은 가산점이다. 우선순위를 판단할 때 이걸 기준으로 삼는다.
 - 요구사항, 심사 기준, 제출 체크리스트: [docs/contest/requirements.md](docs/contest/requirements.md)
@@ -30,7 +30,7 @@
 - Vehicle SDK: `ai.pleos.playground:Vehicle:2.3.2`, NaviHelper SDK: `ai.pleos.playground:NaviHelper:3.0.5` (권한 `NAVI_ROUTE_SEARCH`, `NAVI_ROUTE`)
 - 그 밖의 SDK 좌표, API, 권한: [docs/pleos/sdk-notes.md](docs/pleos/sdk-notes.md)
 - 에뮬레이터: [docs/pleos/emulator-setup.md](docs/pleos/emulator-setup.md). GPU 필수이고 **Cold boot로만** 켠다.
-- 보호자 웹: React + Vite + TypeScript, 테스트는 Vitest. Node 22.12 이상. 버전은 `web/package.json`에 정확히 고정한다 (`^`, `~` 없음). 보호자 웹 저장은 지금 브라우저 localStorage. 병원 웹은 Firebase JS SDK(설정 없으면 메모리). 자세히: [docs/architecture.md](docs/architecture.md) "보호자 웹", "병원 웹"
+- 보호자 웹: React + Vite + TypeScript, 테스트는 Vitest. Node 22.12 이상. 버전은 `web/package.json`에 정확히 고정한다 (`^`, `~` 없음). 보호자 웹 저장은 동의 전 브라우저 localStorage, 동의 뒤 Firestore(설정이 있을 때만 동적 import). 병원 웹은 Firebase JS SDK(설정 없으면 메모리). 자세히: [docs/architecture.md](docs/architecture.md) "보호자 웹", "병원 웹"
 - Firebase 로컬 서버: `firebase/` (에뮬레이터, 보안 규칙, 시드). `firebase-tools` 버전은 `firebase/package.json`에 고정. Java 21에서 동작 확인. 사용법: [firebase/README.md](firebase/README.md)
 
 ## 명령어
@@ -69,10 +69,11 @@ Windows에서는 `gradlew.bat`을 쓴다. Bash에서는 `./gradlew`.
   - 차량 기능 래퍼는 `VehicleConnection.vehicle`을 쓴다. `Vehicle`을 직접 만들지 않는다.
 - `secrets.properties`가 없어도 빌드는 되게 한다 (빈 값을 기본값으로). 그래야 CI와 새 팀원 PC에서 깨지지 않는다.
 - 보호자 웹 화면은 `PetProfileRepository`(인터페이스)만 쓴다. localStorage는 `web/src/data/`와 `web/src/container.ts`에서만 쓴다.
-- 병원 웹 화면은 `HospitalDesk`(인터페이스)만 쓴다. `firebase` 패키지는 `web/src/data/firestoreHospitalDesk.ts`에서만 import한다.
+- 보호자 웹의 서버 모드 화면은 `OwnerServer`/`OwnerAccount`(인터페이스)만 쓴다.
+- 병원 웹 화면은 `HospitalDesk`(인터페이스)만 쓴다. `firebase` 패키지는 `web/src/data/firestore*.ts`(병원 `firestoreHospitalDesk.ts`, 보호자 `firestoreOwnerStore.ts`)에서만 import한다.
 - 차 앱의 서버 통신은 `data/server/`에서만 한다 (`java.net`은 `UrlConnectionHttpTransport.kt` 하나). 서버 설정이 없어도 앱은 내장 시연 병원으로 끝까지 돈다.
 - 병원·환자 건 형식의 기준은 [docs/data/hospital-status.md](docs/data/hospital-status.md), [docs/data/emergency-case.md](docs/data/emergency-case.md)다.
-- 반려견 프로필 형식의 기준은 [docs/data/pet-profile.md](docs/data/pet-profile.md)다. 웹과 차 앱이 같이 따른다.
+- 반려견 프로필 형식의 기준은 [docs/data/pet-profile.md](docs/data/pet-profile.md)다. 웹과 차 앱이 같이 따른다. 서버 저장과 차 연결은 [docs/data/owner-link.md](docs/data/owner-link.md)다.
 
 ## 규칙
 
@@ -106,7 +107,7 @@ Windows에서는 `gradlew.bat`을 쓴다. Bash에서는 `./gradlew`.
 | `apk/` | 제출용 release APK (`<팀명>_<앱이름>_release.apk`) |
 | `web/` | 보호자 웹(`/`)과 병원 웹(`/hospital/`) (React). 실행 방법: [web/README.md](web/README.md) |
 | `firebase/` | Firebase 에뮬레이터 설정, Firestore 보안 규칙, 시드·규칙 점검 스크립트 |
-| `docs/data/` | 웹·차 앱·서버가 같이 따르는 데이터 형식 (반려견 프로필, 제휴 병원 상태, 환자 건) |
+| `docs/data/` | 웹·차 앱·서버가 같이 따르는 데이터 형식 (반려견 프로필, 보호자 연결, 제휴 병원 상태, 환자 건) |
 | `docs/contest/` | 대회 요구사항 |
 | `docs/pleos/` | Pleos SDK와 에뮬레이터에 대해 검증된 사실 |
 | `docs/product/` | 기획 (문제, 차량특화성, 사업성). 기획서 DOCX의 원천 |

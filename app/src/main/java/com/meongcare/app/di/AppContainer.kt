@@ -20,7 +20,14 @@ import com.meongcare.app.data.hospital.SampleHospitals
 import com.meongcare.app.data.hospital.TimeoutHospitalBoardSource
 import com.meongcare.app.data.location.FakeCurrentLocationSource
 import com.meongcare.app.data.location.NaviCurrentLocationSource
+import com.meongcare.app.data.link.FakeOwnerLink
+import com.meongcare.app.data.link.NoOwnerLink
 import com.meongcare.app.data.pet.FakePetProfileSource
+import com.meongcare.app.data.pet.LinkedPetProfileSource
+import com.meongcare.app.data.pet.LinkedProfileRead
+import com.meongcare.app.data.pet.LinkedProfileReader
+import com.meongcare.app.data.pet.SamplePetProfiles
+import com.meongcare.app.domain.link.OwnerLinkService
 import com.meongcare.app.data.server.AnonymousAuth
 import com.meongcare.app.data.server.FirestoreCaseSender
 import com.meongcare.app.data.server.FirestoreHospitalBoardSource
@@ -46,7 +53,12 @@ import com.meongcare.app.ui.card.symptomLabelRes
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import java.security.SecureRandom
+import kotlin.random.asKotlinRandom
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 
@@ -172,14 +184,47 @@ class AppContainer(context: Context, val dataMode: DataMode) {
     private fun caseSenderFor(candidate: HospitalCandidate): CaseSender =
         server?.second?.takeIf { candidate.sendsCardToServer } ?: fakeCaseSender
 
-    /**
-     * 반려견 프로필. 서버(보호자 웹 연결)가 생기기 전까지 **모든 데이터 모드에서 Fake("보리")**다.
-     * 서버 구현이 생기면 [sourcePlanOf]에 칸을 더한다 (docs/plans 009 "설계 결정 3").
-     */
-    val petProfileSource: PetProfileSource = FakePetProfileSource()
+    /** 반려견 프로필과 보호자 웹 연결 구성 (014, [petPlanOf]의 표) */
+    val petPlan: PetPlan = petPlanOf(dataMode, hasServer = serverConfig != null)
 
-    /** 반려견 정보가 시연용 샘플인지. 화면에 그 사실을 알린다 (출품 유의사항). 지금은 Fake뿐이라 항상 true. */
-    val isPetProfileSample: Boolean = true
+    /** debug 패널 [가짜 보호자 코드 입력]. Fake 연결일 때만 있다 */
+    val fakeOwnerLink: FakeOwnerLink? =
+        if (petPlan.link == LinkKind.FAKE) FakeOwnerLink(random = SecureRandom().asKotlinRandom()) else null
+
+    /** 보호자 웹 연결 (014). 연결 코드는 `SecureRandom`으로 만든다 */
+    val ownerLink: OwnerLinkService = when (petPlan.link) {
+        LinkKind.FAKE -> fakeOwnerLink ?: NoOwnerLink
+        // 서버 연결은 계획 014 단계 8에서 끼운다
+        LinkKind.SERVER, LinkKind.NONE -> NoOwnerLink
+    }
+
+    private val linkedProfileReader: LinkedProfileReader = when (petPlan.link) {
+        // Fake 연결은 연결해도 샘플 보리다 (화면에 시연용이라고 알린다)
+        LinkKind.FAKE -> LinkedProfileReader { LinkedProfileRead.Loaded(SamplePetProfiles.bori) }
+        LinkKind.SERVER, LinkKind.NONE -> LinkedProfileReader { LinkedProfileRead.Unavailable }
+    }
+
+    private val linkedPetProfileSource = LinkedPetProfileSource(
+        scope = applicationScope,
+        link = ownerLink,
+        sample = FakePetProfileSource(),
+        reader = linkedProfileReader,
+        sampleBeforeLink = petPlan.sampleBeforeLink,
+    )
+
+    /**
+     * 반려견 프로필 (014). 연결 전(또는 연결 없음)에는 샘플 "보리"(Real은 등록 안 됨), 서버 연결 뒤에는 보호자가 등록한 프로필이다.
+     * 연결된 뒤 읽지 못하면 샘플로 대신하지 않는다 ([LinkedPetProfileSource]).
+     */
+    val petProfileSource: PetProfileSource = linkedPetProfileSource
+
+    /** 연결된 반려견 정보를 다시 읽는다 ([진료 카드 만들기], 처음 화면이 보이는 동안 1분마다). 연결 전이면 아무 일도 없다 */
+    fun refreshPetProfile() = linkedPetProfileSource.refresh()
+
+    /** 반려견 정보가 시연용 샘플인지. 화면에 그 사실을 알린다 (출품 유의사항). 서버 연결로 받은 정보만 샘플이 아니다 */
+    val petProfileIsSample: StateFlow<Boolean> = ownerLink.state
+        .map { petProfileIsSampleOf(petPlan, it) }
+        .stateIn(applicationScope, SharingStarted.Eagerly, petProfileIsSampleOf(petPlan, ownerLink.state.value))
 
     /** 고른 증상과 진료 카드. Fake 길안내와 같은 프로세스 수명이라 안내 시작부터 도착까지 남는다. */
     val medicalCardSession = MedicalCardSession()

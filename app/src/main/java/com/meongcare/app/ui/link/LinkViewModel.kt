@@ -86,6 +86,11 @@ class LinkViewModel(
         create()
     }
 
+    /** 처음 화면의 [연결 끊기] → 확인 [끊기] */
+    fun unlink() {
+        viewModelScope.launch { link.unlink() }
+    }
+
     /** [닫기]·[확인]·시스템 뒤로: 쓰지 않은 코드를 지우고 닫는다 */
     fun close() {
         createJob?.cancel()

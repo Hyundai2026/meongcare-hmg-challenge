@@ -593,13 +593,13 @@ export interface HospitalDesk {
     - 새 `AnonymousAuthRefreshTest`: `` `만료 5분 전이 되기 1ms 전에는 갱신하지 않는다`() ``, `` `만료 5분 전이 되면 갱신 토큰으로 새 토큰을 받는다`() ``, `` `갱신해도 uid는 그대로다`() ``, `` `갱신 응답의 uid가 다르면 실패로 본다`() ``, `` `갱신에 실패해도 만료 전이면 지금 토큰을 쓴다`() ``, `` `만료 뒤 갱신에 실패하면 이번에는 null이고 다음에 다시 갱신한다`() ``, `` `갱신이 거부되면 새로 가입한다`() ``, `` `만료 시각을 모르면 갱신하지 않는다`() ``, `` `동시에 불러도 갱신은 한 번이다`() ``, `` `갱신 토큰은 몸통에만 있고 URL에 없다`() ``, `` `로그에 토큰과 uid가 없다`() ``.
   - 확인: 기존 `FirestoreClients*Test` 그대로 통과. F1을 에뮬레이터에 Node 한 줄로 해 본 결과를 진행 로그에. 기기에서는 S1~S5를 짧게 다시 본다 (1시간 만료는 기다리지 않는다. "확인하지 못한 것"에 적는다).
 
-- [ ] 14. tester → `test: …` (tester가 쓴 테스트를 영역별로 커밋)
+- [x] 14. tester → `test: …` (tester가 쓴 테스트를 영역별로 커밋)
   - 넘길 것: 이 계획 파일 경로와 대상만. 대상: `NaviRouteOnlyGuidanceSource`(닫기 규칙), `tripTimingOf`, `HospitalTrip`(확인 읽기·시작값), `FirestoreJson.ackOf`·`FirestoreCaseSender.readAck`, `ServerConfig.refreshUrl`, `AnonymousAuth`(갱신), `tripPanelOf`, 웹 `caseAck.ts`·`serverInfo.ts`·메모리 저장소 `acknowledgeCase`.
   - 대상 아님: `PleosNaviClient`, Compose 화면, `AppContainer`, `firestoreHospitalDesk.ts`(SDK), `preflight.mjs`.
   - 계약 기준: 설계 결정 2·3·4·5·7·8·9의 표와 경계 (정확히 5분 전, 간격 1ms 전, 읽는 중 도착·취소, 같은 실패 반복, 자정 넘는 도착 예정).
   - 버그 보고는 메인이 `fix:`로 고친다. UI가 바뀌면 `/verify` 다시.
 
-- [ ] 15. 문서 갱신
+- [x] 15. 문서 갱신
   - 15-1. → `docs(architecture): 카드 확인과 경로 남기기와 안내 영역 반영`
     - "서비스 기능 스택": 진료 카드 전송 행(갱신 간격 시연 4초·실제 60초, 병원 카드 확인), 서버 행(익명 토큰 미리 갱신).
     - "데이터 모드" 차량 내비 표: 시연 도착 시 "내비 경로도 취소" → **"경로를 남긴다 (013 U2)"**, `[안내 취소]`·Real 취소는 내비가 앞에 나온다는 U3 한 줄.
@@ -609,7 +609,7 @@ export interface HospitalDesk {
     - `AGENTS.md` 명령어 표에 `npm --prefix firebase run preflight` 한 줄. `README.md` 시연 흐름(카드 확인, 도착 때 앱이 남음, [안내 취소] 뒤 GNB로 돌아오기). `web/README.md`: 에뮬레이터 호스트는 `127.0.0.1`(localhost 아님), 화면 위 서버 줄 보는 법. `firebase/README.md`: preflight, R1~R13.
   - 확인: 문서만 바뀐 커밋. 링크가 맞는지 본다.
 
-- [ ] 16. 개발 노트 작성 (`docs/notes/`)
+- [x] 16. 개발 노트 작성 (`docs/notes/`)
   - `docs/notes/xxj15/YYYY-MM-DD-smooth-trip.md` (형식: docs/notes/README.md). 넣을 것:
     - 결정과 이유: U1~U4, 기존 테스트를 지키려고 자리를 바꾼 것(설계 결정 1), 간격 값, 토큰 갱신 규칙, preflight를 만든 이유(관찰 1)
     - 사용한 Pleos API·권한: 새 권한 없음, `cancelRoute`를 덜 부르게 된 것, U3 관찰
@@ -657,6 +657,12 @@ export interface HospitalDesk {
   - 확인 중 더한 것: PF6 (응급 접수 + 30분 안 대기 정보가 있는 병원). 시드 뒤 30분이 지나 차 목록에 1위가 없어지는 것을 실제로 겪었다. PT 직전에 잡으려고 더했다. adb가 잠깐 바빠 PF5가 한 번 거짓 실패해서 adb 확인을 한 번 더 시도하게 했다.
   - **확인하지 못한 것**: S8(에뮬레이터 끄고 켜기), S9(서버 끊김 → 시연 병원 대체: adb reverse를 지워도 이미 열린 keep-alive 연결로 계속 닿아 재현하지 못함. 내장 병원은 확인을 읽지 않는 것은 단위 테스트로 확인), 좁은 세로 배치(일반 폰 에뮬레이터가 꺼져 있음, 미리보기 코드만), PF4의 "다른 에뮬레이터가 있을 때" 실패 경로(에이전트가 에뮬레이터를 띄우지 않는다), 토큰 1시간 만료 실제 경과.
   - 환경: 사용자 병원 웹 개발 서버(5173)는 에뮬레이터 주소가 `localhost`라서 이번 사고(IPv6 쪽에 붙음)의 원인이었다. 지금은 화면에 경고가 뜬다. 사용자에게 `127.0.0.1`로 바꾸라고 알린다 (에이전트는 그 파일을 읽지 않는다).
+
+- 2026-11-06 (마무리, 메인): 단계 14~16 끝.
+  - tester: 경계 테스트 Android 68, 웹 31. 버그 없음. 참고 사항 중 `ackOf`가 `fields`가 객체가 아닌 응답을 "아직"으로 보던 것을 형식 오류로 고쳤다 (`fix(data)`). 최종 Android 838, 웹 368 통과.
+  - 문서: architecture, emergency-case, sdk-notes·emulator-setup, AGENTS 명령어 표, README, web/README, firebase/README.
+  - 노트: docs/notes/xxj15/2026-11-06-smooth-trip.md
+  - 있으면 좋음 A~D는 하지 않았다 (노트 "남은 일").
 
 ## 결정 / 배운 점
 

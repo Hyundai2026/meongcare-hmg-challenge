@@ -71,7 +71,7 @@
 - 서버 없이: `npm --prefix web run dev` → `http://localhost:5173/hospital/`. 이 브라우저에서만 동작하고 예시 환자 1건이 보인다.
 - 차 앱과 연결 (PC의 Firebase 에뮬레이터, Java 21 필요): [web/README.md](web/README.md) "로컬 에뮬레이터에 붙여 보기"와 [firebase/README.md](firebase/README.md). debug 빌드에서만 된다. release APK는 서버 없이 시연용 병원으로 돈다.
   - 차가 [출발]하면 진료 카드가 "새 환자"로 강조되어 뜨고, 남은 시간이 몇 초마다 바뀐다. 병원이 **[카드 확인]**을 누르면 차 화면(주행 중 포함)에 "병원이 카드를 확인했어요"가 뜬다.
-  - 시연 전에 `npm --prefix firebase run preflight`로 서버·adb reverse·대기 정보를 점검한다. 병원 웹 위의 "서버:" 줄이 `127.0.0.1:8080 … 실시간 연결됨`인지 본다.
+  - 시연 직전에 `npm --prefix firebase run preflight -- --fix`로 서버·adb reverse·대기 정보를 점검하고, 고칠 수 있는 것은 고친다. 병원 웹 위의 "서버:" 줄이 `127.0.0.1:8080 … 실시간 연결됨`인지 본다.
 
 ## APK
 

@@ -195,6 +195,8 @@ class AppContainer(context: Context, val dataMode: DataMode) {
         senderFor = ::caseSenderFor,
         scope = applicationScope,
         log = { Log.i(TRIP_LOG_TAG, it) },
+        // 시연 길안내는 2초에 1분씩 줄어서 도착 예정을 몇 초마다 보낸다 (013, [tripTimingOf])
+        etaInterval = tripTimingOf(sourcePlan.isGuidanceSimulated).etaInterval,
     )
 
     /** Pleos Vehicle 연결. Real 구성에서만 만든다 (Fake에서는 Vehicle을 만들지 않는다). */

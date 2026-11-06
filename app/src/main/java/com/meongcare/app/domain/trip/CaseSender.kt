@@ -27,4 +27,28 @@ interface CaseSender {
 
     /** 도착·취소를 알린다. 성공하면 true */
     suspend fun finish(ref: CaseRef, status: CaseStatus, at: Instant): Boolean
+
+    /**
+     * 이 건의 병원 확인(docs/data/emergency-case.md `acknowledgedAt`)을 한 번 읽는다 (013 U1). 던지지 않는다.
+     * 기본 구현은 [AckRead.Unsupported]다 (확인을 읽지 않는 전송: 내장 시연 병원).
+     */
+    suspend fun readAck(ref: CaseRef): AckRead = AckRead.Unsupported
+}
+
+/** 병원 확인을 한 번 읽은 결과 (013 U1). */
+sealed interface AckRead {
+    /** 이 전송 방식은 확인을 읽지 않는다 → 읽기를 멈춘다. 로그 없음 */
+    data object Unsupported : AckRead
+
+    /** 아직 확인 전 */
+    data object Pending : AckRead
+
+    /** 병원이 확인했다. [at]은 서버 시각 */
+    data class Acknowledged(val at: Instant) : AckRead
+
+    /** 건이 없거나 읽을 수 없다 (병원 [완료]로 지움, 다른 계정) → 읽기를 멈춘다 */
+    data object Gone : AckRead
+
+    /** 이번에는 읽지 못했다 (네트워크, 401·5xx, 로그인 실패, 형식 오류). [reason]은 로그용 짧은 이유 (개인정보 없음) */
+    data class Failed(val reason: String) : AckRead
 }

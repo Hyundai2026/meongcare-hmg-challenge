@@ -46,15 +46,22 @@ sealed interface CardDelivery {
 
     data object Sending : CardDelivery
 
-    /** 보냈다. [toServer]가 false면 시연용(내장 병원)이라 실제로는 보내지 않았다 */
-    data class Sent(val toServer: Boolean) : CardDelivery
+    /**
+     * 보냈다. [toServer]가 false면 시연용(내장 병원)이라 실제로는 보내지 않았다.
+     * [acknowledgedAt]은 병원이 [카드 확인]을 누른 시각(서버 시각). 아직이거나 확인을 읽지 않는 병원이면 null (013 U1)
+     */
+    data class Sent(val toServer: Boolean, val acknowledgedAt: Instant? = null) : CardDelivery
 
     /** 보내지 못했다. [HospitalTrip.resend]로 다시 보낸다 */
     data object Failed : CardDelivery
 }
 
-/** 고른 병원으로 가는 중인 상태. */
-data class TripState(val candidate: HospitalCandidate, val delivery: CardDelivery)
+/**
+ * 고른 병원으로 가는 중인 상태.
+ * @param startMinutes 진행 막대의 시작: 이번 안내에서 본 가장 큰 남은 분 (013). 아직 모르면 null.
+ *   목록의 이동 어림은 길안내 남은 시간이 아니라서 쓰지 않는다.
+ */
+data class TripState(val candidate: HospitalCandidate, val delivery: CardDelivery, val startMinutes: Int? = null)
 
 /**
  * 병원을 고르고 출발한 뒤의 일을 맡는다 (계획 012 "설계 결정 8"의 4·7).
@@ -152,7 +159,7 @@ class HospitalTrip(
             launch { deliver(state.candidate, it, choice.travel?.toCaseMinutes(), phase) }
         }
 
-        val terminal = trackPhase(phase)
+        val terminal = trackPhase(phase, state.candidate)
         if (terminal == Phase.Cancelled) {
             // 보낸 건(또는 보내는 중인 건)이 있으면 "취소"를 보낼 시간을 준다. 실패해서 기다리는 중이면 바로 멈춘다.
             if (delivery != null) {
@@ -166,14 +173,19 @@ class HospitalTrip(
         }
     }
 
-    /** 길안내 상태를 따라 [phase]를 바꾸고, 도착·취소가 되면 그 값을 돌려준다. */
-    private suspend fun trackPhase(phase: MutableStateFlow<Phase>): Phase {
+    /**
+     * 길안내 상태를 따라 [phase]를 바꾸고, 도착·취소가 되면 그 값을 돌려준다.
+     * 남은 분을 알게 되면 진행 막대의 시작값([TripState.startMinutes])을 올린다 (013).
+     */
+    private suspend fun trackPhase(phase: MutableStateFlow<Phase>, candidate: HospitalCandidate): Phase {
         var sawGuiding = false
         guidance.state.first { state ->
             when (state) {
                 is GuidanceState.Guiding -> {
                     sawGuiding = true
-                    phase.value = Phase.EnRoute(state.remainingTime?.toCaseMinutes())
+                    val minutes = state.remainingTime?.toCaseMinutes()
+                    phase.value = Phase.EnRoute(minutes)
+                    minutes?.let { raiseStart(candidate, it) }
                 }
                 is GuidanceState.Arrived -> phase.value = Phase.Arrived
                 // 출발 전의 "안내 없음"은 무시한다. 안내를 본 뒤의 "안내 없음"만 취소다.
@@ -256,6 +268,15 @@ class HospitalTrip(
 
     private fun setDelivery(candidate: HospitalCandidate, delivery: CardDelivery) {
         _trip.update { if (it?.candidate == candidate) it.copy(delivery = delivery) else it }
+    }
+
+    /** 진행 막대의 시작값: 처음 알게 된 남은 분, 그보다 커지면(재탐색 등) 큰 값 */
+    private fun raiseStart(candidate: HospitalCandidate, minutes: Int) {
+        _trip.update { current ->
+            if (current?.candidate != candidate) return@update current
+            val start = current.startMinutes
+            if (start == null || minutes > start) current.copy(startMinutes = minutes) else current
+        }
     }
 
     private sealed interface Phase {

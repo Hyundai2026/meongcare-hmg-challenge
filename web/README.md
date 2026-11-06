@@ -1,4 +1,11 @@
-# 보호자 웹
+# 웹: 보호자 웹(/)과 병원 웹(/hospital/)
+
+두 페이지가 한 프로젝트에 있다 (Vite 다중 페이지). 라우터는 없다.
+
+- **보호자 웹** `/`: 아래 설명
+- **병원 웹** `/hospital/` (시연용, 012): 아래 "병원 웹" 절
+
+## 보호자 웹
 
 보호자가 폰 브라우저에서 반려견 프로필과 의료정보(주요 질환, 알레르기, 복용 약)를 미리 등록하는 웹이다. 차 앱의 진료 카드가 이 정보를 쓸 예정이다.
 
@@ -19,6 +26,28 @@
 | 빌드 (타입 검사 포함) | `npm --prefix web run build` |
 
 PC 브라우저에서 폰 크기로 보려면 개발자 도구(F12)의 기기 모드(Ctrl+Shift+M)를 켠다.
+
+## 병원 웹 (/hospital/, 012)
+
+제휴 병원 직원이 예상 대기 시간·혼잡도·응급 접수를 알리고, 차에서 보낸 진료 카드와 도착 예정을 실시간으로 보는 **시연용** 화면이다.
+구조: [docs/architecture.md](../docs/architecture.md) "병원 웹". 형식: [docs/data/hospital-status.md](../docs/data/hospital-status.md), [docs/data/emergency-case.md](../docs/data/emergency-case.md)
+
+| 모드 | 언제 | 어떻게 |
+|---|---|---|
+| 메모리 | `web/.env.local`이 없을 때 (기본) | 서버 없이 이 브라우저에서만. 시연 병원 5곳 + 병원마다 예시 환자 1건. 차 앱의 카드는 들어오지 않는다. 새로 고치면 처음으로 돌아간다 |
+| Firebase | `web/.env.local`에 `VITE_FIREBASE_*`가 있을 때 | 익명 로그인 → 링크의 병원 코드로 직원 등록 → 상태와 환자 건을 실시간으로 |
+
+### 로컬 에뮬레이터에 붙여 보기 (차 앱과 연결)
+
+1. 터미널 1: `npm --prefix firebase run emulators` (켜 둔다. [firebase/README.md](../firebase/README.md))
+2. 터미널 2: `npm --prefix firebase run seed -- --reset` → 병원별 링크가 나온다
+3. `web/.env.example`을 `web/.env.local`로 복사한다 (Windows: `copy web.env.example web.env.local`). 처음 세 줄이 에뮬레이터 값이다.
+4. `npm --prefix web run dev` → http://localhost:5173/hospital/?h=demo-fast&code=fast-1234
+5. 차 앱 debug 빌드를 시연 모드로 두고 `secrets.properties`에 에뮬레이터 값을 넣는다 (`secrets.properties.example`). [출발]하면 카드가 이 화면에 뜬다.
+
+- 코드가 없거나 틀리면 "병원용 링크(코드 포함)로 열어 주세요"가 나온다. 한 번 등록된 브라우저는 그 병원을 코드 없이 다시 열 수 있다.
+- `VITE_`로 시작하는 값은 빌드 결과에 그대로 들어가 공개된다. `.env.local`은 커밋하지 않는다.
+- **`.env.local`이 있으면 `build`·`preview`도 Firebase 모드가 된다.** 아래 화면 확인 스크립트(보호자 웹)에는 영향이 없지만, 병원 웹을 메모리 모드로 보려면 `.env.local`을 잠시 치운다.
 
 ## 폰으로 열어 보기
 

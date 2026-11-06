@@ -636,3 +636,65 @@ select {
   height: 16px;
   margin-top: 2px;
 }
+
+/* 서버 저장·차 연결 (계획 014) */
+.server-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.server-card__title {
+  margin: 0;
+  font-size: 18px;
+  color: var(--color-navy);
+}
+
+.server-card__body {
+  margin: 0;
+  font-size: 15px;
+  color: var(--color-text-sub);
+}
+
+.consent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.consent__row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.consent__label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-navy);
+}
+
+.consent__text {
+  margin: 0;
+  font-size: 15px;
+  color: var(--color-text);
+}
+
+.banner--success {
+  background: #e7f6ec;
+  color: #1b6b35;
+}
+
+.banner--info {
+  background: var(--color-blue-soft);
+  color: var(--color-navy);
+}
+
+/* 연결 코드 입력칸: 차 화면처럼 크게, 글자 간격을 둔다 */
+.input--code {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}

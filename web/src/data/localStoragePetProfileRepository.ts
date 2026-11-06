@@ -42,3 +42,16 @@ function saveFailureOf(error: unknown): SaveFailure {
   if (error instanceof DOMException) return 'unavailable'
   return 'unknown'
 }
+
+/**
+ * 브라우저의 프로필을 지운다 (계획 014: 동의한 뒤 서버로 옮기고 나서). 지웠으면(또는 없었으면) true.
+ * 사이트 데이터가 막혀 있으면 false (그 경우 애초에 읽지도 못했다).
+ */
+export function clearLocalPetProfile(storage: Pick<Storage, 'removeItem'>): boolean {
+  try {
+    storage.removeItem(PET_PROFILE_STORAGE_KEY)
+    return true
+  } catch {
+    return false
+  }
+}

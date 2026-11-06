@@ -458,7 +458,7 @@ web/src/ui/            ConsentScreen, LinkCarScreen(+ linkScreenReducer.ts), 안
 
 ### 필수 B — PT 전 (목표 11/13, 늦으면 11/15 뒤)
 
-- [ ] 10. 차를 다시 켜도 연결 유지 (U5 S2)
+- [ ] 10. 차를 다시 켜도 연결 유지 (U5 S2) → **015로 넘김**
   - 10-1. → `feat(data): 연결 자격 암호화 저장소 추가`
     - `data/link/CredentialStore`(인터페이스), `MemoryCredentialStore`, `LinkStoreCodec`(순수: 버전·필드·깨진 값은 없음으로), `KeystoreLinkStore`(AndroidKeyStore AES-GCM 키, 앱 전용 `noBackupFilesDir` 파일. 키·암호문·평문을 로그에 남기지 않는다)
     - 새 `LinkStoreCodecTest`: `` `저장한 자격을 그대로 읽는다`() ``, `` `모르는 버전은 없음으로 본다`() ``, `` `깨진 값은 없음으로 보고 던지지 않는다`() ``, `` `지우면 없음이다`() ``
@@ -468,7 +468,7 @@ web/src/ui/            ConsentScreen, LinkCarScreen(+ linkScreenReducer.ts), 안
   - 확인: L13, O2·O3. 완료 기준 6의 `javax.crypto` Grep.
   - `[선행: pleos-docs-researcher]` R2는 막지 않는다 (답이 오면 노트에 반영).
 
-- [ ] 11. 웹 연결 관리
+- [ ] 11. 웹 연결 관리 → **015로 넘김**
   - 11-1. → `feat(web): 연결된 차 목록과 연결 끊기 추가`
   - 11-2. → `feat(web): 내 정보 지우기 추가` (F6)
   - 새 Vitest: 지우는 순서(readers → 사진 → 프로필 → 동의 → 계정)와 중간 실패 때 남는 것을 순수 함수로 (`deleteOrder.test.ts`)
@@ -476,13 +476,13 @@ web/src/ui/            ConsentScreen, LinkCarScreen(+ linkScreenReducer.ts), 안
 
 ### 마무리
 
-- [ ] 12. tester → `test: …` (tester가 쓴 테스트를 영역별로 커밋)
+- [x] 12. tester → `test: …` (tester가 쓴 테스트를 영역별로 커밋)
   - 넘길 것: 이 계획 파일 경로와 대상만. 대상: `LinkCode`, `petSourceKindOf`, `FakeOwnerLink`, `LinkedPetProfileSource`, `LinkViewModel`, `LinkTexts`, `parkedContentOf`(연결 단계), `FirestoreJson.petProfileOf`, `FirestorePetProfileSource`, `FirestoreOwnerLink`, (B) `LinkStoreCodec`, `AnonymousAuth`(복원), 웹 `web/src/domain/owner/*`, `linkScreenReducer`, `profileScreenReducer`(`'network'`).
   - 대상 아님: Compose 화면, `AppContainer`, `KeystoreLinkStore`, `firestoreOwnerStore.ts`(SDK), 규칙 점검 스크립트.
   - 계약 기준: 설계 3·4·5·6절의 표와 경계 (만료 정확히 10분, 확인 간격 1ms 전, 연결 중 403·404, 코드 겹침 세 번, 정규화 경계, 옮기기 실패).
   - 버그 보고는 메인이 `fix:`로 고친다. UI가 바뀌면 `/verify` 다시.
 
-- [ ] 13. 문서 갱신
+- [x] 13. 문서 갱신
   - 13-1. → `docs(architecture): 보호자 연결 구조와 반려견 데이터 모드 반영`
     - "서비스 기능 스택": 의료 프로필 저장 행(U5 결과, Room+SQLCipher → Keystore 파일 제안이 승인되면), 보호자 등록 웹 행(서버 저장·연결 코드). "데이터 모드"에 `petSourceKindOf` 표, "반려견 프로필은 모든 모드에서 Fake" 문장 고치기. "보호자 웹" 결정 표(저장·의존성·번들), "저장과 개인정보", "Firebase로 옮길 때 할 일"에서 한 것 지우기·남은 것(진짜 프로젝트·개인정보처리방침 URL·코드 무차별 대입 한계). 패키지 구조(`domain/link`, `data/link`, `ui/link`, `di/PetPlan.kt`).
   - 13-2. → `docs: README와 AGENTS에 보호자 연결 반영`
@@ -490,7 +490,7 @@ web/src/ui/            ConsentScreen, LinkCarScreen(+ linkScreenReducer.ts), 안
     - `README.md` 21·52행 문단(연결 방법, 서버 없으면 보리), `web/README.md`(서버 모드·동의·연결 화면), `firebase/README.md`(R1~R24).
   - 확인: 문서만 바뀐 커밋. 링크가 맞는지 본다.
 
-- [ ] 14. 개발 노트 작성 (`docs/notes/`)
+- [x] 14. 개발 노트 작성 (`docs/notes/`)
   - `docs/notes/xxj15/YYYY-MM-DD-owner-link.md` (형식: docs/notes/README.md). 넣을 것:
     - 결정과 이유: U1~U9 답, TV 로그인 방식, 사진 분리, 보리로 대신하지 않는 이유, 기존 테스트를 지킨 자리(설계 1절)
     - 사용한 Pleos API·권한: 새 것 없음. 주행 중 연결 화면 금지 근거(QR 로그인 ⛔)
@@ -546,8 +546,16 @@ web/src/ui/            ConsentScreen, LinkCarScreen(+ linkScreenReducer.ts), 안
   - **확인하지 못한 것**: L10 서버에 닿지 못할 때 "불러오지 못했어요"(보리 아님) — `adb reverse`를 지워도 열린 keep-alive 연결로 계속 닿았다 (013과 같음). 단위 테스트(`LinkedPetProfileSourceTest`, `FirestorePetProfileReaderTest`)로만. L4 시연 모드에서 기어 D(Virtual Console)는 보지 않았다 (Fake 모드에서 D/P 확인함). P1~P3 일반 폰 에뮬레이터는 꺼져 있었다. release APK 설치 확인은 안 했다 (`assembleRelease` 성공).
   - 알려진 한계: 앱을 다시 켜면 차의 익명 uid가 바뀌어 이전 허가 문서가 서버에 남는다 (차는 읽지 못한다). 웹 "연결된 차"(필수 B)에서 지울 수 있게 한다.
   - 다음: 필수 B(10·11)는 새 계획(015)으로 넘기고 12(tester) → 13(문서) → 14(노트) → `/ship` (범위 절의 규칙대로. 영상 촬영 준비를 먼저 dev에 올린다).
+- 2026-11-06: 단계 12~14 완료. **필수 A로 마무리하고 필수 B(10·11)는 계획 015로 넘긴다** (범위 절의 규칙: 영상 촬영 준비를 먼저 dev에 올린다).
+  - tester: Android 103, 웹 52 경계 테스트. 버그 3개를 찾았고 고쳤다 (`c612641` 연결 직후 서버 응답 전 샘플 보리, `3dcc186` 차 시계가 뒤로 가면 남은 시간 10분 초과, `d198d81` 24시·60초 updatedAt). Android **1014**, 웹 **459** 모두 통과.
+  - 고친 뒤 에뮬레이터에서 다시 연결해 연결됨 화면·처음 화면이 콩이(샘플 안내 없음)인 것을 확인했다.
+  - 노트: docs/notes/xxj15/2026-11-06-owner-link.md
 
 ## 결정 / 배운 점
+
+- 공유 흐름(`shareIn replay=1`)의 마지막 값은 출처가 바뀌어도 새 구독자에게 먼저 간다. 연결 상태처럼 "지금 무엇이 맞는 값인가"가 바뀌는 곳에서는 값에 출처를 달고, 구독하는 쪽에서 지금 상태와 맞는지 다시 본다. 멈출 때 마지막 값을 잊게(`replayExpirationMillis = 0`) 한다.
+- Firestore 규칙은 `resource`를 보지 않는 get 조건이면 없는 문서에 404를 준다. 이것으로 "등록 안 됨(404)"과 "연결 끊김(403)"을 나눴다.
+- `adb reverse`를 지워도 열린 keep-alive 연결은 살아 있다. 네트워크 끊김은 기기에서 재현하기 어렵다 (013과 같음).
 
 ## 사용자 승인 요약 (한눈에. 자세한 것은 "확인 필요")
 

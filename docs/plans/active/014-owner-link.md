@@ -386,12 +386,12 @@ web/src/ui/            ConsentScreen, LinkCarScreen(+ linkScreenReducer.ts), 안
   - `[사용자 승인 필요]` U1~U3, U5~U9 답을 진행 로그에 적은 뒤 시작한다. 답에 따라 설계 절을 고친다.
   - `.\gradlew.bat testDebugUnitTest`와 `npm --prefix web test`의 통과 수를 진행 로그에 적는다 (완료 기준 3의 기준값).
 
-- [ ] 1. 형식 문서 → `docs(data): 보호자 프로필 서버 저장과 차 연결 형식 추가`
+- [x] 1. 형식 문서 → `docs(data): 보호자 프로필 서버 저장과 차 연결 형식 추가`
   - `docs/data/owner-link.md` (설계 3절: 경로·필드·쓰는 쪽·읽는 쪽·코드 형식·만료·한 번만·읽는 범위·알려진 한계), `docs/data/owner-link.example.json` (논리 형식: 동의·프로필(콩이 아님, 예시 보리 그대로 써서 pet-profile 예시와 대조)·사진 자리·허가·코드 claim 전/후).
   - `docs/data/pet-profile.md` "저장 위치" 표의 "서버 (나중)" 줄을 `petProfiles/{ownerUid}` + 사진 분리로 바꾼다. "지금 쓰는 곳" 문장도.
   - 확인: `npm --prefix web run check` (docs/data가 웹 검사 대상이다).
 
-- [ ] 2. 차: 연결 계약과 Fake (화면 없음)
+- [x] 2. 차: 연결 계약과 Fake (화면 없음)
   - 2-1. → `feat(domain): 보호자 연결 계약과 연결 코드 규칙 추가`
     - `domain/link/` (`OwnerLinkState`, `LinkCode`, `OwnerLinkService`, `LinkStart`·`LinkCheck` 결과 타입)
     - 새 `LinkCodeTest`: `` `코드는 헷갈리는 글자 없이 6자다`() ``, `` `같은 난수면 같은 코드다`() ``, `` `화면에는 세 글자씩 띄어 보인다`() ``, `` `형식이 틀린 코드는 받지 않는다`() ``, `` `남은 시간은 만든 시각에서 10분이고 0 아래로 내려가지 않는다`() ``, `` `남은 시간은 분 단위로 올림한다`() ``
@@ -401,7 +401,7 @@ web/src/ui/            ConsentScreen, LinkCarScreen(+ linkScreenReducer.ts), 안
     - 새 `FakeOwnerLinkTest`: `` `코드를 만들면 기다림이고 claim하면 연결됨이다`() ``, `` `연결을 끊으면 연결 전이다`() ``, `` `취소한 코드는 claim해도 연결되지 않는다`() ``
     - 새 `LinkedPetProfileSourceTest`: `` `연결 전에는 샘플을 낸다`() ``, `` `연결되면 서버 프로필을 낸다`() ``, `` `연결 뒤 서버를 못 읽으면 샘플이 아니라 읽지 못함이다`() ``, `` `보호자가 끊으면 연결 끊김을 한 번 알리고 샘플로 돌아간다`() ``, `` `보호자가 프로필을 지웠으면 등록 안 됨이다`() ``, `` `Real은 연결 전 등록 안 됨이다`() ``
 
-- [ ] 3. 차: 연결 화면 (Fake로 동작)
+- [x] 3. 차: 연결 화면 (Fake로 동작)
   - 3-1. → `feat(ui): 보호자 연결 코드 화면 추가`
     - `ui/link/` (`LinkViewModel`: 열면 코드 만들기, 구독 중에만 2초마다 확인, 만료·연결·떠남에 멈춤, 떠날 때 코드 지우기 / `LinkUiState` / `LinkTexts` / `LinkScreen` 넓은·좁은 미리보기 1682dp·840dp·411dp, 라이트·다크)
     - 새 `LinkViewModelTest` (가상 시간): `` `열면 코드를 만들어 보인다`() ``, `` `보이는 동안 2초마다 연결됐는지 묻는다`() ``, `` `화면이 사라지면 묻지 않는다`() ``, `` `10분이 지나면 만료를 보이고 묻지 않는다`() ``, `` `새 코드를 누르면 이전 코드를 지우고 새로 만든다`() ``, `` `연결되면 반려견 이름을 보이고 묻기를 멈춘다`() ``, `` `코드 만들기에 실패하면 다시 시도를 보인다`() ``, `` `닫으면 claim 안 된 코드를 지운다`() ``
@@ -524,6 +524,11 @@ web/src/ui/            ConsentScreen, LinkCarScreen(+ linkScreenReducer.ts), 안
   - U1 익명 Auth. U4 11/15는 코드만 (QR은 있으면 좋음 A).
   - U2·U3(a' 사진 보호자 전용 문서)·U5(S1 → 필수 B에서 S2, Room+SQLCipher → Keystore 파일 제안 승인)·U6·U7·U8(동적 import)·U9(a PC 크롬 폰 크기)는 "추천대로"로 한꺼번에 승인.
   - 기준값 (단계 0): Android `testDebugUnitTest` **838**개 통과, 웹 `npm --prefix web test` **371**개(35 파일) 통과.
+- 2026-11-06: 단계 1~3 완료 (`13316c8`~`d979a61`). Android 838 → 883.
+  - 이름을 바꾼 것: `petSourceKindOf` → `petPlanOf`(+ `petProfileIsSampleOf`), `LinkStep` → `linking: Boolean`, 연결 줄은 `LinkRow`/`linkRowOf`, 화면 연결 묶음은 `LinkExtras`. 서버 설정 없는 구성용 `NoOwnerLink`.
+  - 프로필 다시 읽기: `LinkedPetProfileSource.refresh()`. 처음 화면이 보이는 동안(`repeatOnLifecycle(STARTED)`) 60초마다 + [진료 카드 만들기] 때. 구독이 없으면 5초 뒤 멈춘다 (`shareIn WhileSubscribed`).
+  - Pleos 에뮬레이터 Fake 확인: 처음 화면 연결 줄 → 코드 화면("YK9 GCA", 10분 안에) → 주행: 주행 화면만, `EditText` 0, 클릭은 debug 패널뿐 → 정차: 같은 코드 → debug [가짜 보호자 코드 입력] → "보리 보호자와 연결했어요" → [확인] → "보호자 웹과 연결됨" + [연결 끊기] → 확인 대화 → [끊기] → 연결 전. 다크 모드 코드 화면 이상 없음. 오류 로그 없음.
+  - 확인 중 고친 것: 샘플 안내가 "보호자 웹과는 아직 연결되지 않았어요"라 Fake 연결 뒤 "연결됨"과 어긋났다 → "보호자 웹에서 등록한 정보가 아니에요". 확인 대화 버튼이 작은 글자 버튼이었다 → 160dp × 카드 버튼 높이.
 
 ## 결정 / 배운 점
 

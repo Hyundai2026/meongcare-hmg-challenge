@@ -189,6 +189,7 @@ private fun DeliveryChip(line: DeliveryLine, onResend: () -> Unit) {
         DeliveryLine.None -> return
         DeliveryLine.Sending -> Triple(Icons.Filled.Send, TripColors.ChipMuted, stringResource(R.string.delivery_sending))
         DeliveryLine.SentWaiting -> Triple(Icons.Filled.Send, TripColors.Panel, stringResource(R.string.delivery_sent_waiting))
+        DeliveryLine.Sent -> Triple(Icons.Filled.Send, TripColors.Panel, stringResource(R.string.delivery_sent))
         is DeliveryLine.Acknowledged ->
             Triple(Icons.Filled.CheckCircle, TripColors.Ack, stringResource(R.string.delivery_acknowledged, clockText(line.at)))
         DeliveryLine.Sample -> Triple(Icons.Outlined.Info, TripColors.ChipMuted, stringResource(R.string.delivery_sample))

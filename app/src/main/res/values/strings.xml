@@ -128,6 +128,7 @@
     <string name="confirm_without_card">카드 없이 길안내만</string>
     <string name="confirm_depart">출발</string>
     <!-- 카드의 전송·확인 줄 (012, 013). 주행 화면에는 확인 한 줄만 넣는다 -->
+    <string name="delivery_sent">진료 카드를 병원에 보냈어요</string>
     <string name="delivery_sent_waiting">진료 카드를 병원에 보냈어요 · 확인을 기다리는 중</string>
     <string name="delivery_acknowledged">병원이 진료 카드를 확인했어요 (%1$s)</string>
     <string name="delivery_sending">진료 카드를 보내는 중…</string>

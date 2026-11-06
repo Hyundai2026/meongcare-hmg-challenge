@@ -33,8 +33,11 @@ sealed interface DeliveryLine {
 
     data object Sending : DeliveryLine
 
-    /** 서버로 보냈고 병원 확인을 기다린다 */
+    /** 서버로 보냈고 병원 확인을 기다린다 (안내 중) */
     data object SentWaiting : DeliveryLine
+
+    /** 서버로 보냈다. 도착해서 확인을 더 기다리지 않는다 (확인 읽기는 도착하면 멈춘다) */
+    data object Sent : DeliveryLine
 
     /** 병원이 카드를 확인했다. [at]은 기기 시간대의 시:분 */
     data class Acknowledged(val at: LocalTime) : DeliveryLine
@@ -53,7 +56,7 @@ sealed interface DeliveryLine {
  * 이름은 길안내 상태의 목적지 이름을 쓴다.
  */
 fun tripPanelOf(guidance: GuidanceUiState, trip: TripState?, now: Instant, zone: ZoneId): TripPanel? {
-    val delivery = trip?.delivery.toLine(zone)
+    val delivery = trip?.delivery.toLine(zone, arrived = guidance is GuidanceUiState.Arrived)
     val status = trip?.candidate?.status
     return when (guidance) {
         is GuidanceUiState.Idle -> null
@@ -87,7 +90,7 @@ internal fun progressOf(start: Int?, remaining: Int?): Float? {
     return ((start - remaining).toFloat() / start).coerceIn(0f, 1f)
 }
 
-private fun CardDelivery?.toLine(zone: ZoneId): DeliveryLine = when (this) {
+private fun CardDelivery?.toLine(zone: ZoneId, arrived: Boolean): DeliveryLine = when (this) {
     null -> DeliveryLine.None
     CardDelivery.Sending -> DeliveryLine.Sending
     CardDelivery.Failed -> DeliveryLine.Failed
@@ -95,6 +98,7 @@ private fun CardDelivery?.toLine(zone: ZoneId): DeliveryLine = when (this) {
     is CardDelivery.Sent -> when {
         !toServer -> DeliveryLine.Sample
         acknowledgedAt != null -> DeliveryLine.Acknowledged(clockOf(acknowledgedAt, zone))
+        arrived -> DeliveryLine.Sent
         else -> DeliveryLine.SentWaiting
     }
 }

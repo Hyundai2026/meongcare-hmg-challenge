@@ -122,6 +122,14 @@ class TripPanelTest {
     }
 
     @Test
+    fun `도착한 뒤 확인 전이면 기다리는 중이 아니라 보냄이다`() {
+        // 도착하면 확인 읽기를 멈추므로 "확인을 기다리는 중"을 보이지 않는다
+        assertEquals(DeliveryLine.Sent, tripPanelOf(GuidanceUiState.Arrived(name), trip(), now, seoul)!!.delivery)
+        val sample = trip(CardDelivery.Sent(toServer = false))
+        assertEquals(DeliveryLine.Sample, tripPanelOf(GuidanceUiState.Arrived(name), sample, now, seoul)!!.delivery)
+    }
+
+    @Test
     fun `trip이 없으면 전송 줄과 막대가 없다`() {
         val panel = tripPanelOf(GuidanceUiState.Guiding(name, 15), null, now, seoul)!!
         assertEquals(DeliveryLine.None, panel.delivery)

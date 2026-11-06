@@ -107,6 +107,7 @@
     <string name="finder_reported_minutes_ago">%1$d분 전 알림</string>
     <string name="finder_status_stale">대기 정보 %1$d분 전</string>
     <string name="finder_status_none">대기 정보 없음</string>
+    <string name="finder_status_clock_mismatch">대기 정보 시각이 맞지 않아요</string>
     <string name="finder_fastest">가장 빠름</string>
     <string name="finder_sample">시연용</string>
     <string name="finder_none_ranked">지금 대기 시간을 알린 제휴 병원이 없어요.</string>

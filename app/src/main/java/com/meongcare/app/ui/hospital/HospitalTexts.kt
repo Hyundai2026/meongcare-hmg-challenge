@@ -116,7 +116,10 @@ fun statusText(values: HospitalRowValues): String = when (values.freshness) {
             else stringResource(R.string.finder_reported_minutes_ago, it.toInt())
         },
     ).joinToString(SEPARATOR)
-    StatusFreshness.STALE -> stringResource(R.string.finder_status_stale, (values.reportedMinutesAgo ?: 0).toInt())
+    // 알린 시각이 지금보다 뒤(시계가 어긋남)면 "0분 전"이 아니라 시각이 맞지 않는다고 알린다
+    StatusFreshness.STALE -> values.reportedMinutesAgo?.takeIf { it >= 1 }
+        ?.let { stringResource(R.string.finder_status_stale, it.toInt()) }
+        ?: stringResource(R.string.finder_status_clock_mismatch)
     StatusFreshness.NONE -> stringResource(R.string.finder_status_none)
 }
 

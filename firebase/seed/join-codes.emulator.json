@@ -1,0 +1,10 @@
+{
+  "about": "에뮬레이터 전용 시연 코드 (가짜 값이라 커밋한다). 진짜 프로젝트의 코드는 join-codes.local.json에 두고 커밋하지 않는다.",
+  "codes": {
+    "demo-fast": "fast-1234",
+    "demo-main": "main-1234",
+    "demo-near": "near-1234",
+    "demo-stale": "stale-1234",
+    "demo-closed": "closed-1234"
+  }
+}

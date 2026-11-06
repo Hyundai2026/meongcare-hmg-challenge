@@ -37,10 +37,17 @@ value class LinkCode private constructor(val value: String) {
     }
 }
 
-/** 코드를 만든 시각부터 [LinkCode.VALIDITY]까지 남은 시간. 0 아래로 내려가지 않는다 */
+/**
+ * 코드를 만든 시각부터 [LinkCode.VALIDITY]까지 남은 시간. 0 아래로 내려가지 않고 10분을 넘지 않는다
+ * (시동 뒤 차 시계가 맞춰지며 뒤로 가도 "12분 안에"처럼 보이지 않게).
+ */
 fun remainingOf(createdAt: Instant, now: Instant): Duration {
     val left = Duration.between(now, createdAt.plus(LinkCode.VALIDITY))
-    return if (left.isNegative) Duration.ZERO else left
+    return when {
+        left.isNegative -> Duration.ZERO
+        left > LinkCode.VALIDITY -> LinkCode.VALIDITY
+        else -> left
+    }
 }
 
 /** 화면의 "N분 안에": 남은 시간을 분 단위로 올림한다. 만료면 0 */

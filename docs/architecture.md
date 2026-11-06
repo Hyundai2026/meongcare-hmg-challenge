@@ -25,7 +25,7 @@
 
 | 영역 | 결정 | 근거 | 상태 |
 |---|---|---|---|
-| 의료 프로필 저장 | Room + 암호화 (SQLCipher) | Pleos 보안 가이드: 기기에 저장하는 민감정보는 암호화해야 한다 | 결정. **지금(009)은 기기에 저장하지 않는다**: 프로필은 메모리의 Fake("보리"). 서버(보호자 웹) 연동 때 저장 방식을 정한다 |
+| 의료 프로필 저장 | **차 기기에 저장하지 않는다** (014). 연결된 보호자의 프로필을 서버에서 읽어 메모리에만 둔다. 기기에 남길 것(연결 자격, 나중에 마지막 프로필)은 Room·SQLCipher 대신 **Android Keystore로 직접 암호화한 앱 전용 파일**로 한다 (사용자 결정 U5, 2026-11-06) | Pleos 보안 가이드: 기기에 저장하는 민감정보는 암호화해야 한다. 문서 하나·자격 하나에 DB는 과하다 | 결정. 11/15 범위는 저장 없음(앱을 다시 켜면 다시 연결). 연결 자격 암호화 저장은 PT 전 (계획 015로 넘김) |
 | 음성 → 글자 | **Pleos SpeechToText `ON_DEVICE`** (`ko-KR`) + Fake | 네트워크와 앱 등록이 필요 없다. 기술 활용성 점수에 유리하다 | **재검토 (팀 논의)**: 콘솔 "준비 중" = 신청 불가라서 지금은 쓸 수 없는 것으로 본다 (2026-11-03 콘솔 확인). STT 없이도 핵심 흐름이 돌게 할지 정한다. 열리는 시점은 문의 B2 |
 | 음성 안내 | Pleos TextToSpeech `ON_DEVICE` + Fake | STT와 같은 이유 | **재검토**: STT와 같다 |
 | 증상 → 진료 카드 | Claude API, 구조화 출력(JSON 스키마). 진단하지 않고 말한 내용만 정리한다. 카드 생성이 길안내·병원 연결을 막지 않게 뒤에서 따로 돈다 | 정해진 형식으로 증상·복용약·병력만 뽑는다 | **임시: `claude-opus-5-5` (effort `low`). 모델과 AI 범위는 팀 논의 필요.** **지금(009)은 AI 없이 규칙으로 조합한다**: 등록된 프로필 + 큰 버튼으로 고른 증상(12개 프리셋) → `medicalCardOf`. Claude API는 A1 뒤 |
@@ -42,7 +42,7 @@
 | 카드 공유 | MVP: 정차 화면에 크게 보여주기. 나중에 QR·링크 | 서버 작업이 가장 적다 | 결정 |
 | 운전 중 사용 | DO(`distractionOptimized`) 선언. `MainActivity`에 Google 방식 meta-data를 넣었다 (006, 2026-11-05) | 선언이 없으면 주행 중에 시스템 화면이 앱을 가려 주행 화면(남은 시간)이 보이지 않는다 | 결정. Pleos 에뮬레이터에서 동작 확인. 실차·심사 허용은 문의 B1. 안 되면 그 커밋을 revert한다 |
 | 주행/정차 판단 | AAOS `CarUxRestrictionsManager`의 `isRequiresDistractionOptimization` (006) | Pleos·Google 모두 기어·속도가 아니라 규제 값에 반응하라고 한다. 권한이 필요 없다 | 결정. Pleos 에뮬레이터에서 동작 확인 |
-| 보호자 등록 웹 | React + Vite + TypeScript (`web/`). 저장은 브라우저 localStorage 먼저 (008) | 보호자가 집에서 폰으로 의료정보를 미리 등록해서, 차에서는 글자를 입력하지 않게 한다 (AGENTS.md 규칙 3). 서버 없이 먼저 만들고, 저장소 인터페이스로 Firebase를 끼울 자리를 둔다 | 결정. 서버 연동·차 앱 연결은 문의 A1 뒤. 아래 "보호자 웹" |
+| 보호자 등록 웹 | React + Vite + TypeScript (`web/`). 동의 전에는 브라우저 localStorage, **서버 저장에 동의하면 Firestore** (014). 차와는 **연결 코드**로 잇는다: 차가 정차 중 6자 코드를 보이고 보호자가 폰 웹에 입력한다 (TV 로그인 방식) | 보호자가 집에서 폰으로 의료정보를 미리 등록해서, 차에서는 글자를 입력하지 않게 한다 (AGENTS.md 규칙 3) | **구현함 (008·014)**. 형식: [docs/data/owner-link.md](data/owner-link.md). 아래 "보호자 웹" |
 
 ### 사용하기로 한 Pleos 권한 (AGENTS.md 규칙 2, 2026-11-03 팀 승인)
 
@@ -123,6 +123,7 @@ app/src/main/java/com/meongcare/app/
     FakeCurrentLocationSource.kt  Pleos 에뮬레이터와 같은 시연 위치(수정구 시흥동)를 바로 준다
     NaviCurrentLocationSource.kt  내비 위치 해석: 시간 초과 5초, 값 검사(currentLocationOf), 한 번에 하나, 좌표 없는 로그 (JVM 테스트)
   domain/pet/                 PetProfile(형식 문서 대응), PetAge(나이 계산, 웹과 같은 규칙), PetProfileSource + PetProfileLoad
+  domain/link/                (014) LinkCode(연결 코드 6자·10분, 남은 분), OwnerLinkService(연결 상태·코드 만들기·확인·끊기 계약)
   domain/card/                Symptom(12개 프리셋, 선언 순서 = 화면·카드 순서), MedicalCardSession(고르는 중/카드 있음, 메모리)
   domain/hospital/            Hospital(길안내 목적지 + 전화번호 + 시연용 여부 + 제휴 병원 id), HospitalStatus·HospitalCandidate(출처),
                               HospitalBoardSource(목록 인터페이스), TravelEstimate(직선 거리 어림), HospitalRanking(순위 규칙) (012)
@@ -139,15 +140,22 @@ app/src/main/java/com/meongcare/app/
     AnonymousAuth.kt          익명 가입 한 번, 토큰 재사용, 만료 5분 전 갱신(같은 uid, 거부되면 다시 가입) (013)
     FirestoreJson.kt          Firestore REST 값 ↔ 도메인 (형식 문서 규칙)
     FirestoreHospitalBoardSource.kt, FirestoreCaseSender.kt  목록 GET / 카드 POST / 갱신·도착·취소는 documents:commit + updateMask / 확인 읽기는 단건 GET + mask (지운 건 403 = Gone)
-  data/pet/                   SamplePetProfiles("보리", 예시 JSON과 같은 값), FakePetProfileSource
+    FirestoreOwnerLink.kt     (014) 연결 코드 만들기(commit + exists=false + REQUEST_TIME, 409면 새 코드) / 확인(단건 GET) / 끊기(허가 DELETE). 보호자 uid는 여기만 안다
+    FirestorePetProfileReader.kt  (014) 연결된 보호자 프로필 단건 GET (403 = 연결 끊김, 404 = 등록 안 됨)
+  data/pet/                   SamplePetProfiles("보리", 예시 JSON과 같은 값), FakePetProfileSource,
+                              LinkedPetProfileSource(014: 연결 상태 × 샘플 × 서버 프로필, 연결 뒤 못 읽으면 샘플로 대신하지 않음)
+  data/link/                  (014) FakeOwnerLink(debug [가짜 보호자 코드 입력]), NoOwnerLink(서버 설정 없음)
   data/phone/                 AndroidPhoneDialer (ACTION_DIAL. ACTION_DIAL을 부르는 유일한 파일)
   data/demo/
     FakeTripScenario.kt       FAKE 전용: 안내 시작 → 출발(주행), 도착 → 주차(정차)
   data/vehicle/
     VehicleConnection.kt      Pleos Vehicle initialize/release를 한 곳에서
   di/TripTiming.kt            시연·실제 길안내별 도착 예정 갱신·병원 확인 읽기 간격 (013)
+  di/PetPlan.kt               (014) 반려견 프로필·보호자 연결 구성 (petPlanOf, petProfileIsSampleOf)
   ui/theme/                   Color(+ TripColors), Type(글자 크기, DrivingText), Dimens(터치 크기), Theme
-  ui/home/                    HomeViewModel, HomeUiState, HomeContent(1단계 화면 조합), ParkedContent(2단계: 정차 안), HomeScreen, ParkedScreen(처음 화면), DrivingScreen
+  ui/home/                    HomeViewModel, HomeUiState, HomeContent(1단계 화면 조합), ParkedContent(2단계: 정차 안), HomeScreen, ParkedScreen(처음 화면), DrivingScreen,
+                              LinkRow(014: 처음 화면의 연결 줄)
+  ui/link/                    (014) LinkViewModel(코드 만들기, 보이는 동안만 2초마다 확인, 만료·연결·닫기에 멈춤), LinkUiState, LinkScreen(정차 중에만)
   ui/card/                    MedicalCardViewModel, MedicalCardContent(medicalCardOf: 카드 조합), MedicalCardScreen, SymptomPickerScreen, CardTexts, PetVisuals(발바닥·아바타)
   ui/guidance/                GuidanceViewModel, GuidanceUiState, SimulatedGuidanceNotice,
                               TripPanel(tripPanelOf: 안내 영역 상태, JVM 테스트), GuidancePanel(정차 중 안내 영역), StaticProgressBar(움직이지 않는 진행 막대) (013)
@@ -231,7 +239,19 @@ ui ──▶ domain ◀── data
   - **주행 중에만 남은 시간이 줄어든다** (시연 모드): `FakeGuidanceSource`의 진행 조건(`progressGate`)에 "주행 중인지"를 넘긴다. P에 서 있는 동안에는 남은 시간이 그대로이고, 멈추면 최대 한 단계까지 더 줄고 멈춘다. 실제 내비게이션도 차가 서 있으면 남은 시간이 줄지 않는다. 도메인 인터페이스(`GuidanceSource`)는 바꾸지 않았다.
   - **시연용 표시**: 정차 화면 길안내 카드와 도착 화면에 "시연용 길안내예요. 실제 내비게이션과는 아직 연결되지 않았어요." 한 줄. 주행 화면은 바꾸지 않는다 (규칙 3). 출품 유의사항(제출 서류가 사실과 다르면 선정 취소) 때문에 숨기지 않는다.
 - Fake 주행 상태에서는 Pleos `Vehicle`을 만들지 않는다. 일반 에뮬레이터에는 차량 서비스가 없기 때문이다.
-- **반려견 프로필은 모든 모드에서 Fake("보리")다** (009). 서버(보호자 웹 연결) 구현이 없어서 `SourcePlan`에 칸을 두지 않았다. 화면에 "시연용 샘플 정보"라고 알린다 (`AppContainer.isPetProfileSample`). 서버 구현이 생기면 `SourcePlan`에 칸을 더한다.
+- **반려견 프로필과 보호자 연결은 `di/PetPlan.kt`의 `petPlanOf`가 정한다** (014). `SourcePlan`은 바꾸지 않았다.
+
+  | 모드 | 서버 설정 | 연결 | 연결 전 반려견 | 연결 뒤 |
+  |---|---|---|---|---|
+  | Fake | 상관없음 | Fake (debug [가짜 보호자 코드 입력]) | 샘플 보리 | 샘플 보리 그대로 |
+  | 시연 (release) | 없음 | 없음 (연결 버튼 없음) | 샘플 보리 | - |
+  | 시연 | 있음 | 서버 | 샘플 보리 | 서버 프로필. 못 읽으면 "불러오지 못했어요" (보리로 대신하지 않는다) |
+  | Real | 있음 | 서버 | 등록 안 됨 | 서버 프로필 |
+  | Real | 없음 | 없음 | 등록 안 됨 | - |
+
+  - 화면의 "시연용 샘플 정보예요"는 `petProfileIsSample`(StateFlow)을 따른다. 서버 연결로 받은 프로필만 샘플이 아니다.
+  - 서버 클라이언트(전송·익명 계정)는 서버 설정이 있고 Fake가 아닐 때 한 번 만들어 병원과 반려견이 같이 쓴다 (같은 uid여야 규칙을 통과한다).
+  - 연결된 프로필은 처음 화면이 보이는 동안(앱이 앞에 있을 때) 1분마다, [진료 카드 만들기]·[새로 만들기] 때 다시 읽는다. 주행 화면·백그라운드에서는 읽지 않는다.
 - **전화는 모든 모드에서 Android 전화 앱(`AndroidPhoneDialer`)**이다. 시연용 번호는 걸리지 않는 형식이고, `ACTION_DIAL`은 걸지 않는다.
 - **진료 카드 세션(`MedicalCardSession`)은 `AppContainer`의 메모리 객체**다. Fake 길안내와 같은 프로세스 수명이라 안내 시작부터 도착까지 남는다. 앱 프로세스가 죽으면 사라진다 (알려진 한계).
 - `FakeTripScenario`(주행 상태와 길안내가 모두 Fake일 때)가 Fake 길안내와 Fake 주행 상태를 잇는다: 안내를 시작하면 3초 뒤 주행, 도착하면 5초 뒤 정차. 시연 영상을 찍을 때 debug 패널을 누르지 않아도 되게 하려는 것이다.
@@ -326,7 +346,9 @@ ui ──▶ domain ◀── data
 
 ## 보호자 웹 (008, 2026-11-05)
 
-보호자가 폰 브라우저에서 반려견 1마리의 프로필(사진, 이름, 품종, 생년월일 또는 나이, 성별)과 의료정보(주요 질환, 알레르기, 복용 약)를 등록하고 보고 고친다. 차 앱의 진료 카드가 이 정보를 쓸 예정이다.
+보호자가 폰 브라우저에서 반려견 1마리의 프로필(사진, 이름, 품종, 생년월일 또는 나이, 성별)과 의료정보(주요 질환, 알레르기, 복용 약)를 등록하고 보고 고친다. 서버 저장에 동의하면 차와 연결해 차 앱의 진료 카드가 이 정보를 쓴다 (014).
+
+- 연결 형식·보안 규칙: [docs/data/owner-link.md](data/owner-link.md), `firebase/firestore.rules` (R14~R24)
 
 - 실행·확인 방법: [web/README.md](../web/README.md)
 - 프로필 형식 (웹·차 앱·서버 공통): [docs/data/pet-profile.md](data/pet-profile.md)
@@ -336,9 +358,11 @@ ui ──▶ domain ◀── data
 | 항목 | 결정 | 근거 | 버린 대안 |
 |---|---|---|---|
 | 위치 | 같은 저장소 `web/` (사용자 결정) | 심사위원이 저장소 하나에서 앱과 웹을 본다. 프로필 형식을 문서 하나로 맞춘다 | 별도 저장소 |
-| 기술 | React + Vite + TypeScript, 테스트는 Vitest (`environment: 'node'`) | 웹팀이 React를 안다. 의존성은 처음 6개에 012에서 `firebase`(13.1.0, 병원 웹만) 하나를 더했다 (사용자 결정 U4). 버전은 정확히 고정한다 | ESLint (사용자 결정으로 넣지 않음. TypeScript strict가 대신), 라우터·상태 관리·폼·스키마 라이브러리, jsdom |
-| 저장 | 브라우저 localStorage, 키 `owner-web.pet-profile` (사용자 결정) | 서버 규정(A1) 답을 기다리지 않고 만든다. 키는 앱 이름과 묶지 않아 이름이 바뀌어도 데이터가 남는다 | 처음부터 Firebase |
-| 저장소 인터페이스 | `PetProfileRepository` (`load`/`save`, `Promise`, 실패는 결과 값) | localStorage 구현이 앱의 Fake 자리, Firebase 구현이 Real 자리다. 바꿔 끼워도 화면 코드가 그대로다 | 화면에서 localStorage 직접 호출 |
+| 기술 | React + Vite + TypeScript, 테스트는 Vitest (`environment: 'node'`) | 웹팀이 React를 안다. 의존성은 처음 6개에 012에서 `firebase`(13.1.0) 하나를 더했다 (사용자 결정 U4). 보호자 페이지는 **서버 설정이 있을 때만 Firebase를 동적 import**한다 (014 U8: 설정 없이 빌드한 보호자 번들에는 Firebase가 없고 내려받지도 않는다). 버전은 정확히 고정한다 | ESLint (사용자 결정으로 넣지 않음. TypeScript strict가 대신), 라우터·상태 관리·폼·스키마 라이브러리, jsdom |
+| 저장 | 동의 전: 브라우저 localStorage, 키 `owner-web.pet-profile` (008). **동의 뒤: Firestore `petProfiles/{uid}` + 사진은 보호자 전용 `private/photo`** (014 U3·U6). 동의하면 브라우저 정보를 한 번 옮기고 브라우저에서 지운다 (서버에 이미 있으면 덮어쓰지 않는다) | 서버 저장은 동의 뒤에만. 사진은 차가 읽지 못하게 따로 둔다 | 처음부터 Firebase, Firebase Storage(Spark 사용 가능 여부 미확인) |
+| 저장소 인터페이스 | `PetProfileRepository` (`load`/`save`, `Promise`, 실패는 결과 값, 서버에 닿지 못하면 `'network'`). 서버 모드는 `OwnerServer`(계정 `OwnerAccount` + 저장소) | localStorage 구현이 앱의 Fake 자리, Firebase 구현(`data/firestoreOwnerStore.ts`)이 Real 자리다. 바꿔 끼워도 화면 코드가 그대로다 | 화면에서 localStorage 직접 호출 |
+| 보호자 계정 | Firebase **익명 계정** (014 U1). 동의할 때 만든다 (동의 전에는 만들지 않는다) | 시연이 빠르다. 브라우저 사이트 데이터를 지우면 그 프로필을 고칠 수 없다 → 동의 문구에 알린다 | Google 로그인 (약 하루 더), 이메일 |
+| 차 연결 | [차와 연결]에 차 화면의 6자 코드 입력 → 코드 claim + 허가(`readers/{차}`)를 한 번에 쓴다. `?code=`로 열면 미리 채운다 (나중 QR) | 차에서 글자를 입력하지 않는다 | QR (11/15에는 넣지 않음, U4) |
 | 스키마 버전 | `schemaVersion: 1`. 모르는 버전은 읽지 않는다 | localStorage 데이터는 코드보다 오래 남는다. 차 앱이 짐작해서 약 정보를 틀리게 보여 주면 안 된다 | |
 | 사진 | 브라우저에서 긴 변 512px JPEG(품질 0.8)로 줄여 data URL로 저장 | 한 키에 넣어도 용량이 작다. 캔버스로 다시 그려 EXIF(촬영 위치)가 빠진다 | 원본 저장 |
 | 화면 | 탭 의료정보·기본정보 (의료정보가 먼저). 진료이력 탭·알림 아이콘은 두지 않는다 (사용자 결정) | 기능이 없는 버튼을 보이지 않는다 | 진료이력 탭을 "준비 중"으로 보이기 |
@@ -349,9 +373,10 @@ ui ──▶ domain ◀── data
 
 ```
 web/src/
-  main.tsx, config.ts (APP_NAME), container.ts (저장소 구현 고르기)
+  main.tsx, config.ts (APP_NAME), container.ts (저장소 구현 고르기, 설정이 있을 때만 Firestore 모듈을 동적 import)
   domain/   PetProfile 타입, 날짜·나이 계산, JSON 읽기·쓰기, 저장소 인터페이스 (React·브라우저 모름)
-  data/     localStorage 구현
+  domain/owner/  (014) 연결 코드 입력, 프로필 ↔ 서버 문서(사진 분리), 저장 위치 안내, 동의 문구, 브라우저 정보 옮기기, OwnerAccount 인터페이스
+  data/     localStorage 구현, firestoreOwnerStore.ts (014, 'firebase'를 import하는 보호자 쪽 유일한 파일)
   photo/    사진 크기 계산(순수), 캔버스로 줄이기(브라우저)
   ui/       화면. 순수 로직(*Values.ts, profileScreenReducer.ts, profileText.ts)과 컴포넌트(*.tsx)
 ```
@@ -361,7 +386,7 @@ web/src/
 
 ### 저장과 개인정보
 
-- 지금 의료정보와 사진은 **보호자 브라우저의 localStorage에 평문으로** 있다.
+- 동의 전에는 의료정보와 사진이 **보호자 브라우저의 localStorage에 평문으로** 있다. 동의 뒤에는 Firestore에 있고 보안 규칙(R14~R24)으로 지킨다: 보호자 본인만 쓰고, 연결한 차는 프로필 문서 하나만 읽는다 (사진은 못 읽는다).
   - 같은 출처의 스크립트는 모두 읽을 수 있다. 그래서 외부 스크립트(분석 도구, CDN, 웹폰트)를 넣지 않고 `dangerouslySetInnerHTML`을 쓰지 않는다. 화면 확인 스크립트가 밖으로 가는 요청 0건을 확인한다.
   - 브라우저가 지울 수 있다 (방문 기록 삭제, 시크릿 모드). 서버가 생기기 전까지 백업이 없다.
   - 같은 폰·브라우저를 쓰는 다른 사람이 볼 수 있다.
@@ -369,16 +394,12 @@ web/src/
   - Pleos 보안 가이드의 "기기에 저장하는 민감정보는 암호화"는 차 앱 대상이다 ([ux-guidelines.md](pleos/ux-guidelines.md)). 웹은 Pleos 앱이 아니지만, 심사·PT에서 설명할 때 이 차이를 알고 있어야 한다.
 - 의료정보를 로그에 남기지 않는다 (`console.log` 0건).
 - 반려동물 의료정보의 법적 분류는 확인하지 않았다. 민감정보처럼 다룬다. 보호자 이름·연락처 같은 사람 정보는 받지 않는다.
-- 화면 아래에 "이 정보는 지금 쓰는 브라우저에만 저장돼요. 차 앱과의 연결은 준비 중이에요."를 보인다 (출품 유의사항: 제출 내용이 사실과 다르면 선정 취소).
+- 화면 아래에 저장 위치를 늘 보인다 (`domain/owner/ownerNotice.ts`, 출품 유의사항: 제출 내용이 사실과 다르면 선정 취소): 서버 없음 "이 정보는 지금 쓰는 브라우저에만 저장돼요. 이 화면은 서버에 연결되지 않아 차와 연결할 수 없어요." / 동의 전 "…차에서 쓰려면 서버에 저장해 주세요." / 동의 뒤 "이 정보는 MeongCare 서버에 저장되고, 연결한 차에서만 볼 수 있어요." (에뮬레이터면 "(시연용 로컬 서버)")
 
-### Firebase로 옮길 때 할 일 (문의 A1 이후)
+### Firebase로 옮기기 (014에서 한 것과 남은 것)
 
-- Firebase Auth로 보호자를 구분하고, Firestore 보안 규칙으로 자기 문서만 읽고 쓰게 한다. 규칙 없는 테스트 모드로 배포하지 않는다.
-- `PetProfileRepository`의 Firebase 구현을 `web/src/data/`에 더하고 `container.ts`에서 고른다. 실패 이유에 `'network'`를 더한다.
-- 수집 항목·목적·보유 기간을 알리고 동의 버튼을 둔다. 개인정보처리방침 URL을 만든다 (Pleos 앱 제출 폼 필수 항목).
-- 브라우저에 있던 데이터는 보호자가 동의한 뒤 한 번 올리고, 올린 뒤 브라우저에서 지운다.
-- 사진은 Firestore 문서가 아니라 Storage에 두고 `photoUrl`로 가리킨다 (형식 v2).
-- 보호자가 자기 데이터를 지울 수 있게 한다.
+- 한 것: 익명 Auth로 보호자 구분, 보안 규칙(R14~R24), Firestore 저장소와 `'network'`, 수집 항목·쓰는 곳·보관을 알리는 동의 화면과 명시적인 [동의하고 서버에 저장], 동의 뒤 브라우저 정보 한 번 옮기고 지우기, 사진은 보호자 전용 문서로 분리.
+- 남은 것: 개인정보처리방침 URL (Pleos 앱 제출 폼 필수 항목. 대회 제출에는 필요 없다), 사진을 Storage + `photoUrl`(형식 v2)로 옮길지 (Spark에서 쓸 수 있는지 미확인), 보호자가 자기 데이터를 지우기·연결된 차 관리 (PT 전, 계획 015), 연결 코드 마구 대입 제한(Functions·App Check 필요, 지금은 6자·10분·한 번만).
 - 차 앱이 웹 페이지를 연결하면 도메인 등록 증빙이 필요하다 ([ux-guidelines.md](pleos/ux-guidelines.md) "외부 서버·네트워크").
 - 비밀값: Firebase 웹 설정은 `web/.env.local`(gitignore)의 `VITE_FIREBASE_*`로 받는다. 값이 없으면 localStorage 구현을 쓰고 빌드는 그대로 된다. 그때 `web/.env.example`을 같이 만든다.
   - `VITE_`로 시작하는 값은 번들에 들어가 누구나 볼 수 있다. **Claude API 키, 카카오 키는 웹에 절대 넣지 않는다** (서버에만).

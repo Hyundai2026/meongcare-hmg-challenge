@@ -72,6 +72,35 @@ check(
   '시연 병원을 넣는다: npm --prefix firebase run seed -- --reset',
 )
 
+// PF6: 차 앱이 순위를 매길 대기 정보가 있다. 알린 지 30분이 넘으면 "대기 정보 지남"이라 1위가 없다
+// (docs/data/hospital-status.md "오래된 정보"). 시드하고 30분이 지나면 생긴다. 시연 직전에 다시 알린다.
+const STALE_AFTER_MS = 30 * 60_000
+let freshCount = 0
+let oldestFreshMinutesLeft = null
+if (probeToken !== null) {
+  const list = await reach(`${docsUrl(IPV4)}/hospitals`, { headers: { Authorization: `Bearer ${probeToken}` } })
+  const documents = list?.ok ? ((await json(list))?.documents ?? []) : []
+  for (const document of documents) {
+    const status = document.fields?.status?.mapValue?.fields
+    const accepting = status?.acceptingEmergency?.booleanValue === true
+    const updatedAt = Date.parse(status?.updatedAt?.timestampValue ?? '')
+    if (!accepting || Number.isNaN(updatedAt)) continue
+    const age = Date.now() - updatedAt
+    if (age > STALE_AFTER_MS || age < -5 * 60_000) continue
+    freshCount++
+    const left = Math.floor((STALE_AFTER_MS - age) / 60_000)
+    oldestFreshMinutesLeft = oldestFreshMinutesLeft === null ? left : Math.min(oldestFreshMinutesLeft, left)
+  }
+}
+check(
+  'PF6',
+  `응급 접수를 받고 대기 정보가 30분 안인 병원이 있다 (지금 ${freshCount}곳${
+    oldestFreshMinutesLeft === null ? '' : `, 가장 먼저 지나는 곳까지 약 ${oldestFreshMinutesLeft}분`
+  })`,
+  freshCount > 0,
+  '시연 직전에 병원 웹에서 [병원 상태 알리기]를 누르거나 npm --prefix firebase run seed -- --reset (환자 건도 지워진다)',
+)
+
 // PF4: [::1]에 "다른" 에뮬레이터가 없다. 응답이 오면 같은 서버인지 표식으로 확인한다
 async function sameFirestoreOnIpv6() {
   if ((await reach(`http://${IPV6}:${FIRESTORE_PORT}/`)) === null) return true // 아무것도 없다

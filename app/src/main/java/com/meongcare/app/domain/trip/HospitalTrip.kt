@@ -208,6 +208,9 @@ class HospitalTrip(
                 is SendResult.Failed -> {
                     setDelivery(candidate, CardDelivery.Failed)
                     log("카드 전송: 실패 (${result.reason})")
+                    // 보내는 중에 이미 취소됐으면 병원에 만든 건이 없다. 다시 보내기를 기다리지 않고 끝낸다
+                    // (그래야 고른 병원이 바로 비워지고, 취소한 뒤에 새 건을 만들지 않는다).
+                    if (phase.value == Phase.Cancelled) return
                     retry.receive()
                 }
             }

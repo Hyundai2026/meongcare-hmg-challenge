@@ -88,7 +88,11 @@ class MainActivity : ComponentActivity() {
                         onDismissPhoneNumber = cardViewModel::onDismissPhoneNumber,
                         onGoHome = cardViewModel::onGoHome,
                         onOpenCard = cardViewModel::onOpenCard,
-                        onStartNewCard = cardViewModel::onStartNewCard,
+                        // [새로 만들기]도 새 카드를 만드는 시작이라 같이 다시 읽는다
+                        onStartNewCard = {
+                            container.refreshPetProfile()
+                            cardViewModel.onStartNewCard()
+                        },
                     )
                 }
 

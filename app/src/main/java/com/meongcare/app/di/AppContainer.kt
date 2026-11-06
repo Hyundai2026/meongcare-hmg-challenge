@@ -2,6 +2,7 @@ package com.meongcare.app.di
 
 import android.content.Context
 import android.content.pm.PackageManager
+import android.util.Log
 import com.meongcare.app.data.demo.FakeTripScenario
 import com.meongcare.app.data.driving.FakeDrivingStateSource
 import com.meongcare.app.data.driving.RealDrivingStateSource
@@ -13,6 +14,8 @@ import com.meongcare.app.data.guidance.NaviRouteOnlyGuidanceSource
 import com.meongcare.app.data.guidance.navi.PleosNaviClient
 import com.meongcare.app.data.guidance.RealGuidanceSource
 import com.meongcare.app.data.hospital.SampleHospitals
+import com.meongcare.app.data.location.FakeCurrentLocationSource
+import com.meongcare.app.data.location.NaviCurrentLocationSource
 import com.meongcare.app.data.pet.FakePetProfileSource
 import com.meongcare.app.data.phone.AndroidPhoneDialer
 import com.meongcare.app.domain.card.MedicalCardSession
@@ -23,6 +26,7 @@ import com.meongcare.app.domain.driving.DrivingState
 import com.meongcare.app.domain.driving.DrivingStateSource
 import com.meongcare.app.domain.guidance.GuidanceSource
 import com.meongcare.app.domain.hospital.Hospital
+import com.meongcare.app.domain.location.CurrentLocationSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -80,6 +84,22 @@ class AppContainer(context: Context, val dataMode: DataMode) {
             )
             SourceKind.REAL -> RealGuidanceSource()
         }
+    }
+
+    /** 현재 위치를 어디서 받는지 (011, [currentLocationKindOf]). */
+    val locationKind: SourceKind = currentLocationKindOf(mode = dataMode, isAutomotive = isAutomotive)
+
+    /**
+     * 현재 위치 (011). 차량 기기의 시연·Real은 내비, 그 밖은 Fake(Pleos 에뮬레이터와 같은 시연 위치)다.
+     * 지금은 debug 패널만 쓴다. 내비 구현도 물을 때만 NaviHelper를 만든다.
+     * 로그에는 결과 종류와 걸린 시간만 남는다 (좌표·주소 없음).
+     */
+    val currentLocationSource: CurrentLocationSource = when (locationKind) {
+        SourceKind.REAL -> NaviCurrentLocationSource(
+            client = PleosNaviClient(context),
+            log = { Log.i("CurrentLocation", it) },
+        )
+        SourceKind.FAKE -> FakeCurrentLocationSource()
     }
 
     /** 병원 (길안내 목적지 + 전화번호). 병원 검색이 붙기 전까지 시연용 샘플 병원 1곳을 쓴다. */

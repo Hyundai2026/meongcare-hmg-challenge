@@ -775,7 +775,7 @@ override fun onTripInfo(tripInfo: TripInfo)
     - `RouteStateInfo`: `getTermsAgreement()`, `getNaviMode()`, `isRouting()`, `getRouteOption()`, 충전 관련, `getTrafficStatus()` (ETA 없음)
   - **값의 단위(초/분, 미터)는 문서에도 클래스에도 없다.** → 미확인. 실제 값을 찍어 봐야 한다.
   - 참고: `NaviHelper` 3.0.5의 전이 의존성은 `navi-data:3.0.4`, `navi-aidl:3.0.1`, `kotlin-stdlib:1.9.25`, `core-ktx:1.8.0`, `kotlinx-coroutines-android:1.6.3`이다 (pom).
-- 현재 위치: `getCurrentLocationInfo()` → `onCurrentLocationInfo(CurrentLocationInfo)` (권한 `NAVI_ROUTE`, `get*Info()`). 필드 정의는 미확인.
+- 현재 위치: `getCurrentLocationInfo()` → `onCurrentLocationInfo(CurrentLocationInfo)` (권한 `NAVI_ROUTE`, `get*Info()`). 필드 정의는 확인했다 → 아래 `[aar-navi]` "현재 위치". 좌표계와 단위 설명은 문서에 없다.
 
 #### AAR에서 직접 확인한 것 (2026-11-05, `NaviHelper-3.0.5.aar`, `navi-data-3.0.4.aar`를 Pleos Maven에서 받아 javap) [aar-navi]
 
@@ -783,6 +783,14 @@ override fun onTripInfo(tripInfo: TripInfo)
 - `NaviHelperEventListener`는 interface이고 **26개 메서드가 모두 `default`(빈 구현)**다. 필요한 콜백만 재정의하면 된다.
 - `RouteInfo` Kotlin 생성자 (이름과 null 여부, `@Nullable`/`@NotNull` 기준): `latitude: Double`, `longitude: Double`, `displayLatitude: Double?`, `displayLongitude: Double?`, `poiName: String`, `poiId: String`, `address: String`, `poiSubId: String`, `routeOption: RouteOption`, `poiProvider: String`, `isMobileRequest: Boolean`. 기본값 생성자가 있지만 **`poiId`, `address`, `poiSubId`에는 기본값이 없다** (컴파일러가 값을 요구했다). 위도가 먼저다.
 - `TripInfo(distance: Int, eta: Int, estimatedSocAtDest: Int, energyConsumption: Double, summary: TripSummary)`.
+- **현재 위치** (2026-11-05 추가 확인, 011 계획):
+  - `NaviHelper`: `public final void getCurrentLocationInfo()`. 반환값이 없고, 결과는 리스너 콜백으로 온다.
+  - `NaviHelperEventListener`: `default void onCurrentLocationInfo(CurrentLocationInfo)`, `default void onError(NaviErrorCode)`.
+  - `ai.pleos.playground.navi.data.CurrentLocationInfo` (`navi-data` 3.0.4):
+    - 생성자 `(double latitude, double longitude, double heading, String address, String routeId, Integer currentRouteIndex)`
+    - getter: `getLatitude(): double`, `getLongitude(): double`, `getHeading(): double`, `getAddress(): String`, `getRouteId(): String`, `getCurrentRouteIndex(): Integer`
+    - **javap 출력으로는 `address`의 null 여부가 보이지 않는다.** 그래서 앱은 null과 빈 문자열을 "주소 모름"으로 다룬다.
+  - 연결 순서와 스레드는 길안내와 같은 것으로 본다: 리스너 등록 → `initialize(onConnected, onFailed)` → 연결되면 호출. `onConnected`는 main, 리스너 콜백은 binder 스레드다 (`[obs-navi-emu]`).
 - AAR 매니페스트: `minSdkVersion 23`(navi-data, navi-aidl도 23). **`pleos.car.permission`을 스스로 넣지 않는다.** `<queries><intent><action android:name="ai.pleos.playground.intent.action.NAVI_START"/></intent></queries>`와 서비스 버전 meta-data(`min_version_name 2.0.1` 등)를 넣는다.
 
 #### Pleos 에뮬레이터에서 관찰한 것 (2026-11-05, v2.1.0, 실차 아님. 010 spike) [obs-navi-emu]
@@ -803,6 +811,32 @@ debug 빌드의 임시 수신기에서 application context로 `NaviHelper`를 �
     - 재현: 안내 중에 우리 앱을 `am force-stop` → 정리(`cancelRoute`)가 돌지 않아 내비에 경로가 남는다 → 앱을 다시 켜서 안내 시작.
     - 그래서 어댑터(`PleosNaviClient`)는 `onRouteStarted` 전의 `onRouteCancelled`를 무시한다. 그러지 않으면 앱은 안내를 끝냈는데 내비는 새 경로를 안내하는 어긋남이 생겼다 (실제로 봤다).
     - 반대로 카운트다운 중에 사용자가 내비에서 취소하면 그 취소도 무시된다. 그때는 전부 내비는 30초 뒤 안내 없음, 경로만 내비는 30초 뒤 시연용 기본 시간으로 시작한다. 카운트다운 중 취소에 콜백이 오는지는 보지 않았다.
+
+#### Pleos 에뮬레이터에서 관찰한 것: 현재 위치 (2026-11-05, 실차 아님. 011 단계 6) [obs-navi-emu]
+
+011 debug 빌드의 `PleosNaviClient.currentLocation()`으로 봤다. 물을 때마다 새 `NaviHelper` → `initialize` → `getCurrentLocationInfo()` → 답을 받으면 `release()`.
+
+- **내비 지도가 준비되기 전에는 답이 오지 않는다.**
+  - 상황: 에뮬레이터 framework가 다시 시작된 뒤(`BOOT_COMPLETED`), 내비 화면을 한 번도 띄우지 않았다.
+  - 이때 내비 앱 로그: `connectNaviProviderEventFlow - navi not ready … OnCurrentLocationInfoRequest, Status(appStatus=AuthComplete, engineStatus=NaviEngineComplete, mapStatus=MapInitComplete)`
+  - 우리 리스너에는 `onCurrentLocationInfo`도 `onError`도 오지 않았다. 요청이 조용히 버려졌다. 두 번 물어 두 번 다 5초 시간 초과였다.
+  - 다른 시스템 앱의 요청(`GetBookmarkInfo`)도 같은 로그로 버려졌다.
+  - 내비 앱(`ai.umos.maps.android.navigation.app/.MainActivity`)을 한 번 앞에 띄우자 `naviReadyStatus … mapStatus=MapComplete`가 되었다. 그 뒤로는 바로 답이 왔다.
+  - 그래서 **시연 전에 내비 화면을 한 번 띄워 둔다.** 앱은 답이 없으면 시간 초과 뒤 "모름"으로 처리한다.
+- 준비된 뒤의 응답:
+  - `onCurrentLocationInfo`는 binder 스레드로 왔다.
+  - 걸린 시간(연결부터 답까지): 앱을 새로 띄운 뒤 첫 묻기 263ms, 그 뒤 64~83ms.
+  - 값: `CurrentLocationInfo(latitude=37.4127212, longitude=127.094681, heading=0.0, address=수정구 시흥동, routeId=, currentRouteIndex=0)`. 010 spike와 같은 값이다.
+  - 주소는 매번 "수정구 시흥동"이었다. null이나 빈 값은 보지 못했다.
+  - 안내 중에는 `routeId`에 경로 ID가 들어 있었다.
+- **NaviHelper 두 개를 같이 써도 됐다** (010 시연 길안내 중에 위치 묻기).
+  - 위치 쪽 응답은 82ms였다.
+  - 위치 쪽을 `release()`한 뒤에도 내비 화면의 경로가 그대로 있었다.
+  - 그 뒤 앱의 [안내 취소] → 길안내 쪽 `cancelRoute()`로 내비 경로가 사라졌다. 길안내 쪽 연결이 살아 있었다는 뜻이다.
+- `SecurityException`, 크래시는 없었다. 권한은 `NAVI_ROUTE`, `NAVI_ROUTE_SEARCH` 둘뿐이다.
+- 로그:
+  - 우리 앱 pid 로그에는 좌표가 0건이다.
+  - 다른 시스템 앱 몇 개(`[GAA]`, `NavigationEventListener`)는 `CurrentLocationInfo`를 좌표째 logcat에 남긴다. 우리가 바꿀 수 없다.
 
 ### FusedLocation SDK [fused-intro] [fused-setup] [fused-perm]
 
@@ -827,7 +861,7 @@ implementation("ai.pleos.playground:FusedLocation:1.1.3")
 - **Android 표준 `LocationManager`:** Pleos 문서(FusedLocation 3개 페이지, 하드웨어 접근 정책, SDK API 정책, API 호환성, FAQ)에 허용·금지 언급이 없다 → 미확인.
   - 관련 정책: 하드웨어 접근 정책은 모바일 전용 API가 차량에서 지원되지 않거나 제한될 수 있으니 지원 여부를 확인한 뒤 선택(Optional) 구조로 만들라고 한다. [hw-access]
   - Maps/Navigation 앱 가이드: "Pleos Connect 및 AAOS 공식 API 사용을 권장합니다.", "비공식 센서/API 사용은 금지되어 있습니다." (Maps/Navigation 앱 대상 문서) [navi-app-guide]
-- **NaviHelper의 현재 위치:** `getCurrentLocationInfo()` → `onCurrentLocationInfo(CurrentLocationInfo)`. 권한은 `NAVI_ROUTE`(`get*Info()`). 내비게이션 탑재 차량에서만 호환된다. `CurrentLocationInfo` 필드는 미확인. [navi-perm] [api-compat] [gh-navi-src]
+- **NaviHelper의 현재 위치:** `getCurrentLocationInfo()` → `onCurrentLocationInfo(CurrentLocationInfo)`. 권한은 `NAVI_ROUTE`(`get*Info()`). 내비게이션 탑재 차량에서만 호환된다. `CurrentLocationInfo` 필드는 확인했다 (위도·경도·방향 `double`, 주소 `String`) → NaviHelper 절 `[aar-navi]`. [navi-perm] [api-compat] [gh-navi-src] [aar-navi]
 
 ### TextToSpeech SDK (v3.3.1) [tts-intro] [tts-import] [tts-perm]
 
@@ -1241,6 +1275,9 @@ fun sendGleoBroadcast(
 - [ ] 서드파티 앱의 전화 걸기 (`ACTION_DIAL`/`ACTION_CALL`, 블루투스 연결 폰 통화) 허용 여부
 - [ ] Android 표준 `LocationManager`(`ACCESS_FINE_LOCATION`) 위치를 Pleos에서 받을 수 있는지
 - [x] NaviHelper 데이터 클래스 필드 → NaviHelper 절 "산출물로 확인" (`TripInfo.eta`, `DrivingState.duration/distance`, `CurrentLocationInfo` 좌표). 단위는 미확인 (2026-11-03)
+- [ ] `CurrentLocationInfo.address`가 null이나 빈 값으로 오는 경우가 있는지 (javap로는 안 보인다). 에뮬레이터에서는 매번 "수정구 시흥동"이었다 (011). 실차 등 다른 위치에서는 미확인
+- [x] NaviHelper 인스턴스 둘을 동시에 연결해도 되는지 (길안내 중에 현재 위치 묻기) → 에뮬레이터에서 됐다. 한쪽을 release해도 다른 쪽 연결과 내비 경로는 그대로다 (011, NaviHelper 절 "현재 위치" 관찰). 실차는 미확인
+- [ ] 내비 지도가 준비되지 않았을 때(`mapStatus=MapInitComplete`, "navi not ready") 버려진 get 요청에 답을 줄 방법이 있는지. 에뮬레이터에서는 내비 화면을 한 번 띄워야 했다 (011). 실차에서 시동 직후에도 그런지는 미확인
 - [ ] `TripInfo.eta`가 "도착까지 남은 시간"인지 "도착 예정 시각"인지, `DrivingInfo.destination.duration`과 무엇이 다른지. getter 이름만 있고 뜻을 설명하는 문서·클래스 주석이 없다 (2026-11-05, Fake 길안내 계획 005에서 정리). 우리 앱은 남은 시간을 `Duration`으로 받아 변환을 Real 래퍼 안에 가둔다.
 - [ ] `RouteInfo`의 `poiId`/`poiSubId`가 필수인지, 외부 장소 검색 결과(좌표+이름)만으로 경로를 요청할 수 있는지. **2026-11-05 재확인: 여전히 문서에 없음** → 아래 010 R3
 - [ ] `requestTrip(TripRequest)`의 동작 (설명 문서 없음)
@@ -1363,6 +1400,7 @@ fun sendGleoBroadcast(
 - 산출물:
   - [aar-2.3.2] Pleos Maven `ai.pleos.playground:Vehicle:2.3.2` AAR (`classes.jar`를 `javap`으로, `AndroidManifest.xml`, `proguard.txt`). 2026-11-03 확인.
   - [aar-navi-data] Pleos Maven `ai.pleos.playground:navi-data:3.0.4` AAR과 `NaviHelper:3.0.5` pom (`javap`). 2026-11-03 확인.
+  - [aar-navi] Pleos Maven `ai.pleos.playground:NaviHelper:3.0.5`, `navi-data:3.0.4` AAR (`javap`, AAR 매니페스트). 2026-11-05 확인 (010 spike, 011 현재 위치).
   - [aar-stt] Pleos Maven `ai.pleos.playground:SpeechToText:3.3.1` AAR (`javap`). 2026-11-03 확인.
   - [maven-search] Pleos Maven 검색 API, 2026-11-03 확인. `https://nexus-playground.pleos.ai/service/rest/v1/search?repository=maven-releases&q=gleo` (`q=Gleo*`도) → items 비어 있음. 대조로 `q=NaviHelper` → 2.0.2, 2.0.3, 3.0.5.
   - [maven-meta] Pleos Maven `maven-metadata.xml` (2026-11-03 확인):

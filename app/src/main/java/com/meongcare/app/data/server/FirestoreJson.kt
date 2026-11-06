@@ -99,7 +99,8 @@ object FirestoreJson {
         } catch (_: org.json.JSONException) {
             return Ack.Malformed
         }
-        val fields = root.optJSONObject("fields") ?: return Ack.Pending
+        // mask로 읽은 필드가 모두 없으면 fields가 빠진다 (아직). fields가 객체가 아니면 짐작하지 않는다
+        val fields = root.optJSONObject("fields") ?: return if (root.has("fields")) Ack.Malformed else Ack.Pending
         val value = fields.optJSONObject("acknowledgedAt") ?: return if (fields.has("acknowledgedAt")) Ack.Malformed else Ack.Pending
         return when {
             value.has("nullValue") -> Ack.Pending

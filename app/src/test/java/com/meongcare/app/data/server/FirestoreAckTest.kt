@@ -55,6 +55,8 @@ class FirestoreAckTest {
         assertEquals(AckRead.Failed("형식 오류"), sender { doc("""{"timestampValue": "어제"}""") }.first.readAck(ref))
         assertEquals(AckRead.Failed("형식 오류"), sender { doc("\"문자열\"") }.first.readAck(ref))
         assertEquals(AckRead.Failed("형식 오류"), sender { HttpResponse(200, "<html>") }.first.readAck(ref))
+        // fields가 객체가 아니면 짐작하지 않는다 (없을 때만 아직)
+        assertEquals(AckRead.Failed("형식 오류"), sender { HttpResponse(200, """{"fields": "x"}""") }.first.readAck(ref))
     }
 
     @Test

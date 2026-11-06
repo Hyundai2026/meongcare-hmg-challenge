@@ -5,7 +5,7 @@
 
 - 예시: [emergency-case.example.json](emergency-case.example.json). 샘플 반려견 "보리"가 호흡 곤란·기침으로 오는 중이다. 테스트가 이 파일을 읽어서 대조한다.
 - 경로: `hospitals/{hospitalId}/cases/{caseId}` ([hospital-status.md](hospital-status.md) "Firestore 경로"). `caseId`는 Firestore가 만든다.
-- 계획: [docs/plans/completed/012-fastest-hospital.md](../plans/completed/012-fastest-hospital.md) "설계 결정 5·6"
+- 계획: [docs/plans/completed/012-fastest-hospital.md](../plans/completed/012-fastest-hospital.md) "설계 결정 5·6", [013-smooth-trip.md](../plans/active/013-smooth-trip.md) (카드 확인, 시연 갱신 간격)
 
 ## 보내는 것과 보내지 않는 것 (사용자 결정 2026-11-06, 계획 012 U3)
 
@@ -26,7 +26,7 @@
 | `etaUpdatedAt` | 타임스탬프 | 남은 시간을 마지막으로 보낸 시각 (차 시계) | 차 |
 | `card.pet` | 객체 또는 `null` | 반려견 정보. 아래 "card.pet". 차가 프로필을 받지 못했으면 `null` | 차 |
 | `card.symptoms` | `{ code, label }` 배열 | 고른 증상. 0~12개, 프리셋 순서 | 차 |
-| `acknowledgedAt` | 타임스탬프 또는 `null` | 병원이 [확인함]을 누른 시각 (계획 012 있으면 좋음 A) | 병원 웹 |
+| `acknowledgedAt` | 타임스탬프 또는 `null` | 병원 직원이 [카드 확인]을 누른 시각 (서버 시각). 차가 만들 때는 `null` | 병원 웹 |
 
 - 타임스탬프의 논리 형식은 [hospital-status.md](hospital-status.md)와 같다 (예시 JSON에서는 ISO 8601 UTC 문자열).
 
@@ -52,15 +52,23 @@
 ## 상태 흐름
 
 ```
-(차 [출발]) → en_route ──(남은 시간 갱신, 1분에 1번 이하)──→ en_route
+(차 [출발]) → en_route ──(남은 시간 갱신: 실제 길안내 1분, 시연 길안내 4초에 1번 이하)──→ en_route
                  ├──(도착)──→ arrived
                  └──(앱 [안내 취소] 또는 내비 "안내 종료")──→ cancelled
 (병원 웹 [완료]) → 문서 삭제
 ```
 
-- 차는 남은 분이 바뀌었고 마지막으로 보낸 지 60초가 지났을 때만 `remainingMinutes`·`etaAt`·`etaUpdatedAt`을 바꾼다.
+- 차는 남은 분이 바뀌었고 마지막으로 보낸 지 60초(시연 길안내는 4초)가 지났을 때만 `remainingMinutes`·`etaAt`·`etaUpdatedAt`을 바꾼다.
+  - 시연 길안내는 2초에 1분씩 줄어서, 60초 간격이면 병원 화면이 "37분 → 8분 → 도착"으로 튀었다 (계획 013).
 - 차는 도착·취소를 상태로 알리고 문서를 지우지 않는다 (병원이 기록을 봐야 한다). 지우는 것은 병원 웹 [완료]다.
 - 차가 바꿀 수 있는 필드는 `status`, `remainingMinutes`, `etaAt`, `etaUpdatedAt`뿐이다. 병원 웹이 바꿀 수 있는 필드는 `acknowledgedAt`뿐이다 (보안 규칙).
+
+### 카드 확인 (`acknowledgedAt`, 계획 013)
+
+- 병원 웹의 [카드 확인]이 **서버 시각으로 한 번만** 쓴다. 이미 확인된 건은 다시 바꿀 수 없고, 클라이언트 시각은 거부된다 (보안 규칙).
+- 차는 안내 중에만 자기 건의 이 필드를 읽는다: 시연 길안내 4초, 실제 길안내 15초마다. 확인되거나, 도착·취소되거나, 건이 지워졌거나(병원 [완료]), 도착 화면을 닫으면 그만 읽는다.
+- 서버로 보낸 건만 읽는다. 내장 시연 병원은 실제로 보내지 않았으므로 확인을 흉내 내지 않는다.
+- 차 화면: 카드 화면 "병원이 진료 카드를 확인했어요 (14:05)", 주행 화면 "병원이 카드를 확인했어요" 한 줄.
 
 ## 읽는 쪽 규칙 (병원 웹)
 
@@ -77,4 +85,4 @@
 
 - **시계 차이**: `etaAt`은 차 시계로 계산한다. 차와 병원 PC의 시계가 다르면 그만큼 틀린다. 병원 웹은 "도착 예정 14:32 · 약 12분 후"의 "약 N분 후"를 자기 시계로 계산한다.
 - 자동 삭제가 없다 (Functions를 쓰지 않는다). 진짜 프로젝트에서는 남은 건을 정리하는 방법을 정해야 한다 (docs/architecture.md "Firebase로 옮길 때 할 일").
-- 익명 토큰은 약 1시간 유효로 알고 있다. 갱신 전에는 안내가 길면 남은 시간 갱신이 실패할 수 있다 (계획 012 있으면 좋음 C).
+- 익명 토큰은 약 1시간 유효로 알고 있다. 차는 만료 전에 갱신한다 (계획 013 단계 13). 갱신이 끝나기 전 빌드에서는 앱을 오래 켜 두면 서버 요청이 실패할 수 있다.

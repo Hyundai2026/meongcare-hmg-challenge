@@ -362,7 +362,7 @@ ui ──▶ domain ◀── data
 | 저장 | 동의 전: 브라우저 localStorage, 키 `owner-web.pet-profile` (008). **동의 뒤: Firestore `petProfiles/{uid}` + 사진은 보호자 전용 `private/photo`** (014 U3·U6). 동의하면 브라우저 정보를 한 번 옮기고 브라우저에서 지운다 (서버에 이미 있으면 덮어쓰지 않는다) | 서버 저장은 동의 뒤에만. 사진은 차가 읽지 못하게 따로 둔다 | 처음부터 Firebase, Firebase Storage(Spark 사용 가능 여부 미확인) |
 | 저장소 인터페이스 | `PetProfileRepository` (`load`/`save`, `Promise`, 실패는 결과 값, 서버에 닿지 못하면 `'network'`). 서버 모드는 `OwnerServer`(계정 `OwnerAccount` + 저장소) | localStorage 구현이 앱의 Fake 자리, Firebase 구현(`data/firestoreOwnerStore.ts`)이 Real 자리다. 바꿔 끼워도 화면 코드가 그대로다 | 화면에서 localStorage 직접 호출 |
 | 보호자 계정 | Firebase **익명 계정** (014 U1). 동의할 때 만든다 (동의 전에는 만들지 않는다) | 시연이 빠르다. 브라우저 사이트 데이터를 지우면 그 프로필을 고칠 수 없다 → 동의 문구에 알린다 | Google 로그인 (약 하루 더), 이메일 |
-| 차 연결 | [차와 연결]에 차 화면의 6자 코드 입력 → 코드 claim + 허가(`readers/{차}`)를 한 번에 쓴다. `?code=`로 열면 미리 채운다 (나중 QR) | 차에서 글자를 입력하지 않는다 | QR (11/15에는 넣지 않음, U4) |
+| 차 연결 | 프로필 아래 카드 하나: [차와 연결하기] → (동의 전이면 동의) → 바로 코드 입력 → 코드 claim + 허가(`readers/{차}`)를 한 번에 쓴다. 허가 목록을 실시간으로 봐서 카드가 "차와 연결됨"으로 바뀐다 (`watchLinkedCars`). `?code=`로 열면 미리 채운다 (나중 QR) | 차에서 글자를 입력하지 않는다 | QR (11/15에는 넣지 않음, U4) |
 | 스키마 버전 | `schemaVersion: 1`. 모르는 버전은 읽지 않는다 | localStorage 데이터는 코드보다 오래 남는다. 차 앱이 짐작해서 약 정보를 틀리게 보여 주면 안 된다 | |
 | 사진 | 브라우저에서 긴 변 512px JPEG(품질 0.8)로 줄여 data URL로 저장 | 한 키에 넣어도 용량이 작다. 캔버스로 다시 그려 EXIF(촬영 위치)가 빠진다 | 원본 저장 |
 | 화면 | 탭 의료정보·기본정보 (의료정보가 먼저). 진료이력 탭·알림 아이콘은 두지 않는다 (사용자 결정) | 기능이 없는 버튼을 보이지 않는다 | 진료이력 탭을 "준비 중"으로 보이기 |

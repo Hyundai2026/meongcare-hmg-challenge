@@ -25,7 +25,7 @@ sealed interface HospitalBoard {
  *
  * 나중에 카카오 로컬 검색 병원을 더하면, 그 병원은 대기 정보 없음(`status = null`) 후보로 들어온다.
  */
-interface HospitalBoardSource {
+fun interface HospitalBoardSource {
     /**
      * 목록을 한 번 받는다. 부를 때마다 새로 받는다 (캐시 없음).
      * 취소 말고는 예외를 던지지 않는다. 실패는 [HospitalBoard.Unavailable]이다.

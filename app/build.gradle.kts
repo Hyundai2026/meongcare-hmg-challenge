@@ -110,4 +110,12 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.junit)
     testImplementation(libs.turbine)
+    testImplementation(libs.org.json)
+}
+
+// 단위 테스트가 docs/data/의 예시 JSON을 읽는다 (012). 파일 위치를 넘기고, 바뀌면 테스트를 다시 돌리게 입력으로 둔다.
+tasks.withType<Test>().configureEach {
+    val docsData = rootProject.file("docs/data")
+    inputs.dir(docsData).withPathSensitivity(PathSensitivity.RELATIVE).withPropertyName("docsData")
+    systemProperty("meongcare.docsData", docsData.absolutePath)
 }

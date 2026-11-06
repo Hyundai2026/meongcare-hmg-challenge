@@ -1,0 +1,75 @@
+{
+  "about": "시연용 제휴 병원 5곳. 모두 가상 병원이다. 형식은 hospital-status.md. status.updatedAt은 넣지 않고, 쓰는 쪽(시드, 차 앱 내장 목록, 웹 메모리 저장소)이 '지금 - seedUpdatedMinutesAgo분'으로 채운다.",
+  "hospitals": [
+    {
+      "id": "demo-fast",
+      "seedUpdatedMinutesAgo": 2,
+      "document": {
+        "schemaVersion": 1,
+        "name": "시연용 바른 동물병원",
+        "phone": "02-0000-0001",
+        "latitude": 37.367,
+        "longitude": 127.1083,
+        "address": null,
+        "isSample": true,
+        "status": { "waitMinutes": 10, "congestion": "normal", "acceptingEmergency": true }
+      }
+    },
+    {
+      "id": "demo-main",
+      "seedUpdatedMinutesAgo": 5,
+      "document": {
+        "schemaVersion": 1,
+        "name": "시연용 동물병원",
+        "phone": "02-0000-0000",
+        "latitude": 37.48544722,
+        "longitude": 127.03636666,
+        "address": null,
+        "isSample": true,
+        "status": { "waitMinutes": 5, "congestion": "low", "acceptingEmergency": true }
+      }
+    },
+    {
+      "id": "demo-near",
+      "seedUpdatedMinutesAgo": 3,
+      "document": {
+        "schemaVersion": 1,
+        "name": "시연용 가까운 동물병원",
+        "phone": "02-0000-0002",
+        "latitude": 37.3947,
+        "longitude": 127.1112,
+        "address": null,
+        "isSample": true,
+        "status": { "waitMinutes": 60, "congestion": "high", "acceptingEmergency": true }
+      }
+    },
+    {
+      "id": "demo-stale",
+      "seedUpdatedMinutesAgo": 90,
+      "document": {
+        "schemaVersion": 1,
+        "name": "시연용 정보 지난 동물병원",
+        "phone": "02-0000-0003",
+        "latitude": 37.4873,
+        "longitude": 127.1017,
+        "address": null,
+        "isSample": true,
+        "status": { "waitMinutes": 5, "congestion": "low", "acceptingEmergency": true }
+      }
+    },
+    {
+      "id": "demo-closed",
+      "seedUpdatedMinutesAgo": 10,
+      "document": {
+        "schemaVersion": 1,
+        "name": "시연용 응급 휴진 동물병원",
+        "phone": "02-0000-0004",
+        "latitude": 37.4113,
+        "longitude": 127.1275,
+        "address": null,
+        "isSample": true,
+        "status": { "waitMinutes": 0, "congestion": "normal", "acceptingEmergency": false }
+      }
+    }
+  ]
+}

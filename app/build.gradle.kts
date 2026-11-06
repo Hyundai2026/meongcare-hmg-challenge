@@ -15,6 +15,13 @@ fun loadProperties(file: File): Properties = Properties().apply {
 fun String.asBuildConfigString(): String =
     "\"" + replace("\\", "\\\\").replace("\"", "\\\"") + "\""
 
+/**
+ * 컴파일 상수가 아닌 BuildConfig 문자열 (`String.valueOf("...")`).
+ * 상수(`static final String = "..."`)는 Kotlin이 쓰는 곳에 값을 박아 넣는데, secrets.properties만 바꾸면
+ * 증분 컴파일이 쓰는 쪽을 다시 컴파일하지 않아 예전 값이 남는다 (012에서 겪음). 상수가 아니면 매번 BuildConfig에서 읽는다.
+ */
+fun String.asBuildConfigRuntimeString(): String = "String.valueOf(" + asBuildConfigString() + ")"
+
 // Pleos Client ID/Secret (TTS/STT용). secrets.properties.example 참고. 없으면 빈 값.
 val secrets = loadProperties(rootProject.file("secrets.properties"))
 
@@ -41,9 +48,9 @@ android {
         buildConfigField("String", "PLEOS_CLIENT_SECRET", secrets.getProperty("PLEOS_CLIENT_SECRET", "").asBuildConfigString())
 
         // Firebase (012, 제휴 병원 목록·카드 전송). 없으면 빈 값 → 앱은 내장 시연 병원으로 돈다 (data/server/ServerConfig.kt).
-        buildConfigField("String", "FIREBASE_PROJECT_ID", secrets.getProperty("FIREBASE_PROJECT_ID", "").asBuildConfigString())
-        buildConfigField("String", "FIREBASE_API_KEY", secrets.getProperty("FIREBASE_API_KEY", "").asBuildConfigString())
-        buildConfigField("String", "FIREBASE_EMULATOR_HOST", secrets.getProperty("FIREBASE_EMULATOR_HOST", "").asBuildConfigString())
+        buildConfigField("String", "FIREBASE_PROJECT_ID", secrets.getProperty("FIREBASE_PROJECT_ID", "").asBuildConfigRuntimeString())
+        buildConfigField("String", "FIREBASE_API_KEY", secrets.getProperty("FIREBASE_API_KEY", "").asBuildConfigRuntimeString())
+        buildConfigField("String", "FIREBASE_EMULATOR_HOST", secrets.getProperty("FIREBASE_EMULATOR_HOST", "").asBuildConfigRuntimeString())
     }
 
     signingConfigs {
@@ -65,7 +72,7 @@ android {
                 signingConfig = signingConfigs.getByName("release")
             }
             // release는 PC의 Firebase 에뮬레이터(평문 HTTP)에 붙지 않는다. ServerConfig도 무시하지만 한 번 더 막는다 (012).
-            buildConfigField("String", "FIREBASE_EMULATOR_HOST", "\"\"")
+            buildConfigField("String", "FIREBASE_EMULATOR_HOST", "".asBuildConfigRuntimeString())
             // Vehicle SDK의 R8 규칙이 확인되기 전까지는 난독화·축소를 끈다.
             isMinifyEnabled = false
             proguardFiles(

@@ -39,6 +39,11 @@ android {
 
         buildConfigField("String", "PLEOS_CLIENT_ID", secrets.getProperty("PLEOS_CLIENT_ID", "").asBuildConfigString())
         buildConfigField("String", "PLEOS_CLIENT_SECRET", secrets.getProperty("PLEOS_CLIENT_SECRET", "").asBuildConfigString())
+
+        // Firebase (012, 제휴 병원 목록·카드 전송). 없으면 빈 값 → 앱은 내장 시연 병원으로 돈다 (data/server/ServerConfig.kt).
+        buildConfigField("String", "FIREBASE_PROJECT_ID", secrets.getProperty("FIREBASE_PROJECT_ID", "").asBuildConfigString())
+        buildConfigField("String", "FIREBASE_API_KEY", secrets.getProperty("FIREBASE_API_KEY", "").asBuildConfigString())
+        buildConfigField("String", "FIREBASE_EMULATOR_HOST", secrets.getProperty("FIREBASE_EMULATOR_HOST", "").asBuildConfigString())
     }
 
     signingConfigs {
@@ -59,6 +64,8 @@ android {
             if (hasReleaseKeystore) {
                 signingConfig = signingConfigs.getByName("release")
             }
+            // release는 PC의 Firebase 에뮬레이터(평문 HTTP)에 붙지 않는다. ServerConfig도 무시하지만 한 번 더 막는다 (012).
+            buildConfigField("String", "FIREBASE_EMULATOR_HOST", "\"\"")
             // Vehicle SDK의 R8 규칙이 확인되기 전까지는 난독화·축소를 끈다.
             isMinifyEnabled = false
             proguardFiles(

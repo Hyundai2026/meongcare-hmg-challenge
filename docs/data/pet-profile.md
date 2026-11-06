@@ -5,7 +5,7 @@
 
 - 예시: [pet-profile.example.json](pet-profile.example.json). 컨셉 그림의 "보리"다. 웹 테스트가 이 파일을 읽어서, 문서와 코드가 어긋나면 테스트가 깨진다.
 - 웹 구현: `web/src/domain/petProfile.ts`, `web/src/domain/petProfileJson.ts`
-- 지금 쓰는 곳: 보호자 웹 (브라우저 localStorage), 차 앱 (진료 카드. 아직 웹과 연결되지 않아 이 예시와 같은 값의 Fake "보리"를 쓴다, 009).
+- 쓰는 곳: 보호자 웹 (브라우저 localStorage, 또는 동의하면 서버), 차 앱 (진료 카드. 보호자 웹과 연결하면 서버의 프로필, 연결 전에는 이 예시와 같은 값의 샘플 "보리", 009·014).
 
 ## 필드
 
@@ -84,7 +84,7 @@
 | 어디 | 키 / 경로 | 비고 |
 |---|---|---|
 | 보호자 웹 (지금) | localStorage `owner-web.pet-profile` | JSON 문자열 하나 (사진 포함). 앱 이름과 묶지 않아서 이름을 바꿔도 데이터가 그대로다 |
-| 서버 (나중) | Firestore 문서 (미정) | 문의 A1 이후. docs/architecture.md "보호자 웹" |
+| 서버 (014) | Firestore `petProfiles/{ownerUid}` (사진만 `petProfiles/{ownerUid}/private/photo`) | 보호자가 동의하면 저장한다. 서버 문서의 `photoDataUrl`은 늘 `null`이고 사진은 보호자만 읽는 문서에 따로 둔다. 연결한 차가 읽는다. 형식: [owner-link.md](owner-link.md) |
 
 ## Kotlin 대응 (차 앱, 009에서 확정)
 
@@ -92,7 +92,7 @@
 
 | JSON | Kotlin |
 |---|---|
-| `schemaVersion` | 도메인 모델에 두지 않는다. JSON을 읽는 쪽(나중 서버 구현)이 1인지 확인하고, 아니면 `PetProfileLoad.Unavailable`을 낸다 |
+| `schemaVersion` | 도메인 모델에 두지 않는다. JSON을 읽는 쪽(서버 구현 `FirestoreJson.petProfileOf`, 014)이 1인지 확인하고, 아니면 `PetProfileLoad.Unavailable`을 낸다 |
 | `name` | `String` |
 | `breed` | `String?` |
 | `sex` | `enum class Sex { MALE, FEMALE }`, `Sex?` |

@@ -1,0 +1,43 @@
+{
+  "owners/owner-uid-1": {
+    "schemaVersion": 1,
+    "consentVersion": 1,
+    "consentedAt": "2026-11-06T09:00:00Z"
+  },
+  "petProfiles/owner-uid-1": {
+    "schemaVersion": 1,
+    "name": "보리",
+    "breed": "골든리트리버",
+    "sex": "male",
+    "birthDate": "2014-08-01",
+    "birthDateIsEstimated": false,
+    "photoDataUrl": null,
+    "medical": {
+      "conditions": ["심장질환"],
+      "allergies": ["특정 단백질 알레르기"],
+      "medications": [{ "name": "심장약", "dosage": "1일 1회" }]
+    },
+    "updatedAt": "2026-11-05T00:00:00.000Z"
+  },
+  "petProfiles/owner-uid-1/private/photo": {
+    "photoDataUrl": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQ"
+  },
+  "linkCodes/K7P3QX (claim 전)": {
+    "schemaVersion": 1,
+    "carUid": "car-uid-1",
+    "createdAt": "2026-11-06T09:05:00Z",
+    "ownerUid": null,
+    "claimedAt": null
+  },
+  "linkCodes/K7P3QX (claim 뒤)": {
+    "schemaVersion": 1,
+    "carUid": "car-uid-1",
+    "createdAt": "2026-11-06T09:05:00Z",
+    "ownerUid": "owner-uid-1",
+    "claimedAt": "2026-11-06T09:06:12Z"
+  },
+  "petProfiles/owner-uid-1/readers/car-uid-1": {
+    "linkCode": "K7P3QX",
+    "createdAt": "2026-11-06T09:06:12Z"
+  }
+}

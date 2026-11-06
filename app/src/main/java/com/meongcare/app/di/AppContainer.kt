@@ -15,10 +15,17 @@ import com.meongcare.app.data.guidance.navi.PleosNaviClient
 import com.meongcare.app.data.guidance.RealGuidanceSource
 import com.meongcare.app.data.hospital.BuiltInHospitalBoardSource
 import com.meongcare.app.data.hospital.FakeCaseSender
+import com.meongcare.app.data.hospital.FallbackHospitalBoardSource
 import com.meongcare.app.data.hospital.SampleHospitals
 import com.meongcare.app.data.location.FakeCurrentLocationSource
 import com.meongcare.app.data.location.NaviCurrentLocationSource
 import com.meongcare.app.data.pet.FakePetProfileSource
+import com.meongcare.app.data.server.AnonymousAuth
+import com.meongcare.app.data.server.FirestoreCaseSender
+import com.meongcare.app.data.server.FirestoreHospitalBoardSource
+import com.meongcare.app.data.server.UrlConnectionHttpTransport
+import com.meongcare.app.data.server.serverConfigOf
+import com.meongcare.app.domain.hospital.HospitalBoard
 import com.meongcare.app.data.phone.AndroidPhoneDialer
 import com.meongcare.app.domain.card.MedicalCardSession
 import com.meongcare.app.domain.pet.PetProfileSource
@@ -33,6 +40,8 @@ import com.meongcare.app.domain.hospital.HospitalCandidate
 import com.meongcare.app.domain.trip.CaseSender
 import com.meongcare.app.domain.trip.HospitalTrip
 import com.meongcare.app.domain.location.CurrentLocationSource
+import com.meongcare.app.BuildConfig
+import com.meongcare.app.ui.card.symptomLabelRes
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -119,15 +128,45 @@ class AppContainer(context: Context, val dataMode: DataMode) {
     val sampleHospital: Hospital = SampleHospitals.demo
 
     /**
-     * 제휴 병원 목록 (012). 지금은 **모든 데이터 모드에서 내장 시연 병원 5곳**이다.
-     * 서버(Firestore)는 계획 012 단계 12에서 데이터 모드에 끼운다 (`di/HospitalPlan.kt`).
+     * 서버(Firebase: Firestore + 익명 Auth, 012). `secrets.properties`에 설정이 없으면 null → 내장 시연 병원으로 돈다.
+     * release는 PC 에뮬레이터 주소를 쓰지 않는다 (`serverConfigOf`).
      */
-    val hospitalBoardSource: HospitalBoardSource = BuiltInHospitalBoardSource()
+    private val serverConfig = serverConfigOf(
+        projectId = BuildConfig.FIREBASE_PROJECT_ID,
+        apiKey = BuildConfig.FIREBASE_API_KEY,
+        emulatorHost = BuildConfig.FIREBASE_EMULATOR_HOST,
+        isDebugBuild = BuildConfig.DEBUG,
+    )
+
+    /** 병원 목록 출처 (012, [hospitalSourceKindOf]의 표) */
+    val hospitalSourceKind: HospitalSourceKind = hospitalSourceKindOf(dataMode, hasServer = serverConfig != null)
+
+    /** 서버를 쓰는 구성에서만 만든다. 로그 태그는 `HospitalTrip` 하나 (결과 종류·개수·시간만). */
+    private val server = serverConfig?.takeIf { hospitalSourceKind != HospitalSourceKind.BUILT_IN }?.let { config ->
+        val transport = UrlConnectionHttpTransport()
+        val auth = AnonymousAuth(config, transport)
+        val label: (com.meongcare.app.domain.card.Symptom) -> String = { context.getString(symptomLabelRes(it)) }
+        FirestoreHospitalBoardSource(config, auth, transport, log = { Log.i(TRIP_LOG_TAG, it) }) to
+            FirestoreCaseSender(config, auth, transport, label)
+    }
+
+    /** 제휴 병원 목록 (012, 계획 012 "설계 결정 4"). */
+    val hospitalBoardSource: HospitalBoardSource = when (hospitalSourceKind) {
+        HospitalSourceKind.BUILT_IN -> BuiltInHospitalBoardSource()
+        HospitalSourceKind.SERVER_WITH_FALLBACK -> server?.let { (board, _) ->
+            FallbackHospitalBoardSource(server = board, log = { Log.i(TRIP_LOG_TAG, it) })
+        } ?: BuiltInHospitalBoardSource()
+        HospitalSourceKind.SERVER_ONLY -> server?.first ?: HospitalBoardSource {
+            Log.i(TRIP_LOG_TAG, "병원 목록: 서버 설정 없음")
+            HospitalBoard.Unavailable("서버 설정 없음")
+        }
+    }
 
     private val fakeCaseSender = FakeCaseSender()
 
-    /** 병원 출처에 맞는 카드 전송 (012). 내장 시연 병원은 Fake 전송이다 (실제로 보내지 않는다). */
-    private fun caseSenderFor(candidate: HospitalCandidate): CaseSender = fakeCaseSender
+    /** 병원 출처에 맞는 카드 전송 (012): 서버에서 온 병원만 서버로 보낸다. 내장 시연 병원은 Fake 전송이다. */
+    private fun caseSenderFor(candidate: HospitalCandidate): CaseSender =
+        server?.second?.takeIf { candidate.sendsCardToServer } ?: fakeCaseSender
 
     /**
      * 반려견 프로필. 서버(보호자 웹 연결)가 생기기 전까지 **모든 데이터 모드에서 Fake("보리")**다.
@@ -152,7 +191,7 @@ class AppContainer(context: Context, val dataMode: DataMode) {
         guidance = guidanceSource,
         senderFor = ::caseSenderFor,
         scope = applicationScope,
-        log = { Log.i("HospitalTrip", it) },
+        log = { Log.i(TRIP_LOG_TAG, it) },
     )
 
     /** Pleos Vehicle 연결. Real 구성에서만 만든다 (Fake에서는 Vehicle을 만들지 않는다). */
@@ -178,3 +217,6 @@ class AppContainer(context: Context, val dataMode: DataMode) {
         return if (sourcePlan.driving == SourceKind.REAL) isDriving.flowOn(Dispatchers.Main) else isDriving
     }
 }
+
+/** 병원 찾기·카드 전송 로그 태그 (012). `adb logcat -s HospitalTrip` */
+private const val TRIP_LOG_TAG = "HospitalTrip"

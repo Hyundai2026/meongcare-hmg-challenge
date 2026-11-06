@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    debug 빌드에만 합쳐진다. PC의 Firebase 에뮬레이터(평문 HTTP)에 붙기 위해 그 주소에만 평문을 허용한다 (012).
+    release에는 이 파일이 없다 (HTTPS만, docs/pleos/ux-guidelines.md "HTTPS·TLS 1.2+").
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application android:networkSecurityConfig="@xml/network_security_config" />
+</manifest>

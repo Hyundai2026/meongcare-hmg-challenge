@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import com.meongcare.app.domain.hospital.RankedHospital
+import com.meongcare.app.domain.trip.FinderStep
 import com.meongcare.app.ui.card.CardFlowUiState
 import com.meongcare.app.ui.card.MedicalCardActions
 import com.meongcare.app.ui.card.MedicalCardScreen
@@ -25,6 +27,8 @@ import com.meongcare.app.ui.guidance.GuidanceUiState
  * @param isGuidanceSimulated 길안내가 시연용이면 카드 화면에 그 사실을 알린다. 주행 화면은 바꾸지 않는다.
  * @param isPetProfileSample 반려견 정보가 시연용 샘플이면 정차 화면·카드에 알린다.
  * @param onCloseArrival 도착 카드 [닫기]. 도착 상태를 지우고 카드도 비운다.
+ * @param finder 병원 찾기 단계 (012). 목록·확인 화면은 [hospitalList]·[hospitalConfirm]이 그린다.
+ * @param onFinderBack 병원 찾기 화면의 시스템 뒤로 (= 화면의 [뒤로])
  * @param bottomBar 화면 아래에 붙는 영역. debug 빌드의 개발자 패널이 들어간다.
  */
 @Composable
@@ -33,13 +37,18 @@ fun HomeScreen(
     guidanceUiState: GuidanceUiState,
     cardUiState: CardFlowUiState,
     cardActions: MedicalCardActions,
-    onStartGuidance: () -> Unit,
+    onFindHospital: () -> Unit,
     onCancelGuidance: () -> Unit,
     onCloseArrival: () -> Unit,
     isGuidanceSimulated: Boolean,
     isPetProfileSample: Boolean,
     modifier: Modifier = Modifier,
     isRouteOnNavi: Boolean = false,
+    finder: FinderStep = FinderStep.None,
+    onFinderBack: () -> Unit = {},
+    hospitalList: @Composable () -> Unit = {},
+    hospitalConfirm: @Composable (RankedHospital) -> Unit = {},
+    cardExtras: CardExtras = CardExtras(),
     bottomBar: @Composable () -> Unit = {},
 ) {
     Surface(modifier = modifier.fillMaxSize()) {
@@ -50,12 +59,17 @@ fun HomeScreen(
                         guidanceUiState = guidanceUiState,
                         cardUiState = cardUiState,
                         cardActions = cardActions,
-                        onStartGuidance = onStartGuidance,
+                        onFindHospital = onFindHospital,
                         onCancelGuidance = onCancelGuidance,
                         onCloseArrival = onCloseArrival,
                         isGuidanceSimulated = isGuidanceSimulated,
                         isPetProfileSample = isPetProfileSample,
                         isRouteOnNavi = isRouteOnNavi,
+                        finder = finder,
+                        onFinderBack = onFinderBack,
+                        hospitalList = hospitalList,
+                        hospitalConfirm = hospitalConfirm,
+                        cardExtras = cardExtras,
                     )
                     HomeContent.DRIVING -> DrivingScreen(guidanceUiState)
                 }
@@ -71,14 +85,19 @@ private fun ParkedFlow(
     guidanceUiState: GuidanceUiState,
     cardUiState: CardFlowUiState,
     cardActions: MedicalCardActions,
-    onStartGuidance: () -> Unit,
+    onFindHospital: () -> Unit,
     onCancelGuidance: () -> Unit,
     onCloseArrival: () -> Unit,
     isGuidanceSimulated: Boolean,
     isPetProfileSample: Boolean,
     isRouteOnNavi: Boolean,
+    finder: FinderStep,
+    onFinderBack: () -> Unit,
+    hospitalList: @Composable () -> Unit,
+    hospitalConfirm: @Composable (RankedHospital) -> Unit,
+    cardExtras: CardExtras,
 ) {
-    when (parkedContentOf(guidanceUiState, cardUiState.session, cardUiState.atHome)) {
+    when (parkedContentOf(guidanceUiState, cardUiState.session, cardUiState.atHome, finder)) {
         ParkedContent.HOME -> ParkedScreen(
             card = cardUiState,
             guidance = guidanceUiState,
@@ -102,13 +121,32 @@ private fun ParkedFlow(
                 state = cardUiState,
                 guidance = guidanceUiState,
                 actions = cardActions,
-                onStartGuidance = onStartGuidance,
+                onFindHospital = onFindHospital,
                 onCancelGuidance = onCancelGuidance,
                 onCloseArrival = onCloseArrival,
                 isPetProfileSample = isPetProfileSample,
                 isGuidanceSimulated = isGuidanceSimulated,
                 isRouteOnNavi = isRouteOnNavi,
+                delivery = cardExtras.delivery,
+                onResend = cardExtras.onResend,
             )
+        }
+        ParkedContent.HOSPITALS -> {
+            BackHandler(onBack = onFinderBack)
+            hospitalList()
+        }
+        ParkedContent.CONFIRM_HOSPITAL -> {
+            BackHandler(onBack = onFinderBack)
+            (finder as? FinderStep.Confirm)?.let { hospitalConfirm(it.choice) }
         }
     }
 }
+
+/**
+ * 진료 카드 화면에 012가 더한 것: 카드 전송 줄과 [다시 보내기].
+ * @param delivery 출발한 뒤의 전송 상태. 출발 전이면 null (줄이 없다)
+ */
+data class CardExtras(
+    val delivery: com.meongcare.app.domain.trip.CardDelivery? = null,
+    val onResend: () -> Unit = {},
+)

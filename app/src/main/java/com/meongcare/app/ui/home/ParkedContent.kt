@@ -1,6 +1,7 @@
 package com.meongcare.app.ui.home
 
 import com.meongcare.app.domain.card.CardSessionState
+import com.meongcare.app.domain.trip.FinderStep
 import com.meongcare.app.ui.guidance.GuidanceUiState
 
 /** 정차 화면(PARKED·ARRIVAL) 안에서 보일 것. */
@@ -13,6 +14,12 @@ enum class ParkedContent {
 
     /** 진료 카드 (안내 없음·안내 중·도착에 따라 머리와 버튼이 다르다) */
     CARD,
+
+    /** 가장 빨리 진료받을 병원 목록 (012) */
+    HOSPITALS,
+
+    /** 고른 병원 확인 (012) */
+    CONFIRM_HOSPITAL,
 }
 
 /**
@@ -21,18 +28,29 @@ enum class ParkedContent {
  *
  * | 안내 \ 카드 세션 | 없음 | 고르는 중 | 카드 있음 |
  * |---|---|---|---|
- * | 안내 없음 | HOME | SYMPTOMS | CARD |
+ * | 안내 없음 | HOME | SYMPTOMS | CARD (병원 찾기 중이면 HOSPITALS / CONFIRM_HOSPITAL) |
  * | 안내 중 | CARD (고른 증상 없음) | SYMPTOMS | CARD |
  * | 도착 | CARD (고른 증상 없음) | SYMPTOMS | CARD |
  *
  * 안내 중·도착인데 세션이 없으면(나중 Real 길안내에서 내비 앱으로 시작한 안내 등) 등록된 의료정보만으로 카드를 보인다.
+ * 병원 찾기 단계는 카드가 있고 안내가 없을 때만 보인다 (출발하면 길안내가 시작되므로 카드로 돌아간다).
  *
  * @param atHome [홈]을 눌러 처음 화면을 보는 중이면 true. 고르는 중이 아니면 처음 화면이다 (처음 화면에 [카드 보기]가 있다).
+ * @param finder 병원 찾기 단계 (012). 주행으로 바뀌었다가 정차하면 같은 단계로 돌아온다.
  */
-fun parkedContentOf(guidance: GuidanceUiState, session: CardSessionState, atHome: Boolean = false): ParkedContent =
+fun parkedContentOf(
+    guidance: GuidanceUiState,
+    session: CardSessionState,
+    atHome: Boolean = false,
+    finder: FinderStep = FinderStep.None,
+): ParkedContent =
     when {
         session is CardSessionState.Picking -> ParkedContent.SYMPTOMS
         atHome -> ParkedContent.HOME
+        session is CardSessionState.Ready && guidance is GuidanceUiState.Idle && finder is FinderStep.Hospitals ->
+            ParkedContent.HOSPITALS
+        session is CardSessionState.Ready && guidance is GuidanceUiState.Idle && finder is FinderStep.Confirm ->
+            ParkedContent.CONFIRM_HOSPITAL
         session is CardSessionState.Ready -> ParkedContent.CARD
         else -> if (guidance is GuidanceUiState.Idle) ParkedContent.HOME else ParkedContent.CARD
     }

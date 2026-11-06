@@ -13,6 +13,8 @@ composeBom = "2024.04.01"
 coroutinesBom = "1.9.0"
 junit = "4.13.2"
 turbine = "1.1.0"
+# 테스트 전용. JVM 단위 테스트에서는 Android 내장 org.json이 동작하지 않아 진짜 구현을 넣는다 (012). 라이선스: Public Domain
+orgJson = "20250517"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -33,6 +35,7 @@ kotlinx-coroutines-bom = { group = "org.jetbrains.kotlinx", name = "kotlinx-coro
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
+org-json = { group = "org.json", name = "json", version.ref = "orgJson" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

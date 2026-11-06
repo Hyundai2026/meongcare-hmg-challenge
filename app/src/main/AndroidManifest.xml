@@ -6,6 +6,9 @@
     <uses-permission android:name="pleos.car.permission.NAVI_ROUTE_SEARCH" />
     <uses-permission android:name="pleos.car.permission.NAVI_ROUTE" />
 
+    <!-- 제휴 병원 목록·진료 카드 전송 (012, Firebase). 일반(normal) 권한이라 실행 중 묻지 않는다. Pleos 권한이 아니다. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:name=".MeongCareApplication"
         android:allowBackup="false"

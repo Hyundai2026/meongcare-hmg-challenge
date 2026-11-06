@@ -1,0 +1,98 @@
+rules_version = '2';
+
+// MeongCare 제휴 병원·환자 건 보안 규칙 (계획 012 "설계 결정 6").
+// 형식: docs/data/hospital-status.md, docs/data/emergency-case.md
+// 차와 병원 웹 모두 익명 로그인한다. "로그인했는가"만이 아니라 "누구의 문서인가"로 막는다.
+// 점검: npm --prefix firebase run check-rules (R1~R8)
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isStaff(hid) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/hospitals/$(hid)/staff/$(request.auth.uid));
+    }
+
+    function validStatus(s) {
+      return s is map
+        && s.keys().hasOnly(['waitMinutes', 'congestion', 'acceptingEmergency', 'updatedAt'])
+        && s.keys().hasAll(['waitMinutes', 'congestion', 'acceptingEmergency', 'updatedAt'])
+        && s.waitMinutes is int && s.waitMinutes >= 0 && s.waitMinutes <= 600
+        && s.congestion in ['low', 'normal', 'high']
+        && s.acceptingEmergency is bool
+        && s.updatedAt == request.time;
+    }
+
+    function optionalNullOr(d, key, type) {
+      return !(key in d) || d[key] == null
+        || (type == 'int' && d[key] is int)
+        || (type == 'timestamp' && d[key] is timestamp);
+    }
+
+    // 차가 만드는 환자 건. 사진(photoDataUrl)과 차 위치는 받지 않는다.
+    function validNewCase(d) {
+      return d.keys().hasOnly(['schemaVersion', 'createdBy', 'createdAt', 'status', 'remainingMinutes',
+                               'etaAt', 'etaUpdatedAt', 'card', 'acknowledgedAt'])
+        && d.keys().hasAll(['schemaVersion', 'createdBy', 'createdAt', 'status', 'card'])
+        && d.schemaVersion == 1
+        && d.createdBy == request.auth.uid
+        && d.createdAt is timestamp
+        && d.status == 'en_route'
+        && optionalNullOr(d, 'remainingMinutes', 'int')
+        && optionalNullOr(d, 'etaAt', 'timestamp')
+        && optionalNullOr(d, 'etaUpdatedAt', 'timestamp')
+        && (!('acknowledgedAt' in d) || d.acknowledgedAt == null)
+        && d.card is map
+        && d.card.keys().hasOnly(['pet', 'symptoms'])
+        && d.card.symptoms is list && d.card.symptoms.size() <= 12
+        && (!('pet' in d.card) || d.card.pet == null
+            || (d.card.pet is map && !('photoDataUrl' in d.card.pet)));
+    }
+
+    match /hospitals/{hid} {
+      allow read: if signedIn();
+      // 병원 문서는 시드(관리자)만 만든다. 직원은 status만 바꾼다.
+      allow create, delete: if false;
+      allow update: if isStaff(hid)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+        && validStatus(request.resource.data.status);
+
+      // 병원 코드가 맞는 브라우저(익명 계정)를 그 병원 직원으로 등록한다.
+      match /staff/{uid} {
+        allow create: if signedIn() && uid == request.auth.uid
+          && request.resource.data.keys().hasOnly(['joinCode'])
+          && request.resource.data.joinCode is string
+          && request.resource.data.joinCode
+             == get(/databases/$(database)/documents/hospitalSecrets/$(hid)).data.joinCode;
+        allow read: if signedIn() && uid == request.auth.uid;
+        allow update, delete: if false;
+      }
+
+      match /cases/{cid} {
+        allow create: if signedIn()
+          && exists(/databases/$(database)/documents/hospitals/$(hid))
+          && validNewCase(request.resource.data);
+        allow read: if signedIn() && (resource.data.createdBy == request.auth.uid || isStaff(hid));
+        allow update: if signedIn() && (
+          (resource.data.createdBy == request.auth.uid
+            && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['status', 'remainingMinutes', 'etaAt', 'etaUpdatedAt'])
+            && request.resource.data.status in ['en_route', 'arrived', 'cancelled']
+            && optionalNullOr(request.resource.data, 'remainingMinutes', 'int')
+            && optionalNullOr(request.resource.data, 'etaAt', 'timestamp'))
+          || (isStaff(hid)
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['acknowledgedAt'])));
+        // [완료]는 병원이 지운다. 보낸 차도 자기 건은 지울 수 있다.
+        allow delete: if isStaff(hid) || (signedIn() && resource.data.createdBy == request.auth.uid);
+      }
+    }
+
+    // 병원별 시연 코드. 아무도 읽거나 쓰지 못한다 (규칙의 get()만 읽는다).
+    match /hospitalSecrets/{hid} {
+      allow read, write: if false;
+    }
+  }
+}

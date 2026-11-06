@@ -1,0 +1,18 @@
+{
+  "name": "meongcare-firebase",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Firebase 로컬 에뮬레이터(Auth·Firestore), 보안 규칙, 시연 병원 시드. 계획 012.",
+  "engines": {
+    "node": "^22.12.0 || ^24.0.0 || >=26.0.0"
+  },
+  "scripts": {
+    "emulators": "firebase emulators:start --project demo-meongcare --only auth,firestore",
+    "seed": "node scripts/seed.mjs",
+    "check-rules": "node scripts/check-rules.mjs"
+  },
+  "devDependencies": {
+    "firebase-tools": "15.34.1"
+  }
+}

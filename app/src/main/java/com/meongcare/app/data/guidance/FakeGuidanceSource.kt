@@ -55,11 +55,14 @@ data class FakeGuidanceTiming(
  *     다시 `true`가 될 때까지 도착을 미룬다 (목적지 전에 차를 세웠다면 아직 도착한 게 아니다).
  *   - 안내 한 번(시작 → 도착·취소·다른 목적지로 다시 시작) 동안 조건을 한 번만 구독하고, 끝나면 구독을 끊는다.
  *     간격마다 새로 구독하면 Real 주행 상태는 그때마다 차량 연결을 새로 맺기 때문이다.
+ * @param initialRemainingFor 목적지마다 처음 남은 시간을 정한다 (012: 병원 목록의 이동 어림). null을 돌려주면
+ *   [FakeGuidanceTiming.initialRemaining]이다. 기본값이면 예전과 똑같다.
  */
 class FakeGuidanceSource(
     private val scope: CoroutineScope,
     private val timing: FakeGuidanceTiming = FakeGuidanceTiming(),
     private val progressGate: Flow<Boolean>? = null,
+    private val initialRemainingFor: (Destination) -> Duration? = { null },
 ) : GuidanceSource {
 
     private val mutableState = MutableStateFlow<GuidanceState>(GuidanceState.Idle)
@@ -103,7 +106,7 @@ class FakeGuidanceSource(
         }
         try {
             delay(timing.routeCalculationDelay)
-            var remaining = timing.initialRemaining
+            var remaining = initialRemainingFor(destination)?.takeIf { it.isPositive() } ?: timing.initialRemaining
             while (remaining.isPositive()) {
                 publish(GuidanceState.Guiding(destination, remaining))
                 if (gateSubscription != null) gateOpen.first { it }

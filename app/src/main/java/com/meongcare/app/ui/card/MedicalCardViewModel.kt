@@ -12,6 +12,8 @@ import com.meongcare.app.domain.hospital.Hospital
 import com.meongcare.app.domain.pet.PetProfileLoad
 import com.meongcare.app.domain.pet.PetProfileSource
 import com.meongcare.app.domain.phone.PhoneDialer
+import com.meongcare.app.domain.trip.CaseCard
+import com.meongcare.app.domain.trip.caseCardOf
 import java.time.Clock
 import java.time.LocalDate
 import kotlinx.coroutines.flow.Flow
@@ -19,6 +21,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
@@ -47,6 +50,10 @@ data class CardFlowUiState(
  * 반려견 프로필과 진료 카드 세션을 합쳐 카드 화면 상태를 만들고, 버튼을 세션·전화 동작으로 바꾼다.
  *
  * 주행 상태와 길안내는 모른다. 무엇을 보여 줄지는 `homeContentOf`(주행 안전)와 `parkedContentOf`(정차 안)가 정한다.
+ *
+ * @param hospital 고정 병원 (010까지의 시연 병원). [selectedHospital]이 없을 때만 쓴다.
+ * @param selectedHospital 병원 찾기에서 고른 병원 (012). 주면 [hospital] 대신 이것을 쓰고, 아직 고르지 않았으면(null)
+ *   [병원에 전화]를 숨긴다 (계획 012 K5). 주지 않으면 예전처럼 [hospital]이다.
  */
 class MedicalCardViewModel(
     petProfileSource: PetProfileSource,
@@ -54,7 +61,15 @@ class MedicalCardViewModel(
     private val hospital: Hospital,
     private val phoneDialer: PhoneDialer,
     private val clock: Clock = Clock.systemDefaultZone(),
+    private val selectedHospital: StateFlow<Hospital?>? = null,
 ) : ViewModel() {
+
+    /** 지금 카드가 쓰는 병원. 고르기 전이면 null */
+    private val currentHospital: Hospital? get() = if (selectedHospital != null) selectedHospital.value else hospital
+
+    /** 마지막으로 받은 프로필. 병원에 보낼 카드를 만들 때 쓴다 */
+    @Volatile
+    private var latestProfile: PetProfileLoad? = null
 
     private val shownPhoneNumber = MutableStateFlow<String?>(null)
 
@@ -66,12 +81,13 @@ class MedicalCardViewModel(
         petProfileSource.profile.map<PetProfileLoad, PetProfileLoad?> { it }.onStart { emit(null) }
 
     val uiState: StateFlow<CardFlowUiState> =
-        combine(profileOrLoading, session.state, shownPhoneNumber, session.atHome) { profile, state, shown, atHome ->
-            uiStateOf(profile, state, shown, atHome)
+        combine(profileOrLoading, session.state, shownPhoneNumber, session.atHome, selectedHospital ?: flowOf(hospital)) { profile, state, shown, atHome, chosen ->
+            latestProfile = profile
+            uiStateOf(profile, state, shown, atHome, chosen)
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
-            initialValue = uiStateOf(profile = null, state = session.state.value, shown = null, atHome = session.atHome.value),
+            initialValue = uiStateOf(profile = null, state = session.state.value, shown = null, atHome = session.atHome.value, chosen = currentHospital),
         )
 
     /** [홈]: 카드를 지우지 않고 처음 화면으로 */
@@ -108,16 +124,29 @@ class MedicalCardViewModel(
 
     /** [병원에 전화]: 전화 앱을 열고, 열지 못하면 번호를 크게 보여 준다 */
     fun onCallHospital() {
-        val number = hospital.phoneNumber ?: return
+        currentHospital?.phoneNumber?.let(::onCallNumber)
+    }
+
+    /** 병원 확인 화면의 [병원에 전화] (012): 아직 고르기 전인 병원 번호로 */
+    fun onCallNumber(number: String) {
         if (!phoneDialer.openDialer(number)) shownPhoneNumber.value = number
     }
+
+    /**
+     * 병원에 보낼 카드 (012): 지금 고른 증상 + 받은 반려견 정보. 사진은 [caseCardOf]가 지운다.
+     * 프로필을 아직 받지 못했거나 읽지 못했으면 반려견 정보 없이(null) 만든다.
+     */
+    fun caseCard(): CaseCard = caseCardOf(
+        pet = (latestProfile as? PetProfileLoad.Loaded)?.profile,
+        symptoms = (session.state.value as? CardSessionState.Ready)?.symptoms ?: emptySet(),
+    )
 
     /** 번호 패널 [확인] */
     fun onDismissPhoneNumber() {
         shownPhoneNumber.value = null
     }
 
-    private fun uiStateOf(profile: PetProfileLoad?, state: CardSessionState, shown: String?, atHome: Boolean) = CardFlowUiState(
+    private fun uiStateOf(profile: PetProfileLoad?, state: CardSessionState, shown: String?, atHome: Boolean, chosen: Hospital?) = CardFlowUiState(
         session = state,
         card = medicalCardOf(
             profile = profile,
@@ -129,9 +158,9 @@ class MedicalCardViewModel(
             today = LocalDate.now(clock),
             zone = clock.zone,
         ),
-        hospitalName = hospital.name,
-        hospitalPhone = hospital.phoneNumber,
-        isHospitalSample = hospital.isSample,
+        hospitalName = chosen?.name ?: hospital.name,
+        hospitalPhone = chosen?.phoneNumber,
+        isHospitalSample = chosen?.isSample ?: hospital.isSample,
         shownPhoneNumber = shown,
         atHome = atHome,
     )
@@ -144,8 +173,9 @@ class MedicalCardViewModel(
             session: MedicalCardSession,
             hospital: Hospital,
             phoneDialer: PhoneDialer,
+            selectedHospital: StateFlow<Hospital?>? = null,
         ): ViewModelProvider.Factory = viewModelFactory {
-            initializer { MedicalCardViewModel(petProfileSource, session, hospital, phoneDialer) }
+            initializer { MedicalCardViewModel(petProfileSource, session, hospital, phoneDialer, selectedHospital = selectedHospital) }
         }
     }
 }

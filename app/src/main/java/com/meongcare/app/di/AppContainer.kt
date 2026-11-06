@@ -31,6 +31,8 @@ import com.meongcare.app.domain.link.OwnerLinkService
 import com.meongcare.app.data.server.AnonymousAuth
 import com.meongcare.app.data.server.FirestoreCaseSender
 import com.meongcare.app.data.server.FirestoreHospitalBoardSource
+import com.meongcare.app.data.server.HttpTransport
+import com.meongcare.app.data.server.ServerConfig
 import com.meongcare.app.data.server.UrlConnectionHttpTransport
 import com.meongcare.app.data.server.serverConfigOf
 import com.meongcare.app.domain.hospital.HospitalBoard
@@ -154,14 +156,23 @@ class AppContainer(context: Context, val dataMode: DataMode) {
     /** 병원 목록 출처 (012, [hospitalSourceKindOf]의 표) */
     val hospitalSourceKind: HospitalSourceKind = hospitalSourceKindOf(dataMode, hasServer = serverConfig != null)
 
+    private val serverTransport: HttpTransport = UrlConnectionHttpTransport()
+
+    /**
+     * 서버 클라이언트 (설정·익명 계정). 서버 설정이 있고 Fake가 아닐 때 한 번 만들어 병원과 반려견(014)이 같이 쓴다.
+     * 같은 익명 계정이어야 한다: 보안 규칙상 차는 자기 uid로 만든 환자 건·연결 코드만 다룬다.
+     */
+    private val serverClient: Pair<ServerConfig, AnonymousAuth>? =
+        serverConfig?.takeIf { dataMode != DataMode.FAKE }?.let { config ->
+            // 토큰은 만료 5분 전부터 미리 갱신한다 (013). 로그에는 결과 종류만
+            config to AnonymousAuth(config, serverTransport, log = { Log.i(TRIP_LOG_TAG, it) })
+        }
+
     /** 서버를 쓰는 구성에서만 만든다. 로그 태그는 `HospitalTrip` 하나 (결과 종류·개수·시간만). */
-    private val server = serverConfig?.takeIf { hospitalSourceKind != HospitalSourceKind.BUILT_IN }?.let { config ->
-        val transport = UrlConnectionHttpTransport()
-        // 토큰은 만료 5분 전부터 미리 갱신한다 (013). 로그에는 결과 종류만
-        val auth = AnonymousAuth(config, transport, log = { Log.i(TRIP_LOG_TAG, it) })
+    private val server = serverClient?.takeIf { hospitalSourceKind != HospitalSourceKind.BUILT_IN }?.let { (config, auth) ->
         val label: (com.meongcare.app.domain.card.Symptom) -> String = { context.getString(symptomLabelRes(it)) }
-        FirestoreHospitalBoardSource(config, auth, transport, log = { Log.i(TRIP_LOG_TAG, it) }) to
-            FirestoreCaseSender(config, auth, transport, label)
+        FirestoreHospitalBoardSource(config, auth, serverTransport, log = { Log.i(TRIP_LOG_TAG, it) }) to
+            FirestoreCaseSender(config, auth, serverTransport, label)
     }
 
     /** 제휴 병원 목록 (012, 계획 012 "설계 결정 4"). */

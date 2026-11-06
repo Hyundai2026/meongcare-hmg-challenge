@@ -45,7 +45,7 @@ PC 브라우저에서 폰 크기로 보려면 개발자 도구(F12)의 기기 �
    - 에뮬레이터 호스트는 `127.0.0.1`이다. **`localhost`로 써도 병원 웹이 `127.0.0.1`로 바꿔 붙는다** (`emulatorHostFor`). `localhost`는 브라우저가 IPv6(`::1`)로 먼저 붙을 수 있어서, 차 앱(`adb reverse` → IPv4)과 다른 에뮬레이터를 볼 수 있었다 (2026-11-06 실제로 생겼다). 화면 위 "서버:" 줄에 붙은 주소가 보이고, `::1`이면 빨간 경고가 뜬다.
 4. `npm --prefix web run dev` → http://localhost:5173/hospital/?h=demo-fast&code=fast-1234
 5. 차 앱 debug 빌드를 시연 모드로 두고 `secrets.properties`에 에뮬레이터 값을 넣는다 (`secrets.properties.example`). [출발]하면 카드가 이 화면에 "새 환자"로 뜬다. [카드 확인]을 누르면 차 화면에 "병원이 카드를 확인했어요"가 뜬다 (계획 013).
-6. 시연 직전: `npm --prefix firebase run preflight` (PF1~PF6). 시드한 지 30분이 지나면 대기 정보가 "지남"이 되어 차 목록에 1위가 없다 → 병원 웹에서 [병원 상태 알리기].
+6. 시연 직전: `npm --prefix firebase run preflight -- --fix` (PF1~PF6). 시드한 지 30분이 지나면 대기 정보가 "지남"이 되어 차 목록에 1위가 없다. `--fix`가 대기 정보를 새로 넣고(환자 건은 그대로) adb reverse도 건다.
 
 - 코드가 없거나 틀리면 "병원용 링크(코드 포함)로 열어 주세요"가 나온다. 한 번 등록된 브라우저는 그 병원을 코드 없이 다시 열 수 있다.
 - `VITE_`로 시작하는 값은 빌드 결과에 그대로 들어가 공개된다. `.env.local`은 커밋하지 않는다.

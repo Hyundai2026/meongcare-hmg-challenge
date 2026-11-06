@@ -579,18 +579,18 @@ ui/card/                   MedicalCardScreen(Idle 버튼, 전송 줄, 고른 병
 
 ### 필수 — 11/06: 차 앱을 가짜 데이터로 끝까지
 
-- [ ] 0. 이 계획 파일 커밋 → `docs(plans): 012 가장 빨리 진료받을 병원 계획 추가`
+- [x] 0. 이 계획 파일 커밋 → `docs(plans): 012 가장 빨리 진료받을 병원 계획 추가`
   - `[사용자 승인 필요]` U1~U4 답을 진행 로그에 적은 뒤 시작한다.
   - `.\gradlew.bat testDebugUnitTest`의 통과 수와 `npm --prefix web test`의 통과 수를 진행 로그에 적는다 (완료 기준 3의 기준값).
 
-- [ ] 1. 공유 데이터 형식 문서
+- [x] 1. 공유 데이터 형식 문서
   - 1-1. → `docs(data): 제휴 병원 상태 형식과 시연 병원 목록 추가`
     - `docs/data/hospital-status.md`, `docs/data/hospitals.sample.json` (설계 결정 5). 좌표를 지도로 확인해 고친다. 직선 거리 계산 결과(설계 결정 1의 9.6km 포함)를 진행 로그에 적는다.
   - 1-2. → `docs(data): 환자 건(진료 카드 전송) 형식 추가`
     - `docs/data/emergency-case.md`, `docs/data/emergency-case.example.json` ("보리" + 호흡 곤란·기침). Firestore 경로, 쓰는 쪽(차/병원 웹), 읽는 쪽 규칙, 시계 차이 한계.
   - 확인: `npm --prefix web run check` (docs/data가 웹 검사 대상이다).
 
-- [ ] 2. 이동 시간과 순위 (순수 Kotlin)
+- [x] 2. 이동 시간과 순위 (순수 Kotlin)
   - 2-1. → `feat(domain): 병원 상태 모델과 이동 시간 어림 추가`
     - `HospitalStatus.kt`, `HospitalCandidate.kt`, `Hospital.id`, `TravelEstimate.kt`
     - `TravelEstimateTest`: `` `같은 좌표면 1분이다`() ``, `` `시연 병원까지는 내비 관찰값 35분에 가깝다`() `` (±3분), `` `분은 올림한다`() ``, `` `멀수록 길어진다`() ``
@@ -609,7 +609,7 @@ ui/card/                   MedicalCardScreen(Idle 버튼, 전송 줄, 고른 병
       - `` `위치를 모르면 대기 시간 순이고 이동 시간은 비운다`() ``
       - `` `시연 병원 5곳은 바른, 시연용, 가까운 순이다`() ``
 
-- [ ] 3. 병원 목록·카드 전송 인터페이스와 Fake
+- [x] 3. 병원 목록·카드 전송 인터페이스와 Fake
   - 3-1. → `feat(domain): 병원 목록과 카드 전송 인터페이스 추가`
     - `HospitalBoardSource.kt`, `domain/trip/CaseCard.kt`, `CaseSender.kt`
   - 3-2. → `feat(data): 내장 시연 병원 목록과 Fake 카드 전송 추가`
@@ -619,7 +619,7 @@ ui/card/                   MedicalCardScreen(Idle 버튼, 전송 줄, 고른 병
     - `FallbackHospitalBoardSourceTest`: `` `서버가 주면 서버 목록이다`() ``, `` `서버가 5초 안에 답하지 않으면 내장으로 대체한다`() ``, `` `서버 실패면 내장으로 대체했다고 알린다`() ``, `` `취소는 그대로 전한다`() ``
     - `SampleHospitalsJsonTest`: `` `내장 시연 병원이 hospitals.sample.json과 같다`() `` (경로 `../docs/data/hospitals.sample.json`)
 
-- [ ] 4. 출발 조정 (`domain/trip/HospitalTrip.kt`) → `feat(domain): 출발 때 카드 전송과 도착 예정 갱신 추가`
+- [x] 4. 출발 조정 (`domain/trip/HospitalTrip.kt`) → `feat(domain): 출발 때 카드 전송과 도착 예정 갱신 추가`
   - 설계 결정 8의 4·7. `FinderStep`도 여기.
   - `HospitalTripTest` (가짜 `GuidanceSource`·`CaseSender`, 가상 시간):
     - `` `출발하면 고른 병원으로 길안내를 시작하고 카드와 도착 예정을 보낸다`() ``
@@ -634,7 +634,7 @@ ui/card/                   MedicalCardScreen(Idle 버튼, 전송 줄, 고른 병
     - `` `내장 병원은 Fake 전송으로, 서버 병원은 서버 전송으로 보낸다`() ``
     - `` `로그에 반려견 이름과 증상이 없다`() ``
 
-- [ ] 5. 차 화면: 목록과 확인 (Fake로 동작)
+- [x] 5. 차 화면: 목록과 확인 (Fake로 동작)
   - 5-1. → `feat(ui): 가장 빨리 진료받을 병원 목록 화면 추가`
     - `HospitalFinderViewModel`(위치·목록 동시에, 30초 폴링은 구독 중에만, [새로 고침], [위치 다시 찾기]), `HospitalFinderUiState`, `HospitalTexts`, `HospitalListScreen`, 미리보기 (넓은·좁은)
     - `HospitalFinderViewModelTest`: `` `열면 위치와 목록을 함께 받는다`() ``, `` `화면이 보이는 동안 30초마다 목록을 다시 받는다`() ``, `` `화면이 사라지면 다시 받지 않는다`() ``, `` `위치를 모르면 대기 시간 순 안내를 보인다`() ``, `` `Real에서 목록을 못 받으면 다시 시도를 보인다`() ``, `` `병원을 고르면 확인 단계다`() ``
@@ -643,7 +643,7 @@ ui/card/                   MedicalCardScreen(Idle 버튼, 전송 줄, 고른 병
     - `HospitalConfirmScreen` (설계 결정 6의 문구, 버튼 4개), `ParkedContent`의 `HOSPITALS`·`CONFIRM_HOSPITAL`, `parkedContentOf(…, finder)`, `HomeScreen` 연결, 시스템 뒤로 = [뒤로]
   - 확인: `assembleDebug`, 완료 기준 7의 Grep 일부 (`ui/`의 data·di import 0건, domain·data/hospital의 `import android.` 0건).
 
-- [ ] 6. 고른 병원으로 길안내·전화 연결 → **체크포인트 A**
+- [x] 6. 고른 병원으로 길안내·전화 연결 → **체크포인트 A**
   - 6-1. → `feat(di): 고른 병원으로 길안내와 전화 연결`
     - `AppContainer`: `hospitalBoardSource`(이 커밋에서는 모든 모드가 내장), `caseSenderFor`, `hospitalTrip`, `symptomLabel`. `MainActivity` 연결.
     - `MedicalCardScreen`: Idle 버튼 교체, 전송 줄, 고른 병원 전화. `MedicalCardViewModel` 맨 뒤 인자.

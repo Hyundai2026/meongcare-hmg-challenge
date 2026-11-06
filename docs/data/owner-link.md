@@ -6,7 +6,7 @@
 - 예시: [owner-link.example.json](owner-link.example.json). 문서 경로마다 논리 형식을 보인다 (타임스탬프는 ISO 8601 UTC 문자열로 적는다).
 - 프로필 필드 자체는 [pet-profile.md](pet-profile.md) v1이다. 이 문서는 서버의 **어디에, 누가, 무엇을** 두는지만 정한다.
 - 보안 규칙: `firebase/firestore.rules`. 점검: `npm --prefix firebase run check-rules` (R14~R24)
-- 계획: [docs/plans/active/014-owner-link.md](../plans/active/014-owner-link.md)
+- 계획: [docs/plans/completed/014-owner-link.md](../plans/completed/014-owner-link.md)
 
 ## 흐름 (TV 로그인 방식)
 

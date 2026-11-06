@@ -8,17 +8,20 @@
 import { initializeApp } from 'firebase/app'
 import { connectAuthEmulator, getAuth, signInAnonymously } from 'firebase/auth'
 import {
+  Timestamp,
+  collection,
   connectFirestoreEmulator,
   doc,
   getDoc,
   getFirestore,
+  onSnapshot,
   serverTimestamp,
   setDoc,
   writeBatch,
 } from 'firebase/firestore'
 import { FIRESTORE_EMULATOR_PORT, hostForUrl } from '../domain/hospital/serverInfo'
 import { CONSENT_VERSION } from '../domain/owner/consent'
-import type { AccountStatus, LinkCarResult, OwnerServer } from '../domain/owner/ownerAccount'
+import type { AccountStatus, LinkCarResult, LinkedCar, OwnerServer } from '../domain/owner/ownerAccount'
 import { profileFromServerDocs, serverDocsOf } from '../domain/owner/ownerProfileDoc'
 import type { PetProfile } from '../domain/petProfile'
 import type { LoadResult, PetProfileRepository, SaveResult } from '../domain/petProfileRepository'
@@ -135,6 +138,37 @@ export function createFirestoreOwnerStore(config: FirebaseWebConfig): OwnerServe
         } catch (error) {
           const failure = failureOf(error)
           return { ok: false, reason: failure === 'denied' ? 'not-found' : failure }
+        }
+      },
+
+      watchLinkedCars(listener: (cars: LinkedCar[] | null) => void): () => void {
+        let stop: (() => void) | null = null
+        let cancelled = false
+        void rememberedUid()
+          .then((uid) => {
+            if (cancelled) return
+            if (uid === null) {
+              listener([])
+              return
+            }
+            // 보호자는 자기 허가 목록을 읽는다 (보안 규칙 readers: list는 보호자만)
+            stop = onSnapshot(
+              collection(db, 'petProfiles', uid, 'readers'),
+              (snapshot) => {
+                listener(
+                  snapshot.docs.map((car) => {
+                    const at: unknown = car.get('createdAt', { serverTimestamps: 'estimate' })
+                    return { linkedAt: at instanceof Timestamp ? at.toDate().toISOString() : null }
+                  }),
+                )
+              },
+              () => listener(null),
+            )
+          })
+          .catch(() => listener(null))
+        return () => {
+          cancelled = true
+          stop?.()
         }
       },
     },

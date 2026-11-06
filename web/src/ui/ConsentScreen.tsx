@@ -1,18 +1,5 @@
 import { CONSENT_ITEMS, CONSENT_TITLE, consentMigrationText } from '../domain/owner/consent'
 
-/** 동의 전 처음 화면 아래 카드: 차에서 쓰려면 서버에 저장해야 한다 (계획 014 U6) */
-export function ConsentPrompt({ onOpen }: { onOpen: () => void }) {
-  return (
-    <section className="card server-card">
-      <h2 className="server-card__title">차에서 이 정보를 쓰려면</h2>
-      <p className="server-card__body">서버에 저장하면 차 화면의 코드로 연결해, 차에서 글자를 입력하지 않고 진료 카드를 만들 수 있어요.</p>
-      <button type="button" className="button button--primary button--block" onClick={onOpen}>
-        서버에 저장하고 차와 연결
-      </button>
-    </section>
-  )
-}
-
 interface Props {
   /** 브라우저에 저장한 반려견 이름. 있으면 옮긴다는 문장을 더한다 */
   browserPetName: string | null
@@ -48,7 +35,7 @@ export function ConsentScreen({ browserPetName, busy, error, onAgree, onLater }:
           나중에
         </button>
         <button type="button" className="button button--primary" onClick={onAgree} disabled={busy}>
-          {busy ? '저장하는 중…' : '동의하고 서버에 저장'}
+          {busy ? '저장하는 중…' : '동의하고 연결하기'}
         </button>
       </div>
     </section>

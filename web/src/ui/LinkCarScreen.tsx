@@ -6,15 +6,43 @@ import {
   linkOutcomeMessage,
   linkScreenReducer,
 } from './linkScreenReducer'
+import type { CarLinkStatus } from './ownerBanner'
 
-/** 동의 뒤 처음 화면 아래 카드: [차와 연결] */
-export function CarLinkCard({ onOpen }: { onOpen: () => void }) {
+const LINKED_AT = new Intl.DateTimeFormat('ko-KR', { month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+
+/**
+ * 프로필 바로 아래 [차와 연결] 카드 (계획 014). 동의 전이어도 같은 카드다: 누르면 필요할 때만 동의를 거쳐 코드 입력으로 간다.
+ * 연결한 차가 있으면 "차와 연결됨"으로 바뀐다 (차가 끊으면 실시간으로 돌아온다).
+ */
+export function CarLinkCard({ status, onOpen }: { status: CarLinkStatus; onOpen: () => void }) {
+  if (status.kind === 'unknown') return null
+  if (status.kind === 'linked') {
+    const when = status.lastLinkedAt === null ? null : LINKED_AT.format(new Date(status.lastLinkedAt))
+    return (
+      <section className="card server-card server-card--linked" aria-live="polite">
+        <h2 className="server-card__title server-card__title--linked">
+          <svg className="server-card__check" viewBox="0 0 20 20" aria-hidden="true">
+            <circle cx="10" cy="10" r="10" fill="currentColor" />
+            <path d="M5.5 10.5l3 3 6-6.5" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          차와 연결됨
+        </h2>
+        <p className="server-card__body">
+          {when !== null ? `${when}에 연결했어요. ` : ''}차에서 진료 카드를 만들면 이 정보가 들어가요.
+          {status.count > 1 ? ` (연결한 차 ${status.count}대)` : ''}
+        </p>
+        <button type="button" className="button button--text server-card__more" onClick={onOpen}>
+          다른 차와 연결
+        </button>
+      </section>
+    )
+  }
   return (
     <section className="card server-card">
-      <h2 className="server-card__title">차에서 이 정보 쓰기</h2>
-      <p className="server-card__body">차를 세우고 MeongCare의 [보호자 웹과 연결]을 누르면 6자리 코드가 보여요.</p>
+      <h2 className="server-card__title">차와 연결</h2>
+      <p className="server-card__body">차를 세우고 MeongCare 앱의 [보호자 웹과 연결]을 누르면 6자리 코드가 보여요. 연결하면 차에서 글자 입력 없이 진료 카드를 만들어요.</p>
       <button type="button" className="button button--primary button--block" onClick={onOpen}>
-        차와 연결
+        차와 연결하기
       </button>
     </section>
   )
@@ -103,7 +131,7 @@ export function LinkCarScreen({ account, petName, prefill, onBack }: Props) {
       )}
       <div className="form__actions">
         <button type="button" className="button button--secondary" onClick={onBack} disabled={state.sending !== null}>
-          {linked ? '닫기' : '돌아가기'}
+          {linked ? '완료' : '돌아가기'}
         </button>
         {!linked && petName !== null && (
           <button type="submit" className="button button--primary" disabled={state.sending !== null}>

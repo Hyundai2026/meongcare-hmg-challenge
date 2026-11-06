@@ -705,11 +705,11 @@ ui/card/                   MedicalCardScreen(Idle 버튼, 전송 줄, 고른 병
   - 고친 것이 있으면 `fix(...)` 커밋. 관찰은 → `docs(pleos): Pleos 에뮬레이터에서 호스트 PC 서버 접속 관찰 기록` (`docs/pleos/emulator-setup.md`, O1), 좌표를 고쳤으면 `docs(data): …`.
   - 시연 영상을 찍는다면 이때 (차 화면 + 병원 웹 나란히).
 
-- [ ] 14. tester → `test: …` (tester가 쓴 테스트를 영역별로 커밋)
+- [x] 14. tester → `test: …` (tester가 쓴 테스트를 영역별로 커밋)
   - 넘길 것: 이 계획 파일 경로와 대상만. 대상: `TravelEstimate`, `rankHospitals`, `FallbackHospitalBoardSource`, `HospitalTrip`, `ServerConfig`, `FirestoreJson`, `AnonymousAuth`, `FirestoreCaseSender`, `hospitalPlanOf`, `HospitalFinderViewModel`, `parkedContentOf`(새 단계), 웹 `web/src/domain/hospital/*`.
   - 버그 보고는 메인이 `fix:`로 고친다. 고친 뒤 UI가 바뀌었으면 `/verify`를 다시.
 
-- [ ] 15. 문서 갱신
+- [x] 15. 문서 갱신
   - 15-1. → `docs(architecture): 제휴 병원 순위와 카드 전송 구조 기록`
     - 서비스 기능 스택: 서버 행("Firebase Functions" → Firestore + 익명 Auth, Spark, Functions 없음), 병원 검색 행(제휴 병원 목록, 카카오는 나중), 새 행(병원 순위, 카드 전송, 이동 시간 어림). 데이터 모드에 설계 결정 4의 표. 패키지 구조. "보호자 웹" 결정 표의 의존성 줄. 새 절 "병원 웹 (012)"(설계 결정 6·7·9 요약). "Firebase로 옮길 때 할 일"에 남은 데이터 정리·병원 코드·API 키 제한 메모. 011의 "release에서는 위치용 NaviHelper가 만들어지지 않는다"를 고친다 (이제 목록을 열 때 묻는다).
   - 15-2. → `docs: 에이전트 지도와 README에 병원 웹·Firebase 반영`
@@ -717,7 +717,7 @@ ui/card/                   MedicalCardScreen(Idle 버튼, 전송 줄, 고른 병
     - `README.md`: 시연 흐름(찾기 → 목록 → 확인 → 출발), 시연용 표시, "병원 웹 (선택)" 절. `web/README.md`: `/hospital/`, `.env.local`, 화면 확인 빌드.
   - 확인: 문서만 바뀐 커밋. 링크가 맞는지 본다.
 
-- [ ] 16. 개발 노트와 마무리
+- [x] 16. 개발 노트와 마무리
   - `docs/notes/xxj15/2026-11-07-fastest-hospital.md` (형식: docs/notes/README.md). 넣을 것:
     - 결정과 이유 (REST를 고른 이유, 이동 시간 어림의 근거와 한계, 순위 규칙, 시연 코드 방식, 대체 동작)
     - 사용한 Pleos API·권한 (새 권한 없음), 새 일반 권한 INTERNET, 새 의존성(`firebase` 웹, firebase-tools, 테스트 `org.json:json`)과 라이선스
@@ -784,6 +784,9 @@ ui/card/                   MedicalCardScreen(Idle 버튼, 전송 줄, 고른 병
     - E10 확인 (Pleos 에뮬레이터, debug 시연, 서버 설정 있음 + PC 에뮬레이터에 닿지 않음): "서버에 연결하지 못해 시연용 병원 정보를 보여 줘요", 로그 `병원 목록: 서버 실패 (익명 로그인 실패, 2119ms)` → `내장 시연 (서버 실패: 익명 로그인 실패)`.
     - O1·E1~E9(차 ↔ 서버 ↔ 병원 웹)는 **아직 확인하지 못했다**: 차 에뮬레이터가 닿으려면 PC 에뮬레이터가 IPv4(127.0.0.1)로 열려야 해서 사람 터미널에서 켜야 한다. `adb reverse tcp:8080 tcp:8080`, `tcp:9099`는 걸어 두었다.
 
+  - 단계 13 (일부): 위 E10, E11 일부, E12, 체크포인트 A의 차 단독 흐름. **E1~E9·O1·O3·O4와 P1~P4는 확인하지 못했다** (사람 터미널에서 Firebase 에뮬레이터를 켜야 한다. 일반 폰 에뮬레이터가 꺼져 있었다). 노트의 "확인하지 못한 것"에 남겼다.
+  - 단계 14: tester가 경계 테스트 214개(Android 143, 웹 71)를 더했다. 버그 B1(보내는 중 취소 뒤 실패면 10초 남음), B2(병원 웹이 좌표 틀린 병원을 건너뛰지 않음)와 의심 3개(Real 목록 시간 초과 없음, 기기 org.json의 "null", 시계 어긋남 "0분 전")를 고쳤다. 최종 Android 708개, 웹 321개 통과.
+  - 단계 15·16: architecture·AGENTS·README·web/README·firebase/README 갱신, 노트 `docs/notes/xxj15/2026-11-06-fastest-hospital.md`.
 ## 결정 / 배운 점
 
 - `HospitalBoardSource`를 `fun interface`로 했다 (함수 하나, 테스트에서 람다로 가짜를 만든다).

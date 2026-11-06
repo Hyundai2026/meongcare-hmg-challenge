@@ -121,7 +121,7 @@ class HospitalTripTest {
         f.trip.depart(choice(), card)
         runCurrent()
 
-        assertEquals(listOf(hospital.destination), f.guidance.started)
+        assertEquals(listOf(hospital.destination.copy(expectedTravel = 19.minutes)), f.guidance.started)
         assertEquals(1, f.sender.sends.size)
         val (sentCard, eta) = f.sender.sends.single()
         assertEquals(card, sentCard)

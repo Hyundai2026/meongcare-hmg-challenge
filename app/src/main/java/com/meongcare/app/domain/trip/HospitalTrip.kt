@@ -146,7 +146,8 @@ class HospitalTrip(
     private suspend fun run(state: TripState, choice: RankedHospital, card: CaseCard?) = coroutineScope {
         val phase = MutableStateFlow<Phase>(Phase.Starting)
 
-        launch { guidance.start(choice.hospital.destination) }
+        // 이동 어림을 목적지에 실어 보낸다. Fake 길안내는 처음 남은 시간으로 쓰고, 차량 내비는 보지 않는다.
+        launch { guidance.start(choice.hospital.destination.copy(expectedTravel = choice.travel)) }
         val delivery = card?.let {
             launch { deliver(state.candidate, it, choice.travel?.toCaseMinutes(), phase) }
         }

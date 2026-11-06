@@ -80,6 +80,8 @@ class AppContainer(context: Context, val dataMode: DataMode) {
                     scope = applicationScope,
                     timing = FakeGuidanceTiming().let { if (initial != null) it.copy(initialRemaining = initial) else it },
                     progressGate = if (sourcePlan.guidanceWaitsForDriving) isDrivingFlow() else null,
+                    // 내비 예상 시간이 있으면 그것, 없으면 병원 목록의 이동 어림 (012)
+                    initialRemainingFor = { if (initial != null) null else it.expectedTravel },
                 )
             },
         )
@@ -87,6 +89,8 @@ class AppContainer(context: Context, val dataMode: DataMode) {
             SourceKind.FAKE -> FakeGuidanceSource(
                 scope = applicationScope,
                 progressGate = if (sourcePlan.guidanceWaitsForDriving) isDrivingFlow() else null,
+                // 처음 남은 시간은 병원 목록의 이동 어림 (012). 없으면 기본 12분
+                initialRemainingFor = { it.expectedTravel },
             )
             SourceKind.REAL -> RealGuidanceSource()
         }

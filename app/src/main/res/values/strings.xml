@@ -86,4 +86,53 @@
     <string name="symptom_no_appetite">식욕 없음</string>
     <string name="symptom_limping">절뚝거림</string>
     <string name="symptom_bloated_belly">배 부풂</string>
+    <!-- 가장 빨리 진료받을 병원 (012). 정차 중에만 보인다. 순위·문구 규칙: docs/plans 012 "설계 결정 2·6·8" -->
+    <string name="card_find_hospital">가장 빨리 진료받을 곳 찾기</string>
+    <string name="finder_title">가장 빨리 진료받을 수 있는 곳</string>
+    <string name="finder_back">뒤로</string>
+    <string name="finder_refresh">새로 고침</string>
+    <string name="finder_loading">가까운 제휴 병원의 대기 시간을 받는 중…</string>
+    <string name="finder_failed">병원 정보를 받지 못했어요</string>
+    <string name="finder_retry">다시 시도</string>
+    <string name="finder_location_unknown">현재 위치를 아직 몰라 대기 시간이 짧은 순으로 보여 줘요. 차량 내비게이션 화면을 한 번 연 뒤 다시 찾아 주세요.</string>
+    <string name="finder_relocate">위치 다시 찾기</string>
+    <string name="finder_total">약 %1$d분</string>
+    <string name="finder_travel">이동 약 %1$d분</string>
+    <string name="finder_travel_unknown">이동 시간 모름</string>
+    <string name="finder_wait">대기 %1$d분</string>
+    <string name="finder_plus">" + "</string>
+    <string name="finder_congestion_low">여유</string>
+    <string name="finder_congestion_normal">보통</string>
+    <string name="finder_congestion_high">혼잡</string>
+    <string name="finder_reported_just_now">방금 알림</string>
+    <string name="finder_reported_minutes_ago">%1$d분 전 알림</string>
+    <string name="finder_status_stale">대기 정보 %1$d분 전</string>
+    <string name="finder_status_none">대기 정보 없음</string>
+    <string name="finder_fastest">가장 빠름</string>
+    <string name="finder_sample">시연용</string>
+    <string name="finder_none_ranked">지금 대기 시간을 알린 제휴 병원이 없어요.</string>
+    <string name="finder_unranked_title">대기 정보가 없거나 지난 곳</string>
+    <string name="finder_not_accepting">지금 응급 접수를 받지 않는 곳: %1$s</string>
+    <string name="finder_notice_estimated">이동 시간은 직선 거리로 어림한 값이에요.</string>
+    <string name="finder_notice_sample_location">시연용 위치(수정구 시흥동) 기준이에요.</string>
+    <string name="finder_notice_built_in">시연용 병원 정보예요. 실제 병원이 아니에요.</string>
+    <string name="finder_notice_fallback">서버에 연결하지 못해 시연용 병원 정보를 보여 줘요.</string>
+    <string name="finder_notice_server">병원 웹에서 알린 대기 시간이에요.</string>
+    <!-- 병원 확인 (012). [출발]을 누르는 것이 이번 전송의 동의다 (사용자 결정 U2·U3) -->
+    <string name="confirm_title">이 병원으로 출발할까요?</string>
+    <string name="confirm_status">대기 정보: %1$s</string>
+    <string name="confirm_send_notice">출발하면 이 병원에 진료 카드와 도착 예정 시간이 전달돼요.</string>
+    <string name="confirm_send_notice_sample">시연용이라 실제 병원에는 보내지 않아요.</string>
+    <string name="confirm_sends">보내는 것: 반려견 이름·품종·성별·나이, 고른 증상, 기존 병력, 알레르기, 복용 약, 도착 예정 시간</string>
+    <string name="confirm_not_sends">보내지 않는 것: 사진, 차의 위치</string>
+    <string name="confirm_deleted">병원 화면에서 진료를 마치고 [완료]를 누르면 지워져요.</string>
+    <string name="confirm_without_card">카드 없이 길안내만</string>
+    <string name="confirm_depart">출발</string>
+    <!-- 카드의 전송 줄 (012). 주행 화면에는 넣지 않는다 -->
+    <string name="delivery_sent">진료 카드를 병원에 보냈어요</string>
+    <string name="delivery_sending">진료 카드를 보내는 중…</string>
+    <string name="delivery_failed">진료 카드를 보내지 못했어요</string>
+    <string name="delivery_resend">다시 보내기</string>
+    <string name="delivery_sample">시연용: 실제 병원에는 보내지 않았어요</string>
+    <string name="delivery_not_sent">카드 없이 출발했어요</string>
 </resources>

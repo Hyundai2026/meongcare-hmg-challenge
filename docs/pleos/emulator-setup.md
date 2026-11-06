@@ -273,6 +273,14 @@ xxj15 PC(RTX 4070 Laptop), AVD `pleos_connect`, Cold boot. 문서가 아니라 �
   - [aosp-consume] https://source.android.com/docs/automotive/driver_distraction/consume ("Testing")
   - [aosp-uxr] https://source.android.com/docs/automotive/driver_distraction/car_uxr
 
+### PC의 Firebase 에뮬레이터에 앱이 붙기 (관찰, 2026-11-06, 계획 012 O1)
+
+- `adb reverse tcp:8080 tcp:8080`, `adb reverse tcp:9099 tcp:9099` + 앱 `secrets.properties`의 `FIREBASE_EMULATOR_HOST=127.0.0.1`로 Pleos 에뮬레이터 앱이 PC의 Firestore·Auth 에뮬레이터에 붙었다. 병원 목록 첫 요청(익명 가입 포함) 159ms, 다음 71ms.
+- `adb reverse`의 PC 쪽은 IPv4 `127.0.0.1`로 붙는다 (PC 에뮬레이터가 `[::1]`에만 열려 있을 때는 닿지 않았다).
+- `10.0.2.2`(Android 에뮬레이터에서 본 PC)로 바로 붙는 것은 해 보지 않았다.
+- PC 에뮬레이터가 꺼져 있으면 연결이 바로 거부되어 시연 모드는 약 2초 만에 내장 시연 병원으로 대체했다.
+- 앱이 debug이고 `network_security_config`가 그 주소의 평문 HTTP를 허용해야 한다 (release는 안 된다).
+
 ## 폼팩터 테스트
 
 출처: https://document.pleos.ai/docs/pleos-only/app-test-guide/form-factor-test-guide (2026-11-03 확인)

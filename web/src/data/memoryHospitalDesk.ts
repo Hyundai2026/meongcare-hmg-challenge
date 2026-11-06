@@ -59,6 +59,7 @@ export function createMemoryHospitalDesk(now: () => Date): HospitalDesk {
 
   return {
     isLocalOnly: true,
+    server: null,
 
     async listHospitals() {
       return ok([...hospitals.values()])
@@ -75,6 +76,11 @@ export function createMemoryHospitalDesk(now: () => Date): HospitalDesk {
       return unsubscribe
     },
 
+    watchConnection(_hospitalId, onChange) {
+      onChange('local')
+      return () => {}
+    },
+
     watchCases(hospitalId, onChange) {
       const unsubscribe = subscribe(caseListeners, hospitalId, onChange)
       onChange([...casesOf(hospitalId)])
@@ -87,6 +93,18 @@ export function createMemoryHospitalDesk(now: () => Date): HospitalDesk {
       const updated: HospitalSummary = { ...hospital, status: { ...input, updatedAt: now() } }
       hospitals.set(hospitalId, updated)
       emit(hospitalListeners, hospitalId, updated)
+      return ok(undefined)
+    },
+
+    async acknowledgeCase(hospitalId, caseId) {
+      const list = casesOf(hospitalId)
+      const target = list.find((c) => c.id === caseId)
+      if (target === undefined) return { ok: false, reason: 'not-found' }
+      // 이미 확인된 건은 처음 시각을 지킨다 (서버 보안 규칙과 같다)
+      if (target.acknowledgedAt !== null) return ok(undefined)
+      const updated = list.map((c) => (c.id === caseId ? { ...c, acknowledgedAt: now() } : c))
+      cases.set(hospitalId, updated)
+      emit(caseListeners, hospitalId, [...updated])
       return ok(undefined)
     },
 

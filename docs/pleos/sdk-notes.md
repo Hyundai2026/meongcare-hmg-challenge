@@ -812,6 +812,20 @@ debug 빌드의 임시 수신기에서 application context로 `NaviHelper`를 �
     - 그래서 어댑터(`PleosNaviClient`)는 `onRouteStarted` 전의 `onRouteCancelled`를 무시한다. 그러지 않으면 앱은 안내를 끝냈는데 내비는 새 경로를 안내하는 어긋남이 생겼다 (실제로 봤다).
     - 반대로 카운트다운 중에 사용자가 내비에서 취소하면 그 취소도 무시된다. 그때는 전부 내비는 30초 뒤 안내 없음, 경로만 내비는 30초 뒤 시연용 기본 시간으로 시작한다. 카운트다운 중 취소에 콜백이 오는지는 보지 않았다.
 
+#### Pleos 에뮬레이터에서 관찰한 것: 경로 취소 뒤 앞에 나오는 앱 (2026-11-06, 실차 아님. 013 U3) [obs-navi-emu]
+
+Android 14 (API 34), Pleos 에뮬레이터, 012 debug 시연 모드(경로만 내비). 우리 앱이 앞에 있는 상태에서 `cancelRoute()`를 불렀다.
+
+- **`cancelRoute()`를 부르면 내비 서비스가 내비 앱을 앞으로 띄운다.** 우리 앱이 앞에 있어도 그렇다.
+  - logcat 순서: 우리 `[NaviHelper][SDK] cancelRoute` → 내비 `requestToNaviProvider(RequestRouteCancel)` → `ActivityTaskManager: Background activity start for ai.umos.maps.android.navigation.app allowed because SYSTEM_ALERT_WINDOW permission is granted.` → `START u10 {flg=0x10000000 cmp=ai.umos.maps.android.navigation.app/.MainActivity} ... (BAL_ALLOW_SAW_PERMISSION)` → 14ms 뒤 `HOME_SCREEN ... hideTask ComponentInfo{com.meongcare.app/com.meongcare.app.MainActivity}`.
+  - 화면에는 경로가 지워진 내비 지도("어디로 갈까요?")가 보인다. 시연 도착 때 앱이 경로를 취소하자 우리 "도착했어요" 대신 이 지도가 나왔다 (012 동작). 앱의 [안내 취소]도 같다.
+- **우리 앱은 스스로 다시 앞으로 돌아올 수 없다.**
+  - 내비가 앞에 나온 900ms 뒤 `MainActivity`에서 `startActivity(FLAG_ACTIVITY_REORDER_TO_FRONT | FLAG_ACTIVITY_NEW_TASK)` → `Background activity launch blocked [... callingUidHasAnyVisibleWindow: false; callingUidProcState: LAST_ACTIVITY ...]` → `(BAL_BLOCK) result code=3`. 그때 우리 Activity는 `CREATED`(멈춤) 상태였다.
+  - 2.5초 뒤 `ActivityManager.moveTaskToFront(taskId, 0)` → `SecurityException: Permission Denial: moveTaskToFront() ... requires android.permission.REORDER_TASKS`. 이 권한은 쓰지 않기로 했다 (새 권한, 그리고 Android 10부터 백그라운드 실행 제한도 받는다).
+- 결론: **`cancelRoute`는 내비 앱을 앞으로 띄우고, 앱은 스스로 돌아올 수 없다.** 사용자는 GNB의 MeongCare 아이콘으로 돌아온다.
+  - 그래서 013부터 시연 모드(경로만 내비)는 시연 도착과 도착 화면 [닫기] 때 `cancelRoute`를 부르지 않고 리스너 해제·`release()`만 한다 (계획 013 U2). 내비에는 경로가 남고, 다음 `requestRoute`가 새 경로로 바꾼다.
+  - 앱의 [안내 취소]와 Real 모드(전부 내비)의 취소는 지금처럼 `cancelRoute`를 부른다 → 내비가 앞에 나온다 (알려진 한계).
+
 #### Pleos 에뮬레이터에서 관찰한 것: 현재 위치 (2026-11-05, 실차 아님. 011 단계 6) [obs-navi-emu]
 
 011 debug 빌드의 `PleosNaviClient.currentLocation()`으로 봤다. 물을 때마다 새 `NaviHelper` → `initialize` → `getCurrentLocationInfo()` → 답을 받으면 `release()`.

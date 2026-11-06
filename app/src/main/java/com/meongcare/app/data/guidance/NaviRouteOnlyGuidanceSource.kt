@@ -3,6 +3,7 @@ package com.meongcare.app.data.guidance
 import com.meongcare.app.data.guidance.navi.NAVI_ROUTE_START_TIMEOUT
 import com.meongcare.app.data.guidance.navi.NaviClient
 import com.meongcare.app.data.guidance.navi.NaviEvent
+import com.meongcare.app.data.guidance.navi.RouteOnClose
 import com.meongcare.app.data.guidance.navi.naviRemainingTimeOf
 import com.meongcare.app.domain.guidance.Destination
 import com.meongcare.app.domain.guidance.GuidanceSource
@@ -28,7 +29,10 @@ import kotlin.time.Duration
  * 2. 내비가 알려 준 예상 시간(`RouteStarted`)으로 시연용 길안내([fakeOf])를 시작한다 (사용자 결정: 내비 예상 시간에서 시작).
  *    - [routeStartTimeout] 안에 오지 않거나, 그 전에 내비 오류가 오면 시연용 기본 시간으로 시작한다.
  *    - 예상 시간이 모름([naviRemainingTimeOf]가 null)이어도 기본 시간이다.
- * 3. 시연용 길안내가 도착하면 내비 경로도 취소한다 (안내 한 번을 끝낸다).
+ * 3. 시연용 길안내가 도착하면 내비 연결을 놓되 **경로는 남긴다** (013 U2). `cancelRoute`는 내비 앱을 앞으로 띄워
+ *    우리 "도착했어요"를 가리기 때문이다 (`[obs-navi-emu]` "경로 취소 뒤 앞에 나오는 앱"). 도착 화면 [닫기]도 같다.
+ *    남은 경로는 다음 출발의 `requestRoute`가 바꾼다 (이전 경로의 취소 알림은 어댑터가 거른다).
+ *    앱의 [안내 취소]와 다른 목적지로 다시 시작할 때는 지금처럼 경로를 취소한다.
  * 4. 내비에서 경로가 취소되면 시연용 길안내도 끝낸다 (안내 없음). 안내가 시작되기 전이어도 같다.
  * 5. 내비의 남은 시간·도착, 안내가 시작된 뒤의 오류는 무시한다. 진행은 시연용이 맡는다.
  *
@@ -65,6 +69,9 @@ class NaviRouteOnlyGuidanceSource(
 
         @Volatile var fake: GuidanceSource? = null
 
+        /** 구독을 끊을 때 내비 경로를 남길지. 시연 도착·[닫기]만 true다 (013 U2) */
+        @Volatile var keepRouteOnClose = false
+
         /** 내비 구독을 끊고(경로 취소) 시연 진행을 멈춘다 */
         suspend fun close() {
             naviJob?.cancel()
@@ -88,7 +95,7 @@ class NaviRouteOnlyGuidanceSource(
 
     private suspend fun followNavi(trip: Trip) {
         var cancelledOnNavi = false
-        navi.trip(trip.destination)
+        navi.trip(trip.destination) { if (trip.keepRouteOnClose) RouteOnClose.KEEP else RouteOnClose.CANCEL }
             .takeWhile { event ->
                 when (event) {
                     is NaviEvent.RouteStarted -> trip.routeStarted.complete(naviRemainingTimeOf(event.remainingSeconds))
@@ -129,7 +136,11 @@ class NaviRouteOnlyGuidanceSource(
                     if (state !is GuidanceState.Idle) mutableState.value = state
                     state is GuidanceState.Arrived
                 }
-                if (arrived) trip.naviJob?.cancel() // 내비 경로도 끝낸다
+                if (arrived) {
+                    // 내비 연결만 놓고 경로는 남긴다 (013 U2): 경로를 취소하면 내비가 앞으로 나와 "도착했어요"를 가린다
+                    trip.keepRouteOnClose = true
+                    trip.naviJob?.cancel()
+                }
             }
         } finally {
             // 이 안내가 끝났는데(취소, 목적지 변경) 시연 진행이 막 시작됐을 수 있다. 남아서 돌지 않게 멈춘다
@@ -154,6 +165,8 @@ class NaviRouteOnlyGuidanceSource(
         } ?: return
         ended.fake?.dismissArrival()
         ended.simulation?.cancel()
+        // [닫기]도 경로를 남긴다 (013 U2). 도착할 때 이미 연결을 놓았으면 아무 일도 없다
+        ended.keepRouteOnClose = true
         ended.naviJob?.cancel()
     }
 }

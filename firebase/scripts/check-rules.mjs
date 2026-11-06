@@ -1,4 +1,4 @@
-// 보안 규칙 점검 R1~R8 (계획 012 "설계 결정 6"). 에뮬레이터를 켜고 시드한 뒤에 돌린다.
+// 보안 규칙 점검 R1~R13 (계획 012 "설계 결정 6", R9~R13은 계획 013 카드 확인). 에뮬레이터를 켜고 시드한 뒤에 돌린다.
 //   npm --prefix firebase run emulators   (다른 터미널)
 //   npm --prefix firebase run seed -- --reset
 //   npm --prefix firebase run check-rules
@@ -118,6 +118,39 @@ check(
 const secretByCar = await firestore('GET', `/hospitalSecrets/${HID}`, { token: car.idToken })
 const secretByStaff = await firestore('GET', `/hospitalSecrets/${HID}`, { token: staff.idToken })
 check('R8', 'hospitalSecrets는 누구도 읽지 못한다', secretByCar.status === 403 && secretByStaff.status === 403, `차 ${secretByCar.status}, 직원 ${secretByStaff.status}`)
+
+// R9~R13: 병원 [카드 확인] (계획 013). 서버 시각으로, 확인 전인 건에 한 번만. 차는 쓰지 못하고 읽기만 한다.
+/** acknowledgedAt 쓰기. serverTime이면 REQUEST_TIME 변환, 아니면 클라이언트 시각 값 */
+async function writeAck(token, serverTime) {
+  const name = caseName
+  const write = serverTime
+    ? { update: { name, fields: {} }, updateMask: { fieldPaths: [] }, updateTransforms: [{ fieldPath: 'acknowledgedAt', setToServerValue: 'REQUEST_TIME' }] }
+    : { update: { name, fields: toFields({ acknowledgedAt: new Date() }) }, updateMask: { fieldPaths: ['acknowledgedAt'] } }
+  return firestore('POST', ':commit', { token, body: { writes: [{ ...write, currentDocument: { exists: true } }] } })
+}
+const clientTime = await writeAck(staff.idToken, false)
+check('R10', '직원이 확인 시각에 클라이언트 시각을 쓰면 거부된다', clientTime.status === 403, `HTTP ${clientTime.status}`)
+const carAck = await writeAck(car.idToken, true)
+check('R12a', '차 계정은 자기 건의 확인 시각을 쓰지 못한다', carAck.status === 403, `HTTP ${carAck.status}`)
+const staffAck = await writeAck(staff.idToken, true)
+check('R9', '직원은 확인 전 건의 확인 시각을 서버 시각으로 쓴다', staffAck.status === 200, `HTTP ${staffAck.status}`)
+const again = await writeAck(staff.idToken, true)
+check('R11', '이미 확인된 건의 확인 시각은 서버 시각으로도 다시 못 바꾼다', again.status === 403, `HTTP ${again.status}`)
+const carRead = await firestore('GET', `${casePath}?mask.fieldPaths=acknowledgedAt`, { token: car.idToken })
+check(
+  'R12b',
+  '차는 자기 건의 확인 시각을 읽는다',
+  carRead.status === 200 && typeof carRead.json?.fields?.acknowledgedAt?.timestampValue === 'string',
+  `HTTP ${carRead.status}, ${JSON.stringify(carRead.json?.fields?.acknowledgedAt)}`,
+)
+const staffDelete = await firestore('DELETE', casePath, { token: staff.idToken })
+const readGone = await firestore('GET', `${casePath}?mask.fieldPaths=acknowledgedAt`, { token: car.idToken })
+check(
+  'R13',
+  `직원이 [완료]로 지운 건을 차가 읽으면 403 또는 404다 (실제: ${readGone.status})`,
+  staffDelete.status === 200 && (readGone.status === 403 || readGone.status === 404),
+  `지우기 ${staffDelete.status}, 읽기 ${readGone.status}`,
+)
 
 // 정리 (관리자 토큰)
 if (casePath) await firestore('DELETE', casePath, { token: ADMIN })

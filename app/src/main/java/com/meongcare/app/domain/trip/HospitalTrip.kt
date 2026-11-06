@@ -46,15 +46,22 @@ sealed interface CardDelivery {
 
     data object Sending : CardDelivery
 
-    /** 보냈다. [toServer]가 false면 시연용(내장 병원)이라 실제로는 보내지 않았다 */
-    data class Sent(val toServer: Boolean) : CardDelivery
+    /**
+     * 보냈다. [toServer]가 false면 시연용(내장 병원)이라 실제로는 보내지 않았다.
+     * [acknowledgedAt]은 병원이 [카드 확인]을 누른 시각(서버 시각). 아직이거나 확인을 읽지 않는 병원이면 null (013 U1)
+     */
+    data class Sent(val toServer: Boolean, val acknowledgedAt: Instant? = null) : CardDelivery
 
     /** 보내지 못했다. [HospitalTrip.resend]로 다시 보낸다 */
     data object Failed : CardDelivery
 }
 
-/** 고른 병원으로 가는 중인 상태. */
-data class TripState(val candidate: HospitalCandidate, val delivery: CardDelivery)
+/**
+ * 고른 병원으로 가는 중인 상태.
+ * @param startMinutes 진행 막대의 시작: 이번 안내에서 본 가장 큰 남은 분 (013). 아직 모르면 null.
+ *   목록의 이동 어림은 길안내 남은 시간이 아니라서 쓰지 않는다.
+ */
+data class TripState(val candidate: HospitalCandidate, val delivery: CardDelivery, val startMinutes: Int? = null)
 
 /**
  * 병원을 고르고 출발한 뒤의 일을 맡는다 (계획 012 "설계 결정 8"의 4·7).
@@ -66,6 +73,10 @@ data class TripState(val candidate: HospitalCandidate, val delivery: CardDeliver
  *   갱신이 실패하면 로그만 남기고 다음 변화 때 다시 보낸다.
  * - 도착하면 "도착", 안내 중에 취소되면(앱 [안내 취소], 내비 "안내 종료") "취소"를 보낸다. 취소되면 고른 병원을 비운다.
  * - [clear] (도착 화면 [닫기]): 고른 병원을 비우고 아무것도 보내지 않는다.
+ * - 병원 확인 (013 U1): 서버로 보낸 카드면 보낸 뒤 [ackPollInterval]마다 자기 건의 확인을 읽는다.
+ *   확인되면 [CardDelivery.Sent.acknowledgedAt]에 시각을 넣고 멈춘다. 도착·취소·[clear]·건 없음·읽기 지원 안 함이면 멈춘다.
+ *   도착·취소되는 순간 읽던 것은 취소하고 결과를 쓰지 않는다. 내장 시연 병원은 읽지 않는다 (확인을 흉내 내지 않는다).
+ *   안내 한 번에 묶여 있어 상주 폴링이 아니다 (docs/pleos/ux-guidelines.md "폴링 최소화").
  *
  * `AppContainer`가 하나 만들어 프로세스 내내 쓴다 (`MedicalCardSession`과 같은 수명).
  * 앱 프로세스가 죽으면 진행 중인 전송 정보는 사라진다 (복원하지 않는다).
@@ -73,6 +84,8 @@ data class TripState(val candidate: HospitalCandidate, val delivery: CardDeliver
  * @param senderFor 병원 출처에 맞는 전송 구현 (서버 병원 → 서버, 내장 병원 → Fake)
  * @param scope 전송과 갱신이 도는 범위. 화면이 사라져도 계속돼야 해서 앱 범위를 준다.
  * @param log 한 일마다 한 줄 (예: "카드 전송: 성공"). **반려견 이름, 증상, 좌표, 병원 이름은 넣지 않는다.**
+ * @param etaInterval 도착 예정을 다시 보내는 최소 간격 (시연 길안내는 짧게, `tripTimingOf`)
+ * @param ackPollInterval 병원 확인을 읽는 간격 (013)
  */
 class HospitalTrip(
     private val guidance: GuidanceSource,
@@ -81,6 +94,7 @@ class HospitalTrip(
     private val now: () -> Instant = Instant::now,
     private val log: (String) -> Unit = {},
     private val etaInterval: Duration = 60.seconds,
+    private val ackPollInterval: Duration = 15.seconds,
 ) {
     private val _finder = MutableStateFlow<FinderStep>(FinderStep.None)
     val finder: StateFlow<FinderStep> = _finder.asStateFlow()
@@ -152,7 +166,7 @@ class HospitalTrip(
             launch { deliver(state.candidate, it, choice.travel?.toCaseMinutes(), phase) }
         }
 
-        val terminal = trackPhase(phase)
+        val terminal = trackPhase(phase, state.candidate)
         if (terminal == Phase.Cancelled) {
             // 보낸 건(또는 보내는 중인 건)이 있으면 "취소"를 보낼 시간을 준다. 실패해서 기다리는 중이면 바로 멈춘다.
             if (delivery != null) {
@@ -166,14 +180,19 @@ class HospitalTrip(
         }
     }
 
-    /** 길안내 상태를 따라 [phase]를 바꾸고, 도착·취소가 되면 그 값을 돌려준다. */
-    private suspend fun trackPhase(phase: MutableStateFlow<Phase>): Phase {
+    /**
+     * 길안내 상태를 따라 [phase]를 바꾸고, 도착·취소가 되면 그 값을 돌려준다.
+     * 남은 분을 알게 되면 진행 막대의 시작값([TripState.startMinutes])을 올린다 (013).
+     */
+    private suspend fun trackPhase(phase: MutableStateFlow<Phase>, candidate: HospitalCandidate): Phase {
         var sawGuiding = false
         guidance.state.first { state ->
             when (state) {
                 is GuidanceState.Guiding -> {
                     sawGuiding = true
-                    phase.value = Phase.EnRoute(state.remainingTime?.toCaseMinutes())
+                    val minutes = state.remainingTime?.toCaseMinutes()
+                    phase.value = Phase.EnRoute(minutes)
+                    minutes?.let { raiseStart(candidate, it) }
                 }
                 is GuidanceState.Arrived -> phase.value = Phase.Arrived
                 // 출발 전의 "안내 없음"은 무시한다. 안내를 본 뒤의 "안내 없음"만 취소다.
@@ -215,7 +234,43 @@ class HospitalTrip(
                 }
             }
         }
-        follow(sender, ref, phase, first = sent, firstIsEstimate = sentIsEstimate)
+        val sentRef: CaseRef = ref
+        coroutineScope {
+            // 병원 확인 읽기: 서버로 보낸 건만. 도착·취소되는 순간 멈춘다 (읽던 결과는 쓰지 않는다)
+            if (candidate.sendsCardToServer) {
+                val poll = launch { pollAck(sender, sentRef, candidate) }
+                launch {
+                    phase.first { it.isTerminal }
+                    poll.cancel()
+                }
+            }
+            follow(sender, sentRef, phase, first = sent, firstIsEstimate = sentIsEstimate)
+        }
+    }
+
+    /** 병원 확인을 [ackPollInterval]마다 읽는다. 확인·건 없음·지원 안 함이면 끝난다. 같은 실패의 로그는 한 줄 */
+    private suspend fun pollAck(sender: CaseSender, ref: CaseRef, candidate: HospitalCandidate) {
+        var lastFailure: String? = null
+        while (true) {
+            delay(ackPollInterval)
+            when (val read = sender.readAck(ref)) {
+                AckRead.Unsupported -> return
+                AckRead.Pending -> lastFailure = null
+                is AckRead.Acknowledged -> {
+                    setDelivery(candidate, CardDelivery.Sent(toServer = candidate.sendsCardToServer, acknowledgedAt = read.at))
+                    log("병원 확인: 확인함")
+                    return
+                }
+                AckRead.Gone -> {
+                    log("병원 확인: 건을 읽을 수 없음")
+                    return
+                }
+                is AckRead.Failed -> {
+                    if (read.reason != lastFailure) log("병원 확인: 읽기 실패 (${read.reason})")
+                    lastFailure = read.reason
+                }
+            }
+        }
     }
 
     /**
@@ -256,6 +311,15 @@ class HospitalTrip(
 
     private fun setDelivery(candidate: HospitalCandidate, delivery: CardDelivery) {
         _trip.update { if (it?.candidate == candidate) it.copy(delivery = delivery) else it }
+    }
+
+    /** 진행 막대의 시작값: 처음 알게 된 남은 분, 그보다 커지면(재탐색 등) 큰 값 */
+    private fun raiseStart(candidate: HospitalCandidate, minutes: Int) {
+        _trip.update { current ->
+            if (current?.candidate != candidate) return@update current
+            val start = current.startMinutes
+            if (start == null || minutes > start) current.copy(startMinutes = minutes) else current
+        }
     }
 
     private sealed interface Phase {

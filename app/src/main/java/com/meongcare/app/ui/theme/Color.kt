@@ -45,3 +45,23 @@ object CardColors {
     val SymptomBackground = Color(0xFFFFF1E0)
     val SymptomText = Color(0xFF7A3E00)
 }
+
+/**
+ * 안내 영역과 진행 막대의 고정색 (013). 라이트·다크와 상관없이 같은 색이다 ([CardColors]와 같은 생각).
+ * 흰 글자와 대비: [Panel] 약 5.7:1, [Arrived] 약 5.3:1.
+ */
+object TripColors {
+    val Panel = ActionBlue
+    val Arrived = Color(0xFF1B7A44)
+    val OnPanel = Color.White
+    /** 패널 위 진행 막대의 바탕 */
+    val Track = Color(0x47FFFFFF)
+    val Fill = Color.White
+    /** 패널 안 전송·확인 줄의 바탕 (흰 바탕 + 어두운 글자) */
+    val Chip = Color.White
+    val ChipText = CardColors.Text
+    val ChipMuted = CardColors.Muted
+    /** 확인됨 표시 (흰 바탕과 대비 약 5.3:1) */
+    val Ack = Arrived
+    val Warn = Color(0xFFC62828)
+}

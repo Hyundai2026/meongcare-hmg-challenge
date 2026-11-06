@@ -8,14 +8,23 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import com.meongcare.app.domain.hospital.RankedHospital
 import com.meongcare.app.domain.trip.FinderStep
+import com.meongcare.app.domain.trip.TripState
 import com.meongcare.app.ui.card.CardFlowUiState
 import com.meongcare.app.ui.card.MedicalCardActions
 import com.meongcare.app.ui.card.MedicalCardScreen
 import com.meongcare.app.ui.card.SymptomPickerScreen
 import com.meongcare.app.ui.guidance.GuidanceUiState
+import com.meongcare.app.ui.guidance.TripPanel
+import com.meongcare.app.ui.guidance.tripPanelOf
+import java.time.Instant
+import java.time.ZoneId
+import kotlinx.coroutines.delay
 
 /**
  * 홈 화면. 두 단계로 보여줄 화면을 고른다.
@@ -30,6 +39,7 @@ import com.meongcare.app.ui.guidance.GuidanceUiState
  * @param finder 병원 찾기 단계 (012). 목록·확인 화면은 [hospitalList]·[hospitalConfirm]이 그린다.
  * @param onFinderBack 병원 찾기 화면의 시스템 뒤로 (= 화면의 [뒤로])
  * @param bottomBar 화면 아래에 붙는 영역. debug 빌드의 개발자 패널이 들어간다.
+ * @param cardExtras 고른 병원과 카드 전송 상태 (012). 안내 영역([tripPanelOf], 013)을 여기서 만든다.
  */
 @Composable
 fun HomeScreen(
@@ -51,6 +61,16 @@ fun HomeScreen(
     cardExtras: CardExtras = CardExtras(),
     bottomBar: @Composable () -> Unit = {},
 ) {
+    // 안내 영역의 도착 예정 시각이 정차 중에 낡지 않게 30초마다 다시 계산한다 (주행 화면은 시각을 보이지 않는다)
+    val tick by produceState(0L) {
+        while (true) {
+            delay(PANEL_REFRESH_MILLIS)
+            value = value + 1
+        }
+    }
+    val panel = remember(guidanceUiState, cardExtras.trip, tick) {
+        tripPanelOf(guidanceUiState, cardExtras.trip, Instant.now(), ZoneId.systemDefault())
+    }
     Surface(modifier = modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize().safeDrawingPadding()) {
             Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
@@ -69,9 +89,10 @@ fun HomeScreen(
                         onFinderBack = onFinderBack,
                         hospitalList = hospitalList,
                         hospitalConfirm = hospitalConfirm,
-                        cardExtras = cardExtras,
+                        panel = panel,
+                        onResend = cardExtras.onResend,
                     )
-                    HomeContent.DRIVING -> DrivingScreen(guidanceUiState)
+                    HomeContent.DRIVING -> DrivingScreen(guidanceUiState, panel = panel)
                 }
             }
             bottomBar()
@@ -95,7 +116,8 @@ private fun ParkedFlow(
     onFinderBack: () -> Unit,
     hospitalList: @Composable () -> Unit,
     hospitalConfirm: @Composable (RankedHospital) -> Unit,
-    cardExtras: CardExtras,
+    panel: TripPanel?,
+    onResend: () -> Unit,
 ) {
     when (parkedContentOf(guidanceUiState, cardUiState.session, cardUiState.atHome, finder)) {
         ParkedContent.HOME -> ParkedScreen(
@@ -103,6 +125,8 @@ private fun ParkedFlow(
             guidance = guidanceUiState,
             actions = cardActions,
             isPetProfileSample = isPetProfileSample,
+            panel = panel,
+            onResend = onResend,
         )
         ParkedContent.SYMPTOMS -> {
             // 시스템 뒤로 = [취소]
@@ -127,8 +151,8 @@ private fun ParkedFlow(
                 isPetProfileSample = isPetProfileSample,
                 isGuidanceSimulated = isGuidanceSimulated,
                 isRouteOnNavi = isRouteOnNavi,
-                delivery = cardExtras.delivery,
-                onResend = cardExtras.onResend,
+                panel = panel,
+                onResend = onResend,
             )
         }
         ParkedContent.HOSPITALS -> {
@@ -143,10 +167,12 @@ private fun ParkedFlow(
 }
 
 /**
- * 진료 카드 화면에 012가 더한 것: 카드 전송 줄과 [다시 보내기].
- * @param delivery 출발한 뒤의 전송 상태. 출발 전이면 null (줄이 없다)
+ * 고른 병원과 카드 전송 (012·013): 안내 영역의 전송·확인 줄과 진행 막대, [다시 보내기].
+ * @param trip 출발한 뒤의 상태. 출발 전이면 null (전송 줄과 막대가 없다)
  */
 data class CardExtras(
-    val delivery: com.meongcare.app.domain.trip.CardDelivery? = null,
+    val trip: TripState? = null,
     val onResend: () -> Unit = {},
 )
+
+private const val PANEL_REFRESH_MILLIS = 30_000L

@@ -32,7 +32,13 @@ import kotlinx.coroutines.flow.callbackFlow
 class PleosNaviClient(context: Context) : NaviClient, NaviLocationClient {
     private val appContext = context.applicationContext
 
-    override fun trip(destination: Destination): Flow<NaviEvent> = callbackFlow {
+    override fun trip(destination: Destination): Flow<NaviEvent> = trip(destination) { RouteOnClose.CANCEL }
+
+    /**
+     * 구독이 끊길 때 아직 도착·취소 전이면 [onClose]를 묻는다. [RouteOnClose.CANCEL]일 때만 `cancelRoute()`를 부른다.
+     * `cancelRoute()`는 내비 앱을 앞으로 띄우므로, 시연 도착처럼 우리 화면을 보여야 할 때는 [RouteOnClose.KEEP]을 준다 (013 U2).
+     */
+    override fun trip(destination: Destination, onClose: () -> RouteOnClose): Flow<NaviEvent> = callbackFlow {
         val helper = NaviHelper(appContext)
         val routeStarted = AtomicBoolean(false)
         val finished = AtomicBoolean(false)
@@ -87,8 +93,8 @@ class PleosNaviClient(context: Context) : NaviClient, NaviLocationClient {
             trySend(NaviEvent.Failed(e.javaClass.simpleName))
         }
         awaitClose {
-            // 도착·취소 전에 끊기면(앱에서 취소, 시연 도착) 내비 경로도 끝낸다
-            runCatching { if (!finished.get()) helper.cancelRoute() }
+            // 도착·취소 전에 끊기면(앱에서 취소) 내비 경로도 끝낸다. 시연 도착·[닫기]는 경로를 남긴다 (013 U2)
+            runCatching { if (!finished.get() && onClose() == RouteOnClose.CANCEL) helper.cancelRoute() }
             runCatching { helper.removeListener(listener) }
             runCatching { helper.release() }
         }

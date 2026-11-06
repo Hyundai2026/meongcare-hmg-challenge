@@ -263,6 +263,7 @@ xxj15 PC(RTX 4070 Laptop), AVD `pleos_connect`, Cold boot. 문서가 아니라 �
 
   - 덤프의 기본 설정(baseline): unknown은 DO true(제한 0x1ff), parked는 DO false, idling·moving은 DO true(제한 0x50). **Idling(기어 D, 정지)도 규제가 걸린다.**
 - 이 요청들은 시연 영상 촬영과 테스트를 손 조작 없이 재현하는 데 쓸 수 있다.
+- 앱이 내비 경로를 취소(`cancelRoute`)하면 내비 앱이 앞으로 나와 우리 앱을 가리고, 우리 앱은 스스로 돌아올 수 없다 (Android 14 백그라운드 실행 제한, 2026-11-06). 자세히: [sdk-notes.md](sdk-notes.md) `[obs-navi-emu]` "경로 취소 뒤 앞에 나오는 앱".
 
 출처 추가 (2026-11-05):
 - [configure] https://document.pleos.ai/docs/connect/guide/getting-started/application-development/configure-pleos-connect-emulator

@@ -145,7 +145,8 @@ class AppContainer(context: Context, val dataMode: DataMode) {
     /** 서버를 쓰는 구성에서만 만든다. 로그 태그는 `HospitalTrip` 하나 (결과 종류·개수·시간만). */
     private val server = serverConfig?.takeIf { hospitalSourceKind != HospitalSourceKind.BUILT_IN }?.let { config ->
         val transport = UrlConnectionHttpTransport()
-        val auth = AnonymousAuth(config, transport)
+        // 토큰은 만료 5분 전부터 미리 갱신한다 (013). 로그에는 결과 종류만
+        val auth = AnonymousAuth(config, transport, log = { Log.i(TRIP_LOG_TAG, it) })
         val label: (com.meongcare.app.domain.card.Symptom) -> String = { context.getString(symptomLabelRes(it)) }
         FirestoreHospitalBoardSource(config, auth, transport, log = { Log.i(TRIP_LOG_TAG, it) }) to
             FirestoreCaseSender(config, auth, transport, label)
@@ -190,11 +191,16 @@ class AppContainer(context: Context, val dataMode: DataMode) {
      * 병원을 고르고 출발한 뒤의 일 (012): 길안내 시작, 카드·도착 예정 전송, 도착·취소 알림.
      * 로그는 `HospitalTrip` 태그에 결과 종류만 남긴다 (반려견 이름·증상·좌표·병원 이름 없음).
      */
+    private val tripTiming = tripTimingOf(sourcePlan.isGuidanceSimulated)
+
     val hospitalTrip = HospitalTrip(
         guidance = guidanceSource,
         senderFor = ::caseSenderFor,
         scope = applicationScope,
         log = { Log.i(TRIP_LOG_TAG, it) },
+        // 시연 길안내는 2초에 1분씩 줄어서 도착 예정과 병원 확인을 몇 초마다 주고받는다 (013, [tripTimingOf])
+        etaInterval = tripTiming.etaInterval,
+        ackPollInterval = tripTiming.ackPollInterval,
     )
 
     /** Pleos Vehicle 연결. Real 구성에서만 만든다 (Fake에서는 Vehicle을 만들지 않는다). */

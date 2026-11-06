@@ -51,6 +51,7 @@ Windows에서는 `gradlew.bat`을 쓴다. Bash에서는 `./gradlew`.
 | 웹 화면 확인 | `build` → `preview` → `python web/scripts/verify_screens.py` ([web/README.md](web/README.md)) |
 | Firebase 에뮬레이터 (터미널 하나를 계속 씀) | `npm --prefix firebase ci` 한 번 → `npm --prefix firebase run emulators` |
 | 시연 병원 넣기 / 보안 규칙 점검 | `npm --prefix firebase run seed -- --reset` / `npm --prefix firebase run check-rules` |
+| 시연 전 점검 (차·병원 웹이 같은 서버에 붙었나, 대기 정보가 살아 있나) | `npm --prefix firebase run preflight` |
 | dev에 반영 | `/ship` 스킬 |
 | main에 반영 (요청할 때만) | `/promote` 스킬 |
 | 제출용 APK | `/release-apk` 스킬 |

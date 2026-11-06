@@ -125,7 +125,7 @@ class MainActivity : ComponentActivity() {
                             },
                         )
                     },
-                    cardExtras = CardExtras(delivery = tripState?.delivery, onResend = trip::resend),
+                    cardExtras = CardExtras(trip = tripState, onResend = trip::resend),
                     bottomBar = {
                         if (BuildConfig.DEBUG) {
                             val fake = container.fakeDrivingStateSource

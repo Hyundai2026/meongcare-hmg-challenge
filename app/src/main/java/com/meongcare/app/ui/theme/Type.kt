@@ -22,3 +22,14 @@ internal val MeongCareTypography = Typography(
     labelLarge = TextStyle(fontSize = 22.sp, lineHeight = 28.sp, fontWeight = FontWeight.SemiBold),
     labelMedium = TextStyle(fontSize = 16.sp, lineHeight = 22.sp),
 )
+
+/**
+ * 주행 화면의 남은 분 숫자 크기 (013 U4). 한눈에 읽게 아주 크게 둔다. 임시값 (Pleos 타입 스케일 미확인).
+ * 넓은 화면은 Pleos 앱 영역 전체(약 1682dp), 좁은 화면은 세로 반쪽 창(600dp 미만)이다.
+ */
+object DrivingText {
+    val MinutesWide = 200.sp
+    val MinutesNarrow = 132.sp
+    val DestinationWide = 40.sp
+    val DestinationNarrow = 28.sp
+}

@@ -80,6 +80,35 @@ object FirestoreJson {
         return HospitalStatus(wait.toInt(), congestion, accepting, updatedAt)
     }
 
+    // ---- 읽기: 환자 건의 병원 확인 (013 U1) ----
+
+    /** 확인 시각을 읽은 결과. [Malformed]는 짐작하지 않고 실패로 본다 */
+    sealed interface Ack {
+        data object Pending : Ack
+        data class At(val at: Instant) : Ack
+        data object Malformed : Ack
+    }
+
+    /**
+     * 단일 문서 GET 응답(`mask.fieldPaths=acknowledgedAt`) → 확인 시각.
+     * `acknowledgedAt`이 없거나 `nullValue`면 아직, `timestampValue`면 그 시각, 그 밖의 형식·JSON이 아니면 [Ack.Malformed].
+     */
+    fun ackOf(responseBody: String): Ack {
+        val root = try {
+            JSONObject(responseBody)
+        } catch (_: org.json.JSONException) {
+            return Ack.Malformed
+        }
+        // mask로 읽은 필드가 모두 없으면 fields가 빠진다 (아직). fields가 객체가 아니면 짐작하지 않는다
+        val fields = root.optJSONObject("fields") ?: return if (root.has("fields")) Ack.Malformed else Ack.Pending
+        val value = fields.optJSONObject("acknowledgedAt") ?: return if (fields.has("acknowledgedAt")) Ack.Malformed else Ack.Pending
+        return when {
+            value.has("nullValue") -> Ack.Pending
+            value.has("timestampValue") -> fields.timestampOf("acknowledgedAt")?.let { Ack.At(it) } ?: Ack.Malformed
+            else -> Ack.Malformed
+        }
+    }
+
     // ---- 쓰기: 환자 건 ----
 
     /**

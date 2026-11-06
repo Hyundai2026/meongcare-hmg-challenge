@@ -5,11 +5,13 @@ package com.meongcare.app.data.server
  *
  * @param documentsUrl `.../v1/projects/<id>/databases/(default)/documents` (끝에 `/` 없음)
  * @param signUpUrl 익명 가입 주소 (`accounts:signUp?key=...`)
+ * @param refreshUrl 익명 토큰 갱신 주소 (securetoken `v1/token?key=...`, 013). 갱신 토큰은 URL이 아니라 몸통에 넣는다
  */
 data class ServerConfig(
     val projectId: String,
     val documentsUrl: String,
     val signUpUrl: String,
+    val refreshUrl: String,
     val isEmulator: Boolean,
 ) {
     /** Firestore commit 요청에 쓰는 문서 이름 앞부분: `projects/<id>/databases/(default)/documents` */
@@ -31,10 +33,13 @@ fun serverConfigOf(projectId: String, apiKey: String, emulatorHost: String, isDe
     val key = apiKey.trim()
     if (isDebugBuild && host.isNotEmpty()) {
         val urlHost = if (host.contains(':') && !host.startsWith("[")) "[$host]" else host
+        val emulatorKey = key.ifEmpty { "demo-key" }
         return ServerConfig(
             projectId = project,
             documentsUrl = "http://$urlHost:$FIRESTORE_EMULATOR_PORT/v1/projects/$project/databases/(default)/documents",
-            signUpUrl = "http://$urlHost:$AUTH_EMULATOR_PORT/identitytoolkit.googleapis.com/v1/accounts:signUp?key=${key.ifEmpty { "demo-key" }}",
+            signUpUrl = "http://$urlHost:$AUTH_EMULATOR_PORT/identitytoolkit.googleapis.com/v1/accounts:signUp?key=$emulatorKey",
+            // Auth 에뮬레이터도 갱신을 받는다 (2026-11-06 확인: form 몸통, 응답 id_token·refresh_token·expires_in·user_id)
+            refreshUrl = "http://$urlHost:$AUTH_EMULATOR_PORT/securetoken.googleapis.com/v1/token?key=$emulatorKey",
             isEmulator = true,
         )
     }
@@ -43,6 +48,7 @@ fun serverConfigOf(projectId: String, apiKey: String, emulatorHost: String, isDe
         projectId = project,
         documentsUrl = "https://firestore.googleapis.com/v1/projects/$project/databases/(default)/documents",
         signUpUrl = "https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=$key",
+        refreshUrl = "https://securetoken.googleapis.com/v1/token?key=$key",
         isEmulator = false,
     )
 }

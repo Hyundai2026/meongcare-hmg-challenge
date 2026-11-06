@@ -2,7 +2,7 @@
 
 제휴 병원 상태와 환자 건(진료 카드)을 저장하는 Firestore와, 차·병원 웹이 쓰는 익명 로그인(Auth)을
 **내 PC에서 가짜로 띄운다** (Firebase Local Emulator Suite). 웹으로 치면 로컬 개발 DB 서버다.
-계획: [docs/plans/active/012-fastest-hospital.md](../docs/plans/active/012-fastest-hospital.md) "설계 결정 6·9"
+계획: [docs/plans/completed/012-fastest-hospital.md](../docs/plans/completed/012-fastest-hospital.md) "설계 결정 6·9"
 
 데이터 형식: [docs/data/hospital-status.md](../docs/data/hospital-status.md), [docs/data/emergency-case.md](../docs/data/emergency-case.md)
 

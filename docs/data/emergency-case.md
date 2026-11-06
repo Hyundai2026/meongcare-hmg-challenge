@@ -5,7 +5,7 @@
 
 - 예시: [emergency-case.example.json](emergency-case.example.json). 샘플 반려견 "보리"가 호흡 곤란·기침으로 오는 중이다. 테스트가 이 파일을 읽어서 대조한다.
 - 경로: `hospitals/{hospitalId}/cases/{caseId}` ([hospital-status.md](hospital-status.md) "Firestore 경로"). `caseId`는 Firestore가 만든다.
-- 계획: [docs/plans/active/012-fastest-hospital.md](../plans/active/012-fastest-hospital.md) "설계 결정 5·6"
+- 계획: [docs/plans/completed/012-fastest-hospital.md](../plans/completed/012-fastest-hospital.md) "설계 결정 5·6"
 
 ## 보내는 것과 보내지 않는 것 (사용자 결정 2026-11-06, 계획 012 U3)
 

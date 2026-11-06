@@ -5,7 +5,7 @@
 
 - 예시: [hospitals.sample.json](hospitals.sample.json). 시연용 가상 병원 5곳이다. 차 앱 내장 목록, 웹 메모리 저장소, 에뮬레이터 시드가 모두 이 파일과 같은 값을 쓴다. 테스트가 이 파일을 읽어서 대조한다.
 - 쓰는 곳: 병원 웹 `/hospital/`(상태를 알림), 차 앱(가장 빨리 진료받을 병원 순위, 012), 시드 스크립트 `firebase/scripts/seed.mjs`.
-- 계획: [docs/plans/active/012-fastest-hospital.md](../plans/active/012-fastest-hospital.md) "설계 결정 5"
+- 계획: [docs/plans/completed/012-fastest-hospital.md](../plans/completed/012-fastest-hospital.md) "설계 결정 5"
 
 ## Firestore 경로
 

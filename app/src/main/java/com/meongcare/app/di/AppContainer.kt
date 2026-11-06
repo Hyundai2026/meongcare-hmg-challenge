@@ -17,6 +17,7 @@ import com.meongcare.app.data.hospital.BuiltInHospitalBoardSource
 import com.meongcare.app.data.hospital.FakeCaseSender
 import com.meongcare.app.data.hospital.FallbackHospitalBoardSource
 import com.meongcare.app.data.hospital.SampleHospitals
+import com.meongcare.app.data.hospital.TimeoutHospitalBoardSource
 import com.meongcare.app.data.location.FakeCurrentLocationSource
 import com.meongcare.app.data.location.NaviCurrentLocationSource
 import com.meongcare.app.data.pet.FakePetProfileSource
@@ -156,7 +157,9 @@ class AppContainer(context: Context, val dataMode: DataMode) {
         HospitalSourceKind.SERVER_WITH_FALLBACK -> server?.let { (board, _) ->
             FallbackHospitalBoardSource(server = board, log = { Log.i(TRIP_LOG_TAG, it) })
         } ?: BuiltInHospitalBoardSource()
-        HospitalSourceKind.SERVER_ONLY -> server?.first ?: HospitalBoardSource {
+        HospitalSourceKind.SERVER_ONLY -> server?.let { (board, _) ->
+            TimeoutHospitalBoardSource(board, log = { Log.i(TRIP_LOG_TAG, it) })
+        } ?: HospitalBoardSource {
             Log.i(TRIP_LOG_TAG, "병원 목록: 서버 설정 없음")
             HospitalBoard.Unavailable("서버 설정 없음")
         }

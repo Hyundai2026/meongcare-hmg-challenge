@@ -7,6 +7,7 @@
 import { createFirestoreHospitalDesk } from '../data/firestoreHospitalDesk'
 import { createMemoryHospitalDesk } from '../data/memoryHospitalDesk'
 import type { HospitalDesk } from '../domain/hospital/hospitalDesk'
+import { emulatorHostFor } from '../domain/hospital/serverInfo'
 
 function envValue(value: unknown): string | null {
   return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null
@@ -15,7 +16,9 @@ function envValue(value: unknown): string | null {
 export function createHospitalDesk(now: () => Date): HospitalDesk {
   const projectId = envValue(import.meta.env.VITE_FIREBASE_PROJECT_ID)
   if (projectId === null) return createMemoryHospitalDesk(now)
-  const emulatorHost = envValue(import.meta.env.VITE_FIREBASE_EMULATOR_HOST)
+  // localhost는 127.0.0.1로 맞춘다 (차 앱과 같은 에뮬레이터를 보게, 2026-11-06 IPv4·IPv6 두 에뮬레이터 사고)
+  const rawHost = envValue(import.meta.env.VITE_FIREBASE_EMULATOR_HOST)
+  const emulatorHost = rawHost === null ? null : emulatorHostFor(rawHost)
   // 에뮬레이터는 API 키를 검사하지 않는다 (2026-11-06 확인). 진짜 프로젝트는 키가 있어야 한다.
   const apiKey = envValue(import.meta.env.VITE_FIREBASE_API_KEY) ?? (emulatorHost !== null ? 'demo-key' : null)
   if (apiKey === null) return createMemoryHospitalDesk(now)

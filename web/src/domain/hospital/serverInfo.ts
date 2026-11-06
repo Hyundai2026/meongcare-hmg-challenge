@@ -20,6 +20,16 @@ export const FIRESTORE_EMULATOR_PORT = 8080
 
 const IPV6_OR_LOCALHOST = new Set(['localhost', '::1', '[::1]'])
 
+/**
+ * 에뮬레이터 주소를 차 앱과 같은 IPv4로 맞춘다. `localhost`는 브라우저가 IPv6(::1)로 먼저 붙을 수 있어서
+ * 차 앱(adb reverse → 127.0.0.1)과 다른 에뮬레이터를 볼 수 있다. 에뮬레이터는 127.0.0.1에 고정했다 (firebase/firebase.json).
+ * 그 밖의 주소(::1, 다른 PC의 IP)는 그대로 둔다 (::1이면 화면이 경고한다).
+ */
+export function emulatorHostFor(host: string): string {
+  const trimmed = host.trim()
+  return trimmed.toLowerCase() === 'localhost' ? '127.0.0.1' : trimmed
+}
+
 /** IPv6 주소는 URL에서 대괄호로 감싼다 */
 export function hostForUrl(host: string): string {
   return host.includes(':') && !host.startsWith('[') ? `[${host}]` : host

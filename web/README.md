@@ -42,7 +42,7 @@ PC 브라우저에서 폰 크기로 보려면 개발자 도구(F12)의 기기 �
 1. 터미널 1: `npm --prefix firebase run emulators` (켜 둔다. [firebase/README.md](../firebase/README.md))
 2. 터미널 2: `npm --prefix firebase run seed -- --reset` → 병원별 링크가 나온다
 3. `web/.env.example`을 `web/.env.local`로 복사한다 (Windows: `copy web.env.example web.env.local`). 처음 세 줄이 에뮬레이터 값이다.
-   - **에뮬레이터 호스트는 `127.0.0.1`로 둔다 (`localhost` 아님).** `localhost`는 브라우저가 IPv6(`::1`)로 먼저 붙을 수 있어서, 차 앱(`adb reverse` → IPv4)과 다른 에뮬레이터를 볼 수 있다 (2026-11-06 실제로 생겼다). 화면 위 "서버:" 줄에 주소가 보이고, `localhost`·`::1`이면 빨간 경고가 뜬다. `--mode`로 다른 env 파일(예: `.env.emulator.local`)을 쓰면 그 파일도 같다.
+   - 에뮬레이터 호스트는 `127.0.0.1`이다. **`localhost`로 써도 병원 웹이 `127.0.0.1`로 바꿔 붙는다** (`emulatorHostFor`). `localhost`는 브라우저가 IPv6(`::1`)로 먼저 붙을 수 있어서, 차 앱(`adb reverse` → IPv4)과 다른 에뮬레이터를 볼 수 있었다 (2026-11-06 실제로 생겼다). 화면 위 "서버:" 줄에 붙은 주소가 보이고, `::1`이면 빨간 경고가 뜬다.
 4. `npm --prefix web run dev` → http://localhost:5173/hospital/?h=demo-fast&code=fast-1234
 5. 차 앱 debug 빌드를 시연 모드로 두고 `secrets.properties`에 에뮬레이터 값을 넣는다 (`secrets.properties.example`). [출발]하면 카드가 이 화면에 "새 환자"로 뜬다. [카드 확인]을 누르면 차 화면에 "병원이 카드를 확인했어요"가 뜬다 (계획 013).
 6. 시연 직전: `npm --prefix firebase run preflight` (PF1~PF6). 시드한 지 30분이 지나면 대기 정보가 "지남"이 되어 차 목록에 1위가 없다 → 병원 웹에서 [병원 상태 알리기].

@@ -698,3 +698,26 @@ select {
   letter-spacing: 0.2em;
   text-transform: uppercase;
 }
+
+/* 연결됨 카드: 초록 체크 */
+.server-card--linked {
+  gap: var(--space-2);
+}
+
+.server-card__title--linked {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: #1b6b35;
+}
+
+.server-card__check {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  color: #2e9e57;
+}
+
+.server-card__more {
+  align-self: flex-start;
+}

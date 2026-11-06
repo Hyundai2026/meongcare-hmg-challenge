@@ -14,6 +14,12 @@ export type LinkCarResult =
   /** 코드를 못 찾음·만료·이미 씀 (어느 쪽인지 알리지 않는다, 계획 014 K6) */
   | { ok: false; reason: 'not-found' | 'no-profile' | 'network' | 'unknown' }
 
+/** 이 보호자의 정보를 읽을 수 있는 차 하나 (`petProfiles/{uid}/readers/{차}`) */
+export interface LinkedCar {
+  /** 연결한 시각 (ISO 8601). 모르면 null */
+  linkedAt: string | null
+}
+
 export interface OwnerAccount {
   /** 이 브라우저가 기억한 계정이 동의했는지. 계정이 없으면 before-consent */
   status(): Promise<AccountStatus>
@@ -21,6 +27,11 @@ export interface OwnerAccount {
   consent(): Promise<ConsentResult>
   /** 차 화면의 코드로 연결한다. 코드는 normalizeLinkCode를 거친 값이다 */
   linkCar(code: string): Promise<LinkCarResult>
+  /**
+   * 연결된 차 목록을 실시간으로 받는다 (차가 연결을 끊으면 바로 빠진다). 읽지 못하면 null.
+   * 돌려준 함수를 부르면 그만 받는다.
+   */
+  watchLinkedCars(listener: (cars: LinkedCar[] | null) => void): () => void
 }
 
 /** 서버 모드에서 화면이 쓰는 것 */

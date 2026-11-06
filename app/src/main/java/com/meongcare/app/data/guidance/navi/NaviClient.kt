@@ -13,6 +13,25 @@ interface NaviClient {
      * 구독을 끊으면: 아직 도착·취소 전이면 경로를 취소하고, 연결을 놓는다.
      */
     fun trip(destination: Destination): Flow<NaviEvent>
+
+    /**
+     * [trip]과 같다. 다만 구독을 끊을 때(도착·취소 이벤트로 이미 끝난 경우 제외) [onClose]를 한 번 불러,
+     * [RouteOnClose.KEEP]이면 경로를 취소하지 않고 연결만 놓는다 (013 U2).
+     * 기본 구현은 [trip]이다 (항상 취소).
+     */
+    fun trip(destination: Destination, onClose: () -> RouteOnClose): Flow<NaviEvent> = trip(destination)
+}
+
+/** 안내 구독을 끊을 때 내비 경로를 어떻게 할지 (013 U2). */
+enum class RouteOnClose {
+    /**
+     * 경로를 취소한다 (`cancelRoute`). 내비 서비스가 내비 앱을 앞으로 띄워 우리 앱을 가리고,
+     * 우리 앱은 스스로 돌아올 수 없다 (`[obs-navi-emu]` "경로 취소 뒤 앞에 나오는 앱", 013 U3).
+     */
+    CANCEL,
+
+    /** 경로를 내비에 남기고 리스너 해제·`release()`만 한다. 다음 `requestRoute`가 새 경로로 바꾼다. */
+    KEEP,
 }
 
 /** 내비에서 오는 일. 값의 단위는 Pleos 에뮬레이터 관찰로 정했다 (duration 초, distance 미터). */

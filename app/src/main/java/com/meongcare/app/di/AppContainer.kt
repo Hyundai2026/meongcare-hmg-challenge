@@ -31,6 +31,8 @@ import com.meongcare.app.domain.link.OwnerLinkService
 import com.meongcare.app.data.server.AnonymousAuth
 import com.meongcare.app.data.server.FirestoreCaseSender
 import com.meongcare.app.data.server.FirestoreHospitalBoardSource
+import com.meongcare.app.data.server.FirestoreOwnerLink
+import com.meongcare.app.data.server.FirestorePetProfileReader
 import com.meongcare.app.data.server.HttpTransport
 import com.meongcare.app.data.server.ServerConfig
 import com.meongcare.app.data.server.UrlConnectionHttpTransport
@@ -202,17 +204,31 @@ class AppContainer(context: Context, val dataMode: DataMode) {
     val fakeOwnerLink: FakeOwnerLink? =
         if (petPlan.link == LinkKind.FAKE) FakeOwnerLink(random = SecureRandom().asKotlinRandom()) else null
 
+    /** 서버 연결 (014). 서버 설정이 있고 Fake가 아닐 때만. 로그 태그 `OwnerLink` (결과 종류·HTTP 상태·시간만) */
+    private val firestoreOwnerLink: FirestoreOwnerLink? = serverClient?.takeIf { petPlan.link == LinkKind.SERVER }?.let { (config, auth) ->
+        FirestoreOwnerLink(config, auth, serverTransport, SecureRandom().asKotlinRandom(), log = { Log.i(OWNER_LINK_LOG_TAG, it) })
+    }
+
     /** 보호자 웹 연결 (014). 연결 코드는 `SecureRandom`으로 만든다 */
     val ownerLink: OwnerLinkService = when (petPlan.link) {
         LinkKind.FAKE -> fakeOwnerLink ?: NoOwnerLink
-        // 서버 연결은 계획 014 단계 8에서 끼운다
-        LinkKind.SERVER, LinkKind.NONE -> NoOwnerLink
+        LinkKind.SERVER -> firestoreOwnerLink ?: NoOwnerLink
+        LinkKind.NONE -> NoOwnerLink
     }
 
     private val linkedProfileReader: LinkedProfileReader = when (petPlan.link) {
         // Fake 연결은 연결해도 샘플 보리다 (화면에 시연용이라고 알린다)
         LinkKind.FAKE -> LinkedProfileReader { LinkedProfileRead.Loaded(SamplePetProfiles.bori) }
-        LinkKind.SERVER, LinkKind.NONE -> LinkedProfileReader { LinkedProfileRead.Unavailable }
+        LinkKind.SERVER -> serverClient?.let { (config, auth) ->
+            FirestorePetProfileReader(
+                config = config,
+                auth = auth,
+                transport = serverTransport,
+                ownerUid = { firestoreOwnerLink?.ownerUid },
+                log = { Log.i(OWNER_LINK_LOG_TAG, it) },
+            )
+        } ?: LinkedProfileReader { LinkedProfileRead.Unavailable }
+        LinkKind.NONE -> LinkedProfileReader { LinkedProfileRead.Unavailable }
     }
 
     private val linkedPetProfileSource = LinkedPetProfileSource(
@@ -285,3 +301,6 @@ class AppContainer(context: Context, val dataMode: DataMode) {
 
 /** 병원 찾기·카드 전송 로그 태그 (012). `adb logcat -s HospitalTrip` */
 private const val TRIP_LOG_TAG = "HospitalTrip"
+
+/** 보호자 웹 연결 로그 태그 (014). `adb logcat -s OwnerLink` */
+private const val OWNER_LINK_LOG_TAG = "OwnerLink"

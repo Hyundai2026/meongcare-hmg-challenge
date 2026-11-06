@@ -25,6 +25,10 @@ import com.meongcare.app.ui.debug.DebugPanel
 import com.meongcare.app.ui.debug.debugLocationText
 import com.meongcare.app.ui.guidance.GuidanceViewModel
 import com.meongcare.app.ui.home.CardExtras
+import com.meongcare.app.ui.home.LinkExtras
+import com.meongcare.app.ui.home.linkRowOf
+import com.meongcare.app.ui.link.LinkScreen
+import com.meongcare.app.ui.link.LinkViewModel
 import com.meongcare.app.ui.home.HomeScreen
 import com.meongcare.app.ui.hospital.HospitalConfirmScreen
 import com.meongcare.app.ui.hospital.HospitalFinderViewModel
@@ -62,9 +66,19 @@ class MainActivity : ComponentActivity() {
                 val finder by trip.finder.collectAsStateWithLifecycle()
                 val tripState by trip.trip.collectAsStateWithLifecycle()
                 val cardUiState by cardViewModel.uiState.collectAsStateWithLifecycle()
+                val linkViewModel: LinkViewModel = viewModel(
+                    factory = LinkViewModel.factory(container.ownerLink, container.petProfileSource.profile),
+                )
+                val linking by linkViewModel.isOpen.collectAsStateWithLifecycle()
+                val linkState by container.ownerLink.state.collectAsStateWithLifecycle()
+                val isPetProfileSample by container.petProfileIsSample.collectAsStateWithLifecycle()
                 val cardActions = remember(cardViewModel) {
                     MedicalCardActions(
-                        onStartCard = cardViewModel::onStartCard,
+                        // [진료 카드 만들기] 때 연결된 반려견 정보를 다시 읽는다 (014 K4)
+                        onStartCard = {
+                            container.refreshPetProfile()
+                            cardViewModel.onStartCard()
+                        },
                         onToggleSymptom = cardViewModel::onToggleSymptom,
                         onConfirmSymptoms = cardViewModel::onConfirmSymptoms,
                         onCancelPicking = cardViewModel::onCancelPicking,
@@ -74,7 +88,11 @@ class MainActivity : ComponentActivity() {
                         onDismissPhoneNumber = cardViewModel::onDismissPhoneNumber,
                         onGoHome = cardViewModel::onGoHome,
                         onOpenCard = cardViewModel::onOpenCard,
-                        onStartNewCard = cardViewModel::onStartNewCard,
+                        // [새로 만들기]도 새 카드를 만드는 시작이라 같이 다시 읽는다
+                        onStartNewCard = {
+                            container.refreshPetProfile()
+                            cardViewModel.onStartNewCard()
+                        },
                     )
                 }
 
@@ -93,7 +111,7 @@ class MainActivity : ComponentActivity() {
                         trip.clear()
                     },
                     isGuidanceSimulated = container.sourcePlan.isGuidanceSimulated,
-                    isPetProfileSample = container.isPetProfileSample,
+                    isPetProfileSample = isPetProfileSample,
                     isRouteOnNavi = container.naviUse == NaviUse.ROUTE_ONLY,
                     finder = finder,
                     onFinderBack = trip::back,
@@ -126,6 +144,21 @@ class MainActivity : ComponentActivity() {
                         )
                     },
                     cardExtras = CardExtras(trip = tripState, onResend = trip::resend),
+                    link = LinkExtras(
+                        linking = linking,
+                        row = linkRowOf(linkState, guidanceUiState),
+                        onOpen = {
+                            container.ownerLink.acknowledgeRevoked()
+                            linkViewModel.open()
+                        },
+                        onUnlink = linkViewModel::unlink,
+                        onClose = linkViewModel::close,
+                        onRefreshPet = container::refreshPetProfile,
+                    ),
+                    linkScreen = {
+                        val linkUiState by linkViewModel.uiState.collectAsStateWithLifecycle()
+                        LinkScreen(state = linkUiState, onNewCode = linkViewModel::onNewCode, onClose = linkViewModel::close)
+                    },
                     bottomBar = {
                         if (BuildConfig.DEBUG) {
                             val fake = container.fakeDrivingStateSource
@@ -158,6 +191,11 @@ class MainActivity : ComponentActivity() {
                                     null
                                 },
                                 onAskLocation = locationViewModel::onAsk,
+                                onFakeOwnerClaim = container.fakeOwnerLink?.let { fakeLink ->
+                                    val pending by fakeLink.pendingCode.collectAsStateWithLifecycle()
+                                    val claim: () -> Unit = { fakeLink.claim() }
+                                    if (linking && pending != null && uiState == HomeUiState.Parked) claim else null
+                                },
                             )
                         }
                     },

@@ -1,7 +1,8 @@
 import type { PetProfile } from './petProfile'
 
-export type LoadFailure = 'unavailable' | 'corrupted' | 'unsupported-version'
-export type SaveFailure = 'quota' | 'unavailable' | 'unknown'
+/** network: 서버에 닿지 못했다 (Firestore 구현, 014) */
+export type LoadFailure = 'unavailable' | 'corrupted' | 'unsupported-version' | 'network'
+export type SaveFailure = 'quota' | 'unavailable' | 'unknown' | 'network'
 
 export type LoadResult = { ok: true; profile: PetProfile | null } | { ok: false; reason: LoadFailure }
 export type SaveResult = { ok: true } | { ok: false; reason: SaveFailure }
@@ -9,7 +10,7 @@ export type SaveResult = { ok: true } | { ok: false; reason: SaveFailure }
 /**
  * 프로필 저장소. 화면은 이 인터페이스만 안다.
  * - 지금: 브라우저 저장소 구현 (data/, 앱의 Fake 자리)
- * - 나중: Firebase(Firestore) 구현 (앱의 Real 자리). 그때 'network' 같은 이유를 더한다.
+ * - 서버: Firebase(Firestore) 구현 (앱의 Real 자리, 014). 동의한 뒤에 쓴다. 서버에 닿지 못하면 'network'다.
  * 브라우저 저장소도 Promise로 감싸서, 바꿔 끼워도 화면 코드가 바뀌지 않게 한다.
  * 실패는 예외가 아니라 결과 값으로 돌려준다.
  */

@@ -7,12 +7,15 @@ import com.meongcare.app.domain.hospital.Hospital
 import com.meongcare.app.domain.hospital.HospitalCandidate
 import com.meongcare.app.domain.hospital.HospitalOrigin
 import com.meongcare.app.domain.hospital.HospitalStatus
+import com.meongcare.app.domain.pet.MedicalInfo
+import com.meongcare.app.domain.pet.Medication
 import com.meongcare.app.domain.pet.PetProfile
 import com.meongcare.app.domain.pet.Sex
 import com.meongcare.app.domain.trip.CaseCard
 import com.meongcare.app.domain.trip.CaseEta
 import com.meongcare.app.domain.trip.CaseStatus
 import java.time.Instant
+import java.time.LocalDate
 import java.time.format.DateTimeParseException
 import org.json.JSONArray
 import org.json.JSONObject
@@ -106,6 +109,79 @@ object FirestoreJson {
             value.has("nullValue") -> Ack.Pending
             value.has("timestampValue") -> fields.timestampOf("acknowledgedAt")?.let { Ack.At(it) } ?: Ack.Malformed
             else -> Ack.Malformed
+        }
+    }
+
+    // ---- 읽기: 연결된 보호자의 반려견 프로필 (014) ----
+
+    /**
+     * 단일 문서 GET 응답(`petProfiles/{uid}`) → 프로필. 기준: docs/data/pet-profile.md "읽는 쪽 규칙", owner-link.md.
+     * 형식이 틀리거나 `schemaVersion`이 1이 아니면 null이다 (짐작하지 않는다). 모르는 필드는 무시한다.
+     * 사진은 차가 읽지 못하는 문서에 따로 있어서 늘 null이다.
+     */
+    fun petProfileOf(responseBody: String): PetProfile? {
+        val root = try {
+            JSONObject(responseBody)
+        } catch (_: org.json.JSONException) {
+            return null
+        }
+        val fields = root.optJSONObject("fields") ?: return null
+        if (fields.longOf("schemaVersion") != SCHEMA_VERSION) return null
+        val name = fields.stringOf("name")?.takeIf { it.isNotEmpty() } ?: return null
+        val breed = fields.optionalString("breed") ?: return null
+        val sex = when (val text = (fields.optionalString("sex") ?: return null).value) {
+            null -> null
+            "male" -> Sex.MALE
+            "female" -> Sex.FEMALE
+            else -> return null
+        }
+        val birthDate = (fields.optionalString("birthDate") ?: return null).value?.let { localDateOf(it) ?: return null }
+        val estimated = fields.booleanOf("birthDateIsEstimated") ?: return null
+        val medical = fields.mapOf("medical") ?: return null
+        val conditions = medical.stringList("conditions") ?: return null
+        val allergies = medical.stringList("allergies") ?: return null
+        val medications = medical.arrayValues("medications")?.map { value ->
+            val med = value.optJSONObject("mapValue")?.optJSONObject("fields") ?: return null
+            Medication(name = med.stringOf("name") ?: return null, dosage = med.stringOf("dosage") ?: return null)
+        } ?: return null
+        val updatedAt = fields.stringOf("updatedAt")?.let { utcInstantOf(it) } ?: return null
+        return PetProfile(
+            name = name,
+            breed = breed.value,
+            sex = sex,
+            birthDate = birthDate,
+            birthDateIsEstimated = estimated,
+            photoDataUrl = null,
+            medical = MedicalInfo(conditions, allergies, medications),
+            updatedAt = updatedAt,
+        )
+    }
+
+    private val ISO_DATE = Regex("""\d{4}-\d{2}-\d{2}""")
+    private val ISO_UTC = Regex("""\d{4}-\d{2}-\d{2}T(\d{2}):(\d{2}):(\d{2})(\.\d+)?Z""")
+
+    /** `YYYY-MM-DD`이고 있는 날짜만 (2023-02-30은 null) */
+    private fun localDateOf(text: String): LocalDate? {
+        if (!ISO_DATE.matches(text)) return null
+        return try {
+            LocalDate.parse(text)
+        } catch (_: DateTimeParseException) {
+            null
+        }
+    }
+
+    /**
+     * pet-profile.md: `YYYY-MM-DDTHH:mm:ssZ`(UTC, 초 뒤 소수 있어도 됨)만. 없는 시각(24시, 60초 윤초)은 손상이다
+     * (`Instant.parse`는 받아 주지만 보호자 웹의 읽는 쪽 규칙과 맞춘다).
+     */
+    private fun utcInstantOf(text: String): Instant? {
+        val match = ISO_UTC.matchEntire(text) ?: return null
+        val (hour, minute, second) = match.destructured
+        if (hour.toInt() > 23 || minute.toInt() > 59 || second.toInt() > 59) return null
+        return try {
+            Instant.parse(text)
+        } catch (_: DateTimeParseException) {
+            null
         }
     }
 
@@ -243,4 +319,26 @@ object FirestoreJson {
     }
 
     private fun JSONObject.mapOf(key: String): JSONObject? = value(key)?.optJSONObject("mapValue")?.optJSONObject("fields")
+
+    /** 문자열 또는 `nullValue`. 없거나 다른 타입이면 null (틀린 값), 값이 null이면 `Field(null)` */
+    private class Field<T>(val value: T)
+
+    private fun JSONObject.optionalString(key: String): Field<String?>? {
+        val v = value(key) ?: return null
+        return when {
+            v.has("nullValue") -> Field(null)
+            v.has("stringValue") -> (v.opt("stringValue") as? String)?.let { Field(it) }
+            else -> null
+        }
+    }
+
+    /** 배열 값들. 빈 배열은 `values` 없이 온다. 배열이 아니면 null */
+    private fun JSONObject.arrayValues(key: String): List<JSONObject>? {
+        val array = value(key)?.optJSONObject("arrayValue") ?: return null
+        val values = array.optJSONArray("values") ?: return emptyList()
+        return (0 until values.length()).map { values.optJSONObject(it) ?: return null }
+    }
+
+    private fun JSONObject.stringList(key: String): List<String>? =
+        arrayValues(key)?.map { (it.takeIf { v -> v.has("stringValue") }?.opt("stringValue") as? String) ?: return null }
 }

@@ -20,10 +20,21 @@ import com.meongcare.app.data.hospital.SampleHospitals
 import com.meongcare.app.data.hospital.TimeoutHospitalBoardSource
 import com.meongcare.app.data.location.FakeCurrentLocationSource
 import com.meongcare.app.data.location.NaviCurrentLocationSource
+import com.meongcare.app.data.link.FakeOwnerLink
+import com.meongcare.app.data.link.NoOwnerLink
 import com.meongcare.app.data.pet.FakePetProfileSource
+import com.meongcare.app.data.pet.LinkedPetProfileSource
+import com.meongcare.app.data.pet.LinkedProfileRead
+import com.meongcare.app.data.pet.LinkedProfileReader
+import com.meongcare.app.data.pet.SamplePetProfiles
+import com.meongcare.app.domain.link.OwnerLinkService
 import com.meongcare.app.data.server.AnonymousAuth
 import com.meongcare.app.data.server.FirestoreCaseSender
 import com.meongcare.app.data.server.FirestoreHospitalBoardSource
+import com.meongcare.app.data.server.FirestoreOwnerLink
+import com.meongcare.app.data.server.FirestorePetProfileReader
+import com.meongcare.app.data.server.HttpTransport
+import com.meongcare.app.data.server.ServerConfig
 import com.meongcare.app.data.server.UrlConnectionHttpTransport
 import com.meongcare.app.data.server.serverConfigOf
 import com.meongcare.app.domain.hospital.HospitalBoard
@@ -46,7 +57,13 @@ import com.meongcare.app.ui.card.symptomLabelRes
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import java.security.SecureRandom
+import kotlin.random.asKotlinRandom
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 
@@ -142,14 +159,23 @@ class AppContainer(context: Context, val dataMode: DataMode) {
     /** 병원 목록 출처 (012, [hospitalSourceKindOf]의 표) */
     val hospitalSourceKind: HospitalSourceKind = hospitalSourceKindOf(dataMode, hasServer = serverConfig != null)
 
+    private val serverTransport: HttpTransport = UrlConnectionHttpTransport()
+
+    /**
+     * 서버 클라이언트 (설정·익명 계정). 서버 설정이 있고 Fake가 아닐 때 한 번 만들어 병원과 반려견(014)이 같이 쓴다.
+     * 같은 익명 계정이어야 한다: 보안 규칙상 차는 자기 uid로 만든 환자 건·연결 코드만 다룬다.
+     */
+    private val serverClient: Pair<ServerConfig, AnonymousAuth>? =
+        serverConfig?.takeIf { dataMode != DataMode.FAKE }?.let { config ->
+            // 토큰은 만료 5분 전부터 미리 갱신한다 (013). 로그에는 결과 종류만
+            config to AnonymousAuth(config, serverTransport, log = { Log.i(TRIP_LOG_TAG, it) })
+        }
+
     /** 서버를 쓰는 구성에서만 만든다. 로그 태그는 `HospitalTrip` 하나 (결과 종류·개수·시간만). */
-    private val server = serverConfig?.takeIf { hospitalSourceKind != HospitalSourceKind.BUILT_IN }?.let { config ->
-        val transport = UrlConnectionHttpTransport()
-        // 토큰은 만료 5분 전부터 미리 갱신한다 (013). 로그에는 결과 종류만
-        val auth = AnonymousAuth(config, transport, log = { Log.i(TRIP_LOG_TAG, it) })
+    private val server = serverClient?.takeIf { hospitalSourceKind != HospitalSourceKind.BUILT_IN }?.let { (config, auth) ->
         val label: (com.meongcare.app.domain.card.Symptom) -> String = { context.getString(symptomLabelRes(it)) }
-        FirestoreHospitalBoardSource(config, auth, transport, log = { Log.i(TRIP_LOG_TAG, it) }) to
-            FirestoreCaseSender(config, auth, transport, label)
+        FirestoreHospitalBoardSource(config, auth, serverTransport, log = { Log.i(TRIP_LOG_TAG, it) }) to
+            FirestoreCaseSender(config, auth, serverTransport, label)
     }
 
     /** 제휴 병원 목록 (012, 계획 012 "설계 결정 4"). */
@@ -172,14 +198,64 @@ class AppContainer(context: Context, val dataMode: DataMode) {
     private fun caseSenderFor(candidate: HospitalCandidate): CaseSender =
         server?.second?.takeIf { candidate.sendsCardToServer } ?: fakeCaseSender
 
-    /**
-     * 반려견 프로필. 서버(보호자 웹 연결)가 생기기 전까지 **모든 데이터 모드에서 Fake("보리")**다.
-     * 서버 구현이 생기면 [sourcePlanOf]에 칸을 더한다 (docs/plans 009 "설계 결정 3").
-     */
-    val petProfileSource: PetProfileSource = FakePetProfileSource()
+    /** 반려견 프로필과 보호자 웹 연결 구성 (014, [petPlanOf]의 표) */
+    val petPlan: PetPlan = petPlanOf(dataMode, hasServer = serverConfig != null)
 
-    /** 반려견 정보가 시연용 샘플인지. 화면에 그 사실을 알린다 (출품 유의사항). 지금은 Fake뿐이라 항상 true. */
-    val isPetProfileSample: Boolean = true
+    /** debug 패널 [가짜 보호자 코드 입력]. Fake 연결일 때만 있다 */
+    val fakeOwnerLink: FakeOwnerLink? =
+        if (petPlan.link == LinkKind.FAKE) FakeOwnerLink(random = SecureRandom().asKotlinRandom()) else null
+
+    /** 서버 연결 (014). 서버 설정이 있고 Fake가 아닐 때만. 로그 태그 `OwnerLink` (결과 종류·HTTP 상태·시간만) */
+    private val firestoreOwnerLink: FirestoreOwnerLink? = serverClient?.takeIf { petPlan.link == LinkKind.SERVER }?.let { (config, auth) ->
+        FirestoreOwnerLink(config, auth, serverTransport, SecureRandom().asKotlinRandom(), log = { Log.i(OWNER_LINK_LOG_TAG, it) })
+    }
+
+    /** 보호자 웹 연결 (014). 연결 코드는 `SecureRandom`으로 만든다 */
+    val ownerLink: OwnerLinkService = when (petPlan.link) {
+        LinkKind.FAKE -> fakeOwnerLink ?: NoOwnerLink
+        LinkKind.SERVER -> firestoreOwnerLink ?: NoOwnerLink
+        LinkKind.NONE -> NoOwnerLink
+    }
+
+    private val linkedProfileReader: LinkedProfileReader = when (petPlan.link) {
+        // Fake 연결은 연결해도 샘플 보리다 (화면에 시연용이라고 알린다)
+        LinkKind.FAKE -> LinkedProfileReader { LinkedProfileRead.Loaded(SamplePetProfiles.bori) }
+        LinkKind.SERVER -> serverClient?.let { (config, auth) ->
+            FirestorePetProfileReader(
+                config = config,
+                auth = auth,
+                transport = serverTransport,
+                ownerUid = { firestoreOwnerLink?.ownerUid },
+                log = { Log.i(OWNER_LINK_LOG_TAG, it) },
+            )
+        } ?: LinkedProfileReader { LinkedProfileRead.Unavailable }
+        LinkKind.NONE -> LinkedProfileReader { LinkedProfileRead.Unavailable }
+    }
+
+    private val linkedPetProfileSource = LinkedPetProfileSource(
+        scope = applicationScope,
+        link = ownerLink,
+        sample = FakePetProfileSource(),
+        reader = linkedProfileReader,
+        sampleBeforeLink = petPlan.sampleBeforeLink,
+    )
+
+    /**
+     * 반려견 프로필 (014). 연결 전(또는 연결 없음)에는 샘플 "보리"(Real은 등록 안 됨), 서버 연결 뒤에는 보호자가 등록한 프로필이다.
+     * 연결된 뒤 읽지 못하면 샘플로 대신하지 않는다 ([LinkedPetProfileSource]).
+     */
+    val petProfileSource: PetProfileSource = linkedPetProfileSource
+
+    /** 연결된 반려견 정보를 다시 읽는다 ([진료 카드 만들기], 처음 화면이 보이는 동안 1분마다). 연결 전이면 아무 일도 없다 */
+    fun refreshPetProfile() = linkedPetProfileSource.refresh()
+
+    /**
+     * 반려견 정보가 시연용 샘플인지. 화면에 그 사실을 알린다 (출품 유의사항). 서버 연결로 받은 정보만 샘플이 아니다.
+     * 연결 직후 서버 응답 전에는 화면에 아직 샘플이 남아 있으므로 그동안도 샘플이다 ([LinkedPetProfileSource.isSample]).
+     */
+    val petProfileIsSample: StateFlow<Boolean> = combine(ownerLink.state, linkedPetProfileSource.isSample) { state, fromSample ->
+        petProfileIsSampleOf(petPlan, state) || fromSample
+    }.stateIn(applicationScope, SharingStarted.WhileSubscribed(5_000), petProfileIsSampleOf(petPlan, ownerLink.state.value))
 
     /** 고른 증상과 진료 카드. Fake 길안내와 같은 프로세스 수명이라 안내 시작부터 도착까지 남는다. */
     val medicalCardSession = MedicalCardSession()
@@ -229,3 +305,6 @@ class AppContainer(context: Context, val dataMode: DataMode) {
 
 /** 병원 찾기·카드 전송 로그 태그 (012). `adb logcat -s HospitalTrip` */
 private const val TRIP_LOG_TAG = "HospitalTrip"
+
+/** 보호자 웹 연결 로그 태그 (014). `adb logcat -s OwnerLink` */
+private const val OWNER_LINK_LOG_TAG = "OwnerLink"

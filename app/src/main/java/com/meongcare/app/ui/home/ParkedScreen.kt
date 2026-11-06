@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -23,6 +24,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -51,6 +56,7 @@ import com.meongcare.app.ui.theme.Dimens
 import com.meongcare.app.ui.theme.MeongCareTheme
 
 private val ContentMaxWidth = 960.dp
+private val DialogButtonMinWidth = 160.dp
 
 /**
  * 정차·주차 중 처음 화면: 반려견 요약 + [진료 카드 만들기].
@@ -65,6 +71,7 @@ private val ContentMaxWidth = 960.dp
  * @param isPetProfileSample 반려견 정보가 시연용 샘플이면 그 사실을 알린다
  * @param panel 안내 영역 (안내 중·도착일 때). null이면 없다
  * @param onResend 안내 영역의 [다시 보내기]
+ * @param linkRow 보호자 웹 연결 줄 (014). [onOpenLink]는 [보호자 웹과 연결], [onUnlink]는 확인 뒤 [끊기]
  */
 @Composable
 fun ParkedScreen(
@@ -75,6 +82,9 @@ fun ParkedScreen(
     modifier: Modifier = Modifier,
     panel: TripPanel? = null,
     onResend: () -> Unit = {},
+    linkRow: LinkRow = LinkRow.Hidden,
+    onOpenLink: () -> Unit = {},
+    onUnlink: () -> Unit = {},
 ) {
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val wide = maxWidth >= 840.dp
@@ -126,6 +136,7 @@ fun ParkedScreen(
                     Text(text = stringResource(R.string.home_card_hint), style = MaterialTheme.typography.bodyLarge)
                     PrimaryButton(stringResource(R.string.home_start_card), actions.onStartCard)
                 }
+                LinkRowPanel(linkRow, petName = (card.card.pet as? PetHeader.Registered)?.name, onOpenLink = onOpenLink, onUnlink = onUnlink)
             }
         }
     }
@@ -151,6 +162,99 @@ private fun CurrentCardPanel(card: CardFlowUiState, onOpenCard: () -> Unit) {
             Text(text = symptoms, style = MaterialTheme.typography.bodyLarge.copy(fontSize = scale.row))
             PrimaryButton(stringResource(R.string.home_open_card), onOpenCard)
         }
+    }
+}
+
+/**
+ * 보호자 웹 연결 줄 (014). 연결 전: [보호자 웹과 연결] / 연결됨: "보호자 웹과 연결됨" + [연결 끊기] (확인 대화).
+ * 정차 중 처음 화면에만 있다 (주행 화면에는 없다).
+ */
+@Composable
+private fun LinkRowPanel(row: LinkRow, petName: String?, onOpenLink: () -> Unit, onUnlink: () -> Unit) {
+    if (row == LinkRow.Hidden) return
+    val scale = LocalCardScale.current
+    var confirming by rememberSaveable { mutableStateOf(false) }
+    Surface(
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        modifier = Modifier.widthIn(max = ContentMaxWidth).fillMaxWidth(),
+    ) {
+        Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            when (row) {
+                is LinkRow.Unlinked -> {
+                    if (row.revoked) {
+                        Text(
+                            stringResource(R.string.link_revoked),
+                            style = MaterialTheme.typography.bodyLarge.copy(fontSize = scale.row),
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                    Text(stringResource(R.string.link_start_hint), style = MaterialTheme.typography.bodyLarge.copy(fontSize = scale.row))
+                    LinkButton(stringResource(R.string.link_start), onOpenLink)
+                }
+                LinkRow.Linked -> {
+                    Text(
+                        stringResource(R.string.link_status_linked),
+                        style = MaterialTheme.typography.titleLarge.copy(fontSize = scale.row),
+                        fontWeight = FontWeight.Bold,
+                    )
+                    LinkButton(stringResource(R.string.link_unlink)) { confirming = true }
+                }
+                LinkRow.Hidden -> Unit
+            }
+        }
+    }
+    if (confirming && row == LinkRow.Linked) {
+        AlertDialog(
+            onDismissRequest = { confirming = false },
+            text = {
+                Text(
+                    if (petName != null) stringResource(R.string.link_unlink_confirm, petName) else stringResource(R.string.link_unlink_confirm_no_name),
+                    style = MaterialTheme.typography.bodyLarge.copy(fontSize = scale.row),
+                )
+            },
+            // 차 화면은 팔을 뻗어 누르므로 대화 상자 버튼도 크게 둔다
+            confirmButton = {
+                Button(
+                    onClick = {
+                        confirming = false
+                        onUnlink()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = ActionBlue, contentColor = Color.White),
+                    shape = RoundedCornerShape(20.dp),
+                    modifier = Modifier.heightIn(min = scale.buttonHeight).widthIn(min = DialogButtonMinWidth),
+                ) {
+                    Text(stringResource(R.string.link_unlink_do), style = MaterialTheme.typography.labelLarge.copy(fontSize = scale.button))
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = { confirming = false },
+                    border = BorderStroke(2.dp, MaterialTheme.colorScheme.outline),
+                    shape = RoundedCornerShape(20.dp),
+                    modifier = Modifier.heightIn(min = scale.buttonHeight).widthIn(min = DialogButtonMinWidth),
+                ) {
+                    Text(
+                        stringResource(R.string.link_cancel),
+                        style = MaterialTheme.typography.labelLarge.copy(fontSize = scale.button),
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+            },
+        )
+    }
+}
+
+@Composable
+private fun LinkButton(text: String, onClick: () -> Unit) {
+    val scale = LocalCardScale.current
+    OutlinedButton(
+        onClick = onClick,
+        border = BorderStroke(2.dp, MaterialTheme.colorScheme.outline),
+        shape = RoundedCornerShape(20.dp),
+        modifier = Modifier.fillMaxWidth().heightIn(min = scale.buttonHeight),
+    ) {
+        Text(text, style = MaterialTheme.typography.labelLarge.copy(fontSize = scale.button), color = MaterialTheme.colorScheme.onSurface)
     }
 }
 

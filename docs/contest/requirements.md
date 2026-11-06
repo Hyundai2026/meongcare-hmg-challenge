@@ -106,7 +106,7 @@
 ## 제출 체크리스트
 
 - [ ] 기획서 DOCX 작성 ([../product/idea.md](../product/idea.md) 기반)
-- [ ] 기획서에 확인하지 않은 기능을 사실처럼 쓰지 않았는지 점검
+- [ ] 기획서에 확인하지 않은 기능을 사실처럼 쓰지 않았는지 점검 ([../product/feature-facts.md](../product/feature-facts.md)와 대조)
 - [ ] 팀원 전원 동의 서명
 - [ ] 시연 영상
 - [ ] `apk/<팀명>_<앱이름>_release.apk` 커밋 (또는 Release URL)

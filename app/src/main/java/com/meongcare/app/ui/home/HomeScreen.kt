@@ -8,10 +8,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import com.meongcare.app.domain.hospital.RankedHospital
 import com.meongcare.app.domain.trip.FinderStep
 import com.meongcare.app.domain.trip.TripState
@@ -40,6 +44,7 @@ import kotlinx.coroutines.delay
  * @param onFinderBack 병원 찾기 화면의 시스템 뒤로 (= 화면의 [뒤로])
  * @param bottomBar 화면 아래에 붙는 영역. debug 빌드의 개발자 패널이 들어간다.
  * @param cardExtras 고른 병원과 카드 전송 상태 (012). 안내 영역([tripPanelOf], 013)을 여기서 만든다.
+ * @param link 보호자 웹 연결 (014): 처음 화면의 연결 줄과 연결 화면. 연결 화면은 [linkScreen]이 그린다.
  */
 @Composable
 fun HomeScreen(
@@ -59,6 +64,8 @@ fun HomeScreen(
     hospitalList: @Composable () -> Unit = {},
     hospitalConfirm: @Composable (RankedHospital) -> Unit = {},
     cardExtras: CardExtras = CardExtras(),
+    link: LinkExtras = LinkExtras(),
+    linkScreen: @Composable () -> Unit = {},
     bottomBar: @Composable () -> Unit = {},
 ) {
     // 안내 영역의 도착 예정 시각이 정차 중에 낡지 않게 30초마다 다시 계산한다 (주행 화면은 시각을 보이지 않는다)
@@ -91,6 +98,8 @@ fun HomeScreen(
                         hospitalConfirm = hospitalConfirm,
                         panel = panel,
                         onResend = cardExtras.onResend,
+                        link = link,
+                        linkScreen = linkScreen,
                     )
                     HomeContent.DRIVING -> DrivingScreen(guidanceUiState, panel = panel)
                 }
@@ -118,16 +127,37 @@ private fun ParkedFlow(
     hospitalConfirm: @Composable (RankedHospital) -> Unit,
     panel: TripPanel?,
     onResend: () -> Unit,
+    link: LinkExtras,
+    linkScreen: @Composable () -> Unit,
 ) {
-    when (parkedContentOf(guidanceUiState, cardUiState.session, cardUiState.atHome, finder)) {
-        ParkedContent.HOME -> ParkedScreen(
-            card = cardUiState,
-            guidance = guidanceUiState,
-            actions = cardActions,
-            isPetProfileSample = isPetProfileSample,
-            panel = panel,
-            onResend = onResend,
-        )
+    when (parkedContentOf(guidanceUiState, cardUiState.session, cardUiState.atHome, finder, link.linking)) {
+        ParkedContent.HOME -> {
+            // 처음 화면이 보이는 동안(앱이 앞에 있을 때만) 연결된 반려견 정보를 1분마다 다시 읽는다 (014 K4)
+            val lifecycleOwner = LocalLifecycleOwner.current
+            LaunchedEffect(lifecycleOwner, link.onRefreshPet) {
+                lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                    while (true) {
+                        link.onRefreshPet()
+                        delay(PET_REFRESH_MILLIS)
+                    }
+                }
+            }
+            ParkedScreen(
+                card = cardUiState,
+                guidance = guidanceUiState,
+                actions = cardActions,
+                isPetProfileSample = isPetProfileSample,
+                panel = panel,
+                onResend = onResend,
+                linkRow = link.row,
+                onOpenLink = link.onOpen,
+                onUnlink = link.onUnlink,
+            )
+        }
+        ParkedContent.LINK -> {
+            BackHandler(onBack = link.onClose)
+            linkScreen()
+        }
         ParkedContent.SYMPTOMS -> {
             // 시스템 뒤로 = [취소]
             BackHandler(onBack = cardActions.onCancelPicking)
@@ -175,4 +205,20 @@ data class CardExtras(
     val onResend: () -> Unit = {},
 )
 
+/**
+ * 보호자 웹 연결 (014).
+ * @param linking 연결 화면이 열려 있는지
+ * @param row 처음 화면의 연결 줄 ([linkRowOf])
+ * @param onRefreshPet 연결된 반려견 정보를 다시 읽는다 (처음 화면이 보이는 동안 1분마다)
+ */
+data class LinkExtras(
+    val linking: Boolean = false,
+    val row: LinkRow = LinkRow.Hidden,
+    val onOpen: () -> Unit = {},
+    val onUnlink: () -> Unit = {},
+    val onClose: () -> Unit = {},
+    val onRefreshPet: () -> Unit = {},
+)
+
 private const val PANEL_REFRESH_MILLIS = 30_000L
+private const val PET_REFRESH_MILLIS = 60_000L

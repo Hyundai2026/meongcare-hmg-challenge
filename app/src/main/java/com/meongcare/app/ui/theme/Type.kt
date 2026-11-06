@@ -33,3 +33,9 @@ object DrivingText {
     val DestinationWide = 40.sp
     val DestinationNarrow = 28.sp
 }
+
+/** 보호자 웹 연결 코드 크기 (014). 보호자가 차 앞에서 폰에 옮겨 적으므로 아주 크게 둔다. 임시값 */
+object LinkText {
+    val CodeWide = 140.sp
+    val CodeNarrow = 72.sp
+}

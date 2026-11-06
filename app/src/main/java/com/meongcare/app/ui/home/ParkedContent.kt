@@ -20,6 +20,9 @@ enum class ParkedContent {
 
     /** 고른 병원 확인 (012) */
     CONFIRM_HOSPITAL,
+
+    /** 보호자 웹 연결 코드 (014). 처음 화면에서만 연다 */
+    LINK,
 }
 
 /**
@@ -37,15 +40,18 @@ enum class ParkedContent {
  *
  * @param atHome [홈]을 눌러 처음 화면을 보는 중이면 true. 고르는 중이 아니면 처음 화면이다 (처음 화면에 [카드 보기]가 있다).
  * @param finder 병원 찾기 단계 (012). 주행으로 바뀌었다가 정차하면 같은 단계로 돌아온다.
+ * @param linking 보호자 웹 연결 화면이 열려 있으면 true (014). 증상 고르기가 먼저고, 안내 중에는 보이지 않는다.
  */
 fun parkedContentOf(
     guidance: GuidanceUiState,
     session: CardSessionState,
     atHome: Boolean = false,
     finder: FinderStep = FinderStep.None,
+    linking: Boolean = false,
 ): ParkedContent =
     when {
         session is CardSessionState.Picking -> ParkedContent.SYMPTOMS
+        linking && guidance is GuidanceUiState.Idle -> ParkedContent.LINK
         atHome -> ParkedContent.HOME
         session is CardSessionState.Ready && guidance is GuidanceUiState.Idle && finder is FinderStep.Hospitals ->
             ParkedContent.HOSPITALS

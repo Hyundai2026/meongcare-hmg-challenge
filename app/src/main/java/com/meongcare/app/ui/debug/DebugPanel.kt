@@ -45,6 +45,7 @@ fun DebugPanel(
     modifier: Modifier = Modifier,
     location: DebugLocationRow? = null,
     onAskLocation: () -> Unit = {},
+    onFakeOwnerClaim: (() -> Unit)? = null,
 ) {
     Surface(
         color = MaterialTheme.colorScheme.surfaceVariant,
@@ -73,6 +74,10 @@ fun DebugPanel(
                     DebugButton("주행", onSetDriving, Modifier.weight(1f))
                     DebugButton("모름", onSetUnknown, Modifier.weight(1f))
                 }
+            }
+            // Fake 보호자 연결 (014): 연결 코드 화면에서만. 보호자가 웹에 코드를 입력한 것처럼 한다
+            if (onFakeOwnerClaim != null) {
+                DebugButton("가짜 보호자 코드 입력", onFakeOwnerClaim)
             }
             if (location != null) {
                 Row(

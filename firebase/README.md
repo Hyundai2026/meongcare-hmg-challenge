@@ -19,7 +19,7 @@
 | 처음 한 번 | `npm --prefix firebase ci` |
 | 에뮬레이터 켜기 (터미널 하나를 계속 쓴다) | `npm --prefix firebase run emulators` |
 | 시연 병원 5곳 넣기 | `npm --prefix firebase run seed` (`-- --reset`이면 먼저 모두 지운다) |
-| 보안 규칙 점검 R1~R13 | `npm --prefix firebase run check-rules` |
+| 보안 규칙 점검 R1~R24 | `npm --prefix firebase run check-rules` |
 | **시연 전 점검** PF1~PF6 (차·병원 웹이 같은 서버에 붙을 준비) | `npm --prefix firebase run preflight` (고칠 수 있는 것까지 고치려면 `-- --fix`) |
 | 에뮬레이터 화면 | http://localhost:4000 (Emulator UI) |
 
@@ -66,6 +66,11 @@
 - 환자 건은 차가 만든다. `createdBy`가 자기 uid여야 하고, **사진(`photoDataUrl`)이 있으면 거부**한다. 읽기는 보낸 차와 그 병원 직원만.
 - 병원 [카드 확인](`acknowledgedAt`)은 직원만, **서버 시각으로, 확인 전인 건에 한 번만** 쓴다. 차는 쓰지 못하고 읽기만 한다 (계획 013, R9~R13).
 - `hospitalSecrets`(병원 코드)는 아무도 읽지 못한다.
+- 보호자 프로필과 차 연결 (계획 014, 형식 [docs/data/owner-link.md](../docs/data/owner-link.md), R14~R24):
+  - 보호자는 **동의 문서**(`owners/{uid}`, 서버 시각)가 있어야 자기 프로필(`petProfiles/{uid}`)을 쓴다. 프로필의 `photoDataUrl`은 늘 null이고, 사진은 보호자만 읽는 `private/photo`에 둔다.
+  - 연결 코드(`linkCodes/{code}`)는 차가 자기 uid·서버 시각으로 만든다. 보호자는 **만료(10분) 전, 안 쓴 코드를 한 번만** claim하고, 같은 한 번에 쓰기로 허가(`readers/{차 uid}`)를 만든다. 코드·프로필 목록 조회는 막는다.
+  - 차는 허가가 있을 때 **프로필 문서 하나만** 읽는다 (사진·동의·허가 목록은 못 읽고, 아무것도 못 쓴다). 허가를 지우면(차·보호자 모두 가능) 읽기는 403, 허가는 있는데 프로필이 없으면 404다.
+  - 규칙으로 막지 못하는 것: 코드 마구 대입(속도 제한은 Functions·App Check가 필요), 남은 코드 문서 자동 정리.
 
 ## 진짜 Firebase 프로젝트로 바꿀 때 (계획 012 있으면 좋음 B)
 

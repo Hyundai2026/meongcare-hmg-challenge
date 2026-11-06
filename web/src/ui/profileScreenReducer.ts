@@ -54,8 +54,9 @@ export function profileScreenReducer(state: ProfileScreenState, action: ProfileS
     case 'edit': {
       if (state.kind !== 'ready' || state.editing !== null) return state
       // 의료정보는 등록된 프로필이 있어야 고친다. 읽을 수 없는 저장소에는 새로 등록하지 않는다.
+      // 서버를 읽지 못했으면(network) 서버의 기존 프로필을 빈 새 프로필로 덮어쓰지 않게 새로 등록을 막는다 (014).
       if (action.target === 'medical' && state.profile === null) return state
-      if (action.target === 'profile' && state.loadError === 'unavailable') return state
+      if (action.target === 'profile' && (state.loadError === 'unavailable' || state.loadError === 'network')) return state
       return { ...state, editing: action.target, saveError: null }
     }
     case 'cancel': {

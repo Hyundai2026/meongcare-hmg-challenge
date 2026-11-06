@@ -145,7 +145,8 @@ class AppContainer(context: Context, val dataMode: DataMode) {
     /** 서버를 쓰는 구성에서만 만든다. 로그 태그는 `HospitalTrip` 하나 (결과 종류·개수·시간만). */
     private val server = serverConfig?.takeIf { hospitalSourceKind != HospitalSourceKind.BUILT_IN }?.let { config ->
         val transport = UrlConnectionHttpTransport()
-        val auth = AnonymousAuth(config, transport)
+        // 토큰은 만료 5분 전부터 미리 갱신한다 (013). 로그에는 결과 종류만
+        val auth = AnonymousAuth(config, transport, log = { Log.i(TRIP_LOG_TAG, it) })
         val label: (com.meongcare.app.domain.card.Symptom) -> String = { context.getString(symptomLabelRes(it)) }
         FirestoreHospitalBoardSource(config, auth, transport, log = { Log.i(TRIP_LOG_TAG, it) }) to
             FirestoreCaseSender(config, auth, transport, label)

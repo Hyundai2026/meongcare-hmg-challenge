@@ -1,9 +1,9 @@
 rules_version = '2';
 
-// MeongCare 제휴 병원·환자 건 보안 규칙 (계획 012 "설계 결정 6").
-// 형식: docs/data/hospital-status.md, docs/data/emergency-case.md
+// MeongCare 제휴 병원·환자 건 보안 규칙 (계획 012 "설계 결정 6"), 보호자 프로필·차 연결 (계획 014).
+// 형식: docs/data/hospital-status.md, docs/data/emergency-case.md, docs/data/owner-link.md
 // 차와 병원 웹 모두 익명 로그인한다. "로그인했는가"만이 아니라 "누구의 문서인가"로 막는다.
-// 점검: npm --prefix firebase run check-rules (R1~R13)
+// 점검: npm --prefix firebase run check-rules (R1~R24)
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -96,6 +96,112 @@ service cloud.firestore {
     // 병원별 시연 코드. 아무도 읽거나 쓰지 못한다 (규칙의 get()만 읽는다).
     match /hospitalSecrets/{hid} {
       allow read, write: if false;
+    }
+
+    // ---- 보호자 프로필과 차 연결 (계획 014). 형식: docs/data/owner-link.md ----
+    // 보호자와 차 모두 익명 계정이다. 차는 연결된 보호자의 프로필 문서 하나만 읽고, 아무것도 쓰지 못한다.
+
+    function isSelf(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function nullOr(v, type) {
+      return v == null || (type == 'string' && v is string) || (type == 'bool' && v is bool);
+    }
+
+    // pet-profile v1 (docs/data/pet-profile.md). 사진은 따로 둔다 (photoDataUrl은 늘 null).
+    // 글자 수 20자는 쓰는 쪽(웹 폼)이 코드 포인트로 지킨다. 규칙은 이모지 등을 고려해 넉넉히 본다.
+    function validProfile(d) {
+      return d.keys().hasOnly(['schemaVersion', 'name', 'breed', 'sex', 'birthDate', 'birthDateIsEstimated',
+                               'photoDataUrl', 'medical', 'updatedAt'])
+        && d.keys().hasAll(['schemaVersion', 'name', 'breed', 'sex', 'birthDate', 'birthDateIsEstimated',
+                            'photoDataUrl', 'medical', 'updatedAt'])
+        && d.schemaVersion == 1
+        && d.name is string && d.name.size() >= 1 && d.name.size() <= 40
+        && nullOr(d.breed, 'string')
+        && (d.sex == null || d.sex in ['male', 'female'])
+        && nullOr(d.birthDate, 'string')
+        && d.birthDateIsEstimated is bool
+        && d.photoDataUrl == null
+        && d.medical is map
+        && d.medical.keys().hasOnly(['conditions', 'allergies', 'medications'])
+        && d.medical.conditions is list && d.medical.conditions.size() <= 20
+        && d.medical.allergies is list && d.medical.allergies.size() <= 20
+        && d.medical.medications is list && d.medical.medications.size() <= 20
+        && d.updatedAt is string;
+    }
+
+    // 연결 코드 유효 시간. 차 앱(LinkCode.VALIDITY)과 같다
+    function codeAlive(c) {
+      return request.time < c.createdAt + duration.value(10, 'm');
+    }
+
+    // 서버 저장 동의. 동의 문서가 있어야 프로필을 만든다
+    match /owners/{uid} {
+      allow get, delete: if isSelf(uid);
+      allow create: if isSelf(uid)
+        && request.resource.data.keys().hasOnly(['schemaVersion', 'consentVersion', 'consentedAt'])
+        && request.resource.data.keys().hasAll(['schemaVersion', 'consentVersion', 'consentedAt'])
+        && request.resource.data.schemaVersion == 1
+        && request.resource.data.consentVersion == 1
+        && request.resource.data.consentedAt == request.time;
+    }
+
+    match /petProfiles/{uid} {
+      // 연결된 차는 허가 문서(readers/{차 uid})가 있으면 읽는다. resource를 보지 않아서, 프로필이 없으면 404다 (403은 연결 끊김)
+      allow get: if isSelf(uid)
+        || (signedIn() && exists(/databases/$(database)/documents/petProfiles/$(uid)/readers/$(request.auth.uid)));
+      allow create, update: if isSelf(uid)
+        && exists(/databases/$(database)/documents/owners/$(uid))
+        && validProfile(request.resource.data);
+      allow delete: if isSelf(uid);
+
+      // 사진: 보호자만 (차는 읽지 못한다)
+      match /private/{doc} {
+        allow get, delete: if isSelf(uid);
+        allow create, update: if isSelf(uid) && doc == 'photo'
+          && request.resource.data.keys().hasOnly(['photoDataUrl'])
+          && request.resource.data.photoDataUrl is string
+          && request.resource.data.photoDataUrl.size() <= 400000
+          && request.resource.data.photoDataUrl.matches('data:image/jpeg;base64,[A-Za-z0-9+/=]*');
+      }
+
+      // 연결 허가. 보호자가 그 차의 코드를 claim하는 같은 한 번에 쓰기(batch)에서만 만든다 (getAfter)
+      match /readers/{carUid} {
+        allow create: if isSelf(uid)
+          && request.resource.data.keys().hasOnly(['linkCode', 'createdAt'])
+          && request.resource.data.keys().hasAll(['linkCode', 'createdAt'])
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.linkCode is string
+          && getAfter(/databases/$(database)/documents/linkCodes/$(request.resource.data.linkCode)).data.ownerUid == uid
+          && getAfter(/databases/$(database)/documents/linkCodes/$(request.resource.data.linkCode)).data.carUid == carUid;
+        allow get, delete: if isSelf(uid) || isSelf(carUid);
+        allow list: if isSelf(uid);
+      }
+    }
+
+    // 연결 코드. 차가 만들고, 보호자가 한 번만 claim한다. 목록 조회는 막는다 (get만)
+    match /linkCodes/{code} {
+      allow create: if signedIn()
+        && code.matches('[2-9A-HJKMNP-Z]{6}')
+        && request.resource.data.keys().hasOnly(['schemaVersion', 'carUid', 'createdAt', 'ownerUid', 'claimedAt'])
+        && request.resource.data.keys().hasAll(['schemaVersion', 'carUid', 'createdAt', 'ownerUid', 'claimedAt'])
+        && request.resource.data.schemaVersion == 1
+        && request.resource.data.carUid == request.auth.uid
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.ownerUid == null
+        && request.resource.data.claimedAt == null;
+      allow get: if signedIn() && (
+        resource.data.carUid == request.auth.uid
+        || resource.data.ownerUid == request.auth.uid
+        || (resource.data.ownerUid == null && codeAlive(resource.data)));
+      allow update: if signedIn()
+        && resource.data.ownerUid == null
+        && codeAlive(resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ownerUid', 'claimedAt'])
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.claimedAt == request.time;
+      allow delete: if signedIn() && resource.data.carUid == request.auth.uid;
     }
   }
 }

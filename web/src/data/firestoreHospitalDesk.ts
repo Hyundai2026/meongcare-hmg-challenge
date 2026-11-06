@@ -75,6 +75,31 @@ export function createFirestoreHospitalDesk(config: FirebaseWebConfig): Hospital
     }
   }
 
+  const opening = new Map<string, Promise<DeskResult<void>>>()
+
+  async function openOnce(hospitalId: string, joinCode: string | null): Promise<DeskResult<void>> {
+    let me: string
+    try {
+      me = await signIn()
+    } catch (error) {
+      return { ok: false, reason: failureOf(error) }
+    }
+    const staffRef = doc(db, 'hospitals', hospitalId, 'staff', me)
+    const isStaff = async () => (await getDoc(staffRef)).exists()
+    try {
+      // 이 브라우저가 이미 직원으로 등록돼 있으면 코드 없이 연다
+      if (await isStaff()) return { ok: true, value: undefined }
+    } catch (error) {
+      return { ok: false, reason: failureOf(error) }
+    }
+    if (joinCode === null || joinCode.length === 0) return { ok: false, reason: 'wrong-code' }
+    const registered = await attempt(() => setDoc(staffRef, { joinCode }))
+    if (registered.ok || registered.reason !== 'wrong-code') return registered
+    // 거부됐지만 그사이 다른 탭·요청이 같은 계정으로 이미 등록했을 수 있다 (직원 문서는 수정할 수 없다)
+    const already = await isStaff().catch(() => false)
+    return already ? { ok: true, value: undefined } : registered
+  }
+
   return {
     isLocalOnly: false,
 
@@ -88,22 +113,15 @@ export function createFirestoreHospitalDesk(config: FirebaseWebConfig): Hospital
           .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
       }),
 
-    async open(hospitalId, joinCode) {
-      let me: string
-      try {
-        me = await signIn()
-      } catch (error) {
-        return { ok: false, reason: failureOf(error) }
-      }
-      const staffRef = doc(db, 'hospitals', hospitalId, 'staff', me)
-      try {
-        // 이 브라우저가 이미 직원으로 등록돼 있으면 코드 없이 연다
-        if ((await getDoc(staffRef)).exists()) return { ok: true, value: undefined }
-      } catch (error) {
-        return { ok: false, reason: failureOf(error) }
-      }
-      if (joinCode === null || joinCode.length === 0) return { ok: false, reason: 'wrong-code' }
-      return attempt(() => setDoc(staffRef, { joinCode }))
+    open(hospitalId, joinCode) {
+      // 같은 병원을 동시에 열면(React StrictMode 개발 모드는 화면 효과를 두 번 돌린다) 요청 하나를 같이 쓴다.
+      // 그렇지 않으면 둘째 등록이 "이미 있는 직원 문서 수정"이 되어 보안 규칙(수정 금지)에 막힌다.
+      const key = `${hospitalId}\n${joinCode ?? ''}`
+      const pending = opening.get(key)
+      if (pending !== undefined) return pending
+      const result = openOnce(hospitalId, joinCode).finally(() => opening.delete(key))
+      opening.set(key, result)
+      return result
     },
 
     watchHospital(hospitalId, onChange) {

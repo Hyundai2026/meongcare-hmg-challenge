@@ -10,6 +10,7 @@ import { newCaseCount, pageTitle } from '../../domain/hospital/caseAck'
 import type { CaseView } from '../../domain/hospital/emergencyCase'
 import type { DeskFailure, HospitalDesk } from '../../domain/hospital/hospitalDesk'
 import type { HospitalSummary } from '../../domain/hospital/hospitalStatus'
+import { CONNECTION_TEXT, type DeskConnection } from '../../domain/hospital/serverInfo'
 import { PawIcon } from '../PawIcon'
 import { CasesPanel } from './CasesPanel'
 import { StatusPanel } from './StatusPanel'
@@ -36,6 +37,7 @@ function readLocation(): Location {
 
 export function HospitalApp({ desk, now }: { desk: HospitalDesk; now: () => Date }) {
   const [location, setLocation] = useState(readLocation)
+  const [connection, setConnection] = useState<DeskConnection | null>(null)
 
   useEffect(() => {
     const onPop = () => setLocation(readLocation())
@@ -65,6 +67,15 @@ export function HospitalApp({ desk, now }: { desk: HospitalDesk; now: () => Date
       <div className="hospital-notices" role="note">
         <p>시연용 화면이에요. 실제 병원이 아니에요.</p>
         {desk.isLocalOnly && <p>서버 없이 이 브라우저에서만 동작해요. 차 앱의 카드는 들어오지 않아요.</p>}
+        {desk.server !== null && (
+          <p className="hospital-server">
+            서버: {desk.server.label}
+            {connection !== null && connection !== 'local' && location.hospitalId !== null && (
+              <span className={`hospital-connection hospital-connection--${connection}`}> · {CONNECTION_TEXT[connection]}</span>
+            )}
+          </p>
+        )}
+        {desk.server?.warning != null && <p className="hospital-server__warning">{desk.server.warning}</p>}
       </div>
       {location.hospitalId === null ? (
         <HospitalPicker desk={desk} onPick={go} />
@@ -75,6 +86,7 @@ export function HospitalApp({ desk, now }: { desk: HospitalDesk; now: () => Date
           hospitalId={location.hospitalId}
           joinCode={location.joinCode}
           now={now}
+          onConnection={setConnection}
         />
       )}
     </div>
@@ -128,11 +140,13 @@ function HospitalDeskView({
   hospitalId,
   joinCode,
   now,
+  onConnection,
 }: {
   desk: HospitalDesk
   hospitalId: string
   joinCode: string | null
   now: () => Date
+  onConnection: (state: DeskConnection | null) => void
 }) {
   const [opened, setOpened] = useState<'opening' | 'open' | DeskFailure>('opening')
   const [hospital, setHospital] = useState<HospitalSummary | null | undefined>(undefined)
@@ -162,13 +176,18 @@ function HospitalDeskView({
         return
       }
       setOpened('open')
-      stops = [desk.watchHospital(hospitalId, setHospital), desk.watchCases(hospitalId, setCases)]
+      stops = [
+        desk.watchHospital(hospitalId, setHospital),
+        desk.watchCases(hospitalId, setCases),
+        desk.watchConnection(hospitalId, onConnection),
+      ]
     })
     return () => {
       alive = false
       stops.forEach((stop) => stop())
+      onConnection(null)
     }
-  }, [desk, hospitalId, joinCode])
+  }, [desk, hospitalId, joinCode, onConnection])
 
   if (opened === 'opening') return <main className="hospital-content hospital-muted">병원 화면을 여는 중…</main>
   if (opened !== 'open') {

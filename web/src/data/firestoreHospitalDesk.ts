@@ -23,6 +23,7 @@ import {
 import { caseFromJson } from '../domain/hospital/emergencyCase'
 import type { DeskFailure, DeskResult, HospitalDesk } from '../domain/hospital/hospitalDesk'
 import { hospitalFromJson, type HospitalSummary } from '../domain/hospital/hospitalStatus'
+import { FIRESTORE_EMULATOR_PORT, hostForUrl, serverInfoOf } from '../domain/hospital/serverInfo'
 
 export interface FirebaseWebConfig {
   projectId: string
@@ -32,18 +33,12 @@ export interface FirebaseWebConfig {
 }
 
 const AUTH_EMULATOR_PORT = 9099
-const FIRESTORE_EMULATOR_PORT = 8080
 
 function failureOf(error: unknown): DeskFailure {
   const code = typeof error === 'object' && error !== null && 'code' in error ? String(error.code) : ''
   if (code.endsWith('permission-denied')) return 'wrong-code'
   if (code.endsWith('unavailable') || code.endsWith('network-request-failed')) return 'network'
   return 'unknown'
-}
-
-/** IPv6 주소는 URL에서 대괄호로 감싼다 */
-function hostForUrl(host: string): string {
-  return host.includes(':') && !host.startsWith('[') ? `[${host}]` : host
 }
 
 export function createFirestoreHospitalDesk(config: FirebaseWebConfig): HospitalDesk {
@@ -102,6 +97,7 @@ export function createFirestoreHospitalDesk(config: FirebaseWebConfig): Hospital
 
   return {
     isLocalOnly: false,
+    server: serverInfoOf(config),
 
     listHospitals: () =>
       attempt(async () => {
@@ -129,6 +125,17 @@ export function createFirestoreHospitalDesk(config: FirebaseWebConfig): Hospital
         doc(db, 'hospitals', hospitalId),
         (snapshot) => onChange(snapshot.exists() ? hospitalFromJson(snapshot.id, snapshot.data()) : null),
         () => onChange(null),
+      )
+    },
+
+    // 서버에서 받은 스냅샷이면 live, 캐시에서 온 것(연결이 끊겨 서버 값을 못 받음)이면 checking, 리스너 오류면 offline
+    watchConnection(hospitalId, onChange) {
+      onChange('checking')
+      return onSnapshot(
+        doc(db, 'hospitals', hospitalId),
+        { includeMetadataChanges: true },
+        (snapshot) => onChange(snapshot.metadata.fromCache ? 'checking' : 'live'),
+        () => onChange('offline'),
       )
     },
 

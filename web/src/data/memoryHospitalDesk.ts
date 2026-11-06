@@ -59,6 +59,7 @@ export function createMemoryHospitalDesk(now: () => Date): HospitalDesk {
 
   return {
     isLocalOnly: true,
+    server: null,
 
     async listHospitals() {
       return ok([...hospitals.values()])
@@ -73,6 +74,11 @@ export function createMemoryHospitalDesk(now: () => Date): HospitalDesk {
       const unsubscribe = subscribe(hospitalListeners, hospitalId, onChange)
       onChange(hospitals.get(hospitalId) ?? null)
       return unsubscribe
+    },
+
+    watchConnection(_hospitalId, onChange) {
+      onChange('local')
+      return () => {}
     },
 
     watchCases(hospitalId, onChange) {

@@ -370,3 +370,27 @@
   color: var(--color-danger);
   font-weight: 600;
 }
+
+/* 서버 주소와 실시간 연결 상태 (계획 013) */
+.hospital-server {
+  margin-top: var(--space-1) !important;
+  font-weight: 600;
+}
+
+.hospital-connection--live {
+  color: #136c3a;
+}
+
+.hospital-connection--checking {
+  color: #8a4300;
+}
+
+.hospital-connection--offline {
+  color: var(--color-danger);
+}
+
+.hospital-server__warning {
+  margin-top: var(--space-1) !important;
+  color: var(--color-danger);
+  font-weight: 600;
+}

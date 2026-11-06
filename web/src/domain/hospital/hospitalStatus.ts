@@ -40,6 +40,10 @@ function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
+function isCoordinate(value: unknown, limit: number): boolean {
+  return typeof value === 'number' && Number.isFinite(value) && value >= -limit && value <= limit
+}
+
 function isCongestion(value: unknown): value is Congestion {
   return value === 'low' || value === 'normal' || value === 'high'
 }
@@ -80,6 +84,8 @@ export function hospitalFromJson(id: string, value: unknown): HospitalSummary | 
   if (value.schemaVersion !== HOSPITAL_SCHEMA_VERSION) return null
   const { name, phone, isSample, status } = value
   if (typeof name !== 'string' || name.trim().length === 0) return null
+  // 병원 웹은 좌표를 쓰지 않지만, 차 앱과 같은 병원만 보이게 같은 규칙으로 건너뛴다 (차 앱은 길안내를 못 한다)
+  if (!isCoordinate(value.latitude, 90) || !isCoordinate(value.longitude, 180)) return null
   return {
     id,
     name,

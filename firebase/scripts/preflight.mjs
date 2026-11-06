@@ -111,10 +111,13 @@ check(
 // PF5: 차 앱이 PC 에뮬레이터에 닿는 길 (ANDROID_SERIAL을 따른다)
 let reverseList = null
 let adbProblem = ''
-try {
-  reverseList = execFileSync('adb', ['reverse', '--list'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 5_000 })
-} catch (error) {
-  adbProblem = String(error?.stderr ?? error?.message ?? error).trim().split('\n')[0]
+// adb 서버가 잠깐 바쁘면 실패할 때가 있어 한 번 더 묻는다
+for (let attempt = 0; attempt < 2 && reverseList === null; attempt++) {
+  try {
+    reverseList = execFileSync('adb', ['reverse', '--list'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 5_000 })
+  } catch (error) {
+    adbProblem = String(error?.stderr ?? error?.message ?? error).trim().split('\n')[0]
+  }
 }
 const hasReverse = (port) => reverseList !== null && reverseList.includes(`tcp:${port} tcp:${port}`)
 check(

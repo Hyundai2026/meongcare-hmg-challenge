@@ -482,6 +482,14 @@ class FunctionNearbyVetSource(
   - U4 보류: K6(카카오 정책)을 확인한 뒤 다시 묻는다. 그때까지 화면에 출처 표시.
   - U5 완료: CYJhub 계정으로 카카오 Developers 앱 생성, REST 키 발급, 카카오맵 사용 설정 ON. 키는 아직 어디에도 넣지 않았다.
   - U6 완료: Temurin JDK 21.0.13 설치 (winget). 설치 프로그램이 시스템 `JAVA_HOME`과 PATH를 JDK 21로 바꿨다 → Android 빌드도 JDK 21로 돈다 (README "JDK 21에서 확인함").
+- 2026-11-08: 0-2 기준 테스트 `testDebugUnitTest` **1014개, 실패 0** (51초).
+- 2026-11-08: 0-3 K1~K7, F1~F7 웹 확인 → `docs/data/nearby-vets.md`. 요점:
+  - K2: 동물병원 카테고리 코드가 없다 → 키워드 `동물병원` + `category_name`으로 거르기. `category_name` 모양은 단계 5에서 실제 응답으로 확인.
+  - K3: radius ≤ 20000m, size ≤ 15, page ≤ 45, `sort=distance`는 x·y 필요. K5: 하루 100,000건, 넘으면 429.
+  - K6: 캐시·저장 금지(운영정책 5조 20호), 제휴처럼 보이게 하는 상표 사용 금지(18조). 출처 표시 의무·영상 노출 조항은 못 찾음 → U4 다시 묻기.
+  - K7: 카카오맵 사용 설정 ON 필요(사용자 완료). 허용 IP 등은 단계 5에서 실제 호출로 확인.
+  - F2: `firebase-functions` 7.4.0, `firebase-admin` 14.5.0 (둘 다 2주 넘음). F7: 에뮬레이터는 Blaze 불필요.
+  - 미확인(단계 5에서 확인): F3 `.secret.local` 위치·`demo-` 동작, F4 성공 키(`result`)·에뮬레이터 토큰 검증, F6 바깥 호출.
 
 ## 결정 / 배운 점
 

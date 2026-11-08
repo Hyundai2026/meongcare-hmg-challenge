@@ -207,6 +207,8 @@ fun statusText(values: HospitalRowValues): String = when (values.freshness) {
 
 /** 목록 줄의 작은 글씨 한 줄: "이동 약 19분 + 대기 10분 · 보통 · 2분 전 알림" */
 @Composable
-fun hospitalRowDetail(values: HospitalRowValues): String = travelAndWaitText(values) + SEPARATOR + statusText(values)
+fun hospitalRowDetail(values: HospitalRowValues): String =
+    // 예시 대기는 "대기 N분(예시)"로 이미 알렸으므로 상태 글자를 덧붙이지 않는다
+    if (values.isWaitExample) travelAndWaitText(values) else travelAndWaitText(values) + SEPARATOR + statusText(values)
 
 private const val SEPARATOR = " · "

@@ -9,6 +9,7 @@
   },
   "scripts": {
     "emulators": "firebase emulators:start --project demo-meongcare --only auth,firestore",
+    "emulators:nearby": "firebase emulators:start --project demo-meongcare --only auth,firestore,functions",
     "seed": "node scripts/seed.mjs",
     "check-rules": "node scripts/check-rules.mjs",
     "preflight": "node scripts/preflight.mjs"

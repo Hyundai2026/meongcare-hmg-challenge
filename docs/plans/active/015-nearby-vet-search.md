@@ -403,11 +403,11 @@ class FunctionNearbyVetSource(
   - 0-2. 기준 테스트 수 세기: `.\gradlew.bat testDebugUnitTest` 후 `app/build/test-results/testDebugUnitTest/*.xml`의 tests 합계를 진행 로그에 적는다.
   - 0-3. U1~U6 답 받기. K1~K7, F1~F7을 메인이 웹으로 확인해 `docs/data/nearby-vets.md`("카카오 로컬 API (확인한 것)", 출처 URL·날짜)와 진행 로그에 적는다. 확인 못 한 항목은 "미확인"으로 남긴다 → `docs(data): 카카오 로컬 API와 Functions 에뮬레이터 확인 사항 기록`
   - 0-4. `java -version` (U6). JDK 21이 없으면 사용자에게 설치를 부탁하고 단계 5 전까지 끝낸다. 단계 1~4는 Java 없이 진행한다.
-- [ ] 1. 도메인 계약 (설계 결정 2)
+- [x] 1. 도메인 계약 (설계 결정 2)
   - `HospitalOrigin.NEARBY_SEARCH`, `canReceiveCard`, `NearbyVetSource`·`NearbyVets`·`NEARBY_RADIUS_METERS`, `nearbyVetRowsOf` + `NearbyVetRowsTest`.
   - `HospitalOrigin`에 값을 더하면 `finderNoticesOf`의 `when`이 컴파일되지 않는다. 목록 출처가 `NEARBY_SEARCH`일 일은 없지만, 새 안내 값(`FinderNotice.NEARBY` 등)으로 받고 KDoc에 이유를 적는다.
   - → `feat(domain): 근처 동물병원 검색 인터페이스와 거리순 정리 규칙`
-- [ ] 2. Fake와 구성표 (설계 결정 3·7)
+- [x] 2. Fake와 구성표 (설계 결정 3·7)
   - `FakeNearbyVetSource` + `FakeNearbyVetSourceTest`. 좌표를 지도로 확인한다.
   - `di/NearbyVetPlan.kt` + `NearbyVetPlanTest`.
   - → `feat(data): 근처 동물병원 Fake 구현`, `feat(di): 근처 동물병원 출처 구성표`
@@ -491,6 +491,10 @@ class FunctionNearbyVetSource(
   - F2: `firebase-functions` 7.4.0, `firebase-admin` 14.5.0 (둘 다 2주 넘음). F7: 에뮬레이터는 Blaze 불필요.
   - U4 답 (CYJhub): 영상·기획서에 실제 병원을 그대로 쓴다. 화면에 "장소 정보: 카카오"와 "대기 정보 없음"을 보이고, 특정 병원을 클로즈업하지 않는다. 제휴처럼 보이는 문구는 쓰지 않는다 (K6 18조).
   - 미확인(단계 5에서 확인): F3 `.secret.local` 위치·`demo-` 동작, F4 성공 키(`result`)·에뮬레이터 토큰 검증, F6 바깥 호출.
+- 2026-11-08: 단계 1·2 완료 (`a62b0ac`, `d25d72f`, `39ab245`). `HospitalOrigin`에 값이 늘어 `HospitalTextsBoundaryTest`의 출처→안내 표에 `NEARBY_SEARCH → FinderNotice.NEARBY` 한 줄을 더했다 (표가 `entries`를 다 돈다).
+- 2026-11-08: **순서 변경 (사용자 결정)**: 실제 카카오 검색을 먼저 보려고 단계 5를 3·4보다 먼저 한다. 실제 응답 모양(K2 `category_name` 등)을 일찍 확인하는 이점도 있다.
+- 2026-11-08: 이 PC의 Node 26.13.0은 `firebase-tools` 15.34.1(engines 20·22·24)이 설치를 거부해서, 사용자 결정으로 **Node 22.23.4 LTS로 바꿨다** (Node 26 제거는 관리자 확인 필요). 웹 engines(22.12 이상)도 맞는다.
+- 2026-11-08: 단계 5 코드: `firebase/functions/` (JS ESM, `node --test` 7개 통과). `firebase.json`에 functions(`127.0.0.1:5001`), `emulators:nearby` 스크립트.
 
 ## 결정 / 배운 점
 

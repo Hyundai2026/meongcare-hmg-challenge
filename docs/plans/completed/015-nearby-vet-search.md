@@ -431,12 +431,12 @@ class FunctionNearbyVetSource(
   - `AppContainer`: `serverClient`의 익명 계정을 같이 써서 FUNCTION 연결 → `feat(di): 시연·Real 모드에서 근처 검색 함수 연결`
 - [x] 8. 끝까지 확인 (일반 태블릿 에뮬레이터 + PC 에뮬레이터)
   - 아래 "확인 절차" E4~E9. 걸린 시간(목록, 근처 검색)을 진행 로그에 적는다. 고칠 것이 나오면 `fix:` 커밋.
-- [ ] 9. 테스트 (`tester`)
+- [x] 9. 테스트 (`tester`)
   - 메인이 `tester`에게 이 계획 경로와 대상(설계 결정 2·3·4·6·8의 계약, `firebase/functions/nearby.mjs`)만 넘긴다.
   - → `test(hospital): 근처 동물병원 계약 테스트` (버그 보고는 메인이 `fix:`로 고친다)
-- [ ] 10. `/verify`
+- [x] 10. `/verify`
   - Fake 모드와 시연 모드(서버 있음) 목록·근처 확인 화면, 넓은 화면·좁은 화면, 라이트·다크. 주행 전환(E3).
-- [ ] 11. 문서 갱신 → `docs: 근처 동물병원 검색 반영`
+- [x] 11. 문서 갱신 → `docs: 근처 동물병원 검색 반영`
   - `docs/data/nearby-vets.md`: 요청·응답 형식, 읽기 규칙, 반경, 저장 금지, 카카오 확인 사항(K1~K7, 출처).
   - `docs/data/hospital-status.md` "나중 후보"의 카카오 줄 → "했음 (015): nearby-vets.md".
   - `docs/architecture.md`: 서비스 기능 스택(서버 행: Functions 에뮬레이터, 병원 목록 행), 데이터 모드(근처 병원 표), 현재 위치 행(위치를 쓰는 곳에 근처 검색), 패키지 구조(새 파일), "Firebase로 옮기기"(배포할 때 할 일: Blaze, 비밀 관리자, App Check·속도 제한 다시 정하기).
@@ -444,7 +444,7 @@ class FunctionNearbyVetSource(
   - `README.md`: "일반 폰·태블릿 에뮬레이터에서 시연하기"와 로컬 서버 시연 절차에 근처 병원 순서. release APK에는 근처 병원이 없다는 것.
   - `AGENTS.md`: 명령어 표에 Functions 관련 두 줄이 필요한지 보고, 넣으면 한 줄씩만.
   - 문서 안의 "계획 015"(연결 자격 암호화 저장) 언급은 이 계획 번호와 겹친다. 아래 "결정 / 배운 점" 참고.
-- [ ] 12. 개발 노트 작성 (`docs/notes/CYJhub/2026-11-DD-nearby-vet-search.md`), 계획을 `docs/plans/completed/`로 옮기기 → `docs(notes): 근처 동물병원 검색 개발 노트`, `docs(plans): 015 완료로 옮김`
+- [x] 12. 개발 노트 작성 (`docs/notes/CYJhub/2026-11-DD-nearby-vet-search.md`), 계획을 `docs/plans/completed/`로 옮기기 → `docs(notes): 근처 동물병원 검색 개발 노트`, `docs(plans): 015 완료로 옮김`
 
 ### 있으면 좋음
 
@@ -524,6 +524,8 @@ class FunctionNearbyVetSource(
   - 8 (태블릿 에뮬레이터 + PC Firebase, 시연 모드, 서울시청): E2 카카오 병원 확인 화면에 [병원에 전화]·[길 안내 시작]만 → 시작하면 3초 뒤 주행 화면(큰 남은 분 + "○○까지" + 진행 막대) → 도착 "○○에 도착했어요" + "카드 없이 출발했어요", `HospitalTrip` 로그에 카드 전송 줄 없음. E3 주행 화면 정보 최소. E6 [병원에 전화] → 전화 앱이 그 번호로 열림 (걸지 않음). E7 도착 → [닫기]. E8 앱 로그·함수 로그는 개수·ms만.
   - E9 (release)는 확인하지 않았다: release APK는 `/release-apk`(사용자 실행)로만 만든다. 근거는 `nearbyFunctionUrlOf`(release면 null) 테스트와 `nearbyVetKindOf` 표.
   - 관찰: 카카오 병원 확인 화면의 안내 상자("이 병원에는 진료 카드를 보낼 수 없어요" 등)는 넓은 화면에서도 버튼 아래로 밀려 스크롤해야 보인다.
+
+- 2026-11-08: 단계 9 tester: 경계 테스트 106개, 버그 3개 → `f404590`으로 고침. 전체 1137개·함수 26개 통과 (`75c4e93`). 단계 10 `/verify` 통과 (가로·라이트, 세로·다크, 실패→다시 찾기). 단계 11 문서 (`0ff0254`). 단계 12 노트·완료로 옮김.
 
 ## 결정 / 배운 점
 

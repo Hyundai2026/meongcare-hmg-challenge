@@ -411,7 +411,7 @@ class FunctionNearbyVetSource(
   - `FakeNearbyVetSource` + `FakeNearbyVetSourceTest`. 좌표를 지도로 확인한다.
   - `di/NearbyVetPlan.kt` + `NearbyVetPlanTest`.
   - → `feat(data): 근처 동물병원 Fake 구현`, `feat(di): 근처 동물병원 출처 구성표`
-- [ ] 3. ViewModel (설계 결정 4)
+- [x] 3. ViewModel (설계 결정 4)
   - `NearbyState`, `Loaded.nearby`, 생성자 인자 2개, V1~V12 + `HospitalFinderNearbyTest` (새 클래스. 기존 `HospitalFinderViewModelTest`는 고치지 않는다).
   - → `feat(ui): 병원 목록에서 근처 동물병원을 따로 찾기`
 - [ ] 4. 화면과 연결 (Fake로 동작, 설계 결정 8) → **체크포인트 A**
@@ -496,6 +496,14 @@ class FunctionNearbyVetSource(
 - 2026-11-08: 이 PC의 Node 26.13.0은 `firebase-tools` 15.34.1(engines 20·22·24)이 설치를 거부해서, 사용자 결정으로 **Node 22.23.4 LTS로 바꿨다** (Node 26 제거는 관리자 확인 필요). 웹 engines(22.12 이상)도 맞는다.
 - 2026-11-08: 단계 5 코드: `firebase/functions/` (JS ESM, `node --test` 7개 통과). `firebase.json`에 functions(`127.0.0.1:5001`), `emulators:nearby` 스크립트.
 - 2026-11-08: 단계 5 확인 (사용자가 `.secret.local`에 키를 넣음): `emulators:nearby` 기동, 손으로 N1~N5 확인 → N1 401, N3 400, **N2 200·15곳·최대 2.8km·238ms**, N4 429, N5 `schemaVersion 1`·`radiusMeters 5000`. F3·F4·F6·K7 확인, K2 거르기 동작 (`kakaoCount 15 → 15`). 기록: `docs/data/nearby-vets.md` `[obs-nearby-emu]`. 함수 로그에 `kakaoCount`(거르기 전 개수)를 더했다.
+- 2026-11-08: 단계 3 (`567e503`, V1~V9 테스트 9개), 단계 4-1·4-2·4-3 (`9184318`, `7ccdacc`, `21ab59d`), 단계 7 (`6a4ce5c`, `4449ad3`) 완료.
+- 2026-11-08: **범위 추가 (사용자 결정)**: 사용자가 "지금 위치 기준"을 요구. 이 PC의 태블릿 에뮬레이터는 내비가 없어 위치가 늘 시연 위치(시흥동)였다. → **내비 없는 기기의 시연·Real 모드는 안드로이드 기기 위치(GPS)를 쓴다** (`usesDeviceLocation`, `DeviceCurrentLocationSource`, `1357328`). 새 권한 `ACCESS_FINE_LOCATION`·`ACCESS_COARSE_LOCATION`(Android 권한, `pleos.car.permission` 아님)을 사용자가 승인 (debug·release 모두). 병원 찾기를 열 때 권한 창, 허용하면 위치를 다시 묻는다. 차량 기기는 그대로 내비 위치.
+  - release를 일반 폰에서 돌리면 위치 권한 창이 뜨고, 거부하면 제휴 목록이 대기 시간 순(WAIT_ONLY)이 된다 (예전에는 시연 위치 기준). 근처 묶음은 release에 없다 (함수 주소 없음).
+- 2026-11-08: **체크포인트 (일반 태블릿 에뮬레이터 + PC Firebase 에뮬레이터, 시연 모드)**: 서울시청(37.5665, 126.978) 위치로 병원 찾기 → 제휴 5곳(서버) + **근처 동물병원 14곳(실제 카카오)**, 거리순, 위치 안내·출처 표시. 로그 `근처 병원: 14곳 (3053ms)`. 확인 화면·길안내·주행 전환(E2·E3·E6·E7)은 아직.
+  - 함정 1: 사용자가 값을 `secrets.properties.example`에 넣었다 → `secrets.properties`로 옮기고 예시 파일은 되돌림. `secrets.properties`와 BuildConfig는 권한 설정상 Claude가 읽지 못한다 (앱 동작으로 확인).
+  - 함정 2: 이 에뮬레이터(API 36 Google Play 태블릿)는 `adb emu geo fix`가 GPS에 닿지 않았다 (`last location=null`). `appops set com.android.shell android:mock_location allow` + `cmd location providers add-test-provider gps` + `set-test-provider-location gps --location lat,lon`으로 넣었다. 실행 스크립트 `-Lat -Lon`에 넣음.
+  - 함정 3: 앱을 막 켠 첫 서버 요청이 5초 시간 초과로 내장 병원으로 대신했다 (느린 에뮬레이터). [새로 고침]으로 서버 5곳.
+  - 관찰: 근처 묶음이 제휴 목록·지난 곳 아래라 넓은 화면에서도 두세 번 스크롤해야 보인다 → 화면 배치는 /verify 때 다시 본다.
 
 ## 결정 / 배운 점
 

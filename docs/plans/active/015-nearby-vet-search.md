@@ -414,7 +414,7 @@ class FunctionNearbyVetSource(
 - [x] 3. ViewModel (설계 결정 4)
   - `NearbyState`, `Loaded.nearby`, 생성자 인자 2개, V1~V12 + `HospitalFinderNearbyTest` (새 클래스. 기존 `HospitalFinderViewModelTest`는 고치지 않는다).
   - → `feat(ui): 병원 목록에서 근처 동물병원을 따로 찾기`
-- [ ] 4. 화면과 연결 (Fake로 동작, 설계 결정 8) → **체크포인트 A**
+- [x] 4. 화면과 연결 (Fake로 동작, 설계 결정 8) → **체크포인트 A**
   - 4-1. `HospitalTrip.depart`의 카드 막기 + `HospitalTripNearbyTest` → `feat(trip): 제휴 병원이 아니면 진료 카드를 보내지 않음`
   - 4-2. 목록 묶음, 문구 순수 함수 + `HospitalTextsNearbyTest`, strings.xml, 미리보기 → `feat(ui): 병원 목록 아래 근처 동물병원 묶음`
   - 4-3. 근처 병원 확인 화면 변형, `MainActivity` 연결, `AppContainer`에 `nearbyVetKind`와 Fake 연결(FUNCTION은 단계 7까지 OFF로 둔다) → `feat(ui): 근처 동물병원 확인 화면과 Fake 연결`
@@ -426,7 +426,7 @@ class FunctionNearbyVetSource(
 - [ ] 6. 함수 점검 스크립트 (설계 결정 5)
   - `firebase/scripts/check-nearby.mjs` N1~N5 → `feat(firebase): 근처 검색 함수 점검 N1~N5`
   - preflight `--nearby`(PF7, PF5의 5001) → `feat(firebase): 시연 전 점검에 Functions 에뮬레이터 추가`
-- [ ] 7. 앱의 함수 호출 (Real 래퍼, 설계 결정 6) `[선행: 메인 웹 확인(Firebase)]` F4·F5
+- [x] 7. 앱의 함수 호출 (Real 래퍼, 설계 결정 6) `[선행: 메인 웹 확인(Firebase)]` F4·F5
   - `NearbyFunctionConfig.kt` + `NearbyFunctionConfigTest`, `FunctionNearbyVetSource` + `FunctionNearbyVetSourceTest` → `feat(server): 근처 동물병원 함수 호출 래퍼`
   - `AppContainer`: `serverClient`의 익명 계정을 같이 써서 FUNCTION 연결 → `feat(di): 시연·Real 모드에서 근처 검색 함수 연결`
 - [ ] 8. 끝까지 확인 (일반 태블릿 에뮬레이터 + PC 에뮬레이터)

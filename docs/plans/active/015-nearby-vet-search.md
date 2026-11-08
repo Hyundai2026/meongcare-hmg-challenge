@@ -398,7 +398,7 @@ class FunctionNearbyVetSource(
 
 단계 하나 = 커밋 1~3개. 앱 코드 커밋은 훅이 `assembleDebug`를 확인한다.
 
-- [ ] 0. 준비
+- [x] 0. 준비
   - 0-1. 이 계획 커밋 → `docs(plans): 015 근처 동물병원 검색 계획`
   - 0-2. 기준 테스트 수 세기: `.\gradlew.bat testDebugUnitTest` 후 `app/build/test-results/testDebugUnitTest/*.xml`의 tests 합계를 진행 로그에 적는다.
   - 0-3. U1~U6 답 받기. K1~K7, F1~F7을 메인이 웹으로 확인해 `docs/data/nearby-vets.md`("카카오 로컬 API (확인한 것)", 출처 URL·날짜)와 진행 로그에 적는다. 확인 못 한 항목은 "미확인"으로 남긴다 → `docs(data): 카카오 로컬 API와 Functions 에뮬레이터 확인 사항 기록`
@@ -489,6 +489,7 @@ class FunctionNearbyVetSource(
   - K6: 캐시·저장 금지(운영정책 5조 20호), 제휴처럼 보이게 하는 상표 사용 금지(18조). 출처 표시 의무·영상 노출 조항은 못 찾음 → U4 다시 묻기.
   - K7: 카카오맵 사용 설정 ON 필요(사용자 완료). 허용 IP 등은 단계 5에서 실제 호출로 확인.
   - F2: `firebase-functions` 7.4.0, `firebase-admin` 14.5.0 (둘 다 2주 넘음). F7: 에뮬레이터는 Blaze 불필요.
+  - U4 답 (CYJhub): 영상·기획서에 실제 병원을 그대로 쓴다. 화면에 "장소 정보: 카카오"와 "대기 정보 없음"을 보이고, 특정 병원을 클로즈업하지 않는다. 제휴처럼 보이는 문구는 쓰지 않는다 (K6 18조).
   - 미확인(단계 5에서 확인): F3 `.secret.local` 위치·`demo-` 동작, F4 성공 키(`result`)·에뮬레이터 토큰 검증, F6 바깥 호출.
 
 ## 결정 / 배운 점

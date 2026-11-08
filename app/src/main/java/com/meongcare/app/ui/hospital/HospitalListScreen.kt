@@ -48,6 +48,7 @@ import com.meongcare.app.domain.hospital.HospitalOrigin
 import com.meongcare.app.domain.hospital.HospitalStatus
 import com.meongcare.app.domain.hospital.RankBasis
 import com.meongcare.app.domain.hospital.RankedHospital
+import com.meongcare.app.domain.hospital.nearbyVetRowsOf
 import com.meongcare.app.domain.hospital.rankHospitals
 import com.meongcare.app.domain.location.CurrentLocation
 import com.meongcare.app.ui.card.CardScale
@@ -67,6 +68,7 @@ private val ContentMaxWidth = 1100.dp
  * 주행으로 바뀌면 `homeContentOf`가 주행 화면을 먼저 고르므로 이 화면은 보이지 않는다 (AGENTS.md 규칙 3).
  *
  * @param isLocationSample 현재 위치가 시연용 Fake 위치면 true ("시연용 위치 기준이에요")
+ * @param isNearbySample 근처 동물병원 출처가 Fake면 true (계획 015, 카카오에 위치를 보내지 않는다)
  */
 @Composable
 fun HospitalListScreen(
@@ -77,6 +79,7 @@ fun HospitalListScreen(
     onRefresh: () -> Unit,
     onRelocate: () -> Unit,
     modifier: Modifier = Modifier,
+    isNearbySample: Boolean = false,
 ) {
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val wide = maxWidth >= 840.dp
@@ -97,7 +100,8 @@ fun HospitalListScreen(
                 when (state) {
                     HospitalFinderUiState.Loading -> Waiting(stringResource(R.string.finder_loading))
                     is HospitalFinderUiState.Failed -> FailedPanel(state.isRetrying, onRefresh)
-                    is HospitalFinderUiState.Loaded -> LoadedList(state, isLocationSample, onChoose, onRelocate)
+                    is HospitalFinderUiState.Loaded ->
+                        LoadedList(state, isLocationSample, isNearbySample, onChoose, onRelocate, onRefresh)
                 }
             }
         }
@@ -149,8 +153,10 @@ private fun FailedPanel(retrying: Boolean, onRetry: () -> Unit) {
 private fun LoadedList(
     state: HospitalFinderUiState.Loaded,
     isLocationSample: Boolean,
+    isNearbySample: Boolean,
     onChoose: (RankedHospital) -> Unit,
     onRelocate: () -> Unit,
+    onRefresh: () -> Unit,
 ) {
     val scale = LocalCardScale.current
     val ranking = state.ranking
@@ -199,6 +205,44 @@ private fun LoadedList(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.widthIn(max = ContentMaxWidth),
         )
+    }
+    NearbySectionView(state.nearby, isNearbySample, onChoose, onRefresh)
+}
+
+/** 제휴 목록 아래 근처 동물병원 묶음 (계획 015). 줄은 제휴 줄과 같은 큰 터치 타깃이고 순위 자리는 "–"다. */
+@Composable
+private fun NearbySectionView(
+    nearby: NearbyState,
+    isNearbySample: Boolean,
+    onChoose: (RankedHospital) -> Unit,
+    onRetry: () -> Unit,
+) {
+    val section = nearbySectionOf(nearby)
+    if (section == NearbySection.HIDDEN) return
+    val scale = LocalCardScale.current
+    Text(
+        stringResource(R.string.finder_nearby_title),
+        style = MaterialTheme.typography.titleMedium.copy(fontSize = scale.chip),
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(top = 12.dp).widthIn(max = ContentMaxWidth),
+    )
+    val notices = nearbyNoticesOf(nearby, isNearbySample)
+    if (notices.isNotEmpty()) {
+        NoticeBox(notices.map { nearbyNoticeText(it) }, modifier = Modifier.widthIn(max = ContentMaxWidth))
+    }
+    val body = MaterialTheme.typography.bodyLarge.copy(fontSize = scale.row)
+    when (section) {
+        NearbySection.HIDDEN -> Unit
+        NearbySection.NEEDS_LOCATION -> Text(stringResource(R.string.finder_nearby_needs_location), style = body)
+        NearbySection.SEARCHING, NearbySection.RETRYING -> Waiting(stringResource(R.string.finder_nearby_searching))
+        NearbySection.EMPTY -> Text(stringResource(R.string.finder_nearby_empty), style = body)
+        NearbySection.FAILED -> Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(stringResource(R.string.finder_nearby_failed), style = body)
+            HospitalPillButton(stringResource(R.string.finder_nearby_retry), onRetry, Icons.Filled.Refresh)
+        }
+        NearbySection.FOUND -> (nearby as NearbyState.Found).rows.forEach { row ->
+            HospitalRow(row = row, rank = null, isFastest = false, onClick = { onChoose(row) })
+        }
     }
 }
 
@@ -301,6 +345,20 @@ internal fun previewRanking(locationKnown: Boolean = true): HospitalFinderUiStat
 private fun HospitalListWidePreview() {
     MeongCareTheme(darkTheme = true) {
         Surface { HospitalListScreen(previewRanking(), true, {}, {}, {}, {}) }
+    }
+}
+
+@Preview(widthDp = 1682, heightDp = 1600)
+@Composable
+private fun HospitalListNearbyPreview() {
+    val here = CurrentLocation(37.4127212, 127.094681, "수정구 시흥동")
+    val vets = listOf(
+        Hospital(Destination("시연용 근처 동물병원 가", 37.4191212, 127.102681), "02-0000-0010", isSample = true),
+        Hospital(Destination("시연용 근처 동물병원 나", 37.3902212, 127.094681), null, isSample = true),
+    )
+    val state = previewRanking().copy(nearby = NearbyState.Found(nearbyVetRowsOf(vets, here, emptyList())))
+    MeongCareTheme(darkTheme = false) {
+        Surface { HospitalListScreen(state, true, {}, {}, {}, {}, isNearbySample = true) }
     }
 }
 

@@ -54,6 +54,74 @@ fun finderNoticesOf(origin: HospitalOrigin, basis: RankBasis, isLocationSample: 
     }
 }
 
+/** 근처 동물병원 묶음에 무엇을 보일지 (계획 015 "설계 결정 8"). */
+enum class NearbySection {
+    /** 묶음 없음 (기능 꺼짐) */
+    HIDDEN,
+
+    /** "현재 위치를 몰라 근처 동물병원은 찾지 않았어요" */
+    NEEDS_LOCATION,
+
+    /** 진행 표시 + "근처 동물병원을 찾는 중…" */
+    SEARCHING,
+
+    /** 병원 줄 */
+    FOUND,
+
+    /** "5km 안에서 찾은 동물병원이 없어요" */
+    EMPTY,
+
+    /** "근처 동물병원을 찾지 못했어요" + [다시 찾기] */
+    FAILED,
+
+    /** 실패 뒤 다시 찾는 중 (진행 표시) */
+    RETRYING,
+}
+
+fun nearbySectionOf(state: NearbyState): NearbySection = when (state) {
+    NearbyState.Off -> NearbySection.HIDDEN
+    NearbyState.NeedsLocation -> NearbySection.NEEDS_LOCATION
+    NearbyState.Searching -> NearbySection.SEARCHING
+    is NearbyState.Found -> NearbySection.FOUND
+    NearbyState.Empty -> NearbySection.EMPTY
+    is NearbyState.Failed -> if (state.isRetrying) NearbySection.RETRYING else NearbySection.FAILED
+}
+
+/** 근처 묶음 위 작은 안내. 화면 글자는 strings.xml `finder_nearby_notice_*`. */
+enum class NearbyNotice {
+    /** 시연용 가짜 근처 병원 (Fake 모드) */
+    SAMPLE,
+
+    /** 현재 위치(약 100m 단위)를 카카오에 보낸다 (사용자 결정 U2) */
+    SENDS_LOCATION,
+
+    /** 장소 정보: 카카오 (U4, K6) */
+    SOURCE_KAKAO,
+}
+
+/**
+ * 근처 묶음 위 안내를 고른다.
+ * - 묶음이 없거나 위치를 몰라 찾지 않았으면 안내도 없다 (위치를 보내지 않았다).
+ * - 가짜 근처 병원이면 "시연용"만 알린다 (카카오에 아무것도 보내지 않는다).
+ * - 실제 검색이면 위치를 보낸다는 것과 출처를 알린다.
+ *
+ * @param isSampleSource 근처 병원 출처가 Fake인지
+ */
+fun nearbyNoticesOf(state: NearbyState, isSampleSource: Boolean): List<NearbyNotice> = when {
+    state == NearbyState.Off || state == NearbyState.NeedsLocation -> emptyList()
+    isSampleSource -> listOf(NearbyNotice.SAMPLE)
+    else -> listOf(NearbyNotice.SENDS_LOCATION, NearbyNotice.SOURCE_KAKAO)
+}
+
+@Composable
+fun nearbyNoticeText(notice: NearbyNotice): String = stringResource(
+    when (notice) {
+        NearbyNotice.SAMPLE -> R.string.finder_nearby_notice_sample
+        NearbyNotice.SENDS_LOCATION -> R.string.finder_nearby_notice_location
+        NearbyNotice.SOURCE_KAKAO -> R.string.finder_nearby_notice_source
+    },
+)
+
 /** 목록 한 줄에 쓰는 값. 글자로 바꾸는 것은 [hospitalRowDetail]이 한다. */
 data class HospitalRowValues(
     /** 큰 글씨 "약 N분". 이동과 대기를 둘 다 알 때만 */

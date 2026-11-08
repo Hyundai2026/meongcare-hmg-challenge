@@ -118,6 +118,15 @@
     <string name="finder_notice_fallback">서버에 연결하지 못해 시연용 병원 정보를 보여 줘요.</string>
     <string name="finder_notice_server">병원 웹에서 알린 대기 시간이에요.</string>
     <string name="finder_notice_nearby">장소 정보: 카카오. 제휴 병원이 아니라 대기 정보가 없어요.</string>
+    <string name="finder_nearby_title">근처 동물병원 · 대기 정보 없음 (5km 안, 가까운 순)</string>
+    <string name="finder_nearby_searching">근처 동물병원을 찾는 중…</string>
+    <string name="finder_nearby_empty">5km 안에서 찾은 동물병원이 없어요.</string>
+    <string name="finder_nearby_needs_location">현재 위치를 몰라 근처 동물병원은 찾지 않았어요.</string>
+    <string name="finder_nearby_failed">근처 동물병원을 찾지 못했어요.</string>
+    <string name="finder_nearby_retry">다시 찾기</string>
+    <string name="finder_nearby_notice_sample">시연용 근처 병원이에요. 실제 병원이 아니에요.</string>
+    <string name="finder_nearby_notice_location">근처 병원을 찾으려고 현재 위치(약 100m 단위)를 카카오에 보내요. 저장하지 않아요.</string>
+    <string name="finder_nearby_notice_source">장소 정보: 카카오. 제휴 병원이 아니라 대기 정보가 없고, 진료 카드를 보낼 수 없어요.</string>
     <!-- 병원 확인 (012). [출발]을 누르는 것이 이번 전송의 동의다 (사용자 결정 U2·U3) -->
     <string name="confirm_title">이 병원으로 출발할까요?</string>
     <string name="confirm_status">대기 정보: %1$s</string>

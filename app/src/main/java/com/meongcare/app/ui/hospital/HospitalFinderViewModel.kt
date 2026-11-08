@@ -10,6 +10,8 @@ import com.meongcare.app.domain.hospital.HospitalBoard
 import com.meongcare.app.domain.hospital.HospitalBoardSource
 import com.meongcare.app.domain.hospital.NearbyVetSource
 import com.meongcare.app.domain.hospital.NearbyVets
+import com.meongcare.app.domain.hospital.RankingRules
+import com.meongcare.app.domain.hospital.exampleStatusOf
 import com.meongcare.app.domain.hospital.nearbyVetRowsOf
 import com.meongcare.app.domain.hospital.rankHospitals
 import com.meongcare.app.domain.location.CurrentLocation
@@ -202,11 +204,18 @@ class HospitalFinderViewModel(
     ): HospitalFinderUiState {
         val state = when (board) {
             is HospitalBoard.Unavailable -> HospitalFinderUiState.Failed()
-            is HospitalBoard.Loaded -> HospitalFinderUiState.Loaded(
-                ranking = rankHospitals(board.candidates, location, now()),
-                origin = board.origin,
-                nearby = nearbyStateOf(nearby, board, location),
-            ).also { lastShown = it }
+            is HospitalBoard.Loaded -> {
+                val at = now()
+                val nearbyState = nearbyStateOf(nearby, board, location)
+                // 설계 변경 V2: 근처 병원에 예시 대기를 붙여 제휴 병원과 한 목록에서 이동 + 대기 순으로 섞는다
+                val nearbyCandidates = (nearbyState as? NearbyState.Found)?.rows.orEmpty()
+                    .map { it.candidate.copy(status = exampleStatusOf(it.hospital, at)) }
+                HospitalFinderUiState.Loaded(
+                    ranking = rankHospitals(board.candidates + nearbyCandidates, location, at, MERGED_RULES),
+                    origin = board.origin,
+                    nearby = nearbyState,
+                ).also { lastShown = it }
+            }
         }
         emit(state)
         return state
@@ -214,6 +223,9 @@ class HospitalFinderViewModel(
 
     companion object {
         private const val STOP_TIMEOUT_MILLIS = 5_000L
+
+        /** 제휴 + 근처를 한 목록에 섞으므로 묶음당 개수를 넉넉히 둔다. 화면은 5개씩 쪽으로 나눈다 */
+        private val MERGED_RULES = RankingRules(maxPerGroup = 50)
 
         fun factory(
             boardSource: HospitalBoardSource,

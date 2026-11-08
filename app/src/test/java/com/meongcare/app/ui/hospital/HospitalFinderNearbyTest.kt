@@ -10,6 +10,7 @@ import com.meongcare.app.domain.hospital.HospitalOrigin
 import com.meongcare.app.domain.hospital.HospitalStatus
 import com.meongcare.app.domain.hospital.NearbyVetSource
 import com.meongcare.app.domain.hospital.NearbyVets
+import com.meongcare.app.domain.hospital.exampleStatusOf
 import com.meongcare.app.domain.location.CurrentLocation
 import com.meongcare.app.domain.location.CurrentLocationSource
 import com.meongcare.app.testutil.MainDispatcherRule
@@ -103,7 +104,13 @@ class HospitalFinderNearbyTest {
         runCurrent()
         val rows = (vm.loaded().nearby as NearbyState.Found).rows
         assertEquals(listOf("가", "나"), rows.map { it.hospital.name })
-        assertEquals(first.ranking, vm.loaded().ranking)
+        // 설계 변경 V2: 근처 병원은 예시 대기를 달고 제휴 병원과 한 순위에 섞인다
+        val ranked = vm.loaded().ranking.ranked
+        assertEquals(setOf("제휴", "가", "나"), ranked.map { it.hospital.name }.toSet())
+        assertEquals(ranked.sortedBy { it.total }.map { it.hospital.name }, ranked.map { it.hospital.name })
+        ranked.filter { it.candidate.origin == HospitalOrigin.NEARBY_SEARCH }.forEach {
+            assertEquals(exampleStatusOf(it.hospital, now), it.status)
+        }
     }
 
     @Test

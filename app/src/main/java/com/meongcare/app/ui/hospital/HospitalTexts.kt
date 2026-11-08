@@ -136,6 +136,8 @@ data class HospitalRowValues(
     val reportedMinutesAgo: Long?,
     val freshness: StatusFreshness,
     val isSample: Boolean,
+    /** 대기 시간이 시연용 예시인지 (근처 검색 병원, 계획 015 설계 변경 V2). "(예시)"를 붙인다 */
+    val isWaitExample: Boolean = false,
 )
 
 fun hospitalRowValuesOf(row: RankedHospital): HospitalRowValues = HospitalRowValues(
@@ -143,6 +145,7 @@ fun hospitalRowValuesOf(row: RankedHospital): HospitalRowValues = HospitalRowVal
     travelMinutes = row.travel?.inWholeMinutes?.toInt(),
     waitMinutes = row.wait?.inWholeMinutes?.toInt(),
     congestion = row.status?.congestion?.takeIf { row.freshness == StatusFreshness.FRESH },
+    isWaitExample = row.candidate.origin == HospitalOrigin.NEARBY_SEARCH && row.status != null,
     reportedMinutesAgo = row.statusAge?.inWholeMinutes,
     freshness = row.freshness,
     isSample = row.hospital.isSample,
@@ -174,7 +177,9 @@ fun congestionText(congestion: Congestion): String = stringResource(
 fun travelAndWaitText(values: HospitalRowValues): String {
     val travel = values.travelMinutes?.let { stringResource(R.string.finder_travel, it) }
         ?: stringResource(R.string.finder_travel_unknown)
-    val wait = values.waitMinutes?.let { stringResource(R.string.finder_wait, it) }
+    val wait = values.waitMinutes?.let {
+        stringResource(if (values.isWaitExample) R.string.finder_wait_example else R.string.finder_wait, it)
+    }
     return when {
         wait == null -> travel
         values.travelMinutes != null -> travel + stringResource(R.string.finder_plus) + wait
@@ -185,7 +190,8 @@ fun travelAndWaitText(values: HospitalRowValues): String {
 /** 대기 정보 상태: "보통 · 2분 전 알림" / "대기 정보 90분 전" / "대기 정보 없음" */
 @Composable
 fun statusText(values: HospitalRowValues): String = when (values.freshness) {
-    StatusFreshness.FRESH -> listOfNotNull(
+    // 예시 대기는 알린 시각이 없다 (병원이 알린 것이 아니다)
+    StatusFreshness.FRESH -> if (values.isWaitExample) stringResource(R.string.finder_wait_example_status) else listOfNotNull(
         values.congestion?.let { congestionText(it) },
         values.reportedMinutesAgo?.let {
             if (it < 1) stringResource(R.string.finder_reported_just_now)

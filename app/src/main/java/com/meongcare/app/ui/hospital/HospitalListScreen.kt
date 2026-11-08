@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.CircularProgressIndicator
@@ -30,6 +31,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -149,6 +154,12 @@ private fun FailedPanel(retrying: Boolean, onRetry: () -> Unit) {
     }
 }
 
+/** 한 쪽에 보이는 병원 수 (계획 015 설계 변경 V2) */
+internal const val PAGE_SIZE = 5
+
+/** [count]개를 [PAGE_SIZE]개씩 나눈 쪽 수. 0개여도 1쪽이다 */
+internal fun pageCountOf(count: Int): Int = maxOf(1, (count + PAGE_SIZE - 1) / PAGE_SIZE)
+
 @Composable
 private fun LoadedList(
     state: HospitalFinderUiState.Loaded,
@@ -161,7 +172,8 @@ private fun LoadedList(
     val scale = LocalCardScale.current
     val ranking = state.ranking
     NoticeBox(
-        finderNoticesOf(state.origin, ranking.basis, isLocationSample).map { finderNoticeText(it) },
+        finderNoticesOf(state.origin, ranking.basis, isLocationSample).map { finderNoticeText(it) } +
+            nearbyNoticesOf(state.nearby, isNearbySample).map { nearbyNoticeText(it) },
         modifier = Modifier.widthIn(max = ContentMaxWidth),
     )
     if (ranking.basis == RankBasis.WAIT_ONLY) {
@@ -181,24 +193,52 @@ private fun LoadedList(
             }
         }
     }
+    NearbyStatusLine(state.nearby, onRefresh)
+
+    // 제휴 + 근처를 한 목록으로: 순위(이동 + 대기 순) 다음에 대기 정보가 없거나 지난 곳. 5개씩 쪽으로 나눈다
+    val rows = ranking.ranked.map { it to true } + ranking.unranked.map { it to false }
     if (ranking.ranked.isEmpty()) {
         Text(stringResource(R.string.finder_none_ranked), style = MaterialTheme.typography.bodyLarge.copy(fontSize = scale.row))
     }
-    ranking.ranked.forEachIndexed { index, row ->
-        HospitalRow(row = row, rank = index + 1, isFastest = index == 0, onClick = { onChoose(row) })
-    }
-    if (ranking.unranked.isNotEmpty()) {
-        Text(
-            stringResource(R.string.finder_unranked_title),
-            style = MaterialTheme.typography.titleMedium.copy(fontSize = scale.chip),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 12.dp),
+    val pageCount = pageCountOf(rows.size)
+    var page by rememberSaveable { mutableIntStateOf(0) }
+    val current = page.coerceIn(0, pageCount - 1)
+    rows.drop(current * PAGE_SIZE).take(PAGE_SIZE).forEachIndexed { offset, (row, isRanked) ->
+        val index = current * PAGE_SIZE + offset
+        HospitalRow(
+            row = row,
+            rank = if (isRanked) index + 1 else null,
+            isFastest = isRanked && index == 0,
+            onClick = { onChoose(row) },
         )
-        ranking.unranked.forEach { row ->
-            HospitalRow(row = row, rank = null, isFastest = false, onClick = { onChoose(row) })
+    }
+    if (pageCount > 1) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(20.dp),
+            modifier = Modifier.widthIn(max = ContentMaxWidth).fillMaxWidth(),
+        ) {
+            HospitalPillButton(
+                stringResource(R.string.finder_page_prev),
+                { page = current - 1 },
+                Icons.AutoMirrored.Filled.ArrowBack,
+                enabled = current > 0,
+            )
+            Text(
+                stringResource(R.string.finder_page, current + 1, pageCount),
+                style = MaterialTheme.typography.titleLarge.copy(fontSize = scale.row),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.weight(1f),
+            )
+            HospitalPillButton(
+                stringResource(R.string.finder_page_next),
+                { page = current + 1 },
+                Icons.AutoMirrored.Filled.ArrowForward,
+                enabled = current < pageCount - 1,
+            )
         }
     }
-    if (ranking.notAccepting.isNotEmpty()) {
+    if (ranking.notAccepting.isNotEmpty() && current == pageCount - 1) {
         Text(
             stringResource(R.string.finder_not_accepting, ranking.notAccepting.joinToString(", ") { it.hospital.name }),
             style = MaterialTheme.typography.bodyLarge,
@@ -206,42 +246,21 @@ private fun LoadedList(
             modifier = Modifier.widthIn(max = ContentMaxWidth),
         )
     }
-    NearbySectionView(state.nearby, isNearbySample, onChoose, onRefresh)
 }
 
-/** 제휴 목록 아래 근처 동물병원 묶음 (계획 015). 줄은 제휴 줄과 같은 큰 터치 타깃이고 순위 자리는 "–"다. */
+/** 근처 동물병원 검색 진행 상태 한 줄 (계획 015). 찾은 병원은 위 목록에 섞여 있으므로 여기서는 상태만 알린다. */
 @Composable
-private fun NearbySectionView(
-    nearby: NearbyState,
-    isNearbySample: Boolean,
-    onChoose: (RankedHospital) -> Unit,
-    onRetry: () -> Unit,
-) {
-    val section = nearbySectionOf(nearby)
-    if (section == NearbySection.HIDDEN) return
-    val scale = LocalCardScale.current
-    Text(
-        stringResource(R.string.finder_nearby_title),
-        style = MaterialTheme.typography.titleMedium.copy(fontSize = scale.chip),
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(top = 12.dp).widthIn(max = ContentMaxWidth),
-    )
-    val notices = nearbyNoticesOf(nearby, isNearbySample)
-    if (notices.isNotEmpty()) {
-        NoticeBox(notices.map { nearbyNoticeText(it) }, modifier = Modifier.widthIn(max = ContentMaxWidth))
-    }
-    val body = MaterialTheme.typography.bodyLarge.copy(fontSize = scale.row)
-    when (section) {
-        NearbySection.HIDDEN -> Unit
-        NearbySection.NEEDS_LOCATION -> Text(stringResource(R.string.finder_nearby_needs_location), style = body)
+private fun NearbyStatusLine(nearby: NearbyState, onRetry: () -> Unit) {
+    val body = MaterialTheme.typography.bodyLarge.copy(fontSize = LocalCardScale.current.chip)
+    val muted = MaterialTheme.colorScheme.onSurfaceVariant
+    when (nearbySectionOf(nearby)) {
+        NearbySection.HIDDEN, NearbySection.FOUND -> Unit
+        NearbySection.NEEDS_LOCATION -> Text(stringResource(R.string.finder_nearby_needs_location), style = body, color = muted)
         NearbySection.SEARCHING, NearbySection.RETRYING -> Waiting(stringResource(R.string.finder_nearby_searching))
-        NearbySection.EMPTY -> Text(stringResource(R.string.finder_nearby_empty), style = body)
-        NearbySection.FAILED -> Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(stringResource(R.string.finder_nearby_failed), style = body)
+        NearbySection.EMPTY -> Text(stringResource(R.string.finder_nearby_empty), style = body, color = muted)
+        NearbySection.FAILED -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            Text(stringResource(R.string.finder_nearby_failed), style = body, color = muted)
             HospitalPillButton(stringResource(R.string.finder_nearby_retry), onRetry, Icons.Filled.Refresh)
-        }
-        NearbySection.FOUND -> (nearby as NearbyState.Found).rows.forEach { row ->
-            HospitalRow(row = row, rank = null, isFastest = false, onClick = { onChoose(row) })
         }
     }
 }

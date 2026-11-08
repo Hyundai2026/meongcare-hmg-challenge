@@ -118,15 +118,19 @@
     <string name="finder_notice_fallback">서버에 연결하지 못해 시연용 병원 정보를 보여 줘요.</string>
     <string name="finder_notice_server">병원 웹에서 알린 대기 시간이에요.</string>
     <string name="finder_notice_nearby">장소 정보: 카카오. 제휴 병원이 아니라 대기 정보가 없어요.</string>
-    <string name="finder_nearby_title">근처 동물병원 · 대기 정보 없음 (5km 안, 가까운 순)</string>
     <string name="finder_nearby_searching">근처 동물병원을 찾는 중…</string>
     <string name="finder_nearby_empty">5km 안에서 찾은 동물병원이 없어요.</string>
     <string name="finder_nearby_needs_location">현재 위치를 몰라 근처 동물병원은 찾지 않았어요.</string>
     <string name="finder_nearby_failed">근처 동물병원을 찾지 못했어요.</string>
     <string name="finder_nearby_retry">다시 찾기</string>
-    <string name="finder_nearby_notice_sample">시연용 근처 병원이에요. 실제 병원이 아니에요.</string>
+    <string name="finder_nearby_notice_sample">근처 병원도 시연용이에요. 실제 병원이 아니고 대기 시간은 예시예요.</string>
     <string name="finder_nearby_notice_location">근처 병원을 찾으려고 현재 위치(약 100m 단위)를 카카오에 보내요. 저장하지 않아요.</string>
-    <string name="finder_nearby_notice_source">장소 정보: 카카오. 제휴 병원이 아니라 대기 정보가 없고, 진료 카드를 보낼 수 없어요.</string>
+    <string name="finder_nearby_notice_source">근처 병원 장소 정보: 카카오 · 대기 시간은 시연용 예시예요.</string>
+    <string name="finder_wait_example">대기 %1$d분(예시)</string>
+    <string name="finder_wait_example_status">대기 시간 예시</string>
+    <string name="finder_page">%1$d / %2$d쪽</string>
+    <string name="finder_page_prev">이전</string>
+    <string name="finder_page_next">다음</string>
     <!-- 병원 확인 (012). [출발]을 누르는 것이 이번 전송의 동의다 (사용자 결정 U2·U3) -->
     <string name="confirm_title">이 병원으로 출발할까요?</string>
     <string name="confirm_status">대기 정보: %1$s</string>
@@ -137,8 +141,8 @@
     <string name="confirm_deleted">병원 화면에서 진료를 마치고 [완료]를 누르면 지워져요.</string>
     <string name="confirm_without_card">카드 없이 길안내만</string>
     <string name="confirm_depart">출발</string>
-    <string name="confirm_nearby_no_card">제휴 병원이 아니라 진료 카드를 보낼 수 없어요.</string>
-    <string name="confirm_nearby_call_first">대기 정보가 없어요. 출발 전에 전화로 진료할 수 있는지 확인해 주세요.</string>
+    <string name="confirm_nearby_no_card">이 병원에는 진료 카드를 보낼 수 없어요.</string>
+    <string name="confirm_nearby_call_first">대기 시간은 시연용 예시예요. 출발 전에 전화로 진료할 수 있는지 확인해 주세요.</string>
     <string name="confirm_nearby_source">장소 정보: 카카오</string>
     <string name="confirm_start_guidance">길 안내 시작</string>
     <!-- 카드의 전송·확인 줄 (012, 013). 주행 화면에는 확인 한 줄만 넣는다 -->

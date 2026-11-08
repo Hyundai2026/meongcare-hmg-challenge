@@ -110,7 +110,6 @@
     <string name="finder_fastest">가장 빠름</string>
     <string name="finder_sample">시연용</string>
     <string name="finder_none_ranked">지금 대기 시간을 알린 제휴 병원이 없어요.</string>
-    <string name="finder_unranked_title">대기 정보가 없거나 지난 곳</string>
     <string name="finder_not_accepting">지금 응급 접수를 받지 않는 곳: %1$s</string>
     <string name="finder_notice_estimated">이동 시간은 직선 거리로 어림한 값이에요.</string>
     <string name="finder_notice_sample_location">시연용 위치(수정구 시흥동) 기준이에요.</string>

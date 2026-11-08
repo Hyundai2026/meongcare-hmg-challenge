@@ -38,6 +38,8 @@ import com.meongcare.app.data.server.HttpTransport
 import com.meongcare.app.data.server.ServerConfig
 import com.meongcare.app.data.server.UrlConnectionHttpTransport
 import com.meongcare.app.data.server.serverConfigOf
+import com.meongcare.app.data.server.FunctionNearbyVetSource
+import com.meongcare.app.data.server.nearbyFunctionUrlOf
 import com.meongcare.app.domain.hospital.HospitalBoard
 import com.meongcare.app.data.phone.AndroidPhoneDialer
 import com.meongcare.app.domain.card.MedicalCardSession
@@ -194,17 +196,24 @@ class AppContainer(context: Context, val dataMode: DataMode) {
         }
     }
 
-    /**
-     * 근처 동물병원 출처 (계획 015 "설계 결정 3"). Fake 모드는 시연용 3곳, 시연·Real은 함수가 있을 때만.
-     * 함수 연결은 단계 7에서 더한다. 그 전까지 시연·Real은 끔이다.
-     */
-    val nearbyVetKind: NearbyVetKind = nearbyVetKindOf(dataMode, hasFunction = false)
+    /** 근처 동물병원 함수 주소. debug + 에뮬레이터 주소일 때만 있다 (계획 015, 배포하지 않음) */
+    private val nearbyFunctionUrl: String? = nearbyFunctionUrlOf(
+        projectId = BuildConfig.FIREBASE_PROJECT_ID,
+        emulatorHost = BuildConfig.FIREBASE_EMULATOR_HOST,
+        isDebugBuild = BuildConfig.DEBUG,
+    )
 
-    /** null = 근처 병원 묶음 없음. 결과는 저장하지 않는다 (카카오 운영정책) */
+    /** 근처 동물병원 출처 (계획 015 "설계 결정 3"). Fake 모드는 시연용 3곳, 시연·Real은 함수가 있을 때만. */
+    val nearbyVetKind: NearbyVetKind =
+        nearbyVetKindOf(dataMode, hasFunction = nearbyFunctionUrl != null && serverClient != null)
+
+    /** null = 근처 병원 묶음 없음. 결과는 저장하지 않는다 (카카오 운영정책). 익명 계정은 병원·반려견과 같은 것 */
     val nearbyVetSource: NearbyVetSource? = when (nearbyVetKind) {
         NearbyVetKind.OFF -> null
         NearbyVetKind.FAKE -> FakeNearbyVetSource()
-        NearbyVetKind.FUNCTION -> null
+        NearbyVetKind.FUNCTION -> serverClient?.let { (_, auth) ->
+            nearbyFunctionUrl?.let { url -> FunctionNearbyVetSource(url, auth, serverTransport, log = { Log.i(TRIP_LOG_TAG, it) }) }
+        }
     }
 
     private val fakeCaseSender = FakeCaseSender()

@@ -134,14 +134,17 @@ class HospitalTrip(
     /**
      * [출발] (`card` 있음) 또는 [카드 없이 길안내만] (`card` = null).
      * 이미 출발했으면 아무것도 하지 않는다.
+     * 진료 카드를 받지 않는 병원(근처 검색 병원, [HospitalCandidate.canReceiveCard] false)이면 `card`가 있어도
+     * 보내지 않고 길안내만 한다 (계획 015): 전송 구현을 고르지 않고, 병원 확인도 읽지 않는다.
      */
     fun depart(choice: RankedHospital, card: CaseCard?) {
-        val delivery = if (card == null) CardDelivery.NotSent else CardDelivery.Sending
+        val sendable = card?.takeIf { choice.candidate.canReceiveCard }
+        val delivery = if (sendable == null) CardDelivery.NotSent else CardDelivery.Sending
         val state = TripState(choice.candidate, delivery)
         if (!_trip.compareAndSet(null, state)) return
         _finder.value = FinderStep.None
         retry = Channel(Channel.CONFLATED)
-        job = scope.launch { run(state, choice, card) }
+        job = scope.launch { run(state, choice, sendable) }
     }
 
     /** 전송 줄의 [다시 보내기]. 실패했을 때만 다시 보낸다 */

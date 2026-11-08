@@ -24,7 +24,7 @@
 - minSdk 28 (Pleos 보안 요구사항), compile/target SDK 35
 - AGP 8.8.2, Gradle wrapper 8.10.2 (Pleos 요구는 8.0 이상), JDK 17 이상 (소스·타깃은 17)
 - 단일 `app` 모듈, MVVM (ViewModel + StateFlow), 수동 DI. 구조와 결정 근거: [docs/architecture.md](docs/architecture.md)
-- 서비스 기능 스택: Room(암호화), Pleos STT/TTS `ON_DEVICE`, Pleos NaviHelper, Firebase(Firestore + 익명 Auth, Functions 없음. 012), Claude API(임시 Opus, 팀 논의 중), 카카오 로컬 API. 표와 승인된 Pleos 권한: [docs/architecture.md](docs/architecture.md) "서비스 기능 스택"
+- 서비스 기능 스택: Room(암호화), Pleos STT/TTS `ON_DEVICE`, Pleos NaviHelper, Firebase(Firestore + 익명 Auth. Functions는 PC 에뮬레이터에서만: 근처 동물병원 `nearbyVets`, 015), Claude API(임시 Opus, 팀 논의 중), 카카오 로컬 API(함수에서만 키를 안다). 표와 승인된 Pleos 권한: [docs/architecture.md](docs/architecture.md) "서비스 기능 스택"
 - applicationId `com.meongcare.app`, 앱 이름 **MeongCare** (2026-11-05 사용자 결정). 이름은 Android `strings.xml`의 `app_name`과 `web/src/config.ts`의 `APP_NAME` 두 곳에 있다
 - Pleos Maven: `https://nexus-playground.pleos.ai/repository/maven-releases/`
 - Vehicle SDK: `ai.pleos.playground:Vehicle:2.3.2`, NaviHelper SDK: `ai.pleos.playground:NaviHelper:3.0.5` (권한 `NAVI_ROUTE_SEARCH`, `NAVI_ROUTE`)
@@ -49,6 +49,7 @@ Windows에서는 `gradlew.bat`을 쓴다. Bash에서는 `./gradlew`.
 | 웹 검사 (타입·빌드·테스트) | `npm --prefix web run check` |
 | 웹 개발 서버 | `npm --prefix web run dev` |
 | 웹 화면 확인 | `build` → `preview` → `python web/scripts/verify_screens.py` ([web/README.md](web/README.md)) |
+| 근처 병원 함수 (Firebase 에뮬레이터 + 점검) | `npm --prefix firebase run emulators:nearby` → `npm --prefix firebase run check-nearby` ([firebase/README.md](firebase/README.md)) |
 | Firebase 에뮬레이터 (터미널 하나를 계속 씀) | `npm --prefix firebase ci` 한 번 → `npm --prefix firebase run emulators` |
 | 시연 병원 넣기 / 보안 규칙 점검 | `npm --prefix firebase run seed -- --reset` / `npm --prefix firebase run check-rules` |
 | 시연 전 점검 (차·병원 웹이 같은 서버에 붙었나, 대기 정보가 살아 있나) | `npm --prefix firebase run preflight -- --fix` (고칠 수 있는 것은 고친다) |

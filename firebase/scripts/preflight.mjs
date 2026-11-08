@@ -1,6 +1,7 @@
 // 시연 전 점검 PF1~PF6 (계획 013). 차 앱과 병원 웹이 같은 Firebase 에뮬레이터에 붙을 준비가 됐는지 본다.
 //   npm --prefix firebase run preflight            점검만
 //   npm --prefix firebase run preflight -- --fix   고칠 수 있는 것을 고치고 다시 점검한다
+//   npm --prefix firebase run preflight -- --nearby   근처 동물병원 함수(계획 015)까지: PF5에 tcp:5001, PF7 Functions 에뮬레이터
 //     - PF5 (adb reverse 없음) → adb reverse tcp:8080·tcp:9099
 //     - PF3·PF6 (병원이 없거나 대기 정보가 모두 지남) → seed (--reset 없이: 병원 대기 정보만 새 시각, 환자 건은 그대로)
 //     - 에뮬레이터를 켜거나 끄는 일(PF1·PF2·PF4)은 하지 않는다. 안내만 한다.
@@ -21,6 +22,9 @@ const ADMIN = 'Bearer owner' // 에뮬레이터 전용 관리자 토큰
 const MIN_HOSPITALS = 5
 
 const FIX = process.argv.includes('--fix')
+// --nearby: 근처 동물병원 함수(계획 015)까지 본다. PF5에 tcp:5001, PF7 추가
+const NEARBY = process.argv.includes('--nearby')
+const FUNCTIONS_PORT = 5001
 const AFTER_FIX = process.env.PREFLIGHT_AFTER_FIX === '1'
 
 let failures = 0
@@ -135,7 +139,7 @@ const hasReverse = (port) => reverseList !== null && reverseList.includes(`tcp:$
 check(
   'PF5',
   `adb reverse tcp:${FIRESTORE_PORT}·tcp:${AUTH_PORT}가 걸려 있다`,
-  hasReverse(FIRESTORE_PORT) && hasReverse(AUTH_PORT),
+  hasReverse(FIRESTORE_PORT) && hasReverse(AUTH_PORT) && (!NEARBY || hasReverse(FUNCTIONS_PORT)),
   reverseList === null
     ? `adb를 쓸 수 없다 (${adbProblem}). 기기가 여럿이면 ANDROID_SERIAL=emulator-5554 를 정하고 다시 돌린다`
     : `adb reverse tcp:${FIRESTORE_PORT} tcp:${FIRESTORE_PORT} && adb reverse tcp:${AUTH_PORT} tcp:${AUTH_PORT}`,
@@ -172,6 +176,21 @@ check(
   '시연 직전에 npm --prefix firebase run preflight -- --fix (병원 대기 정보만 새로, 환자 건은 그대로) 또는 병원 웹 [병원 상태 알리기]',
 )
 
+// PF7 (--nearby): 근처 동물병원 함수가 있는 Functions 에뮬레이터가 응답한다
+if (NEARBY) {
+  const fn = await reach(`http://${IPV4}:${FUNCTIONS_PORT}/${PROJECT_ID}/asia-northeast3/nearbyVets`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ data: {} }),
+  })
+  check(
+    'PF7',
+    `근처 동물병원 함수가 ${IPV4}:${FUNCTIONS_PORT}에서 응답한다`,
+    fn !== null && fn.status !== 404,
+    'npm --prefix firebase run emulators:nearby (functions/.secret.local에 카카오 키). 함수 자체 점검: npm --prefix firebase run check-nearby',
+  )
+}
+
 // --fix: 고칠 수 있는 것을 고치고 한 번만 다시 점검한다
 if (FIX && !AFTER_FIX && failures > 0) {
   const run = (file, args) => {
@@ -186,6 +205,7 @@ if (FIX && !AFTER_FIX && failures > 0) {
   if (failed.has('PF5')) {
     console.log('\n[고침] adb reverse를 건다')
     fixed = run('adb', ['reverse', `tcp:${FIRESTORE_PORT}`, `tcp:${FIRESTORE_PORT}`]) && run('adb', ['reverse', `tcp:${AUTH_PORT}`, `tcp:${AUTH_PORT}`])
+    if (NEARBY) fixed = run('adb', ['reverse', `tcp:${FUNCTIONS_PORT}`, `tcp:${FUNCTIONS_PORT}`]) && fixed
   }
   if ((failed.has('PF3') || failed.has('PF6')) && firestoreUp && authUp) {
     console.log('\n[고침] 시연 병원 대기 정보를 지금 시각으로 다시 넣는다 (환자 건은 그대로)')
@@ -194,7 +214,7 @@ if (FIX && !AFTER_FIX && failures > 0) {
   if (fixed) {
     console.log('\n[다시 점검]')
     try {
-      execFileSync(process.execPath, [fileURLToPath(import.meta.url)], { stdio: 'inherit', env: { ...process.env, PREFLIGHT_AFTER_FIX: '1' } })
+      execFileSync(process.execPath, [fileURLToPath(import.meta.url), ...process.argv.slice(2)], { stdio: 'inherit', env: { ...process.env, PREFLIGHT_AFTER_FIX: '1' } })
       process.exit(0)
     } catch {
       process.exit(1)

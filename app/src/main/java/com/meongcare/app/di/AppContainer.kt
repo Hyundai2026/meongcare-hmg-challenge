@@ -16,8 +16,10 @@ import com.meongcare.app.data.guidance.RealGuidanceSource
 import com.meongcare.app.data.hospital.BuiltInHospitalBoardSource
 import com.meongcare.app.data.hospital.FakeCaseSender
 import com.meongcare.app.data.hospital.FallbackHospitalBoardSource
+import com.meongcare.app.data.hospital.FakeNearbyVetSource
 import com.meongcare.app.data.hospital.SampleHospitals
 import com.meongcare.app.data.hospital.TimeoutHospitalBoardSource
+import com.meongcare.app.data.location.DeviceCurrentLocationSource
 import com.meongcare.app.data.location.FakeCurrentLocationSource
 import com.meongcare.app.data.location.NaviCurrentLocationSource
 import com.meongcare.app.data.link.FakeOwnerLink
@@ -37,6 +39,8 @@ import com.meongcare.app.data.server.HttpTransport
 import com.meongcare.app.data.server.ServerConfig
 import com.meongcare.app.data.server.UrlConnectionHttpTransport
 import com.meongcare.app.data.server.serverConfigOf
+import com.meongcare.app.data.server.FunctionNearbyVetSource
+import com.meongcare.app.data.server.nearbyFunctionUrlOf
 import com.meongcare.app.domain.hospital.HospitalBoard
 import com.meongcare.app.data.phone.AndroidPhoneDialer
 import com.meongcare.app.domain.card.MedicalCardSession
@@ -49,6 +53,7 @@ import com.meongcare.app.domain.guidance.GuidanceSource
 import com.meongcare.app.domain.hospital.Hospital
 import com.meongcare.app.domain.hospital.HospitalBoardSource
 import com.meongcare.app.domain.hospital.HospitalCandidate
+import com.meongcare.app.domain.hospital.NearbyVetSource
 import com.meongcare.app.domain.trip.CaseSender
 import com.meongcare.app.domain.trip.HospitalTrip
 import com.meongcare.app.domain.location.CurrentLocationSource
@@ -136,8 +141,15 @@ class AppContainer(context: Context, val dataMode: DataMode) {
             client = PleosNaviClient(context),
             log = { Log.i("CurrentLocation", it) },
         )
-        SourceKind.FAKE -> FakeCurrentLocationSource()
+        SourceKind.FAKE ->
+            if (usesDeviceLocation) DeviceCurrentLocationSource(context.applicationContext) else FakeCurrentLocationSource()
     }
+
+    /** 내비 없는 기기의 시연·Real이면 기기 위치(GPS)를 쓴다 (계획 015). 화면이 위치 권한을 묻는다 */
+    val usesDeviceLocation: Boolean get() = usesDeviceLocation(dataMode, isAutomotive)
+
+    /** 현재 위치가 시연용 고정 위치인지 ("시연용 위치 기준이에요") */
+    val isLocationSample: Boolean get() = locationKind == SourceKind.FAKE && !usesDeviceLocation
 
     /**
      * 010의 고정 시연 병원. 012부터 카드의 병원은 병원 찾기에서 고른 곳이고([hospitalTrip]),
@@ -189,6 +201,26 @@ class AppContainer(context: Context, val dataMode: DataMode) {
         } ?: HospitalBoardSource {
             Log.i(TRIP_LOG_TAG, "병원 목록: 서버 설정 없음")
             HospitalBoard.Unavailable("서버 설정 없음")
+        }
+    }
+
+    /** 근처 동물병원 함수 주소. debug + 에뮬레이터 주소일 때만 있다 (계획 015, 배포하지 않음) */
+    private val nearbyFunctionUrl: String? = nearbyFunctionUrlOf(
+        projectId = BuildConfig.FIREBASE_PROJECT_ID,
+        emulatorHost = BuildConfig.FIREBASE_EMULATOR_HOST,
+        isDebugBuild = BuildConfig.DEBUG,
+    )
+
+    /** 근처 동물병원 출처 (계획 015 "설계 결정 3"). Fake 모드는 시연용 3곳, 시연·Real은 함수가 있을 때만. */
+    val nearbyVetKind: NearbyVetKind =
+        nearbyVetKindOf(dataMode, hasFunction = nearbyFunctionUrl != null && serverClient != null)
+
+    /** null = 근처 병원 묶음 없음. 결과는 저장하지 않는다 (카카오 운영정책). 익명 계정은 병원·반려견과 같은 것 */
+    val nearbyVetSource: NearbyVetSource? = when (nearbyVetKind) {
+        NearbyVetKind.OFF -> null
+        NearbyVetKind.FAKE -> FakeNearbyVetSource()
+        NearbyVetKind.FUNCTION -> serverClient?.let { (_, auth) ->
+            nearbyFunctionUrl?.let { url -> FunctionNearbyVetSource(url, auth, serverTransport, log = { Log.i(TRIP_LOG_TAG, it) }) }
         }
     }
 

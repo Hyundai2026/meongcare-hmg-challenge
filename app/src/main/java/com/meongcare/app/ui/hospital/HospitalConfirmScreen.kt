@@ -108,14 +108,23 @@ fun HospitalConfirmScreen(
                         }
                     }
                     NoticeBox(
-                        listOfNotNull(
-                            stringResource(
-                                if (choice.candidate.sendsCardToServer) R.string.confirm_send_notice else R.string.confirm_send_notice_sample,
-                            ),
-                            stringResource(R.string.confirm_sends),
-                            stringResource(R.string.confirm_not_sends),
-                            stringResource(R.string.confirm_deleted).takeIf { choice.candidate.sendsCardToServer },
-                        ),
+                        if (!choice.candidate.canReceiveCard) {
+                            // 근처 검색 병원 (계획 015): 카드를 보내지 않는다. 전화로 먼저 확인하게 한다
+                            listOfNotNull(
+                                stringResource(R.string.confirm_nearby_no_card),
+                                stringResource(R.string.confirm_nearby_call_first),
+                                stringResource(R.string.confirm_nearby_source).takeIf { !values.isSample },
+                            )
+                        } else {
+                            listOfNotNull(
+                                stringResource(
+                                    if (choice.candidate.sendsCardToServer) R.string.confirm_send_notice else R.string.confirm_send_notice_sample,
+                                ),
+                                stringResource(R.string.confirm_sends),
+                                stringResource(R.string.confirm_not_sends),
+                                stringResource(R.string.confirm_deleted).takeIf { choice.candidate.sendsCardToServer },
+                            )
+                        },
                         modifier = Modifier.widthIn(max = 1100.dp),
                     )
                 }
@@ -137,11 +146,15 @@ private fun Actions(
     val call: (@Composable (Modifier) -> Unit)? = phone?.let {
         { modifier -> HospitalSecondaryButton(stringResource(R.string.card_call_hospital), { onCall(it) }, modifier, Icons.Filled.Phone, ActionBlue) }
     }
-    val withoutCard: @Composable (Modifier) -> Unit = { modifier ->
+    // 근처 검색 병원은 카드를 받지 않으므로 [출발]·[카드 없이 길안내만] 대신 [길 안내 시작] 하나다 (계획 015)
+    val nearby = !choice.candidate.canReceiveCard
+    val withoutCard: (@Composable (Modifier) -> Unit)? = if (nearby) null else { modifier ->
         HospitalSecondaryButton(stringResource(R.string.confirm_without_card), onDepartWithoutCard, modifier)
     }
-    val depart: @Composable (Modifier) -> Unit = { modifier ->
-        HospitalPrimaryButton(stringResource(R.string.confirm_depart), onDepart, modifier, Icons.Filled.Send)
+    val depart: @Composable (Modifier) -> Unit = if (nearby) {
+        { modifier -> HospitalPrimaryButton(stringResource(R.string.confirm_start_guidance), onDepartWithoutCard, modifier, Icons.Filled.Send) }
+    } else {
+        { modifier -> HospitalPrimaryButton(stringResource(R.string.confirm_depart), onDepart, modifier, Icons.Filled.Send) }
     }
     Column(
         modifier = Modifier.fillMaxWidth().padding(start = Dimens.ScreenPadding, end = Dimens.ScreenPadding, top = 8.dp, bottom = 20.dp),
@@ -150,12 +163,12 @@ private fun Actions(
         if (sideBySide) {
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 call?.invoke(Modifier.weight(1f))
-                withoutCard(Modifier.weight(1f))
+                withoutCard?.invoke(Modifier.weight(1f))
                 depart(Modifier.weight(1.3f))
             }
         } else {
             call?.invoke(Modifier.fillMaxWidth())
-            withoutCard(Modifier.fillMaxWidth())
+            withoutCard?.invoke(Modifier.fillMaxWidth())
             depart(Modifier.fillMaxWidth())
         }
     }

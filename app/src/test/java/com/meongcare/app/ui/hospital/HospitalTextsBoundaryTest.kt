@@ -40,6 +40,7 @@ class HospitalTextsBoundaryTest {
             HospitalOrigin.SERVER to FinderNotice.SERVER,
             HospitalOrigin.BUILT_IN to FinderNotice.BUILT_IN,
             HospitalOrigin.BUILT_IN_FALLBACK to FinderNotice.FALLBACK,
+            HospitalOrigin.NEARBY_SEARCH to FinderNotice.NEARBY,
         )
         HospitalOrigin.entries.forEach { origin ->
             RankBasis.entries.forEach { basis ->
@@ -61,7 +62,7 @@ class HospitalTextsBoundaryTest {
     fun `출처 안내는 늘 맨 위에 하나만 있다`() {
         HospitalOrigin.entries.forEach { origin ->
             val notices = finderNoticesOf(origin, RankBasis.TRAVEL_PLUS_WAIT, isLocationSample = true)
-            val sourceNotices = notices.filter { it in setOf(FinderNotice.SERVER, FinderNotice.BUILT_IN, FinderNotice.FALLBACK) }
+            val sourceNotices = notices.filter { it in setOf(FinderNotice.SERVER, FinderNotice.BUILT_IN, FinderNotice.FALLBACK, FinderNotice.NEARBY) }
             assertEquals(1, sourceNotices.size)
             assertEquals(sourceNotices.single(), notices.first())
         }

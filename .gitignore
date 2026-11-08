@@ -26,6 +26,10 @@ web/.env.*.local
 firebase/node_modules/
 firebase/.emulator-data/
 firebase/seed/join-codes.local.json
+# Functions 에뮬레이터 (firebase/functions/, 015). .secret.local = 카카오 REST 키
+firebase/functions/node_modules/
+firebase/functions/.secret.local
+firebase/functions/.env.local
 firebase-debug.log
 firestore-debug.log
 ui-debug.log

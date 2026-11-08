@@ -1,6 +1,34 @@
 # 근처 동물병원 검색 (계획 015)
 
-차 앱이 현재 위치 기준 반경 5km 안의 동물병원을 카카오 로컬 API로 찾는다. 카카오 호출은 Firebase Function `nearbyVets`가 한다 (키를 앱에 넣지 않는다). 요청·응답 형식은 구현(단계 5·7) 뒤 이 문서에 더한다.
+차 앱이 현재 위치 기준 반경 5km 안의 동물병원을 카카오 로컬 API로 찾는다. 카카오 호출은 Firebase Function `nearbyVets`가 한다 (키를 앱에 넣지 않는다).
+
+## 형식 (schemaVersion 1)
+
+callable 규약 (`POST http://127.0.0.1:5001/demo-meongcare/asia-northeast3/nearbyVets`, `Authorization: Bearer <익명 ID 토큰>`).
+
+```json
+// 요청
+{ "data": { "latitude": 37.4127212, "longitude": 127.094681 } }
+// 성공 (200)
+{ "result": { "schemaVersion": 1, "radiusMeters": 5000,
+  "vets": [ { "name": "○○동물병원", "phone": "02-000-0000", "latitude": 37.41, "longitude": 127.09, "address": "서울 ○○구 …" } ] } }
+// 실패
+{ "error": { "status": "UNAUTHENTICATED | INVALID_ARGUMENT | RESOURCE_EXHAUSTED | FAILED_PRECONDITION | UNAVAILABLE", "message": "…" } }
+```
+
+| 필드 | 규칙 |
+|---|---|
+| 요청 `latitude`·`longitude` | 숫자, 범위 안 (−90~90, −180~180). 다른 필드(반경·개수)는 무시한다. 서버가 소수 셋째 자리(약 100m)로 반올림해 카카오에 보낸다 |
+| `radiusMeters` | 5000 고정 (앱 `NEARBY_RADIUS_METERS`와 같다) |
+| `vets` | 최대 15곳. 카카오 키워드 `동물병원` + 거리순, `category_name`에 "동물병원"이 있는 것만 |
+| `name` | 비어 있지 않음. 앱은 41자 이상이면 그 항목만 뺀다 |
+| `phone`·`address` | 없으면 `null`. 주소는 도로명 → 지번 |
+| `latitude`·`longitude` | 숫자. 범위 밖이면 그 항목만 뺀다 |
+
+- 읽는 쪽은 짐작하지 않는다: `schemaVersion`이 1이 아니거나 `result`·`vets`가 없으면 실패로 본다. 모르는 필드는 무시한다.
+- **저장하지 않는다** (카카오 운영정책 5조 20호): 서버·기기 어디에도 쓰지 않고, 차 앱은 병원 목록 화면과 고른 안내 1곳에만 메모리로 둔다.
+- 남용 방지: 익명 로그인 필수, 같은 계정 5초에 한 번·1시간 30번 (에뮬레이터 프로세스 메모리).
+- 차 앱 화면 (설계 변경 V2): 근처 병원에 **시연용 예시 대기**(`exampleStatusOf`, 5~60분, 병원마다 고정)를 붙여 제휴 병원과 한 순위로 섞고 "(예시)"로 표시한다. 진료 카드는 제휴 병원에만 보낸다.
 
 ## 카카오 로컬 API (확인한 것)
 

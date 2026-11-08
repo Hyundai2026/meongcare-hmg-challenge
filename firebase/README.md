@@ -47,6 +47,20 @@
   - 병원 웹 화면 위 `서버:` 줄이 `에뮬레이터 127.0.0.1:8080 · … · 실시간 연결됨`인지. `localhost`·`::1`이면 빨간 경고가 뜬다.
   - 차 앱 debug 빌드의 `FIREBASE_EMULATOR_HOST`가 `127.0.0.1`인지.
 
+## 근처 동물병원 함수 (`functions/`, 계획 015)
+
+차 앱이 지금 위치 기준 5km 안의 동물병원을 카카오 로컬 API로 찾을 때 부르는 callable 함수 `nearbyVets`다. **배포하지 않고 PC 에뮬레이터에서만** 돌린다 (Blaze 불필요). 형식과 확인 사항: [docs/data/nearby-vets.md](../docs/data/nearby-vets.md)
+
+1. 카카오 Developers에서 앱을 만들고 [카카오맵] > [사용 설정]을 ON, REST API 키를 받는다.
+2. `firebase/functions/.secret.local.example`을 `.secret.local`로 복사하고 `KAKAO_REST_API_KEY=` 뒤에 키를 넣는다. **`.secret.local`은 커밋하지 않는다** (gitignore). 키는 앱·웹·`secrets.properties`에 넣지 않는다.
+3. `npm --prefix firebase/functions ci` (처음 한 번) → `npm --prefix firebase run emulators:nearby`.
+4. 확인: `npm --prefix firebase run check-nearby` (N1 로그인 없으면 거절, N2 시연 위치로 15곳 안팎·모두 5.5km 안, N3 잘못된 위도 거절, N4 5초 안 다시 부르면 거절, N5 형식). 병원 이름·전화는 출력하지 않는다.
+5. 차 앱: debug 빌드, `secrets.properties`에 `FIREBASE_PROJECT_ID=demo-meongcare`·`FIREBASE_EMULATOR_HOST=127.0.0.1`, debug 패널에서 **시연** 모드, `adb reverse tcp:5001 tcp:5001` (8080·9099와 함께).
+
+- 함수 테스트: `npm --prefix firebase/functions test` (`node --test`, 손으로 만든 가짜 카카오 응답).
+- 함수는 좌표를 약 100m(소수 셋째 자리)로 반올림해 카카오에 보내고, 결과를 저장하지 않는다. 로그에는 결과 종류·개수·ms·카카오 HTTP 상태만.
+- 남용 방지: 로그인(익명) 필수, 같은 계정 5초에 한 번·1시간 30번 (프로세스 메모리). 배포할 때 App Check·진짜 속도 제한을 다시 정한다.
+
 ## 병원 웹 링크 (시연 코드 포함)
 
 시드가 끝나면 병원별 링크를 출력한다. 코드는 [seed/join-codes.emulator.json](seed/join-codes.emulator.json)에 있다 (에뮬레이터 전용 가짜 값이라 커밋한다).

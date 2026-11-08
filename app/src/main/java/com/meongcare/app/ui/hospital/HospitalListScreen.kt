@@ -33,6 +33,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -63,6 +64,7 @@ import com.meongcare.app.ui.theme.CardColors
 import com.meongcare.app.ui.theme.Dimens
 import com.meongcare.app.ui.theme.MeongCareTheme
 import java.time.Instant
+import kotlinx.coroutines.launch
 
 private val ContentMaxWidth = 1100.dp
 
@@ -86,13 +88,15 @@ fun HospitalListScreen(
     modifier: Modifier = Modifier,
     isNearbySample: Boolean = false,
 ) {
+    val scrollState = rememberScrollState()
+    val scope = rememberCoroutineScope()
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val wide = maxWidth >= 840.dp
         CompositionLocalProvider(LocalCardScale provides if (wide) CardScale.Wide else CardScale.Narrow) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
+                    .verticalScroll(scrollState)
                     .padding(horizontal = Dimens.ScreenPadding, vertical = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(20.dp),
             ) {
@@ -106,7 +110,10 @@ fun HospitalListScreen(
                     HospitalFinderUiState.Loading -> Waiting(stringResource(R.string.finder_loading))
                     is HospitalFinderUiState.Failed -> FailedPanel(state.isRetrying, onRefresh)
                     is HospitalFinderUiState.Loaded ->
-                        LoadedList(state, isLocationSample, isNearbySample, onChoose, onRelocate, onRefresh)
+                        // 쪽을 넘기면 목록 맨 위로 올린다 (넘긴 뒤 아래쪽에 머물지 않게)
+                        LoadedList(state, isLocationSample, isNearbySample, onChoose, onRelocate, onRefresh) {
+                            scope.launch { scrollState.animateScrollTo(0) }
+                        }
                 }
             }
         }
@@ -168,6 +175,7 @@ private fun LoadedList(
     onChoose: (RankedHospital) -> Unit,
     onRelocate: () -> Unit,
     onRefresh: () -> Unit,
+    onPageChanged: () -> Unit,
 ) {
     val scale = LocalCardScale.current
     val ranking = state.ranking
@@ -220,7 +228,7 @@ private fun LoadedList(
         ) {
             HospitalPillButton(
                 stringResource(R.string.finder_page_prev),
-                { page = current - 1 },
+                { page = current - 1; onPageChanged() },
                 Icons.AutoMirrored.Filled.ArrowBack,
                 enabled = current > 0,
             )
@@ -232,7 +240,7 @@ private fun LoadedList(
             )
             HospitalPillButton(
                 stringResource(R.string.finder_page_next),
-                { page = current + 1 },
+                { page = current + 1; onPageChanged() },
                 Icons.AutoMirrored.Filled.ArrowForward,
                 enabled = current < pageCount - 1,
             )

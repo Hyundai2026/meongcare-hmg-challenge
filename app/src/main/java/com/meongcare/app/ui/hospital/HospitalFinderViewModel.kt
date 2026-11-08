@@ -211,7 +211,12 @@ class HospitalFinderViewModel(
                 val nearbyCandidates = (nearbyState as? NearbyState.Found)?.rows.orEmpty()
                     .map { it.candidate.copy(status = exampleStatusOf(it.hospital, at)) }
                 HospitalFinderUiState.Loaded(
-                    ranking = rankHospitals(board.candidates + nearbyCandidates, location, at, MERGED_RULES),
+                    // 근처 검색이 없으면 015 전과 같은 규칙 (V1)
+                    ranking = if (nearbySource == null) {
+                        rankHospitals(board.candidates, location, at)
+                    } else {
+                        rankHospitals(board.candidates + nearbyCandidates, location, at, MERGED_RULES)
+                    },
                     origin = board.origin,
                     nearby = nearbyState,
                 ).also { lastShown = it }

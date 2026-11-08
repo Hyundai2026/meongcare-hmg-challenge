@@ -77,8 +77,8 @@ export function toVets(kakaoJson) {
   for (const document of documents) {
     if (!isVet(document)) continue;
     const name = typeof document.place_name === "string" ? document.place_name.trim() : "";
-    const latitude = Number.parseFloat(document.y);
-    const longitude = Number.parseFloat(document.x);
+    const latitude = toNumber(document.y);
+    const longitude = toNumber(document.x);
     if (name === "") continue;
     if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90) continue;
     if (!Number.isFinite(longitude) || longitude < -180 || longitude > 180) continue;
@@ -97,6 +97,13 @@ export function toVets(kakaoJson) {
 /** 성공 응답 (`result`) */
 export function resultOf(vets) {
   return { schemaVersion: SCHEMA_VERSION, radiusMeters: RADIUS_METERS, vets };
+}
+
+/** 카카오 좌표 문자열 → 숫자. 문자열 전체가 숫자여야 한다 ("127.09abc"는 NaN). 빈 값·숫자가 아닌 타입은 NaN */
+function toNumber(value) {
+  if (typeof value === "number") return value;
+  if (typeof value !== "string" || value.trim() === "") return Number.NaN;
+  return Number(value.trim());
 }
 
 function textOrNull(value) {

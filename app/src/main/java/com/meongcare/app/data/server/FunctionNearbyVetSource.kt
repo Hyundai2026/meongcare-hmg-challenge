@@ -78,7 +78,10 @@ class FunctionNearbyVetSource(
         val root = JSONObject(responseBody)
         if (root.has("error")) return NearbyVets.Unavailable("함수 오류")
         val result = root.optJSONObject("result") ?: return NearbyVets.Unavailable("형식 오류")
-        if (result.optInt("schemaVersion", -1) != SCHEMA_VERSION) return NearbyVets.Unavailable("형식 오류")
+        // 짐작하지 않는다: 정수 1만 받는다 (문자열 "1"·소수 1.5는 형식 오류. optInt는 둘 다 1로 바꾼다)
+        val version = result.opt("schemaVersion")
+        val isVersionOne = (version is Int && version == SCHEMA_VERSION) || (version is Long && version == SCHEMA_VERSION.toLong())
+        if (!isVersionOne) return NearbyVets.Unavailable("형식 오류")
         val vets = result.optJSONArray("vets") ?: return NearbyVets.Unavailable("형식 오류")
         val hospitals = (0 until vets.length()).mapNotNull { index -> vets.optJSONObject(index)?.let(::hospitalOf) }
         return NearbyVets.Found(hospitals)

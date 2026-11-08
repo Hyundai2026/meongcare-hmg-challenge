@@ -20,6 +20,12 @@ enum class FinderNotice {
     /** 서버에 닿지 못해 내장 시연 병원으로 대신함 */
     FALLBACK,
 
+    /**
+     * 근처 검색 병원 (카카오, 대기 정보 없음). 제휴 목록 전체의 출처가 근처 검색일 일은 없지만,
+     * [HospitalOrigin.NEARBY_SEARCH]를 받아도 맞는 안내가 나오게 둔다 (계획 015 단계 1).
+     */
+    NEARBY,
+
     /** 이동 시간은 직선 거리 어림값 */
     ESTIMATED_TRAVEL,
 
@@ -39,6 +45,7 @@ fun finderNoticesOf(origin: HospitalOrigin, basis: RankBasis, isLocationSample: 
             HospitalOrigin.SERVER -> FinderNotice.SERVER
             HospitalOrigin.BUILT_IN -> FinderNotice.BUILT_IN
             HospitalOrigin.BUILT_IN_FALLBACK -> FinderNotice.FALLBACK
+            HospitalOrigin.NEARBY_SEARCH -> FinderNotice.NEARBY
         },
     )
     if (basis == RankBasis.TRAVEL_PLUS_WAIT) {
@@ -79,6 +86,7 @@ fun finderNoticeText(notice: FinderNotice): String = stringResource(
         FinderNotice.SERVER -> R.string.finder_notice_server
         FinderNotice.BUILT_IN -> R.string.finder_notice_built_in
         FinderNotice.FALLBACK -> R.string.finder_notice_fallback
+        FinderNotice.NEARBY -> R.string.finder_notice_nearby
         FinderNotice.ESTIMATED_TRAVEL -> R.string.finder_notice_estimated
         FinderNotice.SAMPLE_LOCATION -> R.string.finder_notice_sample_location
     },

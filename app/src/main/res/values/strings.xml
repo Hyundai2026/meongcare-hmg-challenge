@@ -117,6 +117,7 @@
     <string name="finder_notice_built_in">시연용 병원 정보예요. 실제 병원이 아니에요.</string>
     <string name="finder_notice_fallback">서버에 연결하지 못해 시연용 병원 정보를 보여 줘요.</string>
     <string name="finder_notice_server">병원 웹에서 알린 대기 시간이에요.</string>
+    <string name="finder_notice_nearby">장소 정보: 카카오. 제휴 병원이 아니라 대기 정보가 없어요.</string>
     <!-- 병원 확인 (012). [출발]을 누르는 것이 이번 전송의 동의다 (사용자 결정 U2·U3) -->
     <string name="confirm_title">이 병원으로 출발할까요?</string>
     <string name="confirm_status">대기 정보: %1$s</string>

@@ -419,7 +419,7 @@ class FunctionNearbyVetSource(
   - 4-2. 목록 묶음, 문구 순수 함수 + `HospitalTextsNearbyTest`, strings.xml, 미리보기 → `feat(ui): 병원 목록 아래 근처 동물병원 묶음`
   - 4-3. 근처 병원 확인 화면 변형, `MainActivity` 연결, `AppContainer`에 `nearbyVetKind`와 Fake 연결(FUNCTION은 단계 7까지 OFF로 둔다) → `feat(ui): 근처 동물병원 확인 화면과 Fake 연결`
   - `/verify` (일반 태블릿 에뮬레이터, Fake 모드): E1·E2·E3. 스크린샷을 진행 로그에 적는다.
-- [ ] 5. 서버 함수 `[선행: 메인 웹 확인(카카오)]` `[선행: 메인 웹 확인(Firebase)]` (U1·U5·U6 필요, 설계 결정 5)
+- [x] 5. 서버 함수 `[선행: 메인 웹 확인(카카오)]` `[선행: 메인 웹 확인(Firebase)]` (U1·U5·U6 필요, 설계 결정 5)
   - 5-1. `firebase/functions/`(package.json, nearby.mjs, nearby.test.mjs, index.js, `.secret.local.example`), `.gitignore`에 `firebase/functions/node_modules/`·`firebase/functions/.secret.local` → `feat(firebase): 카카오 근처 동물병원 검색 함수`
   - 5-2. `firebase.json` functions 설정, `firebase/package.json`의 `emulators:nearby` → `chore(firebase): Functions 에뮬레이터 설정`
   - 확인: `npm --prefix firebase/functions ci`, `npm --prefix firebase/functions test`, `npm --prefix firebase run emulators:nearby`가 세 에뮬레이터를 띄운다.
@@ -495,6 +495,7 @@ class FunctionNearbyVetSource(
 - 2026-11-08: **순서 변경 (사용자 결정)**: 실제 카카오 검색을 먼저 보려고 단계 5를 3·4보다 먼저 한다. 실제 응답 모양(K2 `category_name` 등)을 일찍 확인하는 이점도 있다.
 - 2026-11-08: 이 PC의 Node 26.13.0은 `firebase-tools` 15.34.1(engines 20·22·24)이 설치를 거부해서, 사용자 결정으로 **Node 22.23.4 LTS로 바꿨다** (Node 26 제거는 관리자 확인 필요). 웹 engines(22.12 이상)도 맞는다.
 - 2026-11-08: 단계 5 코드: `firebase/functions/` (JS ESM, `node --test` 7개 통과). `firebase.json`에 functions(`127.0.0.1:5001`), `emulators:nearby` 스크립트.
+- 2026-11-08: 단계 5 확인 (사용자가 `.secret.local`에 키를 넣음): `emulators:nearby` 기동, 손으로 N1~N5 확인 → N1 401, N3 400, **N2 200·15곳·최대 2.8km·238ms**, N4 429, N5 `schemaVersion 1`·`radiusMeters 5000`. F3·F4·F6·K7 확인, K2 거르기 동작 (`kakaoCount 15 → 15`). 기록: `docs/data/nearby-vets.md` `[obs-nearby-emu]`. 함수 로그에 `kakaoCount`(거르기 전 개수)를 더했다.
 
 ## 결정 / 배운 점
 

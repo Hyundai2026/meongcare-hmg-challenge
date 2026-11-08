@@ -14,3 +14,18 @@ fun currentLocationKindOf(mode: DataMode, isAutomotive: Boolean): SourceKind = w
     mode == DataMode.DEMO || mode == DataMode.REAL -> SourceKind.REAL
     else -> SourceKind.FAKE
 }
+
+/**
+ * 내비가 없는 기기에서 시연 위치 대신 **기기 위치(안드로이드 GPS)**를 쓸지 (계획 015, 사용자 결정 2026-11-08).
+ * 근처 동물병원을 "지금 위치" 기준으로 찾으려는 것이다. [currentLocationKindOf]가 Fake라고 한 칸 중에서만 고른다.
+ *
+ * | 모드 | 차량 기기 | 일반 폰·태블릿 |
+ * |---|---|---|
+ * | Fake | 시연 위치 | 시연 위치 |
+ * | 시연 | 내비 | **기기 위치** |
+ * | Real | 내비 | **기기 위치** |
+ *
+ * 권한을 거부하면 위치 모름이다 (다른 위치로 대신하지 않는다).
+ */
+fun usesDeviceLocation(mode: DataMode, isAutomotive: Boolean): Boolean =
+    !isAutomotive && (mode == DataMode.DEMO || mode == DataMode.REAL)

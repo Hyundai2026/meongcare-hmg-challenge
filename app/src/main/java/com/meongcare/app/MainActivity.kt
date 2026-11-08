@@ -2,12 +2,16 @@ package com.meongcare.app
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.meongcare.app.data.location.DeviceCurrentLocationSource
 import com.meongcare.app.di.AppRestarter
 import com.meongcare.app.di.DataMode
 import com.meongcare.app.di.NaviUse
@@ -125,9 +129,21 @@ class MainActivity : ComponentActivity() {
                             ),
                         )
                         val finderState by finderViewModel.uiState.collectAsStateWithLifecycle()
+                        // 내비 없는 기기의 시연·Real: 병원 찾기를 열 때 위치 권한을 한 번 묻는다 (계획 015).
+                        // 허용하면 위치를 다시 묻고 근처 동물병원을 찾는다. 거부하면 "위치를 몰라" 상태로 둔다.
+                        if (container.usesDeviceLocation) {
+                            val permissionLauncher = rememberLauncherForActivityResult(
+                                ActivityResultContracts.RequestMultiplePermissions(),
+                            ) { granted -> if (granted.values.any { it }) finderViewModel.onRelocate() }
+                            LaunchedEffect(Unit) {
+                                if (!DeviceCurrentLocationSource.hasPermission(this@MainActivity)) {
+                                    permissionLauncher.launch(DeviceCurrentLocationSource.PERMISSIONS)
+                                }
+                            }
+                        }
                         HospitalListScreen(
                             state = finderState,
-                            isLocationSample = container.locationKind == SourceKind.FAKE,
+                            isLocationSample = container.isLocationSample,
                             isNearbySample = container.nearbyVetKind == NearbyVetKind.FAKE,
                             onChoose = trip::choose,
                             onBack = trip::back,
@@ -189,7 +205,11 @@ class MainActivity : ComponentActivity() {
                                     DebugLocationRow(
                                         text = debugLocationText(
                                             locationState,
-                                            sourceName = if (container.locationKind == SourceKind.REAL) "내비" else "Fake",
+                                            sourceName = when {
+                                                container.locationKind == SourceKind.REAL -> "내비"
+                                                container.usesDeviceLocation -> "기기"
+                                                else -> "Fake"
+                                            },
                                         ),
                                         isAsking = locationState == DebugLocationUiState.Asking,
                                     )

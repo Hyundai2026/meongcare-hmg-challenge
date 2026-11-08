@@ -19,6 +19,7 @@ import com.meongcare.app.data.hospital.FallbackHospitalBoardSource
 import com.meongcare.app.data.hospital.FakeNearbyVetSource
 import com.meongcare.app.data.hospital.SampleHospitals
 import com.meongcare.app.data.hospital.TimeoutHospitalBoardSource
+import com.meongcare.app.data.location.DeviceCurrentLocationSource
 import com.meongcare.app.data.location.FakeCurrentLocationSource
 import com.meongcare.app.data.location.NaviCurrentLocationSource
 import com.meongcare.app.data.link.FakeOwnerLink
@@ -140,8 +141,15 @@ class AppContainer(context: Context, val dataMode: DataMode) {
             client = PleosNaviClient(context),
             log = { Log.i("CurrentLocation", it) },
         )
-        SourceKind.FAKE -> FakeCurrentLocationSource()
+        SourceKind.FAKE ->
+            if (usesDeviceLocation) DeviceCurrentLocationSource(context.applicationContext) else FakeCurrentLocationSource()
     }
+
+    /** 내비 없는 기기의 시연·Real이면 기기 위치(GPS)를 쓴다 (계획 015). 화면이 위치 권한을 묻는다 */
+    val usesDeviceLocation: Boolean get() = usesDeviceLocation(dataMode, isAutomotive)
+
+    /** 현재 위치가 시연용 고정 위치인지 ("시연용 위치 기준이에요") */
+    val isLocationSample: Boolean get() = locationKind == SourceKind.FAKE && !usesDeviceLocation
 
     /**
      * 010의 고정 시연 병원. 012부터 카드의 병원은 병원 찾기에서 고른 곳이고([hospitalTrip]),

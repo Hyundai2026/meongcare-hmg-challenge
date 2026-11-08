@@ -11,6 +11,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.meongcare.app.di.AppRestarter
 import com.meongcare.app.di.DataMode
 import com.meongcare.app.di.NaviUse
+import com.meongcare.app.di.NearbyVetKind
 import com.meongcare.app.di.SourceKind
 import com.meongcare.app.di.SourcePlan
 import com.meongcare.app.di.next
@@ -117,12 +118,17 @@ class MainActivity : ComponentActivity() {
                     onFinderBack = trip::back,
                     hospitalList = {
                         val finderViewModel: HospitalFinderViewModel = viewModel(
-                            factory = HospitalFinderViewModel.factory(container.hospitalBoardSource, container.currentLocationSource),
+                            factory = HospitalFinderViewModel.factory(
+                                container.hospitalBoardSource,
+                                container.currentLocationSource,
+                                container.nearbyVetSource,
+                            ),
                         )
                         val finderState by finderViewModel.uiState.collectAsStateWithLifecycle()
                         HospitalListScreen(
                             state = finderState,
                             isLocationSample = container.locationKind == SourceKind.FAKE,
+                            isNearbySample = container.nearbyVetKind == NearbyVetKind.FAKE,
                             onChoose = trip::choose,
                             onBack = trip::back,
                             onRefresh = finderViewModel::onRefresh,

@@ -16,6 +16,7 @@ import com.meongcare.app.data.guidance.RealGuidanceSource
 import com.meongcare.app.data.hospital.BuiltInHospitalBoardSource
 import com.meongcare.app.data.hospital.FakeCaseSender
 import com.meongcare.app.data.hospital.FallbackHospitalBoardSource
+import com.meongcare.app.data.hospital.FakeNearbyVetSource
 import com.meongcare.app.data.hospital.SampleHospitals
 import com.meongcare.app.data.hospital.TimeoutHospitalBoardSource
 import com.meongcare.app.data.location.FakeCurrentLocationSource
@@ -49,6 +50,7 @@ import com.meongcare.app.domain.guidance.GuidanceSource
 import com.meongcare.app.domain.hospital.Hospital
 import com.meongcare.app.domain.hospital.HospitalBoardSource
 import com.meongcare.app.domain.hospital.HospitalCandidate
+import com.meongcare.app.domain.hospital.NearbyVetSource
 import com.meongcare.app.domain.trip.CaseSender
 import com.meongcare.app.domain.trip.HospitalTrip
 import com.meongcare.app.domain.location.CurrentLocationSource
@@ -190,6 +192,19 @@ class AppContainer(context: Context, val dataMode: DataMode) {
             Log.i(TRIP_LOG_TAG, "병원 목록: 서버 설정 없음")
             HospitalBoard.Unavailable("서버 설정 없음")
         }
+    }
+
+    /**
+     * 근처 동물병원 출처 (계획 015 "설계 결정 3"). Fake 모드는 시연용 3곳, 시연·Real은 함수가 있을 때만.
+     * 함수 연결은 단계 7에서 더한다. 그 전까지 시연·Real은 끔이다.
+     */
+    val nearbyVetKind: NearbyVetKind = nearbyVetKindOf(dataMode, hasFunction = false)
+
+    /** null = 근처 병원 묶음 없음. 결과는 저장하지 않는다 (카카오 운영정책) */
+    val nearbyVetSource: NearbyVetSource? = when (nearbyVetKind) {
+        NearbyVetKind.OFF -> null
+        NearbyVetKind.FAKE -> FakeNearbyVetSource()
+        NearbyVetKind.FUNCTION -> null
     }
 
     private val fakeCaseSender = FakeCaseSender()

@@ -137,6 +137,10 @@
     <string name="confirm_deleted">병원 화면에서 진료를 마치고 [완료]를 누르면 지워져요.</string>
     <string name="confirm_without_card">카드 없이 길안내만</string>
     <string name="confirm_depart">출발</string>
+    <string name="confirm_nearby_no_card">제휴 병원이 아니라 진료 카드를 보낼 수 없어요.</string>
+    <string name="confirm_nearby_call_first">대기 정보가 없어요. 출발 전에 전화로 진료할 수 있는지 확인해 주세요.</string>
+    <string name="confirm_nearby_source">장소 정보: 카카오</string>
+    <string name="confirm_start_guidance">길 안내 시작</string>
     <!-- 카드의 전송·확인 줄 (012, 013). 주행 화면에는 확인 한 줄만 넣는다 -->
     <string name="delivery_sent">진료 카드를 병원에 보냈어요</string>
     <string name="delivery_sent_waiting">진료 카드를 병원에 보냈어요 · 확인을 기다리는 중</string>

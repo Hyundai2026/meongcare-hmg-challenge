@@ -423,13 +423,13 @@ class FunctionNearbyVetSource(
   - 5-1. `firebase/functions/`(package.json, nearby.mjs, nearby.test.mjs, index.js, `.secret.local.example`), `.gitignore`에 `firebase/functions/node_modules/`·`firebase/functions/.secret.local` → `feat(firebase): 카카오 근처 동물병원 검색 함수`
   - 5-2. `firebase.json` functions 설정, `firebase/package.json`의 `emulators:nearby` → `chore(firebase): Functions 에뮬레이터 설정`
   - 확인: `npm --prefix firebase/functions ci`, `npm --prefix firebase/functions test`, `npm --prefix firebase run emulators:nearby`가 세 에뮬레이터를 띄운다.
-- [ ] 6. 함수 점검 스크립트 (설계 결정 5)
+- [x] 6. 함수 점검 스크립트 (설계 결정 5)
   - `firebase/scripts/check-nearby.mjs` N1~N5 → `feat(firebase): 근처 검색 함수 점검 N1~N5`
   - preflight `--nearby`(PF7, PF5의 5001) → `feat(firebase): 시연 전 점검에 Functions 에뮬레이터 추가`
 - [x] 7. 앱의 함수 호출 (Real 래퍼, 설계 결정 6) `[선행: 메인 웹 확인(Firebase)]` F4·F5
   - `NearbyFunctionConfig.kt` + `NearbyFunctionConfigTest`, `FunctionNearbyVetSource` + `FunctionNearbyVetSourceTest` → `feat(server): 근처 동물병원 함수 호출 래퍼`
   - `AppContainer`: `serverClient`의 익명 계정을 같이 써서 FUNCTION 연결 → `feat(di): 시연·Real 모드에서 근처 검색 함수 연결`
-- [ ] 8. 끝까지 확인 (일반 태블릿 에뮬레이터 + PC 에뮬레이터)
+- [x] 8. 끝까지 확인 (일반 태블릿 에뮬레이터 + PC 에뮬레이터)
   - 아래 "확인 절차" E4~E9. 걸린 시간(목록, 근처 검색)을 진행 로그에 적는다. 고칠 것이 나오면 `fix:` 커밋.
 - [ ] 9. 테스트 (`tester`)
   - 메인이 `tester`에게 이 계획 경로와 대상(설계 결정 2·3·4·6·8의 계약, `firebase/functions/nearby.mjs`)만 넘긴다.
@@ -519,6 +519,11 @@ class FunctionNearbyVetSource(
 - 순위: ViewModel이 `rankHospitals(제휴 + 근처(예시 상태), 위치, 지금, maxPerGroup = 50)`. 근처는 여전히 `nearbyVetRowsOf`로 거른 뒤(반경·제휴와 같은 곳·중복·15곳) 넣는다. `NearbyState`는 근처 검색 진행 상태 줄(찾는 중·실패·위치 모름·없음)에만 쓴다.
 - 화면: 목록 = `ranked` + `unranked`를 이어 5개씩 쪽. 응급 접수 안 함 줄은 마지막 쪽 아래. 쪽 번호는 목록이 바뀌면 범위 안으로 맞춘다.
 - 문구: 근처 병원 줄은 "이동 약 N분 + 대기 M분(예시)" · "대기 시간 예시". 확인 화면: "이 병원에는 진료 카드를 보낼 수 없어요." / "대기 시간은 시연용 예시예요. 출발 전에 전화로 확인해 주세요." / "장소 정보: 카카오".
+
+- 2026-11-08: **단계 6·8 완료**. 6: `check-nearby` N1~N5 모두 PASS (15곳, 최대 2.80km), `preflight -- --nearby` PF7 PASS (`2956b4d`, `acd32a9`). 쪽을 넘기면 맨 위로 (`fcaf909`).
+  - 8 (태블릿 에뮬레이터 + PC Firebase, 시연 모드, 서울시청): E2 카카오 병원 확인 화면에 [병원에 전화]·[길 안내 시작]만 → 시작하면 3초 뒤 주행 화면(큰 남은 분 + "○○까지" + 진행 막대) → 도착 "○○에 도착했어요" + "카드 없이 출발했어요", `HospitalTrip` 로그에 카드 전송 줄 없음. E3 주행 화면 정보 최소. E6 [병원에 전화] → 전화 앱이 그 번호로 열림 (걸지 않음). E7 도착 → [닫기]. E8 앱 로그·함수 로그는 개수·ms만.
+  - E9 (release)는 확인하지 않았다: release APK는 `/release-apk`(사용자 실행)로만 만든다. 근거는 `nearbyFunctionUrlOf`(release면 null) 테스트와 `nearbyVetKindOf` 표.
+  - 관찰: 카카오 병원 확인 화면의 안내 상자("이 병원에는 진료 카드를 보낼 수 없어요" 등)는 넓은 화면에서도 버튼 아래로 밀려 스크롤해야 보인다.
 
 ## 결정 / 배운 점
 

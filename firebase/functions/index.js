@@ -71,7 +71,8 @@ export const nearbyVets = onCall(
       throw new HttpsError("unavailable", "장소 검색 응답을 읽지 못했어요.");
     }
     const vets = toVets(json);
-    logger.info("nearbyVets: 성공", { count: vets.length, ms: Date.now() - started });
+    const kakaoCount = Array.isArray(json?.documents) ? json.documents.length : 0;
+    logger.info("nearbyVets: 성공", { count: vets.length, kakaoCount, ms: Date.now() - started });
     return resultOf(vets);
   },
 );

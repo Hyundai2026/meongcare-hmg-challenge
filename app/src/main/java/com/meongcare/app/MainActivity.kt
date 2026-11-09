@@ -128,6 +128,7 @@ class MainActivity : ComponentActivity() {
                         HospitalListScreen(
                             state = finderState,
                             isLocationSample = container.isLocationSample,
+                            sampleLocationName = container.sampleLocationName,
                             isNearbySample = container.nearbyVetKind == NearbyVetKind.FAKE,
                             onChoose = trip::choose,
                             onBack = trip::back,

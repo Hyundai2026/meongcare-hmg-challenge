@@ -1,5 +1,8 @@
 package com.meongcare.app.di
 
+import com.meongcare.app.data.location.FakeCurrentLocationSource
+import com.meongcare.app.domain.location.CurrentLocation
+
 /**
  * 현재 위치를 어디서 받는지 (011). 순수 함수라 JVM으로 시험한다.
  *
@@ -16,16 +19,21 @@ fun currentLocationKindOf(mode: DataMode, isAutomotive: Boolean): SourceKind = w
 }
 
 /**
- * 내비가 없는 기기에서 시연 위치 대신 **기기 위치(안드로이드 GPS)**를 쓸지 (계획 015, 사용자 결정 2026-11-08).
- * 근처 동물병원을 "지금 위치" 기준으로 찾으려는 것이다. [currentLocationKindOf]가 Fake라고 한 칸 중에서만 고른다.
+ * 내비를 쓰지 않는 칸의 **고정 위치** (계획 016, 사용자 결정 2026-11-09). 내비 칸(차량 기기의 시연·Real)이면 null.
+ *
+ * 일반 에뮬레이터에는 GPS가 없어(기본 위치가 미국) 기기 위치를 쓰면 누가 어디서 돌리느냐에 따라 결과가 달라진다.
+ * 그래서 폰·태블릿은 위치를 고정한다. 015의 기기 위치(안드로이드 GPS)를 대신한다.
  *
  * | 모드 | 차량 기기 | 일반 폰·태블릿 |
  * |---|---|---|
- * | Fake | 시연 위치 | 시연 위치 |
- * | 시연 | 내비 | **기기 위치** |
- * | Real | 내비 | **기기 위치** |
+ * | Fake | 시흥동 ([FakeCurrentLocationSource.DEMO_LOCATION]) | 시흥동 |
+ * | 시연 | null (내비) | 서초동 서운로 62 ([FakeCurrentLocationSource.PHONE_LOCATION]) |
+ * | Real | null (내비) | 서초동 서운로 62 |
  *
- * 권한을 거부하면 위치 모름이다 (다른 위치로 대신하지 않는다).
+ * 규칙: `fixedLocationOf(...) == null` ⇔ `currentLocationKindOf(...) == REAL`.
  */
-fun usesDeviceLocation(mode: DataMode, isAutomotive: Boolean): Boolean =
-    !isAutomotive && (mode == DataMode.DEMO || mode == DataMode.REAL)
+fun fixedLocationOf(mode: DataMode, isAutomotive: Boolean): CurrentLocation? = when {
+    currentLocationKindOf(mode, isAutomotive) == SourceKind.REAL -> null
+    mode == DataMode.FAKE -> FakeCurrentLocationSource.DEMO_LOCATION
+    else -> FakeCurrentLocationSource.PHONE_LOCATION
+}

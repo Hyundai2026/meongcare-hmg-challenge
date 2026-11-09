@@ -72,28 +72,28 @@
 
 ### 필수 (11/15 제출 APK·영상에 들어감)
 
-- [ ] 1. 고정 위치로 바꾸기 (설계 1~3)
+- [x] 1. 고정 위치로 바꾸기 (설계 1~3)
   - `feat(location): 폰·태블릿 시연·Real 위치를 서운로 62로 고정`
     - `LocationPlan.kt`(`fixedLocationOf`), `FakeCurrentLocationSource.PHONE_LOCATION`, `AppContainer`, `MainActivity`(권한 요청 제거, debug 출처 이름).
     - 테스트도 같은 커밋: `DeviceLocationPlanTest` → `FixedLocationPlanTest`(6칸 표 + "null ⇔ 내비" 규칙). `NearbyVetPlanBoundaryTest`의 기기 위치 케이스 3개를 고정 위치 기준으로 바꾼다 (Fake는 어디서나 시흥동, 차량 기기 시연·Real은 null, release + 일반 폰은 서운로). KDoc 첫 줄의 `usesDeviceLocation`도 고친다.
   - `chore(location): 기기 위치 코드와 위치 권한 제거`
     - `DeviceCurrentLocationSource.kt` 삭제, 매니페스트 권한 2줄 삭제, 남은 import 정리.
   - 확인: `./gradlew assembleDebug testDebugUnitTest`, 완료 기준 2·3.
-- [ ] 2. 안내에 위치 이름 넣기 (설계 4)
+- [x] 2. 안내에 위치 이름 넣기 (설계 4)
   - `feat(ui): 시연용 위치 안내에 고정 위치 이름 표시`
   - 확인: `assembleDebug`. `/verify` 태블릿 T2·T3 (UI 변경이 있는 단위라 커밋 전에 본다).
-- [ ] 3. 테스트 (`tester`) → `test(location): 고정 시연 위치 계약 테스트`
+- [x] 3. 테스트 (`tester`) → `test(location): 고정 시연 위치 계약 테스트`
   - 넘길 것: 이 계획 경로, 대상 `di/LocationPlan.kt`·`AppContainer`의 위치 속성·`HospitalTexts`/`HospitalListScreen` 안내.
   - 볼 것: 6칸 표, release(`resolveDataMode(isDebugBuild = false, …)`) + 일반 폰 = 서운로, + 차량 기기 = 내비, 서운로에서 내장 시연 병원 순위가 U1 표와 같은지(A안일 때), 시흥동 Fake 근처 3곳이 Fake 모드에서 그대로 보이는지.
-- [ ] 4. 화면 확인 (`/verify`, 아래 "확인 절차" T1~T5). 결과를 진행 로그에 적는다.
-- [ ] 5. 문서 → `docs: 폰·태블릿 고정 시연 위치 반영`
+- [x] 4. 화면 확인 (`/verify`, 아래 "확인 절차" T1~T5). 결과를 진행 로그에 적는다.
+- [x] 5. 문서 → `docs: 폰·태블릿 고정 시연 위치 반영`
   - `docs/architecture.md`: 39행 서비스 표 "현재 위치"(015 기기 위치 → 016 고정 위치), 93행 `LocationPlan.kt` 설명(`fixedLocationOf`), 124~125행 파일 목록(`DeviceCurrentLocationSource` 줄 삭제, Fake가 두 고정 위치를 준다), 206~214행 "현재 위치" 표 (폰 시연·Real = 서운로, 위치(Fake)).
   - `README.md`: 27행 위치 권한 문구 → "일반 폰·태블릿은 위치를 서울 서초구 서운로 62로 고정한다 (시연용). 위치 권한을 묻지 않는다". 43행 절에 같은 사실과 순위가 Pleos 에뮬레이터와 다르다는 한 줄 (U1 결과에 따라). 71행 테스트 위치 넣기 단계와 72행 "위치 권한 허용" 삭제.
   - `firebase/README.md` 57행: "시연 위치" → "Pleos 에뮬레이터 시연 위치(시흥동)" (`check-nearby.mjs`는 시흥동 그대로).
   - `docs/data/nearby-vets.md`: 54~61행 관찰 기록은 고치지 않는다. 차 앱의 폰 시연 위치가 서운로라는 한 줄만 더한다 (H2를 하면 그 결과도).
   - `docs/data/hospital-status.md` 80행: 기준 위치가 Pleos 에뮬레이터(시흥동)이고 폰·태블릿은 서운로라 순위가 다르다는 한 줄.
   - 015 노트(`docs/notes/CYJhub/2026-11-08-nearby-vet-search.md`)와 completed 계획은 고치지 않는다.
-- [ ] 6. 개발 노트 작성 (`docs/notes/CYJhub/2026-11-09-fixed-demo-location.md`), 계획을 `completed/`로 옮김 → `docs(notes): 폰·태블릿 고정 시연 위치 개발 노트`, `docs(plans): 016 완료로 옮김`
+- [x] 6. 개발 노트 작성 (`docs/notes/CYJhub/2026-11-09-fixed-demo-location.md`), 계획을 `completed/`로 옮김 → `docs(notes): 폰·태블릿 고정 시연 위치 개발 노트`, `docs(plans): 016 완료로 옮김`
 
 ### 있으면 좋음 (U1·시간에 따라)
 
@@ -117,6 +117,8 @@
 
 - 2026-11-09: 계획 작성 (planner).
 - 2026-11-09: U1~U3 답 (CYJhub): U1 기본안 A (병원 배치 그대로, 화면에 위치 이름만 알림). U2 기본안 (Fake는 시흥동 그대로). **U3 "서초동"** (기본안 "서초구 서운로 62" 대신): `PHONE_LOCATION.address = "서초동"`, 안내 "시연용 위치(서초동) 기준이에요."
+
+- 2026-11-09: 단계 1·2 (`a7fdfa7`, `b7d0e9f`, `6287131`, `3950758`), 문서 (`722ab25`), tester 35개 통과·버그 없음 (`4e367e4`, 전체 1173). /verify: 빌드·테스트·린트 통과, aapt2로 위치 권한 없음 확인, 태블릿 시연 모드에서 "시연용 위치(서초동)" + 카카오 근처 병원, 권한 창 없음. 매니페스트 줄 지우기가 CRLF 때문에 처음에 안 먹어 따로 커밋했다 (`6287131`).
 
 ## 결정 / 배운 점
 

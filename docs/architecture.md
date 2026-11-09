@@ -36,7 +36,7 @@
 | 진료 카드 전송 | [출발]하면 자동으로 카드 + 도착 예정을 고른 병원에 보낸다. 남은 시간 갱신은 실제 길안내 1분, **시연 길안내 4초**에 한 번 이하 (`di/TripTiming.kt`, 013). 도착·취소 알림. **병원이 [카드 확인]을 누르면 차에 "병원이 진료 카드를 확인했어요"** (안내 중에만 자기 건을 시연 4초·실제 15초마다 읽는다, 013 U1) (`domain/trip/HospitalTrip.kt`) | 운전자가 따로 조작하지 않는다 (사용자 결정 2026-11-06). 확인 화면에 보내는 것·보내지 않는 것과 [카드 없이 길안내만]을 둔다 (U2) | **구현함 (012·013)**. 사진과 차 위치는 보내지 않는다 (U3). 내장 시연 병원은 확인을 흉내 내지 않는다. 형식: [docs/data/emergency-case.md](data/emergency-case.md) |
 | 길안내 | Pleos NaviHelper `requestRoute(RouteInfo)` (`NaviHelper:3.0.5`) | 콘솔 "사용 가능" SDK | **구현함 (010)**: `data/guidance/navi/PleosNaviClient`. 좌표 + 이름만으로 경로 요청이 된다 (`poiId` 빈 값, Pleos 에뮬레이터 확인). 차량 기기에서만 쓴다 (아래 "데이터 모드") |
 | 도착 예정 시간 | NaviHelper `onRouteStarted`의 `duration`, `onDrivingInfo`의 `destination.duration` | 에뮬레이터에서 값이 내비 화면과 같았다 | **단위는 초** (2100 = 35분, `[obs-navi-emu]`). `onTripInfo`는 오지 않았다 |
-| 현재 위치 | NaviHelper `getCurrentLocationInfo()` | FusedLocation이 "준비 중"이라 대신 쓴다 | **구현함 (011)**. **015: 내비가 없는 기기(일반 폰·태블릿)의 시연·Real 모드는 안드로이드 기기 위치**(`data/location/DeviceCurrentLocationSource`, `LocationManager`, 권한 `ACCESS_FINE_LOCATION`·`ACCESS_COARSE_LOCATION` 사용자 승인 2026-11-08). 병원 찾기를 열 때 권한을 묻고, 거부하면 위치 모름: `data/location/NaviCurrentLocationSource` + `PleosNaviClient.currentLocation`. 물을 때마다 연결하고 답을 받으면 release한다. 병원 목록을 열 때 한 번 묻는다 (012) + debug 패널. Pleos 에뮬레이터에서 64~263ms에 왔다. **내비 화면을 한 번 띄우기 전에는 답이 오지 않는다** (`[obs-navi-emu]`) |
+| 현재 위치 | NaviHelper `getCurrentLocationInfo()` | FusedLocation이 "준비 중"이라 대신 쓴다 | **구현함 (011)**. **016: 내비가 없는 기기(일반 폰·태블릿)의 시연·Real 모드는 고정 위치 서울 서초구 서운로 62**(37.4902566, 127.0283099, 화면 이름 "서초동", `di/LocationPlan.kt`의 `fixedLocationOf`). 015에서 넣은 기기 GPS·위치 권한은 뺐다 (일반 에뮬레이터는 GPS가 없어 기본 위치가 미국이라, 누가 어디서 돌리느냐에 따라 결과가 달랐다): `data/location/NaviCurrentLocationSource` + `PleosNaviClient.currentLocation`. 물을 때마다 연결하고 답을 받으면 release한다. 병원 목록을 열 때 한 번 묻는다 (012) + debug 패널. Pleos 에뮬레이터에서 64~263ms에 왔다. **내비 화면을 한 번 띄우기 전에는 답이 오지 않는다** (`[obs-navi-emu]`) |
 | 도착 감지 | NaviHelper `onDestinationArrived` | 도착하면 카드 화면으로 넘어간다 | Real 모드에서 쓴다. **에뮬레이터에서는 내비 속 차가 움직이지 않아 확인하지 못했다** (JVM 테스트로만) |
 | 병원 전화 | 안드로이드 다이얼러(`ACTION_DIAL`, 권한 없음, 걸지 않음). 안 되면 번호를 크게 보여준다 | | 구현함 (009, `data/phone/AndroidPhoneDialer`). Pleos 에뮬레이터에서 "전화" 앱이 열렸지만 번호는 보이지 않았다 ([sdk-notes.md](pleos/sdk-notes.md) "전화" 관찰). 실차는 미확인 (문의 B4). 시연용 번호 `02-0000-0000` |
 | 카드 공유 | MVP: 정차 화면에 크게 보여주기. 나중에 QR·링크 | 서버 작업이 가장 적다 | 결정 |
@@ -90,7 +90,7 @@ app/src/main/java/com/meongcare/app/
     DataMode.kt               FAKE / DEMO(시연) / REAL, resolveDataMode(release는 DEMO), next(패널 전환 순서)
     SourcePlan.kt             모드 × 차량 기기 → 끼울 구현의 구성표 (순수 함수 sourcePlanOf)
     NaviPlan.kt               모드 × 차량 기기 → 차량 내비 사용 범위 NONE / ROUTE_ONLY / FULL (순수 함수 naviUseOf, 010)
-    LocationPlan.kt           모드 × 차량 기기 → 현재 위치 출처 FAKE / REAL(내비) (순수 함수 currentLocationKindOf, 011)
+    LocationPlan.kt           모드 × 차량 기기 → 현재 위치 출처 FAKE / REAL(내비) (순수 함수 currentLocationKindOf, 011) + 내비 아닐 때 고정 위치 (fixedLocationOf, 016)
     HospitalPlan.kt           모드 × 서버 설정 → 병원 목록 출처 BUILT_IN / SERVER_WITH_FALLBACK / SERVER_ONLY (순수 함수 hospitalSourceKindOf, 012)
     NearbyVetPlan.kt          모드 × 함수 주소 → 근처 동물병원 출처 OFF / FAKE / FUNCTION (순수 함수 nearbyVetKindOf, 015)
     DataModeStore.kt          debug에서 고른 모드를 저장 (release는 항상 DEMO)
@@ -121,8 +121,7 @@ app/src/main/java/com/meongcare/app/
     navi/PleosNaviClient.kt   NaviHelper 어댑터. NaviHelper를 부르는 유일한 파일. 안내 한 번, 현재 위치 한 번마다 연결하고 끝나면 release
     navi/NaviTiming.kt        내비 남은 초 → 남은 시간 규칙, 안내 시작 대기 30초
   data/location/
-    FakeCurrentLocationSource.kt  Pleos 에뮬레이터와 같은 시연 위치(수정구 시흥동)를 바로 준다
-    DeviceCurrentLocationSource.kt  내비 없는 기기의 안드로이드 위치 (LocationManager, 위치 권한, 015)
+    FakeCurrentLocationSource.kt  고정 위치를 바로 준다: DEMO_LOCATION(시흥동, Pleos 에뮬레이터 내비와 같음), PHONE_LOCATION(서초동 서운로 62, 016)
     NaviCurrentLocationSource.kt  내비 위치 해석: 시간 초과 5초, 값 검사(currentLocationOf), 한 번에 하나, 좌표 없는 로그 (JVM 테스트)
   domain/pet/                 PetProfile(형식 문서 대응), PetAge(나이 계산, 웹과 같은 규칙), PetProfileSource + PetProfileLoad
   domain/link/                (014) LinkCode(연결 코드 6자·10분, 남은 분), OwnerLinkService(연결 상태·코드 만들기·확인·끊기 계약)
@@ -208,7 +207,7 @@ ui ──▶ domain ◀── data
     | 모드 | 차량 기기 | 현재 위치 | debug 패널 표시 |
     |---|---|---|---|
     | 시연 (release), Real | 예 | 내비 (`NaviCurrentLocationSource` + `PleosNaviClient`) | 위치(내비) |
-    | 시연, Real (015) | 아니오 (일반 폰·태블릿) | **기기 위치** (`DeviceCurrentLocationSource`, 안드로이드 위치 권한. 거부하면 모름) | 위치(기기) |
+    | 시연, Real (016) | 아니오 (일반 폰·태블릿) | **고정: 서초구 서운로 62** ("서초동", `FakeCurrentLocationSource.PHONE_LOCATION`, `fixedLocationOf`) | 위치(Fake) |
     | Fake | | Fake: Pleos 에뮬레이터와 같은 값 (37.4127212, 127.094681, "수정구 시흥동") | 위치(Fake) |
 
     - Fake 값을 에뮬레이터 위치로 한 이유: 두 에뮬레이터가 같은 위치를 쓰게 되어, 나중에 병원 검색 결과가 에뮬레이터마다 달라지지 않는다. 사람의 실제 위치가 아니다.

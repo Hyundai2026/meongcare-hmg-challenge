@@ -87,6 +87,7 @@ fun HospitalListScreen(
     onRelocate: () -> Unit,
     modifier: Modifier = Modifier,
     isNearbySample: Boolean = false,
+    sampleLocationName: String? = null,
 ) {
     val scrollState = rememberScrollState()
     val scope = rememberCoroutineScope()
@@ -111,7 +112,7 @@ fun HospitalListScreen(
                     is HospitalFinderUiState.Failed -> FailedPanel(state.isRetrying, onRefresh)
                     is HospitalFinderUiState.Loaded ->
                         // 쪽을 넘기면 목록 맨 위로 올린다 (넘긴 뒤 아래쪽에 머물지 않게)
-                        LoadedList(state, isLocationSample, isNearbySample, onChoose, onRelocate, onRefresh) {
+                        LoadedList(state, isLocationSample, sampleLocationName, isNearbySample, onChoose, onRelocate, onRefresh) {
                             scope.launch { scrollState.animateScrollTo(0) }
                         }
                 }
@@ -171,6 +172,7 @@ internal fun pageCountOf(count: Int): Int = maxOf(1, (count + PAGE_SIZE - 1) / P
 private fun LoadedList(
     state: HospitalFinderUiState.Loaded,
     isLocationSample: Boolean,
+    sampleLocationName: String?,
     isNearbySample: Boolean,
     onChoose: (RankedHospital) -> Unit,
     onRelocate: () -> Unit,
@@ -180,7 +182,7 @@ private fun LoadedList(
     val scale = LocalCardScale.current
     val ranking = state.ranking
     NoticeBox(
-        finderNoticesOf(state.origin, ranking.basis, isLocationSample).map { finderNoticeText(it) } +
+        finderNoticesOf(state.origin, ranking.basis, isLocationSample).map { finderNoticeText(it, sampleLocationName) } +
             nearbyNoticesOf(state.nearby, isNearbySample).map { nearbyNoticeText(it) },
         modifier = Modifier.widthIn(max = ContentMaxWidth),
     )

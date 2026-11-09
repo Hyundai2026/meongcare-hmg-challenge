@@ -24,7 +24,7 @@
 ## 테스트 환경 및 필요 설정
 
 - 확인한 환경: Pleos Connect Emulator v2.1.0 (Android API 34), 일반 폰 에뮬레이터 (Android API 34). 그 밖의 환경은 확인하지 않았다.
-- 계정 설정은 필요 없다. 일반 폰·태블릿에서 병원 찾기를 처음 열면 **위치 권한**을 묻는다 (지금 위치 기준 이동 시간. 거부해도 앱은 돌고, 병원은 대기 시간 순으로 보인다). 차량 기기(Pleos 에뮬레이터)는 묻지 않는다.
+- 계정 설정과 권한 허용은 필요 없다. 일반 폰·태블릿(차량 기기가 아닌 곳)은 현재 위치를 **서울 서초구 서운로 62(화면 이름 "서초동")로 고정**한다 (시연용, 계획 016). 차량 기기(Pleos 에뮬레이터)는 내비 위치를 쓴다.
 
 ### Pleos 에뮬레이터에서 시연하기 (기어로 주행·정차 바꾸기)
 
@@ -68,8 +68,8 @@
 
 1. [firebase/README.md](firebase/README.md) "근처 동물병원 함수": 카카오 REST 키를 `firebase/functions/.secret.local`에 넣고 `npm --prefix firebase run emulators:nearby` → `seed -- --reset` → `preflight -- --nearby --fix`.
 2. 차 앱 debug 빌드 (`secrets.properties`에 에뮬레이터 값), debug 패널에서 **시연** 모드.
-3. 일반 태블릿 에뮬레이터는 위치를 테스트 위치로 넣는다 (Extended controls의 위치가 GPS에 닿지 않는 이미지가 있다): `adb shell appops set com.android.shell android:mock_location allow` → `adb shell cmd location providers add-test-provider gps` → `adb shell cmd location providers set-test-provider-enabled gps true` → `adb shell cmd location providers set-test-provider-location gps --location 37.5665,126.9780`.
-4. 진료 카드 → **[가장 빨리 진료받을 곳 찾기]** → 위치 권한 허용 → 제휴 병원과 근처 동물병원이 "이동 + 대기"가 짧은 순으로 **5개씩** ([이전]/[다음]).
+3. 위치는 넣지 않아도 된다. 일반 폰·태블릿은 서초동(서운로 62)으로 고정돼 있다 (계획 016). 차량 기기(Pleos 에뮬레이터)는 내비 위치(기본 시흥동).
+4. 진료 카드 → **[가장 빨리 진료받을 곳 찾기]** → 제휴 병원과 근처 동물병원이 "이동 + 대기"가 짧은 순으로 **5개씩** ([이전]/[다음]).
    - 근처 병원의 대기 시간은 **시연용 예시**다. 줄마다 "대기 N분(예시)", 목록 위에 "근처 병원 장소 정보: 카카오 · 대기 시간은 시연용 예시예요".
    - 근처 병원을 누르면 [병원에 전화]·[길 안내 시작]만 있다. 제휴 병원이 아니라 진료 카드는 보내지 않는다.
    - 현재 위치(약 100m 단위)를 우리 함수 → 카카오로 보내고, 결과는 저장하지 않는다.

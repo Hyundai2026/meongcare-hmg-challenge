@@ -54,7 +54,7 @@
 1. 카카오 Developers에서 앱을 만들고 [카카오맵] > [사용 설정]을 ON, REST API 키를 받는다.
 2. `firebase/functions/.secret.local.example`을 `.secret.local`로 복사하고 `KAKAO_REST_API_KEY=` 뒤에 키를 넣는다. **`.secret.local`은 커밋하지 않는다** (gitignore). 키는 앱·웹·`secrets.properties`에 넣지 않는다.
 3. `npm --prefix firebase/functions ci` (처음 한 번) → `npm --prefix firebase run emulators:nearby`.
-4. 확인: `npm --prefix firebase run check-nearby` (N1 로그인 없으면 거절, N2 시연 위치로 15곳 안팎·모두 5.5km 안, N3 잘못된 위도 거절, N4 5초 안 다시 부르면 거절, N5 형식). 병원 이름·전화는 출력하지 않는다.
+4. 확인: `npm --prefix firebase run check-nearby` (N1 로그인 없으면 거절, N2 Pleos 에뮬레이터 시연 위치(시흥동)로 15곳 안팎·모두 5.5km 안, N3 잘못된 위도 거절, N4 5초 안 다시 부르면 거절, N5 형식). 병원 이름·전화는 출력하지 않는다.
 5. 차 앱: debug 빌드, `secrets.properties`에 `FIREBASE_PROJECT_ID=demo-meongcare`·`FIREBASE_EMULATOR_HOST=127.0.0.1`, debug 패널에서 **시연** 모드, `adb reverse tcp:5001 tcp:5001` (8080·9099와 함께).
 
 - 함수 테스트: `npm --prefix firebase/functions test` (`node --test`, 손으로 만든 가짜 카카오 응답).

@@ -8,10 +8,6 @@
 
     <!-- 제휴 병원 목록·진료 카드 전송 (012, Firebase). 일반(normal) 권한이라 실행 중 묻지 않는다. Pleos 권한이 아니다. -->
     <uses-permission android:name="android.permission.INTERNET" />
-    <!-- 내비가 없는 기기(일반 폰·태블릿)에서 근처 동물병원을 지금 위치로 찾는다 (계획 015, 사용자 결정 2026-11-08).
-         차량 기기는 Pleos 내비 위치를 쓰고 이 권한을 묻지 않는다. -->
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
     <application
         android:name=".MeongCareApplication"

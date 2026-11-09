@@ -1,11 +1,13 @@
 package com.meongcare.app.di
 
+import com.meongcare.app.data.location.FakeCurrentLocationSource
 import com.meongcare.app.data.server.nearbyFunctionUrlOf
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Test
 
-/** 계획 015 "설계 결정 3"(`nearbyVetKindOf`)과 범위 추가(`usesDeviceLocation`)의 경계 (tester). */
+/** 계획 015 "설계 결정 3"(`nearbyVetKindOf`)과 범위 추가(016에서 `fixedLocationOf`로 바뀜)의 경계 (tester). */
 class NearbyVetPlanBoundaryTest {
 
     @Test
@@ -37,19 +39,19 @@ class NearbyVetPlanBoundaryTest {
     }
 
     @Test
-    fun `Fake 모드는 어떤 기기에서도 기기 위치를 쓰지 않는다`() {
-        assertFalse(usesDeviceLocation(DataMode.FAKE, isAutomotive = true))
-        assertFalse(usesDeviceLocation(DataMode.FAKE, isAutomotive = false))
+    fun `Fake 모드는 어떤 기기에서도 시흥동 고정 위치다 (016)`() {
+        assertEquals(FakeCurrentLocationSource.DEMO_LOCATION, fixedLocationOf(DataMode.FAKE, isAutomotive = true))
+        assertEquals(FakeCurrentLocationSource.DEMO_LOCATION, fixedLocationOf(DataMode.FAKE, isAutomotive = false))
     }
 
     @Test
-    fun `차량 기기는 어떤 모드에서도 기기 위치를 쓰지 않는다`() {
-        DataMode.entries.forEach { mode -> assertFalse(mode.name, usesDeviceLocation(mode, isAutomotive = true)) }
+    fun `차량 기기의 시연·Real은 고정 위치가 없다 (내비, 016)`() {
+        listOf(DataMode.DEMO, DataMode.REAL).forEach { mode -> assertNull(mode.name, fixedLocationOf(mode, isAutomotive = true)) }
     }
 
     @Test
-    fun `release로 일반 폰에서 돌리면 기기 위치를 쓴다`() {
+    fun `release로 일반 폰에서 돌리면 서초동 고정 위치다 (016)`() {
         val mode = resolveDataMode(isDebugBuild = false, savedName = "FAKE")
-        assertEquals(true, usesDeviceLocation(mode, isAutomotive = false))
+        assertEquals(FakeCurrentLocationSource.PHONE_LOCATION, fixedLocationOf(mode, isAutomotive = false))
     }
 }

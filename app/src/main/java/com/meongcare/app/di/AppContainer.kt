@@ -19,7 +19,6 @@ import com.meongcare.app.data.hospital.FallbackHospitalBoardSource
 import com.meongcare.app.data.hospital.FakeNearbyVetSource
 import com.meongcare.app.data.hospital.SampleHospitals
 import com.meongcare.app.data.hospital.TimeoutHospitalBoardSource
-import com.meongcare.app.data.location.DeviceCurrentLocationSource
 import com.meongcare.app.data.location.FakeCurrentLocationSource
 import com.meongcare.app.data.location.NaviCurrentLocationSource
 import com.meongcare.app.data.link.FakeOwnerLink
@@ -131,25 +130,27 @@ class AppContainer(context: Context, val dataMode: DataMode) {
     /** 현재 위치를 어디서 받는지 (011, [currentLocationKindOf]). */
     val locationKind: SourceKind = currentLocationKindOf(mode = dataMode, isAutomotive = isAutomotive)
 
+    /** 내비를 쓰지 않을 때의 고정 위치 (016, [fixedLocationOf]). 내비면 null */
+    private val fixedLocation = fixedLocationOf(mode = dataMode, isAutomotive = isAutomotive)
+
     /**
-     * 현재 위치 (011). 차량 기기의 시연·Real은 내비, 그 밖은 Fake(Pleos 에뮬레이터와 같은 시연 위치)다.
-     * 지금은 debug 패널만 쓴다. 내비 구현도 물을 때만 NaviHelper를 만든다.
-     * 로그에는 결과 종류와 걸린 시간만 남는다 (좌표·주소 없음).
+     * 현재 위치 (011·016). 차량 기기의 시연·Real은 내비, 그 밖은 고정 위치다
+     * (Fake 모드는 Pleos 에뮬레이터와 같은 시흥동, 폰·태블릿의 시연·Real은 서초동 서운로 62).
+     * 내비 구현도 물을 때만 NaviHelper를 만든다. 로그에는 결과 종류와 걸린 시간만 남는다 (좌표·주소 없음).
      */
     val currentLocationSource: CurrentLocationSource = when (locationKind) {
         SourceKind.REAL -> NaviCurrentLocationSource(
             client = PleosNaviClient(context),
             log = { Log.i("CurrentLocation", it) },
         )
-        SourceKind.FAKE ->
-            if (usesDeviceLocation) DeviceCurrentLocationSource(context.applicationContext) else FakeCurrentLocationSource()
+        SourceKind.FAKE -> FakeCurrentLocationSource(fixedLocation ?: FakeCurrentLocationSource.DEMO_LOCATION)
     }
 
-    /** 내비 없는 기기의 시연·Real이면 기기 위치(GPS)를 쓴다 (계획 015). 화면이 위치 권한을 묻는다 */
-    val usesDeviceLocation: Boolean get() = usesDeviceLocation(dataMode, isAutomotive)
+    /** 현재 위치가 시연용 고정 위치인지 ("시연용 위치(…) 기준이에요") */
+    val isLocationSample: Boolean get() = locationKind == SourceKind.FAKE
 
-    /** 현재 위치가 시연용 고정 위치인지 ("시연용 위치 기준이에요") */
-    val isLocationSample: Boolean get() = locationKind == SourceKind.FAKE && !usesDeviceLocation
+    /** 시연용 고정 위치의 이름 ("서초동", "수정구 시흥동"). 내비 위치면 null */
+    val sampleLocationName: String? get() = fixedLocation?.address
 
     /**
      * 010의 고정 시연 병원. 012부터 카드의 병원은 병원 찾기에서 고른 곳이고([hospitalTrip]),

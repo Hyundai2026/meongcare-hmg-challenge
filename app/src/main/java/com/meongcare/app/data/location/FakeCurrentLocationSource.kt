@@ -23,5 +23,16 @@ class FakeCurrentLocationSource(
             longitude = 127.094681,
             address = "수정구 시흥동",
         )
+
+        /**
+         * 내비 없는 기기(일반 폰·태블릿)의 시연·Real 모드 고정 위치 (계획 016, 사용자 결정 2026-11-09).
+         * 서울 서초구 서운로 62 (서초2동). 좌표는 OpenStreetMap 지오코딩 결과 ("62, 서운로, 서초2동, 서초구").
+         * 화면에는 "서초동"으로 보인다 (사용자 결정 U3).
+         */
+        val PHONE_LOCATION = CurrentLocation(
+            latitude = 37.4902566,
+            longitude = 127.0283099,
+            address = "서초동",
+        )
     }
 }

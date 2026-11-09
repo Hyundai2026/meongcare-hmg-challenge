@@ -151,17 +151,19 @@ fun hospitalRowValuesOf(row: RankedHospital): HospitalRowValues = HospitalRowVal
     isSample = row.hospital.isSample,
 )
 
+/** @param sampleLocationName 시연용 고정 위치 이름 ("서초동", "수정구 시흥동"). [FinderNotice.SAMPLE_LOCATION]에 쓴다 (016) */
 @Composable
-fun finderNoticeText(notice: FinderNotice): String = stringResource(
-    when (notice) {
-        FinderNotice.SERVER -> R.string.finder_notice_server
-        FinderNotice.BUILT_IN -> R.string.finder_notice_built_in
-        FinderNotice.FALLBACK -> R.string.finder_notice_fallback
-        FinderNotice.NEARBY -> R.string.finder_notice_nearby
-        FinderNotice.ESTIMATED_TRAVEL -> R.string.finder_notice_estimated
-        FinderNotice.SAMPLE_LOCATION -> R.string.finder_notice_sample_location
-    },
-)
+fun finderNoticeText(notice: FinderNotice, sampleLocationName: String? = null): String = when (notice) {
+    FinderNotice.SERVER -> stringResource(R.string.finder_notice_server)
+    FinderNotice.BUILT_IN -> stringResource(R.string.finder_notice_built_in)
+    FinderNotice.FALLBACK -> stringResource(R.string.finder_notice_fallback)
+    FinderNotice.NEARBY -> stringResource(R.string.finder_notice_nearby)
+    FinderNotice.ESTIMATED_TRAVEL -> stringResource(R.string.finder_notice_estimated)
+    FinderNotice.SAMPLE_LOCATION -> stringResource(
+        R.string.finder_notice_sample_location,
+        sampleLocationName ?: stringResource(R.string.finder_sample_location_unnamed),
+    )
+}
 
 @Composable
 fun congestionText(congestion: Congestion): String = stringResource(

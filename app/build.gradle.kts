@@ -110,6 +110,7 @@ dependencies {
 
     implementation(libs.pleos.vehicle)
     implementation(libs.pleos.navihelper)
+    implementation(libs.pleos.speech.to.text)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)

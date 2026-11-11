@@ -9,6 +9,13 @@
     <!-- 제휴 병원 목록·진료 카드 전송 (012, Firebase). 일반(normal) 권한이라 실행 중 묻지 않는다. Pleos 권한이 아니다. -->
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <!--
+        음성 증상 입력 (Pleos SpeechToText ON_DEVICE, docs/plans 010).
+        2026-11-03 팀 승인 권한 (docs/architecture.md "사용하기로 한 Pleos 권한"). 에뮬레이터에서 보호 수준 normal.
+        android.permission.RECORD_AUDIO는 선언하지 않는다 (2026-11-05 사용자 결정): 음성 서비스가 대신 녹음한다.
+    -->
+    <uses-permission android:name="pleos.car.permission.STT_SERVICE" />
+
     <application
         android:name=".MeongCareApplication"
         android:allowBackup="false"

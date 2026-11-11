@@ -18,7 +18,8 @@
 ## 서비스 기능 스택 (MeongCare, 2026-11-03 결정)
 
 서비스: 반려동물 의료 이동 코파일럿. 앱 이름은 **MeongCare** (2026-11-05 사용자 결정. 기획 초기 가칭은 PawCare Drive)
-- 운전 중: 음성으로 증상을 말하면 병원 연결과 길안내를 시작한다.
+- 운전 중: 음성으로 증상을 말하면 병원 연결과 길안내를 시작한다 (목표).
+  - **지금(010)은 정차 중 증상 고르기 화면에서만 음성으로 증상을 말한다.** 주행 중 음성 입력은 문의 B1의 답을 보고 정한다.
 - 정차 후: 진료 카드를 확인하고 공유한다.
 
 근거가 된 Pleos 사실은 [docs/pleos/sdk-notes.md](pleos/sdk-notes.md)와 [ux-guidelines.md](pleos/ux-guidelines.md)에 있다.
@@ -26,7 +27,7 @@
 | 영역 | 결정 | 근거 | 상태 |
 |---|---|---|---|
 | 의료 프로필 저장 | **차 기기에 저장하지 않는다** (014). 연결된 보호자의 프로필을 서버에서 읽어 메모리에만 둔다. 기기에 남길 것(연결 자격, 나중에 마지막 프로필)은 Room·SQLCipher 대신 **Android Keystore로 직접 암호화한 앱 전용 파일**로 한다 (사용자 결정 U5, 2026-11-06) | Pleos 보안 가이드: 기기에 저장하는 민감정보는 암호화해야 한다. 문서 하나·자격 하나에 DB는 과하다 | 결정. 11/15 범위는 저장 없음(앱을 다시 켜면 다시 연결). 연결 자격 암호화 저장은 PT 전 (다음 계획으로 넘김. 015는 근처 동물병원 검색이 썼다) |
-| 음성 → 글자 | **Pleos SpeechToText `ON_DEVICE`** (`ko-KR`) + Fake | 네트워크와 앱 등록이 필요 없다. 기술 활용성 점수에 유리하다 | **재검토 (팀 논의)**: 콘솔 "준비 중" = 신청 불가라서 지금은 쓸 수 없는 것으로 본다 (2026-11-03 콘솔 확인). STT 없이도 핵심 흐름이 돌게 할지 정한다. 열리는 시점은 문의 B2 |
+| 음성 → 글자 | **Pleos SpeechToText `ON_DEVICE`** (`ko-KR`) + Fake | 네트워크와 앱 등록이 필요 없다. 기술 활용성 점수에 유리하다 | **결정 (2026-11-05 사용자 결정)**: Pleos 에뮬레이터에서 키 없이 한국어 인식을 확인했다 ([sdk-notes.md](pleos/sdk-notes.md) "STT `ON_DEVICE` 실행 확인"). 콘솔은 아직 "준비 중"이라 **음성은 추가 입력 수단**으로 두고, 증상 버튼 흐름은 그대로 둔다. 쓰지 말라는 답(B2)이 오면 음성만 뺀다 ("음성 입력 빼는 법"). **구현함 (010)**: 정차 중 증상 고르기 화면에서 한 문장 → 키워드 규칙(AI 없음) → 증상 선택에 더함. 주행 중 음성은 B1 뒤. `RECORD_AUDIO`는 선언하지 않았다 (Pleos 에뮬레이터에서는 음성 서비스가 대신 녹음한다) |
 | 음성 안내 | Pleos TextToSpeech `ON_DEVICE` + Fake | STT와 같은 이유 | **재검토**: STT와 같다 |
 | 증상 → 진료 카드 | Claude API, 구조화 출력(JSON 스키마). 진단하지 않고 말한 내용만 정리한다. 카드 생성이 길안내·병원 연결을 막지 않게 뒤에서 따로 돈다 | 정해진 형식으로 증상·복용약·병력만 뽑는다 | **임시: `claude-opus-5-5` (effort `low`). 모델과 AI 범위는 팀 논의 필요.** **지금(009)은 AI 없이 규칙으로 조합한다**: 등록된 프로필 + 큰 버튼으로 고른 증상(12개 프리셋) → `medicalCardOf`. Claude API는 A1 뒤 |
 | 서버 | **Firebase** | AI 키와 장소 검색 키를 앱에 넣지 않는다 (Pleos 보안 가이드: 키 하드코딩 금지, HTTPS·TLS 1.2+). 팀의 웹 경험과 가깝다 | **구현함 (012): Firestore + 익명 Auth, Spark(무료) 요금제, Functions 없음.** 익명 토큰은 만료 5분 전에 같은 uid로 미리 갱신한다 (013). 개발·시연은 PC의 Firebase 에뮬레이터 (`firebase/`). 진짜 프로젝트("MeongCare", Spark, Firestore 서울) 연결은 아직이다. Functions(카카오·Claude 키 숨기기)는 Blaze가 필요해 배포하지 않는다. **015: 근처 동물병원 함수 `nearbyVets`(카카오 키를 이 함수만 안다)를 PC의 Functions 에뮬레이터에서만 돌린다** (`firebase/functions/`, `npm --prefix firebase run emulators:nearby`). 배포할 때 할 일: Blaze, 비밀 관리자, App Check·속도 제한 다시 정하기 |
@@ -75,7 +76,7 @@
 | # | 질문 | 문서에서 확인한 것 | "안 된다"면 |
 |---|---|---|---|
 | B1 | 주행 중에도 쓰는 앱(DO)은 Pleos에서 어떻게 선언하는가? Maps/Navigation이 아닌 앱도 주행 중 음성 입력이 허용되는가? | DO 미선언 앱은 주행 중 사용 불가. Pleos 문서에 선언 방법이 없다. 대회 개발 가이드는 "운전 중 음성을 받아 메모로 남기는" 앱을 예시로 든다 | "운전 중 음성 SOS"를 출발 전·정차 중 흐름으로 바꾼다 |
-| B2 | 대회 FAQ는 SpeechToText·TextToSpeech·FusedLocation을 "쓸 수 있는 SDK"로 드는데, 콘솔에서는 "준비 중"(신청 불가)이다. **언제 "신청 필요"로 바뀌는가? 2차 PT(12/03) 전에 열리는가?** 열리기 전에 `ON_DEVICE` 모드로 개발·시연해도 되는가? 그 대신 안드로이드 표준 `SpeechRecognizer`를 써도 되는가? | 콘솔 "준비 중" = 신청 불가 (2026-11-03 콘솔 직접 확인). 문서상 `ON_DEVICE`는 앱 등록 불필요지만 사용 허가는 아니다 | 기본 흐름을 큰 버튼(증상 프리셋)으로 만들고, 음성은 열리면 붙인다 |
+| B2 | 대회 FAQ는 SpeechToText·TextToSpeech·FusedLocation을 "쓸 수 있는 SDK"로 드는데, 콘솔에서는 "준비 중"(신청 불가)이다. **언제 "신청 필요"로 바뀌는가? 2차 PT(12/03) 전에 열리는가?** 열리기 전에 `ON_DEVICE` 모드로 개발·시연해도 되는가? 그 대신 안드로이드 표준 `SpeechRecognizer`를 써도 되는가? | 콘솔 "준비 중" = 신청 불가 (2026-11-03 콘솔 직접 확인). 문서상 `ON_DEVICE`는 앱 등록 불필요지만 사용 허가는 아니다. **운영사무국 답 (2026-11-05, 사용자 전달): 따로 신청받는 절차는 없고, 제공 상태는 Playground 문서를 보라.** `ON_DEVICE`를 써도 되는지는 직접 답하지 않았다 | 기본 흐름은 큰 버튼(증상 프리셋)이다. 음성(`ON_DEVICE`)은 추가 입력으로 붙인다 (2026-11-05 결정). 안 된다고 하면 음성만 뺀다 |
 | B3 | 이 서비스에 맞는 앱 카테고리는 무엇인가 (Lifestyle / Mobility Services)? | 반려동물·의료 카테고리가 없다. 선언과 기능이 안 맞으면 즉시 반려 | 답에 맞춰 선언만 바꾼다 |
 | B4 | 서드파티 앱이 차량에서 전화를 걸 수 있는가 (`ACTION_DIAL`)? | Telephony는 차량에서 제한될 수 있다 | 번호를 크게 보여 준다 (대비책 있음) |
 
@@ -95,6 +96,7 @@ app/src/main/java/com/meongcare/app/
     NearbyVetPlan.kt          모드 × 함수 주소 → 근처 동물병원 출처 OFF / FAKE / FUNCTION (순수 함수 nearbyVetKindOf, 015)
     DataModeStore.kt          debug에서 고른 모드를 저장 (release는 항상 DEMO)
     AppRestarter.kt           모드를 저장하고 앱을 다시 시작 (debug)
+    VoicePlan.kt              모드 × 차량 기기 → 음성 입력 종류(NONE/FAKE/REAL). 화면에서 빼는 스위치 VOICE_INPUT_ENABLED
   domain/driving/
     DrivingState.kt           PARKED / DRIVING / UNKNOWN
     DrivingStateSource.kt     주행 상태를 Flow로 주는 인터페이스
@@ -125,7 +127,10 @@ app/src/main/java/com/meongcare/app/
     NaviCurrentLocationSource.kt  내비 위치 해석: 시간 초과 5초, 값 검사(currentLocationOf), 한 번에 하나, 좌표 없는 로그 (JVM 테스트)
   domain/pet/                 PetProfile(형식 문서 대응), PetAge(나이 계산, 웹과 같은 규칙), PetProfileSource + PetProfileLoad
   domain/link/                (014) LinkCode(연결 코드 6자·10분, 남은 분), OwnerLinkService(연결 상태·코드 만들기·확인·끊기 계약)
-  domain/card/                Symptom(12개 프리셋, 선언 순서 = 화면·카드 순서), MedicalCardSession(고르는 중/카드 있음, 메모리)
+  domain/card/                Symptom(12개 프리셋, 선언 순서 = 화면·카드 순서), MedicalCardSession(고르는 중/카드 있음, 메모리. 음성 결과는 select로 더하기만)
+  domain/voice/
+    VoiceInput.kt             한 문장 듣기 인터페이스 (listen(): Flow<VoiceEvent>), VoiceEvent, VoiceFailure
+    SymptomMatcher.kt         받아쓴 문장 → 증상 프리셋 (키워드 규칙, AI 없음)
   domain/hospital/            Hospital(길안내 목적지 + 전화번호 + 시연용 여부 + 제휴 병원 id), HospitalStatus·HospitalCandidate(출처),
                               HospitalBoardSource(목록 인터페이스), TravelEstimate(직선 거리 어림), HospitalRanking(순위 규칙) (012)
                               015: NearbyVetSource·NearbyVets, nearbyVetRowsOf(거리순·5km·제휴와 겹침 제거), exampleStatusOf(예시 대기)
@@ -153,6 +158,11 @@ app/src/main/java/com/meongcare/app/
     FakeTripScenario.kt       FAKE 전용: 안내 시작 → 출발(주행), 도착 → 주차(정차)
   data/vehicle/
     VehicleConnection.kt      Pleos Vehicle initialize/release를 한 곳에서
+  data/voice/
+    FakeVoiceInput.kt         예시 문장(SampleVoiceSentences)을 낱말씩 받아쓰는 Fake
+    SpeechToTextClient.kt     Pleos STT 경계 (SttEvent. Pleos 타입 없음)
+    RealVoiceInput.kt         STT 이벤트 → VoiceEvent, 시간 제한 (Pleos 없음, JVM 테스트)
+    PleosSpeechToTextClient.kt  Pleos SpeechToText ON_DEVICE를 부르는 유일한 파일
   di/TripTiming.kt            시연·실제 길안내별 도착 예정 갱신·병원 확인 읽기 간격 (013)
   di/PetPlan.kt               (014) 반려견 프로필·보호자 연결 구성 (petPlanOf, petProfileIsSampleOf)
   ui/theme/                   Color(+ TripColors), Type(글자 크기, DrivingText), Dimens(터치 크기), Theme
@@ -163,10 +173,12 @@ app/src/main/java/com/meongcare/app/
   ui/guidance/                GuidanceViewModel, GuidanceUiState, SimulatedGuidanceNotice,
                               TripPanel(tripPanelOf: 안내 영역 상태, JVM 테스트), GuidancePanel(정차 중 안내 영역), StaticProgressBar(움직이지 않는 진행 막대) (013)
   ui/hospital/                (012) HospitalFinderViewModel(위치·목록 동시에, 보이는 동안 30초마다 목록), HospitalListScreen, HospitalConfirmScreen, HospitalTexts
+  ui/voice/                   SymptomVoiceViewModel, VoiceUiState, VoicePanel(증상 고르기 위 음성 영역), VoiceActions
   ui/debug/                   DebugPanel (상태 없음. 값과 동작은 MainActivity가 넘긴다), DebugLocationViewModel([위치 묻기] 상태와 문구, debug 빌드에서만 만든다)
 app/src/test/java/com/meongcare/app/
   testutil/MainDispatcherRule.kt
-  data/driving/, data/guidance/, data/demo/, data/location/, data/pet/, di/, domain/pet/, domain/card/, ui/home/, ui/guidance/, ui/card/, ui/debug/   단위 테스트
+  data/driving/, data/guidance/, data/demo/, data/location/, data/pet/, data/voice/, di/, domain/pet/, domain/card/, domain/voice/, ui/home/, ui/guidance/, ui/card/, ui/voice/, ui/debug/   단위 테스트
+app/src/test/resources/voice/symptom-sentences.tsv   받아쓴 문장 → 기대 증상 (Kotlin을 몰라도 줄을 더할 수 있다)
 ```
 
 ## 의존 방향
@@ -252,6 +264,20 @@ ui ──▶ domain ◀── data
   - **시연 모드가 기기에 따라 주행 상태 출처를 고르는 이유**: 심사위원이 APK를 어디서 돌릴지 모른다 (문의 A2). Pleos 에뮬레이터에서는 Virtual Console로 기어를 바꾸면 화면이 바뀌고, 왼쪽 Driving view와 앱이 맞는다. 일반 폰 에뮬레이터에서는 Real 주행 상태가 항상 UNKNOWN이라 안내를 시작할 수조차 없어서, Fake 시나리오로 흐름을 잇는다.
   - **주행 중에만 남은 시간이 줄어든다** (시연 모드): `FakeGuidanceSource`의 진행 조건(`progressGate`)에 "주행 중인지"를 넘긴다. P에 서 있는 동안에는 남은 시간이 그대로이고, 멈추면 최대 한 단계까지 더 줄고 멈춘다. 실제 내비게이션도 차가 서 있으면 남은 시간이 줄지 않는다. 도메인 인터페이스(`GuidanceSource`)는 바꾸지 않았다.
   - **시연용 표시**: 정차 화면 길안내 카드와 도착 화면에 "시연용 길안내예요. 실제 내비게이션과는 아직 연결되지 않았어요." 한 줄. 주행 화면은 바꾸지 않는다 (규칙 3). 출품 유의사항(제출 서류가 사실과 다르면 선정 취소) 때문에 숨기지 않는다.
+- **음성 입력은 `di/VoicePlan.kt`의 `voiceInputKindOf(mode, isAutomotive)`가 따로 정한다** (010).
+  - `SourcePlan`에 칸을 더하지 않은 이유: `SourcePlanBoundaryTest`가 `SourcePlan`을 위치 인자로 만들고 `equals`로 비교해서, 칸을 더하면 기존 테스트를 고쳐야 한다. 따로 두면 음성만 빼기도 쉽다.
+
+  | 모드 | 차량 기기 (`FEATURE_AUTOMOTIVE`) | 음성 입력 | 시연용 표시 |
+  |---|---|---|---|
+  | Fake | 상관없음 | Fake (예시 문장 3개를 돌아가며) | O |
+  | 시연 | 예 (Pleos 에뮬레이터, 실차) | Real (`ON_DEVICE`, 마이크) | X |
+  | 시연 | 아니오 (일반 폰) | Fake | O |
+  | Real | 예 | Real | X |
+  | Real | 아니오 | 없음 (음성 서비스가 없다) | - |
+  | 스위치(`VOICE_INPUT_ENABLED`) 꺼짐 | 모두 | 없음 | - |
+
+  - 시연용 표시: 음성 영역 안 작은 글씨 "시연용 음성 입력이에요. 실제로 듣지 않고 예시 문장을 받아써요." 주행 화면에는 음성 영역이 없다.
+  - 음성 입력이 없으면 증상 고르기 화면에 음성 영역이 없고, 버튼 흐름은 그대로다.
 - Fake 주행 상태에서는 Pleos `Vehicle`을 만들지 않는다. 일반 에뮬레이터에는 차량 서비스가 없기 때문이다.
 - **반려견 프로필과 보호자 연결은 `di/PetPlan.kt`의 `petPlanOf`가 정한다** (014). `SourcePlan`은 바꾸지 않았다.
 
@@ -358,6 +384,30 @@ ui ──▶ domain ◀── data
 - 권한을 선언하지 않는다. `pleos.car.permission.*`도 `android.car.permission.*`도 필요 없었다 (Pleos 에뮬레이터에서 `SecurityException` 없음).
 - Gradle: `useLibrary("android.car")` (컴파일용). 매니페스트 `<uses-library>`는 필요 없었다 (Pleos 에뮬레이터에서 `NoClassDefFoundError` 없음).
 
+## SpeechToText 수명주기 (010, 2026-11-05)
+
+- **듣기 한 번 = `SpeechToText` 객체 하나.** `RealVoiceInput.listen()`을 구독하면 `PleosSpeechToTextClient.start()`가 새 객체를 만들어 `initialize` → `addListener` → `setLocale(Locale.KOREA)` → `request()`까지 한다. 끝나거나 구독이 취소되면 `stop()` → (인식 끝을 기다림) → `removeListener()` → `release()`하고 버린다. Pleos 문서: release한 뒤 다시 쓰려면 새 객체를 만든다.
+  - **`stop()` 바로 뒤에 `release()`하지 않는다.** SDK의 `stop()`은 서비스에 보내는 일을 코루틴으로 미루고, `release()`는 그 자리에서 서비스 연결을 끊는다. 바로 이어 부르면 `stop`이 서비스에 닿지 않아 음성 서비스가 계속 녹음한다 (2026-11-05 Pleos 에뮬레이터에서 봄. 앱을 닫아도 계속됐고, 다음 `request()`가 와서야 멈췄다). 그래서 `onEndedRecognition`이 오거나 1초가 지나면 놓는다. 에뮬레이터에서는 `stop()` 뒤 `onEndedRecognition`이 오지 않았고, 서비스는 `stop()` 1~7ms 뒤에 녹음을 멈췄다.
+  - 이유: `initialize` 성공까지 약 20ms라 매번 만들어도 느리지 않다. 프로세스 수명 객체를 두면 화면 전환·실패 복구 상태가 늘어난다. `Car` 연결(006)과 같은 방식이다.
+  - "`Vehicle`의 initialize/release는 `VehicleConnection` 한 곳에서" 규칙은 Vehicle SDK 규칙이다. STT는 이 규칙 밖이고, `RealVoiceInput`이 한 곳에서 관리한다.
+- 듣기가 끝나는 때 (모두 객체를 놓는다):
+  - 최종 결과(`onUpdated(completed=true)`)나 오류가 옴
+  - 시간 제한: 시작 뒤 3초 안에 응답(준비·받아쓰기)이 없으면 "쓸 수 없음", 인식이 끝난 뒤 2초 안에 최종 결과가 없으면 "말소리 없음", 시작 뒤 15초가 지나면 "말소리 없음". 시간은 이벤트가 올 때마다 다시 재지 않는다. 값은 기본안이다 (Pleos 문서에 무음 대기·최대 녹음 시간이 없다).
+  - [듣기 취소], 고르는 중이 아니게 됨(카드 만들기·취소), 증상 고르기 화면이 사라짐(주행 화면으로 바뀜), 앱이 화면에서 사라짐(`ON_STOP`) → `SymptomVoiceViewModel`이 구독을 취소한다.
+- 오디오 포커스는 요청하지 않는다. 콜백이 어느 스레드로 오는지 가리지 않는다 (`Channel`로 받는다). 둘 다 Pleos 문서에 없다 (sdk-notes "듣는 동안의 오디오 포커스, 콜백 스레드, 끝점 검출").
+- 결과는 **더하기만** 한다. 찾은 증상을 `MedicalCardSession.select`로 지금 선택에 더하고, 빼는 것은 버튼으로 한다. 인식한 문장은 음성 영역에만 보이고 카드와 로그에는 남기지 않는다 (반려견 의료정보).
+
+## 음성 입력 빼는 법 (010, 문의 B2 대비)
+
+- **화면에서만 빼기**: `di/VoicePlan.kt`의 `VOICE_INPUT_ENABLED = false` 한 줄. 모든 모드가 "없음"이 되어 음성 영역이 사라진다. SDK와 권한은 APK에 남는다.
+- **APK에서 완전히 빼기** (STT를 쓰면 안 된다는 답이 오면): 위 한 줄 + 아래 두 커밋을 새것부터 `git revert` (한 번에: `git revert <2의 해시> <1의 해시>`).
+  1. `feat(data): Pleos SpeechToText ON_DEVICE 래퍼 추가`
+  2. `fix(data): STT를 멈출 때 음성 서비스가 녹음을 끝낸 뒤에 놓기` (1의 래퍼만 고친 커밋)
+  - SDK 의존성(`gradle/libs.versions.toml`, `app/build.gradle.kts`), `STT_SERVICE` 권한(`AndroidManifest.xml`), `PleosSpeechToTextClient.kt`, `AppContainer`의 Real 연결이 함께 빠진다. Real 자리는 "없음"이 된다.
+  - 이 파일과 줄은 다른 커밋에서 되도록 건드리지 않는다. 건드리면 그 커밋도 같이 되돌려야 한다.
+  - 2026-11-05에 확인했다: 두 커밋을 되돌린 상태에서 `assembleDebug`와 단위 테스트(433개)가 통과했다.
+- 주행 화면, 길안내, 진료 카드 조합 코드는 음성 작업(010)에서 바뀌지 않았다. 음성을 빼도 버튼 흐름은 그대로다.
+
 ## 보호자 웹 (008, 2026-11-05)
 
 보호자가 폰 브라우저에서 반려견 1마리의 프로필(사진, 이름, 품종, 생년월일 또는 나이, 성별)과 의료정보(주요 질환, 알레르기, 복용 약)를 등록하고 보고 고친다. 서버 저장에 동의하면 차와 연결해 차 앱의 진료 카드가 이 정보를 쓴다 (014).
@@ -440,4 +490,6 @@ web/src/
 - 화면은 `/verify` 스킬로 에뮬레이터 스크린샷을 찍어 확인한다.
 - Real 구현은 Pleos 에뮬레이터(GPU PC)에서 확인한다.
   - `android.car`를 부르는 어댑터는 JVM으로 시험하지 않는다. 판단 로직(`RealDrivingStateSource`)만 가짜 client로 시험한다.
+  - Pleos SpeechToText를 부르는 어댑터(`PleosSpeechToTextClient`)도 같다. 판단 로직(`RealVoiceInput`)만 가짜 client로 시험한다.
+- 증상 키워드 규칙은 이름 붙은 테스트와 함께, 받아쓴 문장 모음(`app/src/test/resources/voice/symptom-sentences.tsv`)으로도 시험한다. Pleos 에뮬레이터에서 실제로 받아쓴 문장은 출처에 "관찰 날짜"를 적어 더한다.
   - 주행 상태는 Virtual Console HTTP 요청으로 바꾼다 (docs/pleos/emulator-setup.md "Pleos 에뮬레이터에서 직접 해 본 것").

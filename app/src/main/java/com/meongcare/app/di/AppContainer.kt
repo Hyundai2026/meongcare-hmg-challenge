@@ -42,6 +42,9 @@ import com.meongcare.app.data.server.FunctionNearbyVetSource
 import com.meongcare.app.data.server.nearbyFunctionUrlOf
 import com.meongcare.app.domain.hospital.HospitalBoard
 import com.meongcare.app.data.phone.AndroidPhoneDialer
+import com.meongcare.app.data.voice.FakeVoiceInput
+import com.meongcare.app.data.voice.PleosSpeechToTextClient
+import com.meongcare.app.data.voice.RealVoiceInput
 import com.meongcare.app.domain.card.MedicalCardSession
 import com.meongcare.app.domain.pet.PetProfileSource
 import com.meongcare.app.domain.phone.PhoneDialer
@@ -58,6 +61,7 @@ import com.meongcare.app.domain.trip.HospitalTrip
 import com.meongcare.app.domain.location.CurrentLocationSource
 import com.meongcare.app.BuildConfig
 import com.meongcare.app.ui.card.symptomLabelRes
+import com.meongcare.app.domain.voice.VoiceInput
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -86,6 +90,9 @@ class AppContainer(context: Context, val dataMode: DataMode) {
 
     /** 차량 내비(NaviHelper)를 길안내에 쓰는 범위 (010). [sourcePlan]의 길안내 칸보다 앞선다. */
     val naviUse: NaviUse = naviUseOf(mode = dataMode, isAutomotive = isAutomotive)
+
+    /** 음성 입력 구성. [SourcePlan]과 따로 정한다 ([voiceInputKindOf], docs/plans 010 "설계 결정 7"). */
+    val voiceInputKind: VoiceInputKind = voiceInputKindOf(mode = dataMode, isAutomotive = isAutomotive)
 
     /** 프로세스와 수명이 같은 코루틴 범위. Fake 길안내의 시간 흐름과 시연 시나리오가 여기서 돈다. */
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -292,6 +299,16 @@ class AppContainer(context: Context, val dataMode: DataMode) {
 
     /** 고른 증상과 진료 카드. Fake 길안내와 같은 프로세스 수명이라 안내 시작부터 도착까지 남는다. */
     val medicalCardSession = MedicalCardSession()
+
+    /** 증상 고르기 화면의 음성 입력. `null`이면 이 구성에 음성 입력이 없다. */
+    val voiceInput: VoiceInput? = when (voiceInputKind) {
+        VoiceInputKind.NONE -> null
+        VoiceInputKind.FAKE -> FakeVoiceInput()
+        VoiceInputKind.REAL -> RealVoiceInput(PleosSpeechToTextClient(context))
+    }
+
+    /** 음성 입력이 실제로 듣지 않는 시연용인지. 화면에 그 사실을 알린다 (출품 유의사항). */
+    val isVoiceSimulated: Boolean = voiceInputKind == VoiceInputKind.FAKE
 
     /** 전화 앱 열기 (모든 데이터 모드). 열지 못하면 화면이 번호를 크게 보여 준다. */
     val phoneDialer: PhoneDialer = AndroidPhoneDialer(context)

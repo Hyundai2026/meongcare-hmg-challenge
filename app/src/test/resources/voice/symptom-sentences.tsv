@@ -1,0 +1,45 @@
+# 받아쓴 문장 → 기대 증상. 열: 문장<TAB>기대 증상(Symptom 이름, 쉼표로 구분, 없으면 빈칸)<TAB>출처
+# 출처: "관찰 날짜"(Pleos 에뮬레이터가 실제로 받아쓴 문장), "작성"(사람이 쓴 문장). Kotlin을 몰라도 줄을 더할 수 있다.
+# 증상 이름: BREATHING_DIFFICULTY SEIZURE COLLAPSE BLEEDING_OR_WOUND SWALLOWED_OBJECT VOMITING DIARRHEA COUGH LETHARGY NO_APPETITE LIMPING BLOATED_BELLY
+강아지가 갑자기 토하고 숨을 가쁘게 쉬어요	VOMITING,BREATHING_DIFFICULTY	관찰 2026-11-05
+강아지가 다리를…		관찰 2026-11-05 (부분 결과로 잘린 문장)
+치아가 내일 금요일이에요 내일 토요일이었으면 좋겠어요		관찰 2026-11-05
+야간 예약을 위해 금요일이야		관찰 2026-11-05
+어 기운이 없어요 강아지	LETHARGY	관찰 2026-11-05 (마이크)
+계속 김혜림이 계속 토하고 기운이 없어요	VOMITING,LETHARGY	관찰 2026-11-05 (마이크)
+그 막 진로 20분 강아지가 갑자기 토하고 숨을 바쁘게 쉬어요 잠시만요 아니 아니 이거	VOMITING,BREATHING_DIFFICULTY	관찰 2026-11-05 기기 (마이크, 주변 말소리 섞임. "가쁘게"→"바쁘게")
+숨이 차서 헐떡거려요	BREATHING_DIFFICULTY	작성
+갑자기 경련을 일으켰어요	SEIZURE	작성
+발작하듯이 몸을 떨어요	SEIZURE	작성
+산책하다가 쓰러졌어요	COLLAPSE	작성
+의식이 없어요	COLLAPSE	작성
+다리에서 피가 나요	BLEEDING_OR_WOUND	작성
+다른 개한테 물렸어요	BLEEDING_OR_WOUND	작성
+양말을 삼켰어요	SWALLOWED_OBJECT	작성
+길에서 뭘 주워먹었어요	SWALLOWED_OBJECT	작성
+밤새 구토를 세 번 했어요	VOMITING	작성
+노란 물을 게워냈어요	VOMITING	작성
+설사를 계속해요	DIARRHEA	작성
+변이 묽어요	DIARRHEA	작성
+켁켁거리면서 기침해요	COUGH	작성
+축 처져서 누워만 있어요	LETHARGY	작성
+밥을 하나도 안 먹어요	NO_APPETITE	작성
+입맛이 없는지 사료를 남겨요	NO_APPETITE	작성
+뒷다리를 절뚝거려요	LIMPING	작성
+걷지 못해요	LIMPING	작성
+배가 빵빵하게 부풀었어요	BLOATED_BELLY	작성
+토하고 설사하고 기운이 없어요	VOMITING,DIARRHEA,LETHARGY	작성
+구토는 안 했어요		작성 (부정)
+설사는 없고 기침을 해요	COUGH	작성 (부정)
+기침은 안 하는데 숨을 헐떡여요	BREATHING_DIFFICULTY	작성 (부정)
+토요일에 병원 가요		작성 (오탐 방지)
+강아지가 안쓰러워요		작성 (오탐 방지)
+밥은 잘 먹어요		작성 (오탐 방지)
+피곤해 보여요		작성 (오탐 방지)
+숨이 가빠요	BREATHING_DIFFICULTY	작성 (tester 2026-11-05)
+잘 못 걸어요	LIMPING	작성 (tester 2026-11-05)
+축 늘어졌어요	LETHARGY	작성 (tester 2026-11-05)
+토해서 기운이 없어요	VOMITING,LETHARGY	작성 (tester 2026-11-05)
+구토를 집에서 안 했어요		작성 (부정, "에서")
+강아지가 토마토를 하나 먹었어요		작성 (오탐 방지, tester 2026-11-05)
+커피가 쏟아졌어요		작성 (오탐 방지)

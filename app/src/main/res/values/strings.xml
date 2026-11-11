@@ -188,4 +188,21 @@
     <string name="link_unlink_do">끊기</string>
     <string name="link_cancel">취소</string>
     <string name="link_revoked">보호자가 연결을 끊었어요</string>
+
+    <!-- 음성으로 증상 고르기 (010). 정차 중 증상 고르기 화면에만 있다 -->
+    <string name="voice_prompt_title">한 문장으로 말해 주세요</string>
+    <string name="voice_prompt_example">예: 토하고 숨을 가쁘게 쉬어요</string>
+    <string name="voice_start">말로 증상 고르기</string>
+    <string name="voice_starting">마이크를 켜는 중이에요</string>
+    <string name="voice_listening">듣고 있어요</string>
+    <string name="voice_cancel">듣기 취소</string>
+    <string name="voice_heard">알아들은 말: “%1$s”</string>
+    <string name="voice_matched">골랐어요: %1$s. 아래에서 고칠 수 있어요</string>
+    <string name="voice_not_matched">맞는 증상을 찾지 못했어요. 버튼으로 골라 주세요</string>
+    <string name="voice_retry">다시 말하기</string>
+    <string name="voice_failed_no_speech">말소리를 듣지 못했어요</string>
+    <string name="voice_failed_mic">마이크를 쓸 수 없어요. 버튼으로 골라 주세요</string>
+    <string name="voice_failed_unavailable">지금은 음성 입력을 쓸 수 없어요. 버튼으로 골라 주세요</string>
+    <!-- 시연용 표시 (출품 유의사항). Fake 음성 입력일 때만 -->
+    <string name="voice_simulated_notice">시연용 음성 입력이에요. 실제로 듣지 않고 예시 문장을 받아써요.</string>
 </resources>

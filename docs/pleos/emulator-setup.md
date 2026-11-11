@@ -184,6 +184,26 @@ Apple Silicon Mac용이다. 순서는 위 Windows와 같다. SDK 경로는 Andro
 - Virtual Console(차량 데이터 시뮬레이션)은 에뮬레이터 2.1.0 이상이 필요하다.
 - 블루투스 동글 페어링은 지원하지 않는다.
 
+## 에뮬레이터 마이크 (Mac)
+
+(팀 운영안, 2026-11-05 xxj15 Mac에서 확인. 공식 가이드 아님)
+
+기본 상태로 켜면 에뮬레이터 안에서 녹음은 되지만 소리가 무음이다. 아래 두 가지가 모두 필요했다.
+
+1. **에뮬레이터를 켠 앱에 macOS 마이크 권한을 준다.** 시스템 설정 > 개인정보 보호 및 보안 > 마이크.
+   - macOS는 에뮬레이터를 실행한 앱(터미널, VS Code, Android Studio)을 기준으로 권한을 본다. Claude Code(VS Code)에서 켰다면 **Visual Studio Code**를 켠다.
+   - 권한이 거부된 상태에서 켠 에뮬레이터는 권한을 준 뒤에도 무음이었다. **에뮬레이터를 다시 켠다.**
+2. **`-allow-host-audio`를 붙여 켠다.** `emulator -help` 원문: "Allows sending of audio from audio input devices. Otherwise, zeroes out audio."
+
+   ```
+   emulator -avd pleos_connect -no-snapshot-load -no-snapshot-save -gpu host -allow-host-audio
+   ```
+
+   - 켠 상태에서는 `adb emu avd hostmicon` / `hostmicoff`로 켜고 끈다.
+- 확인 방법: STT `ResultListener.onUpdatedRms` 값. 무음일 때는 0.5 안팎, Mac 마이크가 들어오면 조용할 때 100~500, 말할 때 수천이다.
+- **소리가 늦게, 겹쳐서 들어올 수 있다.** 몇 초 전에 말한 문장이 다시 인식된 적이 있다. Mac 스피커를 꺼도 그대로였으므로 스피커→마이크 메아리는 아니다. 시연 영상을 마이크로 찍을 때 주의한다.
+- AAOS 앱은 user 10에서 돈다. 마이크 권한을 adb로 줄 때는 `adb shell pm grant --user 10 com.meongcare.app android.permission.RECORD_AUDIO`.
+
 ## Virtual Console (차량 데이터 시뮬레이션)
 
 출처:

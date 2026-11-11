@@ -149,16 +149,28 @@ vehicle-sdk = { module = "ai.pleos.playground:Vehicle", version.ref = "vehicleSd
 | FusedLocation | 정밀 위치 정보 조회 | 준비 중 |
 | TextToSpeech | TextToSpeech | 준비 중 (문서: Client ID/Secret 필요) |
 | SpeechToText | SpeechToText | 준비 중 (문서: Client ID/Secret 필요) |
-| Vehicle Control | 8개: 도어/트렁크/프렁크 제어, 공조 설정, 주행 정보 설정, EV 충전 설정, 창문 제어, 좌석 제어, 사이드미러 제어, 라이트 제어 | 8개 모두 준비 중 |
+| Vehicle Control | 8개: 도어/트렁크/프렁크 제어, 내부 온도 및 공조 설정, 차량 주행 정보 설정, EV 충전 설정, 창문 상태 제어, 좌석 설정 제어, 사이드미러 제어, 내부/외부 라이트 제어 | 8개 모두 준비 중 (2026-11-05 다시 확인) |
 
 - Vehicle State의 "차량 주행 정보"에도 속도·기어는 없다. 아래 "속도·기어·주행 상태"와 맞는다.
 - NaviHelper 콘솔 항목과 권한의 대응은 콘솔에 적혀 있지 않다. 설명으로 보면 "경로 정보 조회"는 `NAVI_ROUTE`(`get*Info()`), "경로 탐색 설정"은 `NAVI_ROUTE_SEARCH`(`requestRoute()` 등)에 해당하는 것으로 보인다 (추정). `NAVI_CUSTOM_MAP`(`requestNavigationScreen()`)에 해당하는 항목은 없다.
 - 차량은 **읽기만** 된다. 공조·창문 등을 바꾸는 Vehicle Control은 전부 준비 중이다.
+  > **관찰 (2026-11-05, Pleos 에뮬레이터 v2.1.0, 실차 아님. `pm list permissions -f`, `dumpsys package`):** Pleos SDK를 거치지 않고 시스템 공조를 다루는 길도 없다.
+  > - AAOS 표준 `android.car.permission.CONTROL_CAR_CLIMATE`(정의 패키지 `com.android.car.updatable`)는 `signature|privileged`다. 서드파티 앱은 받을 수 없다. `GET_CAR_VENDOR_CATEGORY_HVAC`, `SET_CAR_VENDOR_CATEGORY_HVAC`도 같다.
+  > - 상단 바(GNB) 공조는 `ai.umos.applibrary.permission.CONTROL_GNB_HVAC`(`com.android.systemui`, `signature`)로 보호된다.
+  > - Pleos의 `pleos.car.permission.CAR_CLIMATE`, `CONTROL_CAR_CLIMATE`, `PRIVATE_CAR_CLIMATE`(정의 패키지 `ai.pleos.playground.service.vehicle`)는 `normal`이다. 에뮬레이터에서는 선언만 하면 허용된다. 그래도 콘솔에서 Vehicle Control이 "준비 중"이고, 승인되지 않은 권한은 심사 탈락 사유이므로 제어 권한은 쓰지 않는다. [sdk-overview]
+  > - 시스템 차량 설정 앱 `ai.umos.vehiclecontrol`이 받는 intent action에는 공조 화면을 여는 것이 없다. `android.settings.SOUND_SETTINGS`(소리 설정)는 받는다. 우리 앱에서 보내 보지는 않았다.
+- **제어 함수는 SDK에 이미 들어 있다 (Vehicle 2.3.2 AAR, `javap -v`, 2026-11-05).** "준비 중"은 함수가 없다는 뜻이 아니라, 콘솔에서 사용을 신청할 수 없다는 뜻이다.
+  - 콘솔 Vehicle Control 페이지 설명 (원문, 2026-11-05 사용자 캡처): "Vehicle SDK 연동으로 차량의 도어, 창문, 실내/외 라이트, 실내 온도, 좌석 설정 등을 제어할 수 있습니다. 일부 API는 주행 중 제한될 수 있으며, 사전 승인된 권한이 있어야 합니다." 공조 항목 이름은 "내부 온도 및 공조 설정"이고, 설명은 "차량의 공조를 제어합니다. 온도, 에어컨 및 공기 순환, 팬 방향 등을 제어할 수 있습니다."다.
+  - `HVAC` 인터페이스의 set 함수 13개는 모두 `@RequiresPermission("pleos.car.permission.CONTROL_CAR_CLIMATE")`이다: `setHvacPower`, `setHvacAc`, `setHvacMaxAc`, `setHvacTemperature(SeatArea, float, TemperatureUnit, …)`, `setHvacFanSpeed(SeatArea, int, …)`, `setHvacFanDirection(SeatArea, FanDirectionType, …)`, `setHvacRecirculation`, `setHvacAutoRecirculation`, `setHvacAuto`, `setHvacDual`, `setHvacAirCleaner`, `setHvacDefroster(WindowArea, …)`, `setHvacMaxDefrost`.
+  - get·check·register·unregister 함수는 모두 `pleos.car.permission.CAR_CLIMATE`다. 실내 온도는 `getHvacTemperatureCurrent(SeatArea[, TemperatureUnit], …)`, 변화 구독은 `registerHvacTemperatureCurrent`다.
+  - 에뮬레이터에서 호출해 보지는 않았다. 승인 없이 `CONTROL_CAR_CLIMATE`를 쓰면 심사 탈락 위험이 있다는 점은 그대로다.
 - 상태의 뜻 (문서 원문) [create-project]:
   - 준비 중: "API 제공 준비 중인 상태로 신청 버튼이 나타나지 않습니다." "해당 상태에서는 신청할 수 없으므로 신청 필요 상태로 변경된 후 진행하시기 바랍니다."
   - 사용 가능: "신청 없이 사용 가능한 SDK이거나 신청이 승인되어 사용 가능한 상태입니다." "Vehicle State와 NaviHelper SDK가 이 상태에 해당합니다. 이 두 SDK는 신청 없이 바로 사용 가능합니다."
   - 신청 필요: "신청해야 사용 가능한데 아직 신청하지 않는 상태입니다."
 - **해석 (2026-11-03 팀 판단): "준비 중"인 SDK는 지금 쓸 수 없는 것으로 본다.** `ON_DEVICE`가 앱 등록 없이 동작한다는 STT/TTS 문서의 문장은 사용 허가가 아니다. 열리는 시점은 주최측에 묻는다 ([architecture.md](../architecture.md#pleos주최측에-문의할-것) B2).
+  - 기술적으로는 STT `ON_DEVICE`가 지금도 Pleos 에뮬레이터에서 동작한다 (2026-11-05 관찰, 아래 "STT `ON_DEVICE` 실행 확인"). 써도 되는지(허가)는 여전히 B2 답에 달렸다.
+  - **결정 변경 (2026-11-05 사용자 결정): STT는 `ON_DEVICE`로 쓴다.** 근거는 대회 FAQ의 사용 가능 SDK 목록에 STT가 있는 것, 운영사무국의 "따로 신청받는 절차는 없다"는 답 ([architecture.md](../architecture.md#pleos주최측에-문의할-것) B2), 에뮬레이터 동작 확인이다. 대신 음성은 추가 입력 수단으로만 둔다. 증상 버튼 흐름은 그대로 두어서 음성이 안 되거나 쓰지 말라는 답이 와도 앱이 돈다. TTS는 시험하지 않았으므로 이 결정에 들어가지 않는다.
 
 - 그 밖의 SDK는 사용 신청이 필요하고, 일부는 제휴 계약이 필요하다.
 - **"준비 중"인 SDK에 핵심 기능을 걸지 않는다.** 기획 전에 콘솔에서 상태를 다시 확인한다.
@@ -938,28 +950,131 @@ val speechToText = SpeechToText(applicationContext, Mode.HYBRID)
   - **산출물로 확인 (2026-11-03):** `SpeechToText-3.3.1.aar`의 `ai.pleos.playground.stt.constant.Mode`에는 `HYBRID`, `SERVER`, `ON_DEVICE` 세 상수가 있다 (`javap`). [aar-stt]
 - 사용 순서: 생성 → `initialize()` → `addListener()` → (선택) `setLocale()` → (서버 모드면) 앱 등록 → `request()` → `stop()` → `removeListener()` 후 `release()` [stt-intro]
 - 초기화·해제: `speechToText.initialize(object : OnInitializeListener { ... })` 또는 `speechToText.initialize()`. 해제는 `speechToText.removeListener(resultListener)` 후 `speechToText.release()`. release 후 다시 쓰려면 새 객체를 만든다. [stt-init]
+  - `release()` 원문: "SDK 사용을 마치면 `release()`를 호출하여 연결과 내부 리소스를 해제합니다." 예시 코드는 `removeListener()` → `release()`이고 그 앞에 `stop()`이 없다. 듣는 중에 `release()`하면 어떻게 되는지, `release()` 전에 `stop()`을 불러야 하는지는 쓰여 있지 않다. [stt-init]
 - 언어: `setLocale(locale: Locale)`, 예 `speechToText.setLocale(Locale.KOREA)`. 지원 locale은 `ko-KR`, `en-US`, `fr-CA`, `es-US`, `es-MX`. 미호출 시 이전 설정값, 없으면 시스템 locale. [stt-locale]
 - 결과 리스너 `ResultListener` (원문 시그니처) [stt-listener]:
   - `override fun onUpdated(stt: String, completed: Boolean)`: 인식 텍스트 갱신. `completed`가 `true`면 그 결과가 완료된 것.
   - `override fun onError(errorType: ErrorType)`
-  - 그 밖에 `onReady()`, `onStartedRecognition()`, `onUpdatedEpdData(on, off)`, `onUpdatedRms(rms)`, `onEndedRecognition()` (이름만 확인, 시그니처 미확인)
+  - 그 밖의 콜백 (원문 설명, 2026-11-05 확인. 시그니처는 아래 "STT `ON_DEVICE` 실행 확인"의 `javap` 결과):
+    - `onReady()`: "음성 인식 요청을 처리할 준비가 되었을 때 호출됩니다."
+    - `onStartedRecognition()`: "음성 인식이 시작될 때 호출됩니다."
+    - `onUpdatedEpdData(on, off)`: "EPD(End Point Detection)가 감지한 음성 시작(`on`)과 종료(`off`) 위치가 갱신될 때 호출됩니다. 위치 값은 입력 오디오 버퍼의 byte offset입니다." 영문판: "The values are byte offsets in the input audio buffer." **시간(ms)이 아니라 바이트 위치다.**
+    - `onUpdatedRms(rms)`: "입력 음성 신호의 RMS(Root Mean Square) 값이 갱신될 때 호출됩니다. RMS는 신호 크기를 나타내는 값이며 dB 값이 아닙니다." 값의 범위는 쓰여 있지 않다.
+    - `onEndedRecognition()`: "음성 인식이 종료될 때 호출됩니다."
+    - `onError(errorType)`: "처리 중 오류가 발생하면 호출됩니다."
   - 원문: "인식 이벤트를 놓치지 않도록 `request()` 또는 `sendAudio()`를 호출하기 전에 리스너를 등록하세요."
+  - 원문: "리스너가 더 이상 필요하지 않거나 SDK를 해제하기 전에는 등록할 때 사용한 동일한 인스턴스를 제거합니다."
 - 시작·중지 (원문): `speechToText.addListener(resultListener)` → `speechToText.request()`, 중지 `speechToText.stop()`. 원문: "서버 기반 인식이 필요한 모드에서는 앱 등록 또는 UA 인증도 완료해야 합니다." [stt-start]
+  - `request()` 원문: "차량 마이크로 음성 인식을 시작하려면 `request()`를 호출합니다. 호출 시 SDK가 마이크를 활성화하고 입력 음성의 인식을 시작합니다." [stt-start]
+  - `stop()` 원문: "진행 중인 음성 인식을 중지하고 마이크 사용을 종료하려면 `stop()`을 호출합니다." 이어서 "인식이 종료되면 `ResultListener.onEndedRecognition()`이 호출됩니다." [stt-start]
+  - intro의 사용 순서 원문: "인식이 끝나면 `stop()`을 호출합니다." [stt-intro]
 - 앱이 가진 PCM 보내기: `sendAudio(ByteArray)` 후 `completeAudioSend()`. **`ON_DEVICE` 모드에서만** 쓸 수 있다. 예시 포맷은 16 kHz, 16-bit, mono PCM, 100ms(3,200 bytes) 청크 (필수 형식이라고 하지는 않음). [stt-audio]
 - 앱 등록 (서버 모드만): `speechToText.registerApp(clientID = clientId, clientSecret = clientSecret, listener = object : OnServerConnectionListener { onConnected() / onFailed(errorType: ErrorType) })`. Client ID/Secret은 My Project 생성 시 발급된다. [stt-appreg]
 - `ErrorType` 값: `AUDIO_ERROR`, `INVALID_REQUEST_ERROR`, `MIC_ERROR`, `NETWORK_ERROR`, `NOT_SUPPORTED_API`("현재 모드 또는 실행 환경에서 지원하지 않는 API입니다."), `ON_DEVICE_ENGINE_ERROR`, `PERMISSION_DENIED`, `SERVER_INTERNAL_ERROR`, `TIMEOUT`, `UNAUTHENTICATED`, `UNAVAILABLE_LANGUAGE`, `UNKNOWN` [stt-error]
+  - 음성 입력에 관련된 값의 설명과 권장 조치 (원문, 2026-11-05 확인) [stt-error]:
+    - `TIMEOUT`: "제한 시간 안에 요청이 완료되지 못했습니다." / "네트워크와 서버 상태를 확인한 후 다시 요청합니다." 무음과의 관계, `ON_DEVICE`에서도 오는지, 제한 시간 값은 쓰여 있지 않다.
+    - `MIC_ERROR`: "마이크 입력을 시작하거나 처리하는 중 오류가 발생했습니다." / "마이크 상태와 센서 개인정보 보호 설정을 확인합니다."
+    - `INVALID_REQUEST_ERROR`: "요청 값이나 요청 상태가 올바르지 않습니다." / "호출 순서, 중복 요청 및 입력 값을 확인합니다."
+    - `ON_DEVICE_ENGINE_ERROR`: "On-device 음성 인식 엔진에서 오류가 발생했습니다." / "엔진 상태를 확인하거나 `HYBRID` 또는 `SERVER` 모드를 검토합니다."
+    - `PERMISSION_DENIED`: "SpeechToText 서비스 접근 권한이 없습니다." / "manifest의 `STT_SERVICE` 권한과 실행 환경의 권한 상태를 확인합니다."
+  - 원문: "`ErrorType`은 새로운 오류 타입이 추가될 수 있으므로 `when` 또는 `switch` 문에 기본 분기를 두는 것을 권장합니다." [stt-error]
 - `SpeechToText` 클래스 멤버 (API Reference 목차): `Companion`, `Constructor`, `addListener`, `completeAudioSend`, `initialize`, `registerApp`, `release`, `removeListener`, `request`, `sendAudio`, `setLocale`, `stop`. 모드를 바꾸는 setter는 없다. 상세 페이지 본문은 비어 있다. [stt-api-ref]
 - Pleos Maven 게시 버전: 2.1.2, 2.1.3, 2.1.3.1, 2.1.3.1.1, 2.1.3.2, 3.3.0, 3.3.1 (latest/release 3.3.1, lastUpdated 2026-10-13). [maven-meta]
+- SDK 릴리스 노트의 SpeechToText v3.3.1 항목 (원문, 2026-11-05 확인) [sdk-release-note]:
+  - 호환성 깨짐: "오류 콜백 인자 타입 변경 (String → ErrorType)". 변경: "ResultListener.onError(errMsg: String) → ResultListener.onError(errorType: ErrorType)", "OnServerConnectionListener.onFailed(msg: String) → OnServerConnectionListener.onFailed(errorType: ErrorType)"
+  - 추가: "초기화 결과 콜백 지원 추가 (SpeechToText.initialize(listener: OnInitializeListener), OnInitializeListener)", "SDK 버전 조회 속성 추가 (SpeechToText.version)", "오류 유형 enum 추가 (ErrorType)", "추론 출처 enum 추가 (InferenceSource: ON_DEVICE, SERVER)"
+  - `InferenceSource`를 어느 API가 돌려주는지는 문서에 없다. API Reference `ai.pleos.playground.stt.data/inference-source/entry`는 본문이 비어 있다. [stt-api-ref]
+  - 릴리스 노트에 STT 3.3.0, 2.x 항목은 없다.
+
+#### 듣는 동안의 오디오 포커스, 콜백 스레드, 끝점 검출 (문서 조사, 2026-11-05)
+
+010 음성 증상 입력 계획의 선행 질문 Q1~Q3. **세 질문의 핵심(포커스 주체, 스레드, 무음 시간)은 모두 문서에 없다.** 문서에 있는 원문은 위 항목들에 넣었고, 여기에는 질문별 결론만 둔다. 실행 관찰로 채울 것은 아래 "미확인"에 있다.
+
+- **Q1. `request()`로 듣는 동안 오디오 포커스 → 문서에 없음.**
+  - STT 가이드와 API Reference 어디에도 오디오 포커스, 미디어 감쇄(duck)나 일시정지 언급이 없다. SDK(음성 서비스)가 포커스를 잡는지, 앱이 `USAGE_VOICE_COMMAND`/`USAGE_ASSISTANT`로 요청해야 하는지 둘 다 쓰여 있지 않다.
+  - `request()` 원문은 "SDK가 마이크를 활성화"한다고만 한다 (위 시작·중지 항목). [stt-start]
+  - 오디오 포커스 가이드의 음성 관련 문장은 Gleo 것뿐이다: "Gleo가 호출되어 앱이 AUDIOFOCUS_LOSS_TRANSIENT를 수신하면, 즉시 재생을 중단하고 필요 시 오디오 포커스를 반납(abandon)해야 합니다.", 검증 시나리오 "C로 동시 홀더 2명(MUSIC+NAVIGATION) 상태에서 VOICE_COMMAND 요청". 이것이 STT SDK에도 적용되는지, 그 VOICE_COMMAND 요청을 누가 하는지는 없다. [audio-focus] (컨텍스트·usage 표는 [ux-guidelines.md](ux-guidelines.md#오디오-포커스와-음성-안내))
+  - 같은 가이드의 "각 오디오 스트림은 재생 시작 전 `AudioAttributes` + `AudioFocusRequest`로 포커스를 요청해야 합니다."는 재생 기준 문장이다. 녹음(입력) 쪽을 말하는 문장은 없다. [audio-focus]
+- **Q2. 콜백 스레드와 호출 스레드 → 문서에 없음. `stop()` 뒤에 대해서는 `onEndedRecognition()`만 문서에 있다.**
+  - `ResultListener` 콜백이 어느 스레드로 오는지, `initialize`/`request`/`stop`/`release`를 메인 스레드에서 불러야 하는지 쓰여 있지 않다. API Reference 메서드 페이지는 제목뿐이라 `@MainThread` 같은 표기도 볼 수 없다. [stt-api-ref]
+    - `sending-audio-data` 예시 코드가 청크 사이에 `Thread.sleep(100L)`을 부르지만, 어느 스레드에서 돌리라는 설명은 없다. [stt-audio]
+  - `stop()` 절에 "인식이 종료되면 `ResultListener.onEndedRecognition()`이 호출됩니다."가 있다. [stt-start] 이 문장이 `stop()`으로 끝낸 경우를 가리키는지, 스스로 끝난 경우까지 포함하는지는 구분하지 않는다.
+  - `stop()` 뒤에 최종 결과(`onUpdated(completed = true)`)가 오는지는 문서에 없다. 영문판도 같다.
+- **Q3. 무음일 때 `TIMEOUT`, EPD 대기 시간, 최대 녹음 시간 → 문서에 없음. `onUpdatedEpdData`의 뜻과 단위는 있다.**
+  - `TIMEOUT`의 설명은 "제한 시간 안에 요청이 완료되지 못했습니다."뿐이고, 권장 조치가 네트워크·서버 확인이다 (위 `ErrorType` 항목). 말이 없을 때 오는지, 제한 시간이 몇 초인지는 없다. [stt-error]
+  - EPD 무음 대기 시간, 최대 녹음 시간, 이 값을 바꾸는 API는 없다. `SpeechToText` 멤버 목록에도 설정 메서드가 없다. [stt-api-ref]
+  - `onUpdatedEpdData(on, off)`: EPD가 감지한 음성 시작·끝 위치이고 단위는 입력 오디오 버퍼의 **byte offset**이다 (위 `ResultListener` 항목). [stt-listener] 바이트를 시간으로 바꾸려면 입력 형식이 필요한데, `request()`(마이크) 입력 형식은 문서에 없다. `sendAudio` 예시 형식은 16 kHz, 16-bit, mono다. [stt-audio]
+- 확인한 페이지 (모두 2026-11-05):
+  - STT 가이드: intro, importing-sdk(프로그래밍 가이드 목차), initialization-and-release, result-listeners, start-and-stop, sending-audio-data, error-code. result-listeners, start-and-stop, error-code는 영문판(`/en/docs/...`)도 대조했고 내용이 같다.
+  - STT API Reference: entry, `ai.pleos.playground.stt`의 `speech-to-text/entry`와 `initialize`, `request`, `stop`, `release`, `ai.pleos.playground.stt.constant/entry`와 `error-type/entry`, `ai.pleos.playground.stt.data/entry`와 `inference-source/entry`, `ai.pleos.playground.stt.listener/entry`와 `result-listener/entry`. **패키지 목차 아래 상세 페이지는 제목만 있고 본문이 비어 있다.**
+  - SDK 개요, SDK 릴리스 노트, 오디오 포커스 개발 가이드, Suspend 모드 오디오 포커스 가이드, Music/Audio 앱 개발 가이드, 차량 앱 FAQ. [sdk-overview] [sdk-release-note] [audio-focus] [audio-focus-suspend] [music-app-guide] [faq]
 
 ### STT/TTS 사용 조건 정리 (2026-11-03 조사)
 
 - **콘솔 "준비 중"의 의미:** 신청 버튼이 없고 "Comming Soon" 배지가 붙는다(문서 표기 그대로). 원문: "해당 상태에서는 신청할 수 없으므로 **신청 필요** 상태로 변경된 후 진행하시기 바랍니다." [create-project]
 - **Client ID/Secret:** 콘솔 프로젝트 정보의 SDK 항목에서 확인한다. 원문: "앱 등록 등 서버 연결을 요구하는 SDK를 사용할 때 필요한 정보입니다." 해당 SDK는 TextToSpeech, SpeechToText. [create-project]
 - **`ON_DEVICE`와 "준비 중"의 관계:** STT/TTS 문서는 `ON_DEVICE`에 앱 등록이 필요 없다고만 하고, 콘솔 상태와의 관계는 어느 문서에도 없다. 권한(`STT_SERVICE`/`TTS_SERVICE`)에 "사전 협의 및 승인"이 필요한지도 STT/TTS 권한 페이지에는 없다. 반면 SDK 개요는 "퍼미션은 Pleos App Market과 사전 협의 및 승인된 범위 내에서만 사용할 수 있습니다."라고 한다. [sdk-overview] → **심사 제출 앱에서 `ON_DEVICE`를 써도 되는지는 미확인.**
-- **에뮬레이터:** STT/TTS intro 원문 "SpeechToText SDK를 사용하려면 Android Studio에 Pleos Connect Emulator를 설치하고 AVD를 설정합니다." 설정 항목에 "마이크 접근 설정", "Cold boot 설정"이 있다. [stt-intro] [tts-intro] 에뮬레이터에 On-device 엔진이 들어 있는지, 실제로 인식되는지는 문서에 없다 → 미확인 (GPU PC에서 직접 실행해 확인 필요). 마이크 설정은 [emulator-setup.md](emulator-setup.md#주의) 참고.
+- **에뮬레이터:** STT/TTS intro 원문 "SpeechToText SDK를 사용하려면 Android Studio에 Pleos Connect Emulator를 설치하고 AVD를 설정합니다." 설정 항목에 "마이크 접근 설정", "Cold boot 설정"이 있다. [stt-intro] [tts-intro] 에뮬레이터에 On-device 엔진이 들어 있는지, 실제로 인식되는지는 문서에 없다. → **Pleos 에뮬레이터에서 직접 실행해 동작을 확인했다** (2026-11-05, 아래 "STT `ON_DEVICE` 실행 확인"). 마이크 설정은 [emulator-setup.md](emulator-setup.md#주의) 참고.
 - **Android 표준 `SpeechRecognizer` / `android.speech.tts.TextToSpeech`:** Pleos 문서(SDK 개요, SDK API 정책, 하드웨어 접근 정책, API 호환성, FAQ, 오디오 포커스 가이드, TTS 선행 묵음 가이드)에 허용·금지 언급이 없다 → 미확인.
   - 관련 정책 문장: "동일하거나 유사한 기능의 API가 AAOS 표준에 이미 존재하는 경우, 해당 표준 API 사용을 권장하며 Pleos Connect SDK에서는 중복 기능을 제공하지 않습니다." [sdk-api-policy] Pleos가 STT/TTS SDK를 따로 제공하므로, 이 문장만으로 표준 API 사용 가능 여부를 판단할 수 없다.
 - **음성 출력의 오디오 포커스:** 재생 전 `AudioAttributes` + `AudioFocusRequest`로 포커스를 요청한다. 컨텍스트 매핑에서 NAVIGATION은 `NAVIGATION`, `ASSISTANCE_NAVIGATION_GUIDANCE`, VOICE_COMMAND는 `VOICE_COMMAND`, `ASSISTANT`. TTS SDK가 어느 usage로 재생하는지는 문서에 없다. 자세한 내용은 [ux-guidelines.md](ux-guidelines.md#오디오-포커스와-음성-안내) [audio-focus]
+
+### STT `ON_DEVICE` 실행 확인 (관찰, 2026-11-05)
+
+xxj15 Mac(M4 Pro), AVD `pleos_connect`(arm64, Cold boot). 문서가 아니라 실행해서 본 결과다. 실험 코드는 로컬 브랜치 `spike/stt-ondevice`(dev에 합치지 않음)의 debug 화면 `SttProbeActivity`다.
+
+- **결론: Client ID/Secret 없이 `ON_DEVICE` 모드로 한국어 인식이 된다.** 콘솔 상태는 "준비 중"인 채다. 심사 제출 앱에서 써도 되는지는 여전히 미확인이다 (위 "`ON_DEVICE`와 '준비 중'의 관계", 문의 B2).
+- SDK 받기: `ai.pleos.playground:SpeechToText:3.3.1`이 Pleos Maven에서 그대로 받아진다. 전이 의존성은 `ai.pleos.playground.security:universal-access:0.6.0` 하나다.
+- AAR 매니페스트 (산출물):
+  - `android.permission.INTERNET`을 선언한다 (주석: "CCG Validation 체크를 위한 권한").
+  - `<queries>`로 `ai.pleos.playground.caas.intent.action.SPEECH_START`를 찾는다.
+  - 요구 음성 서비스(CAAS) 최소 버전: `4.1.29` (versionCode 4001029).
+- 에뮬레이터 쪽 (`adb shell`):
+  - 음성 서비스 `ai.pleos.playground.caas` **4.2.10-coral-aosp**가 들어 있다. `SPEECH_START`를 받는 서비스는 `ai.pleos.playground.caas.service.speech.SpeechService`다.
+  - `pleos.car.permission.STT_SERVICE`는 이 패키지가 정의하고 보호 수준이 **`normal`**이다. 매니페스트에 선언만 하면 설치할 때 허용된다 (`granted=true`).
+- 클래스 시그니처 (`javap`, 3.3.1):
+  - `SpeechToText(Context, Mode)`, `initialize(OnInitializeListener)`, `addListener(ResultListener)`, `setLocale(Locale)`, `request()`, `stop()`, `sendAudio(byte[])`, `completeAudioSend()`, `release()`
+  - `OnInitializeListener`: `onSuccess()`, `onFailure(ErrorType)`
+  - `ResultListener`: `onUpdated(String, Boolean)`, `onUpdatedEpdData(Long, Long)`, `onStartedRecognition()`, `onEndedRecognition()`, `onError(ErrorType)`, `onReady()`, `onUpdatedRms(Double)`
+  - 문서 목차에 없는 멤버: `getCallApi()`, `getAmbientAi()`, `registerApp`의 람다 오버로드 2개
+- **PCM 입력 (`sendAudio`)**: Mac `say -v Yuna`로 만든 문장을 16 kHz, 16-bit, mono로 바꿔 3,200 bytes(100ms)씩 넣었다.
+  - 순서: `initialize` → `onSuccess` → `addListener` → `setLocale(Locale.KOREA)` → `sendAudio` 반복 → `completeAudioSend`. `request()` 없이 된다.
+  - 결과: 넣기 시작한 지 약 1초 뒤부터 `onUpdated(completed=false)`로 글자가 점점 늘었다. 그 뒤 `onEndedRecognition`, `onUpdated(completed=true, "강아지가 갑자기 토하고 숨을 가쁘게 쉬어요")`가 왔다. 넣은 문장과 글자가 똑같다.
+  - 부분 결과마다 `onStartedRecognition`이 다시 온다. 한 번만 오는 이벤트로 다루면 안 된다.
+  - `initialize` 성공까지 약 20ms 걸렸다. 네트워크·앱 등록 호출은 없었다.
+- **마이크 입력 (`request`)**: 된다. `onReady` 뒤 음성 서비스가 16 kHz로 녹음을 시작하고(`AudioRecorderImpl start`), 말하면 부분 결과와 최종 결과가 온다.
+  - 에뮬레이터에 Mac 마이크 소리가 들어오게 하는 방법은 [emulator-setup.md](emulator-setup.md#에뮬레이터-마이크-mac) "에뮬레이터 마이크 (Mac)".
+  - Mac `say`를 스피커로 틀어 마이크로 넣은 결과:
+    - "강아지가 다리를 절어요" → "강아지가 다리를…" (Yuna, 여자 목소리)
+    - "샤갈! 내일 금요일이에요! 내일 토요일이었음 좋겠어요" → "치아가 내일 금요일이에요 내일 토요일이었으면 좋겠어요". 두 문장이 결과 하나로 이어졌다. "샤갈" 같은 낯선 고유명사는 틀린다.
+    - "샤갈샤갈 내일 왜 금요일이야" (Reed, 남자 목소리) → "야간 예약을 위해 금요일이야". 여자 목소리보다 결과가 나빴다. 스피커→마이크를 거치며 소리가 나빠진 영향과 섞여 있어 목소리 탓인지는 모른다.
+  - 부분 결과는 약 0.4초마다 오고, 말이 끝나면 약 0.1~0.3초 뒤에 최종 결과가 온다.
+  - **문장 중간에 잠깐 쉬면(느낌표 뒤 등) 거기서 인식이 끝난다** (`onEndedRecognition`). 이어서 말한 부분은 `request()`를 다시 부르기 전까지 버려진다. 한 번에 한 문장을 받는 흐름으로 설계한다.
+  - 사람 목소리가 작게 들어오면(음량 `rms` 약 500~1,100) 아무 결과도 오지 않았다. `say`는 약 10,000이었다.
+- **`RECORD_AUDIO`**: AAOS 앱은 운전자 계정 **user 10**에서 돈다. `adb shell pm grant`는 기본이 user 0이라 `--user 10`을 붙여야 한다.
+  - 앱에 권한이 없을 때: 서비스 로그 `callerIdentityForRecordAudio(...) mode=1`. 녹음은 음성 서비스(`ai.pleos.playground.caas`) 이름으로 시작됐다.
+  - 권한이 있을 때: `mode=0`이고 녹음이 우리 앱 이름으로 시작됐다.
+  - 우리 앱에 `RECORD_AUDIO`가 꼭 필요한지는 문서에 없다. 권한이 없을 때 실차에서도 이렇게 대신 녹음되는지는 미확인이다.
+
+#### 앱 구현(010)에서 본 것 (관찰, 2026-11-05)
+
+xxj15 Mac, AVD `pleos_connect`, 앱 debug 빌드 "시연 (주행 Real)" 모드 (음성 = Real). 무음 시험은 에뮬레이터 마이크를 끈 채로 했다 (`adb emu avd hostmicoff`).
+
+- import 경로 (3.3.1): `ai.pleos.playground.stt.SpeechToText`, `ai.pleos.playground.stt.constant.ErrorType`, `ai.pleos.playground.stt.constant.Mode`, `ai.pleos.playground.stt.listener.OnInitializeListener`, `ai.pleos.playground.stt.listener.ResultListener`.
+- 병합 매니페스트의 권한은 `pleos.car.permission.STT_SERVICE`(우리가 선언), `android.permission.INTERNET`(AAR이 더함) 둘뿐이다. `RECORD_AUDIO`는 선언하지 않았다 (010 사용자 결정).
+  - 설치하면 `STT_SERVICE: granted=true`, `INTERNET: granted=true`다 (`dumpsys package`, 설치 권한이라 user 0·10 공통).
+  - `RECORD_AUDIO` 없이도 음성 서비스가 녹음한다. 서비스 로그 `callerIdentityForRecordAudio(com.meongcare.app) mode=0`, `startRecordAudioOp(... packageName=com.meongcare.app) - result: 0`.
+- 콜백 스레드: SDK가 binder 스레드에서 받아(`[binder:...]onUpdated ReadyToStartRecognition`) 메인 스레드로 넘긴 뒤(`SttViewModel [main]notifyReady`) 우리 리스너를 불렀다. `onReady`, `OnInitializeListener.onSuccess`가 메인 스레드에서 왔다 (로그의 pid = tid).
+- `initialize` 성공까지 4~35ms였다. 듣기마다 새 객체를 만들어도 두 번째 듣기가 문제없이 시작됐다.
+- **무음일 때 (Q3 관찰)**: `onReady` 뒤 아무 이벤트도 오지 않았다. 15초 동안 `onEndedRecognition`도, `onError(TIMEOUT)`도 없었다. 서비스는 1초마다 `recognize(... isFinal=false, cnt=N)`를 찍으며 계속 들었다.
+  - 그래서 우리 앱은 최대 듣기 시간(15초)으로 끝낸다 → "말소리를 듣지 못했어요". 더 빨리 끝내려면 "준비 뒤 N초 동안 받아쓰기가 없으면 끝" 규칙을 더해야 한다 (하지 않음).
+- **`stop()` 바로 뒤에 `release()`하면 음성 서비스가 녹음을 멈추지 않는다.**
+  - SDK 3.3.1 바이트코드: `stop()` → `SttServiceManager.closeStream()` → `OnDeviceStt`가 `close`를 **코루틴으로 띄운다**. `release()` → `disconnectService()` → 그 자리에서 `unbindService`.
+  - 그래서 `stop()` → `removeListener()` → `release()`를 이어 부르면 서비스 쪽에 `close(com.meongcare.app)` 로그가 없고, 녹음(`AudioRecordingConfiguration`, `pack:ai.pleos.playground.caas`)이 계속 켜져 있었다. 서비스는 100ms마다 `Resources$NotFoundException: com.meongcare.app not found check register`를 찍었다 (떼어 낸 리스너에 결과를 보내려다 실패).
+  - 우리 앱 프로세스를 끝내도(`adb install -r`) 계속 녹음했다. 같은 앱이 다음에 `request()`를 부르자 서비스가 옛 작업을 끝냈다 (`(jobId=37) finish(com.meongcare.app)`, `Session.stop`, `releaseRecord`).
+  - `stop()`만 부르고 기다리면: 서비스가 1~7ms 안에 `close(com.meongcare.app)` → `finish` → `Session.stop`으로 녹음을 멈췄다. **`onEndedRecognition`은 오지 않았다** (4번 시험). 위 Q2 "`stop()` 뒤에는 `onEndedRecognition()`이 온다"는 문장과 다르다.
+  - 그래서 앱은 `stop()` 뒤 `onEndedRecognition`이 오거나 1초가 지나면 `removeListener()` → `release()`한다 (`PleosSpeechToTextClient`). 고친 뒤 [듣기 취소], 15초 시간 초과, 듣는 중 주행 전환(기어 D) 모두 녹음이 멈췄다.
+- 우리 앱 로그(`PleosStt`)에는 이벤트 이름만 남는다. SDK와 음성 서비스 자체 로그에 인식 문장이 찍히는지는 이번에 말소리 없이 시험해서 보지 못했다.
 
 ### Gleo Interface (음성 명령으로 앱 기능 호출) [gleo-core] [gleo-deliver]
 
@@ -1282,10 +1397,17 @@ fun sendGleoBroadcast(
 
 - [x] STT/TTS 생성자, 모드 지정, `setLocale`과 지원 언어(`ko-KR` 포함), 결과 리스너, 앱 등록 방법 → 위 TextToSpeech / SpeechToText 절
 - [x] NaviHelper 목적지 요청(`requestRoute(RouteInfo)`), 도착 이벤트(`onDestinationArrived`), 권한별 API → 위 NaviHelper 절
+- [x] Pleos 에뮬레이터에서 STT `ON_DEVICE`가 Client ID/Secret 없이 동작하는지 → 동작한다 (PCM 입력과 마이크 입력 모두 한국어 인식 확인, 2026-11-05). 위 "STT `ON_DEVICE` 실행 확인"
 - [ ] 콘솔에서 "준비 중"인 STT/TTS를 `ON_DEVICE` 모드로 심사 제출 앱에서 써도 되는지. `STT_SERVICE`/`TTS_SERVICE` 권한에 사전 승인이 필요한지. (문서에 없음. Pleos 문의 필요)
 - [ ] Pleos 에뮬레이터에 On-device STT/TTS 엔진이 있어 실제로 인식·합성되는지 (GPU PC에서 직접 실행해 확인)
 - [x] `Mode.ON_DEVICE` 상수 이름 → `HYBRID`, `SERVER`, `ON_DEVICE` 확인 (AAR `javap`, 2026-11-03)
 - [ ] Android 표준 `SpeechRecognizer`, `android.speech.tts.TextToSpeech`를 Pleos에서 써도 되는지, `RECORD_AUDIO`가 필요한지
+- [ ] STT `request()`로 듣는 동안의 오디오 포커스: 음성 서비스가 잡는지(미디어가 줄거나 멈추는지), 앱이 `USAGE_VOICE_COMMAND`/`USAGE_ASSISTANT`로 요청해야 하는지. **문서에 없음** (2026-11-05, 위 "듣는 동안의 오디오 포커스, 콜백 스레드, 끝점 검출" Q1). 에뮬레이터에서 미디어 재생 중 `request()`하고 `adb shell dumpsys audio`의 포커스 스택으로 관찰해야 한다.
+- [ ] STT `ResultListener` 콜백 스레드, `initialize`/`request`/`stop`/`release` 호출 스레드 제약. **문서에 없음** (2026-11-05, Q2). 래퍼에서 스레드를 정해 두고 실행해서 콜백 스레드를 찍어 본다.
+- [ ] STT `stop()` 뒤에 `onUpdated(completed = true)` 최종 결과가 오는지, `onEndedRecognition()`이 `stop()`에서도 오는지. 문서는 "인식이 종료되면 `onEndedRecognition()`이 호출됩니다."뿐이다 (2026-11-05, Q2).
+- [ ] STT 무음일 때 오는 이벤트, `TIMEOUT`이 무음에서도(`ON_DEVICE`) 오는지, EPD 무음 대기 시간과 최대 녹음 시간. **문서에 없음** (2026-11-05, Q3). `onUpdatedEpdData`의 뜻과 단위(byte offset)는 확인했다.
+- [ ] STT `request()`(마이크) 입력의 오디오 형식. `onUpdatedEpdData`의 byte offset을 시간으로 바꾸는 데 필요하다. 문서에는 `sendAudio` 예시 형식(16 kHz, 16-bit, mono)만 있다.
+- [ ] STT `InferenceSource`(`ON_DEVICE`, `SERVER`)를 어느 API가 돌려주는지. 릴리스 노트에만 있고 API Reference 본문은 비어 있다 (2026-11-05).
 - [ ] 서드파티 앱의 전화 걸기 (`ACTION_DIAL`/`ACTION_CALL`, 블루투스 연결 폰 통화) 허용 여부
 - [ ] Android 표준 `LocationManager`(`ACCESS_FINE_LOCATION`) 위치를 Pleos에서 받을 수 있는지
 - [x] NaviHelper 데이터 클래스 필드 → NaviHelper 절 "산출물로 확인" (`TripInfo.eta`, `DrivingState.duration/distance`, `CurrentLocationInfo` 좌표). 단위는 미확인 (2026-11-03)
@@ -1349,7 +1471,7 @@ fun sendGleoBroadcast(
 - [constant-control] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/Vehicle/vehicle/ai.pleos.playground.vehicle.constant.control/entry
 - [constant-pkg] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/Vehicle/vehicle/ai.pleos.playground.vehicle.constant/entry (2026-11-05 확인)
 - [listener-pkg] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/Vehicle/vehicle/ai.pleos.playground.vehicle.listener/entry (2026-11-05 확인)
-- [sdk-release-note] https://document.pleos.ai/docs/pleos-only/release-note/sdk-release-note (Vehicle SDK v2.3.2, 2026-10-19 릴리스. 2026-11-05 확인. 같은 페이지의 "NaviHelper v3.0.5" 절도 2026-11-05 확인)
+- [sdk-release-note] https://document.pleos.ai/docs/pleos-only/release-note/sdk-release-note (Vehicle SDK v2.3.2, 2026-10-19 릴리스. SpeechToText·TextToSpeech v3.3.1 항목. 2026-11-05 확인. 같은 페이지의 "NaviHelper v3.0.5" 절도 2026-11-05 확인)
 - [navi-intro] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/NaviHelper/intro
 - [navi-import] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/NaviHelper/importing-sdk
 - [navi-perm] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/NaviHelper/declaring-permissions
@@ -1363,13 +1485,18 @@ fun sendGleoBroadcast(
 - [stt-import] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/SpeechToText/importing-sdk
 - [stt-perm] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/SpeechToText/declaring-permissions
 - [stt-init] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/SpeechToText/initialization-and-release
-- [stt-listener] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/SpeechToText/result-listeners
+- [stt-listener] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/SpeechToText/result-listeners (영문판 https://document.pleos.ai/en/docs/pleos-only/connect-sdk-pleos/SpeechToText/result-listeners 대조, 2026-11-05)
 - [stt-locale] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/SpeechToText/set-locale
 - [stt-appreg] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/SpeechToText/app-registration
-- [stt-start] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/SpeechToText/start-and-stop
+- [stt-start] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/SpeechToText/start-and-stop (영문판 `/en/docs/...` 대조, 2026-11-05)
 - [stt-audio] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/SpeechToText/sending-audio-data
-- [stt-error] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/SpeechToText/error-code
+- [stt-error] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/SpeechToText/error-code (영문판 `/en/docs/...` 대조, 2026-11-05)
 - [stt-api-ref] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/SpeechToText/entry (하위: `.../speech-to-text/ai.pleos.playground.stt/speech-to-text/entry`, `.../ai.pleos.playground.stt.constant/mode/entry`)
+  - 2026-11-05에 본 하위 페이지 (경로 앞부분은 `https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/SpeechToText/speech-to-text/`). 모두 제목만 있고 본문이 비어 있다:
+    - `ai.pleos.playground.stt/speech-to-text/initialize`, `.../request`, `.../stop`, `.../release`
+    - `ai.pleos.playground.stt.constant/entry`, `ai.pleos.playground.stt.constant/error-type/entry`
+    - `ai.pleos.playground.stt.data/entry`, `ai.pleos.playground.stt.data/inference-source/entry`
+    - `ai.pleos.playground.stt.listener/entry`, `ai.pleos.playground.stt.listener/result-listener/entry`
 - [tts-init] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/TextToSpeech/initialization-and-release
 - [tts-locale] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/TextToSpeech/set-locale
 - [tts-start] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/TextToSpeech/start-and-stop
@@ -1386,6 +1513,8 @@ fun sendGleoBroadcast(
 - [api-compat] https://document.pleos.ai/docs/pleos-only/vehicle-app-planning-guide/api-compatibility-availability
 - [navi-app-guide] https://document.pleos.ai/docs/pleos-only/vehicle-app-developer-guide/navigation-app-development-guide
 - [audio-focus] https://document.pleos.ai/docs/pleos-only/vehicle-app-developer-guide/audio-focus-development-guide/audio-focus-development
+- [audio-focus-suspend] https://document.pleos.ai/docs/pleos-only/vehicle-app-developer-guide/audio-focus-development-guide/suspend-mode-audio-focus (2026-11-05 확인)
+- [music-app-guide] https://document.pleos.ai/docs/pleos-only/vehicle-app-developer-guide/music-audio-app-developement-guide (2026-11-05 확인)
 - [driving-policy] https://document.pleos.ai/docs/pleos-only/vehicle-app-planning-guide/driving-restiction-policy
 - [design-colors] https://document.pleos.ai/docs/connect/guide/docs-design/foundations/colors
 - [emulator-release-note] https://document.pleos.ai/docs/pleos-only/release-note/emulator-release-note

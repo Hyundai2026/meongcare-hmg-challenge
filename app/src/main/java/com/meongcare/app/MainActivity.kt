@@ -37,6 +37,8 @@ import com.meongcare.app.ui.hospital.HospitalListScreen
 import com.meongcare.app.ui.home.HomeUiState
 import com.meongcare.app.ui.home.HomeViewModel
 import com.meongcare.app.ui.theme.MeongCareTheme
+import com.meongcare.app.ui.voice.SymptomVoiceViewModel
+import com.meongcare.app.ui.voice.VoiceActions
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -94,6 +96,22 @@ class MainActivity : ComponentActivity() {
                             container.refreshPetProfile()
                             cardViewModel.onStartNewCard()
                         },
+                    )
+                }
+
+                val voiceViewModel: SymptomVoiceViewModel = viewModel(
+                    factory = SymptomVoiceViewModel.factory(
+                        voiceInput = container.voiceInput,
+                        session = container.medicalCardSession,
+                        isSimulated = container.isVoiceSimulated,
+                    ),
+                )
+                val voiceUiState by voiceViewModel.uiState.collectAsStateWithLifecycle()
+                val voiceActions = remember(voiceViewModel) {
+                    VoiceActions(
+                        onStart = voiceViewModel::onStartListening,
+                        onCancel = voiceViewModel::onCancelListening,
+                        onStop = voiceViewModel::onStop,
                     )
                 }
 
@@ -166,6 +184,8 @@ class MainActivity : ComponentActivity() {
                         val linkUiState by linkViewModel.uiState.collectAsStateWithLifecycle()
                         LinkScreen(state = linkUiState, onNewCode = linkViewModel::onNewCode, onClose = linkViewModel::close)
                     },
+                    voice = voiceUiState,
+                    voiceActions = voiceActions,
                     bottomBar = {
                         if (BuildConfig.DEBUG) {
                             val fake = container.fakeDrivingStateSource

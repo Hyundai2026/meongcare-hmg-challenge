@@ -73,8 +73,26 @@
 - Pleos Connect SDK로 개발한다. 세부 내용은 [../pleos/sdk-notes.md](../pleos/sdk-notes.md) 참고.
 - FAQ "어떤 SDK와 API를 쓸 수 있나요?": "Vehicle SDK, NaviHelper SDK, TextToSpeech SDK, SpeechToText SDK, FusedLocation SDK입니다."
   - Playground 콘솔에서는 이 중 TTS·STT·FusedLocation이 "준비 중"이다 ([../pleos/sdk-notes.md](../pleos/sdk-notes.md#sdk-사용-가능-상태-playground-콘솔-기준-create-project)). FAQ는 "각 SDK의 현재 제공 상태와 사용 조건은 SDK 문서 페이지에서 확인해 주세요."라고만 한다.
+  - **2026-11-12 확인: 대회 공지가 "준비 중"이어도 써도 된다고 한다** (아래 "개발 범위").
 - 개발 가이드의 앱 예시 (주제를 제한하지 않는 참고용): "음성 메모 앱" — "SpeechToText SDK로 운전 중 음성을 받아 메모로 남깁니다." 주최측이 운전 중 음성 입력을 예시로 든다.
 - 수상팀 지원 항목의 Pleos App Market 탑재는 "별도 검증·심사와 지원 차종·지역 조건을 거치며 최종 입점 또는 배포를 보장하지 않습니다."
+
+## 개발 범위 (공지 "공모전 개발 범위 및 기술 문의 안내")
+
+출처: https://appdevchallenge.auto-hmg.io/notice/c0a1a000-2026-4923-8000-000000000008 (게시일은 페이지에 없다. 2026-11-12 확인, 원문 대조함). 자세한 기록: [../pleos/sdk-notes.md](../pleos/sdk-notes.md) "공모전 참가자에게 해당하는 안내".
+
+- "개발 문서에 공개된 SDK(Vehicle SDK, NaviHelper SDK, TextToSpeech SDK, SpeechToText SDK, FusedLocation SDK)는 공모전 출품작에 사용할 수 있습니다."
+- "Pleos Playground 워크스페이스에 '준비 중'으로 표시되어 있더라도 개발 문서에 안내된 방법으로 에뮬레이터에서 개발·시험할 수 있습니다."
+  - → STT·TTS(`ON_DEVICE`)·FusedLocation을 공모전에서 써도 된다. 문의 B2는 공모전 범위에서는 풀렸다.
+  - → Vehicle Control(공조 제어 등)은 공지에 이름이 따로 없다. 새 `pleos.car.permission.*`이 필요하므로 AGENTS.md 규칙 2(사용자 승인)는 그대로다.
+- "문서에서 지원되지 않는 기능은 사용할 수 없습니다. 필요한 경우 기획서에 향후 계획으로 적어 주세요"
+- "개발 문서에 공개되지 않은 SDK와 Pleos LLM SDK는 공모전 기간 중 제공되지 않습니다."
+- "차량 마이크 음성을 외부 음성 인식 서비스로 보내는 방식은 공식 개발 문서에서 지원하지 않아 사용할 수 없습니다. 음성 인식은 SpeechToText SDK를 이용해 주세요"
+  - → 외부 AI API에는 소리가 아니라 STT가 받아쓴 글자만 보낸다. 공지에 외부 웹 API·자체 서버를 막는 문장은 없다 (A1 답과 같다).
+- "공모전 참가팀은 Gleo Interface(App Schema) 검토·승인을 신청할 수 없습니다" → Gleo는 기획서에 향후 계획으로만 쓴다.
+- "2차 PT는 Pleos Connect 에뮬레이터에서 구동되는 앱 시연으로 진행합니다. 실제 차량은 필요하지 않습니다"
+- "이번 공모전의 심사는 Pleos App Market 입점 심사가 아닙니다."
+- 기술 문의: "개별 기능의 구현 방법이나 특정 API의 동작에 대한 문의에는 따로 답변드리지 않습니다" → 남은 기술 문의(B1, B3, B4)는 답을 기대하지 않는다.
 
 ## 출품 유의사항 (공지 "공모전 참가 및 출품 유의사항 안내")
 

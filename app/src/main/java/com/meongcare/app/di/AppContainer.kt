@@ -42,6 +42,10 @@ import com.meongcare.app.data.server.FunctionNearbyVetSource
 import com.meongcare.app.data.server.nearbyFunctionUrlOf
 import com.meongcare.app.domain.hospital.HospitalBoard
 import com.meongcare.app.data.phone.AndroidPhoneDialer
+import com.meongcare.app.data.speech.AndroidAudioFocusGate
+import com.meongcare.app.data.speech.FakeSpeaker
+import com.meongcare.app.data.speech.PleosTextToSpeechClient
+import com.meongcare.app.data.speech.RealSpeaker
 import com.meongcare.app.data.voice.FakeVoiceInput
 import com.meongcare.app.data.voice.PleosSpeechToTextClient
 import com.meongcare.app.data.voice.RealVoiceInput
@@ -58,6 +62,8 @@ import com.meongcare.app.domain.hospital.HospitalCandidate
 import com.meongcare.app.domain.hospital.NearbyVetSource
 import com.meongcare.app.domain.trip.CaseSender
 import com.meongcare.app.domain.trip.HospitalTrip
+import com.meongcare.app.domain.trip.TripAnnouncer
+import com.meongcare.app.domain.speech.Speaker
 import com.meongcare.app.domain.location.CurrentLocationSource
 import com.meongcare.app.BuildConfig
 import com.meongcare.app.ui.card.symptomLabelRes
@@ -93,6 +99,9 @@ class AppContainer(context: Context, val dataMode: DataMode) {
 
     /** 음성 입력 구성. [SourcePlan]과 따로 정한다 ([voiceInputKindOf], docs/plans 010 "설계 결정 7"). */
     val voiceInputKind: VoiceInputKind = voiceInputKindOf(mode = dataMode, isAutomotive = isAutomotive)
+
+    /** 소리 안내(TTS) 구성. [SourcePlan]과 따로 정한다 ([speechOutputKindOf], docs/plans 017 "설계 결정 7"). */
+    val speechOutputKind: SpeechOutputKind = speechOutputKindOf(mode = dataMode, isAutomotive = isAutomotive)
 
     /** 프로세스와 수명이 같은 코루틴 범위. Fake 길안내의 시간 흐름과 시연 시나리오가 여기서 돈다. */
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -329,6 +338,16 @@ class AppContainer(context: Context, val dataMode: DataMode) {
         ackPollInterval = tripTiming.ackPollInterval,
     )
 
+    /**
+     * 짧은 문장을 소리로 읽는다 (017). `null`이면 이 구성에 소리 안내가 없다.
+     * 018(길안내 중 증상 추가)의 확인 소리도 이것을 쓴다. 한 번에 하나씩 읽으므로 안내와 확인이 겹치지 않는다.
+     */
+    val speaker: Speaker? = when (speechOutputKind) {
+        SpeechOutputKind.NONE -> null
+        SpeechOutputKind.FAKE -> FakeSpeaker()
+        SpeechOutputKind.REAL -> RealSpeaker(PleosTextToSpeechClient(context), focus = AndroidAudioFocusGate(context))
+    }
+
     /** Pleos Vehicle 연결. Real 구성에서만 만든다 (Fake에서는 Vehicle을 만들지 않는다). */
     val vehicleConnection: VehicleConnection? =
         if (sourcePlan.createsVehicleConnection) VehicleConnection(context) else null
@@ -337,6 +356,16 @@ class AppContainer(context: Context, val dataMode: DataMode) {
         // 주행 상태와 길안내가 모두 Fake일 때만: 안내를 시작하면 출발하고, 도착하면 주차하는 시연 흐름을 만든다.
         if (sourcePlan.runsTripScenario) {
             FakeTripScenario(applicationScope, guidanceSource, fakeDrivingStateSource).start()
+        }
+        // 병원 가는 길의 사건(출발, 카드 전송, 병원 확인, 도착)을 소리로 알린다 (017). 로그에는 사건 종류와 결과만 남는다.
+        speaker?.let {
+            TripAnnouncer(
+                trip = hospitalTrip.trip,
+                guidance = guidanceSource.state,
+                speaker = it,
+                scope = applicationScope,
+                log = { message -> Log.i(ANNOUNCER_LOG_TAG, message) },
+            ).start()
         }
     }
 
@@ -355,6 +384,7 @@ class AppContainer(context: Context, val dataMode: DataMode) {
 
 /** 병원 찾기·카드 전송 로그 태그 (012). `adb logcat -s HospitalTrip` */
 private const val TRIP_LOG_TAG = "HospitalTrip"
+private const val ANNOUNCER_LOG_TAG = "TripAnnouncer"
 
 /** 보호자 웹 연결 로그 태그 (014). `adb logcat -s OwnerLink` */
 private const val OWNER_LINK_LOG_TAG = "OwnerLink"

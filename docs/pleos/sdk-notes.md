@@ -1279,6 +1279,41 @@ xxj15 Mac, AVD `pleos_connect`, 앱 debug 빌드 "시연 (주행 Real)" 모드 (
   - 그래서 앱은 `stop()` 뒤 `onEndedRecognition`이 오거나 1초가 지나면 `removeListener()` → `release()`한다 (`PleosSpeechToTextClient`). 고친 뒤 [듣기 취소], 15초 시간 초과, 듣는 중 주행 전환(기어 D) 모두 녹음이 멈췄다.
 - 우리 앱 로그(`PleosStt`)에는 이벤트 이름만 남는다. SDK와 음성 서비스 자체 로그에 인식 문장이 찍히는지는 이번에 말소리 없이 시험해서 보지 못했다.
 
+### TTS `ON_DEVICE` 실행 확인 (관찰, 2026-11-12)
+
+문서가 아니라 실행해서 본 결과다 (계획 017 단계 1 spike).
+
+- 환경:
+  - PC: xxj15의 Windows PC (RTX 4070 Laptop)
+  - AVD: `pleos_connect` (Cold boot)
+  - 음성 서비스: `ai.pleos.playground.caas` 4.2.10-coral-aosp (`versionCode` 4002010). AAR의 최소 버전 4.1.29보다 높다.
+- 실험 코드: 로컬 브랜치 `spike/tts-ondevice` (dev에 합치지 않음)의 debug 화면 `TtsProbeActivity`. adb `am start --es cmd …`로 명령을 보냈다.
+- **에이전트는 소리를 듣지 못했다.** 재생 여부는 `dumpsys audio`의 AudioTrack `state:started`, `onUpdatedRms` 값, 음성 서비스 로그로 판단했다. 귀로 들어서 확인할 것(첫 음절 잘림)은 남았다.
+
+| # | 본 것 | 결과 |
+|---|---|---|
+| S1 | `ON_DEVICE` 한국어, Client ID/Secret 없이 | **재생된다.** 음성 서비스 프로세스(`ai.pleos.playground.caas`)의 AudioTrack이 `state:started`, 22050Hz mono. RMS 값이 온다. 화자는 `seoyoon` (서비스 로그 `generate … speaker=seoyoon locale=ko_KR`) |
+| S2 | 권한 | `pleos.car.permission.TTS_SERVICE`는 `protectionLevel:normal`(정의 패키지 `ai.pleos.playground.caas`). 매니페스트에 선언하면 설치 때 `granted=true` |
+| S3 | 시간과 콜백 | `initialize(listener)` → `onSuccess`까지 **9~16ms**. 부팅 뒤 첫 객체만 562ms. `speak()`마다 `onReady` → `onStart`(10~160ms 뒤) → `onUpdatedRms` 여러 번 → `onDone`. 콜백은 **binder 스레드**로 온다. SDK 호출은 메인 스레드에서 했다 |
+| S3 | 부팅 뒤 첫 합성 | **소리가 나기까지 약 6초 늦었다.** `onStart` 6.2초 뒤 첫 RMS가 왔고, `onDone`은 `onStart` 10.8초 뒤였다. 두 번째부터는 같은 객체든 새 객체든 첫 RMS가 `onStart` 0.5~0.8초 뒤에 왔다. 그래서 늦은 것은 객체가 아니라 음성 엔진의 첫 합성이다 |
+| S4 | 첫 음절 잘림 | 확인 못 함 (소리를 듣지 못함) |
+| S5 | 36자 문장 | `onStart` → `onDone` 약 5초. `onDone`은 서비스가 재생을 끝내고 player를 놓은 뒤에 온다 (`onDeviceTtsPlayer - released` → `UpdateTtsDone`) |
+| S6 | 말하는 중 다시 `speak()` | **줄을 서지 않고 앞 문장을 끊는다.** 서비스가 앞 작업을 `fadeout`하고 새 작업을 시작한다. 앞 문장에는 `onDone`도 `onStop`도 오지 않는다 (서비스 로그 `sendTtsDataIfLatest ignore - latestId=…`). 오류는 없다. → 앱이 앞 문장의 끝(`onDone`/`onStop`/`onError`)을 기다린 뒤 다음 문장을 넘겨야 한다 |
+| S7 | 말하는 중 `stop()` | 약 16ms 뒤 `onStop`. `onDone`은 오지 않는다. 서비스는 `fadeout` 뒤 약 0.2초에 재생을 멈춘다 |
+| S7 | 말하지 않을 때 `stop()` | 그래도 `onStop`이 온다 |
+| S7 | `stop()` 바로 뒤 `speak()` | `onStop` → `onReady` → `onStart` → `onDone`. 된다 |
+| S7 | `stop()` 바로 뒤 `release()` | 이번에는 `stop`이 서비스에 닿아 재생이 멈췄다. 다만 SDK 로그에 `disconnectService`가 서비스의 `stop` 수신보다 먼저 찍혔다. 순서가 경쟁이다 (STT 010에서는 이 경쟁으로 녹음이 계속됐다). 그래서 `stop()` → `onStop`을 기다린 뒤 `release()`하는 것이 안전하다 |
+| S8 | usage | `setAudioAttributes`를 `initialize` 성공 뒤(`onSuccess` 안)에 부르면 **서비스 AudioTrack의 usage가 그 값으로 바뀐다.** `USAGE_ASSISTANCE_NAVIGATION_GUIDANCE`(12), `USAGE_ASSISTANT`(16) 모두 확인. 부르지 않으면 `USAGE_MEDIA` ([aar-tts]와 같다) |
+| S8 | 오디오 포커스 | **아무도 포커스를 잡지 않는다.** 말하는 동안 `dumpsys audio`의 포커스 스택이 비어 있었다 (세 usage 모두). SDK도 음성 서비스도 포커스를 요청하지 않는다 |
+| S9 | 음악 중 말하기 | 확인 못 함 (에뮬레이터에 음악 파일이 없다. `com.android.music`은 있다) |
+| S10 | 내비 음성과 겹침 | 확인 못 함 (spike에서는 경로를 시작하지 않았다). 내비 앱(`ai.umos.maps.android.navigation.app`)은 `USAGE_ASSISTANCE_NAVIGATION_GUIDANCE` MediaPlayer를 여러 개 갖고 있다 |
+| S11 | 우리 앱이 뒤에 있을 때 | **재생된다.** 내비 앱을 앞으로 띄워 우리 앱이 가려진 상태(`topResumedActivity`가 내비)에서 `speak()` → `onDone`까지 왔다. Pleos 홈 키로는 우리 앱이 뒤로 가지 않았다 (멀티 윈도우) |
+| S12 | 229자 문장 | 오류 없이 끝까지 읽었다 (`onStart` → `onDone` 27.6초) |
+| S13 | 로그에 문장 | **SDK가 우리 앱 프로세스에서 읽을 문장 전체를 로그에 남긴다**: `D [GAAS][SDK]OnDeviceStreamTts: doSpeak(com.meongcare.app) text=…`. 음성 서비스도 `I [GAAS]OnDeviceTtsStreamManagerImpl: … received final. texts=…`로 남긴다. 앱에서 막을 수 없다 → 안내 문장에 반려견 이름·증상 같은 민감한 정보를 넣지 않는다 |
+
+- 서비스 쪽 처리 흐름 (로그): `speak` → `OnDeviceTtsStreamManagerImpl` 작업 만들기(jobId) → `OnDeviceStreamPlayerImpl` 모델 불러오기(23~29ms) → `generate` 조각마다 PCM → `writeAudioTrack` → 끝나면 player release → `UpdateTtsDone`.
+- 서비스 로그에 `AppOpsRepository … isOpAllowed(com.meongcare.app) :android:play_audio`가 있다. 앱의 오디오 재생 권한(AppOps)을 확인하는 것으로 보인다 (추정).
+
 ### Gleo Interface (음성 명령으로 앱 기능 호출) [gleo-core] [gleo-deliver]
 
 - Gleo AI가 앱이 정의한 function을 호출하는 function calling 방식이다. 앱은 App Schema(JSON)를 등록하고, Gleo AI는 Gleo Action으로 앱을 부르며, 앱은 Callback으로 응답한다. [gleo-core]
@@ -1611,8 +1646,8 @@ fun sendGleoBroadcast(
 - [x] Pleos 에뮬레이터에서 STT `ON_DEVICE`가 Client ID/Secret 없이 동작하는지 → 동작한다 (PCM 입력과 마이크 입력 모두 한국어 인식 확인, 2026-11-05). 위 "STT `ON_DEVICE` 실행 확인"
 - [x] 공모전 출품작·PT에서 콘솔 "준비 중"인 STT/TTS를 문서에 안내된 방법(`ON_DEVICE` 포함)으로 써도 되는지 → 된다. 대회 공지 "Pleos Playground 워크스페이스에 '준비 중'으로 표시되어 있더라도 개발 문서에 안내된 방법으로 에뮬레이터에서 개발·시험할 수 있습니다" (2026-11-12) [contest-notice-scope]
 - [ ] App Market 입점 심사 제출 앱에서 콘솔 "준비 중"인 STT/TTS를 `ON_DEVICE` 모드로 써도 되는지. `STT_SERVICE`/`TTS_SERVICE` 권한에 사전 승인이 필요한지. (문서에 없음. 대회 공지는 "이번 공모전의 심사는 Pleos App Market 입점 심사가 아닙니다."라고 해서 이 부분은 답하지 않는다)
-- [ ] Pleos 에뮬레이터에 On-device STT/TTS 엔진이 있어 실제로 인식·합성되는지 (GPU PC에서 직접 실행해 확인)
-  - STT는 된다 (2026-11-05 관찰, 위 "STT `ON_DEVICE` 실행 확인"). **TTS `ON_DEVICE` 한국어 합성은 아직 실행해 보지 않았다** → 아래 "017·018" 목록.
+- [x] Pleos 에뮬레이터에 On-device STT/TTS 엔진이 있어 실제로 인식·합성되는지 (GPU PC에서 직접 실행해 확인) → STT 2026-11-05, TTS 2026-11-12 확인 (각 "`ON_DEVICE` 실행 확인" 절)
+  - STT는 된다 (2026-11-05 관찰, 위 "STT `ON_DEVICE` 실행 확인"). TTS도 재생된다 (2026-11-12 관찰, 위 "TTS `ON_DEVICE` 실행 확인").
 - [x] `Mode.ON_DEVICE` 상수 이름 → `HYBRID`, `SERVER`, `ON_DEVICE` 확인 (AAR `javap`, 2026-11-03)
 - [ ] Android 표준 `SpeechRecognizer`, `android.speech.tts.TextToSpeech`를 Pleos에서 써도 되는지, `RECORD_AUDIO`가 필요한지
   - 2026-11-12: 공모전에서는 대회 공지가 "음성 인식은 SpeechToText SDK를 이용해 주세요."라고 한다. `SpeechRecognizer`를 이름으로 금지하지는 않는다. TTS와 `RECORD_AUDIO`에 대한 문장은 없다. [contest-notice-scope]
@@ -1646,18 +1681,18 @@ fun sendGleoBroadcast(
 문서에 없어서 AAR(`javap`)이나 에뮬레이터 실행으로 봐야 하는 것이다. 근거는 위 "TTS 문서 조사 (017 선행, 2026-11-12)" T1~T7.
 
 - AAR(`javap`)로 볼 것:
-  - [ ] `speak()`의 정확한 시그니처 (`isFinal` 기본값 인자인지, 반환형)
-  - [ ] `setAudioAttributes`, `setAudioZoneId`, `setSpeakerType`의 인자 타입. `setSpeakerType`이 받는 enum이 있다면 그 값 (API Reference 목차의 constant 패키지에는 `ErrorType`, `Mode`뿐이다)
-  - [ ] `EventListener`에 기본 구현이 있는지 (필요한 콜백만 재정의해도 되는지)
-  - [ ] AAR 매니페스트가 더하는 권한·`<queries>`, 요구 음성 서비스 최소 버전 (STT 3.3.1은 `INTERNET`, `SPEECH_START`, CAAS 4.1.29였다)
+  - [x] `speak()`의 정확한 시그니처 → `speak(String, Boolean)`, 둘째 인자에 기본값 (`speak$default`), 반환형 없음 [aar-tts]
+  - [x] (2026-11-12 [aar-tts]: `AudioAttributes`, `Int`, `String`. `setSpeakerType`이 받는 값의 목록은 AAR에도 없다) `setAudioAttributes`, `setAudioZoneId`, `setSpeakerType`의 인자 타입. `setSpeakerType`이 받는 enum이 있다면 그 값 (API Reference 목차의 constant 패키지에는 `ErrorType`, `Mode`뿐이다)
+  - [x] `EventListener`에 기본 구현이 있는지 → 없다. 6개 모두 재정의한다 [aar-tts]
+  - [x] (2026-11-12 [aar-tts]: STT와 같다. `INTERNET`, `SPEECH_START`, CAAS 4.1.29) AAR 매니페스트가 더하는 권한·`<queries>`, 요구 음성 서비스 최소 버전 (STT 3.3.1은 `INTERNET`, `SPEECH_START`, CAAS 4.1.29였다)
 - 에뮬레이터에서 볼 것 (TTS):
-  - [ ] `ON_DEVICE` 한국어 합성이 Client ID/Secret 없이 소리 나는지, `initialize` 성공까지 걸리는 시간
-  - [ ] `pleos.car.permission.TTS_SERVICE`의 보호 수준 (`STT_SERVICE`는 `normal`이었다. `adb shell dumpsys package`로 확인)
-  - [ ] 콜백 순서와 횟수: `onReady`가 초기화 뒤 한 번인지 `speak()`마다인지, `onStart` → `onDone` 순서, 콜백 스레드
-  - [ ] 말하는 중 다시 `speak()`하면 앞 문장 뒤에 줄을 서는지, 앞 문장을 끊는지, 오류(`INVALID_REQUEST_ERROR`)가 나는지
-  - [ ] `stop()` 뒤 `onStop`만 오는지(`onDone`은 안 오는지), 말하지 않을 때 `stop()`하면 무엇이 오는지, `stop()` 바로 뒤 `speak()`가 되는지
-  - [ ] 긴 문장(예: 200자 이상)도 끝까지 읽는지, 글자 수 제한 오류가 있는지
-  - [ ] 재생 usage와 오디오 포커스: `speak()` 중 `adb shell dumpsys audio`의 포커스 스택과 usage. 앱이 따로 포커스를 요청하지 않아도 내비 음성·미디어가 줄어드는지(duck) 멈추는지
+  - [x] `ON_DEVICE` 한국어 합성이 Client ID/Secret 없이 소리 나는지, `initialize` 성공까지 걸리는 시간 → 재생된다(귀로는 듣지 못함), 9~16ms (부팅 뒤 처음만 562ms). 아래 "TTS `ON_DEVICE` 실행 확인"
+  - [x] (`normal`, 설치하면 `granted=true`) `pleos.car.permission.TTS_SERVICE`의 보호 수준 (`STT_SERVICE`는 `normal`이었다. `adb shell dumpsys package`로 확인)
+  - [x] 콜백 순서와 횟수: `onReady`가 초기화 뒤 한 번인지 `speak()`마다인지, `onStart` → `onDone` 순서, 콜백 스레드 → `speak()`마다 `onReady` → `onStart` → (`onUpdatedRms` 여러 번) → `onDone`. binder 스레드
+  - [x] 말하는 중 다시 `speak()`하면 앞 문장 뒤에 줄을 서는지, 앞 문장을 끊는지, 오류(`INVALID_REQUEST_ERROR`)가 나는지 → **앞 문장을 끊는다**(fadeout). 앞 문장에는 `onDone`·`onStop`이 오지 않는다. 오류 없음
+  - [x] `stop()` 뒤 `onStop`만 오는지(`onDone`은 안 오는지), 말하지 않을 때 `stop()`하면 무엇이 오는지, `stop()` 바로 뒤 `speak()`가 되는지 → `onStop`만 온다. 말하지 않을 때도 `onStop`. `stop()` 바로 뒤 `speak()`는 된다
+  - [x] 긴 문장(예: 200자 이상)도 끝까지 읽는지, 글자 수 제한 오류가 있는지 → 229자를 오류 없이 끝까지 (27.6초)
+  - [x] (usage는 `setAudioAttributes` 값대로, 포커스는 아무도 잡지 않는다. 음악이 줄어드는지는 음악 파일이 없어 못 봄) 재생 usage와 오디오 포커스: `speak()` 중 `adb shell dumpsys audio`의 포커스 스택과 usage. 앱이 따로 포커스를 요청하지 않아도 내비 음성·미디어가 줄어드는지(duck) 멈추는지
   - [ ] 내비(NaviHelper 길안내) TBT 음성이 나오는 중에 `speak()`하면 둘 다 들리는지, 한쪽이 줄거나 멈추는지, 우리 TTS가 `AUDIO_ERROR`로 거절되는지
   - [ ] 첫 음절이 잘리는지 (선행 묵음을 SDK가 넣는지 간접 확인). 잘리면 문장 앞에 쉼표·공백을 넣는 우회가 듣는지
 - 에뮬레이터에서 볼 것 (STT와 TTS 번갈아 쓰기, 018):

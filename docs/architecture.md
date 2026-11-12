@@ -30,7 +30,7 @@
 |---|---|---|---|
 | 의료 프로필 저장 | **차 기기에 저장하지 않는다** (014). 연결된 보호자의 프로필을 서버에서 읽어 메모리에만 둔다. 기기에 남길 것(연결 자격, 나중에 마지막 프로필)은 Room·SQLCipher 대신 **Android Keystore로 직접 암호화한 앱 전용 파일**로 한다 (사용자 결정 U5, 2026-11-06) | Pleos 보안 가이드: 기기에 저장하는 민감정보는 암호화해야 한다. 문서 하나·자격 하나에 DB는 과하다 | 결정. 11/15 범위는 저장 없음(앱을 다시 켜면 다시 연결). 연결 자격 암호화 저장은 PT 전 (계획 019, 웹의 연결된 차 관리·내 정보 지우기와 같이. 015는 근처 동물병원 검색이 썼다) |
 | 음성 → 글자 | **Pleos SpeechToText `ON_DEVICE`** (`ko-KR`) + Fake | 네트워크와 앱 등록이 필요 없다. 기술 활용성 점수에 유리하다 | **결정 (2026-11-05 사용자 결정)**: Pleos 에뮬레이터에서 키 없이 한국어 인식을 확인했다 ([sdk-notes.md](pleos/sdk-notes.md) "STT `ON_DEVICE` 실행 확인"). 콘솔은 아직 "준비 중"이라 **음성은 추가 입력 수단**으로 두고, 증상 버튼 흐름은 그대로 둔다. **2026-11-12 대회 공지로 공모전에서는 써도 된다** (B2 해결). 버튼이 기본이고 음성은 추가라는 구조는 그대로다. **구현함 (010)**: 정차 중 증상 고르기 화면에서 한 문장 → 키워드 규칙(AI 없음) → 증상 선택에 더함. 주행 중 음성은 B1 뒤. `RECORD_AUDIO`는 선언하지 않았다 (Pleos 에뮬레이터에서는 음성 서비스가 대신 녹음한다) |
-| 음성 안내 | Pleos TextToSpeech `ON_DEVICE` + Fake | STT와 같은 이유 | **만든다 (2026-11-12 사용자 결정, 계획 017).** 2026-11-12 대회 공지로 공모전에서는 써도 된다. 권한 `TTS_SERVICE`는 팀 승인됨. 주행 중 화면을 보지 않아도 되게 길안내 사건(출발, 병원 카드 확인, 도착)을 짧게 읽는다. 018(주행 중 증상 추가)의 확인 소리도 이것을 쓴다 |
+| 음성 안내 | Pleos TextToSpeech `ON_DEVICE` + Fake | STT와 같은 이유 | **구현함 (017, 2026-11-12 사용자 결정).** 2026-11-12 대회 공지로 공모전에서는 써도 된다. 권한 `TTS_SERVICE`는 팀 승인됨 (보호 수준 normal). 말하는 사건: 출발 / 늦게 보냄 / 못 보냄 / 병원 확인 / 도착을 안내 한 번에 한 번씩 (`domain/trip/TripAnnouncer`), 문장에는 병원 이름만. 재생은 usage `USAGE_ASSISTANCE_NAVIGATION_GUIDANCE`, 앱이 `AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK`로 포커스를 잡는다 (SDK·음성 서비스는 잡지 않는다, spike S8). 우리 앱이 내비에 가려져 있어도 소리가 난다 (S11). 한계: 부팅 뒤 첫 합성은 약 6초 늦다, Pleos SDK가 읽는 문장을 기기 로그에 남긴다. 018(주행 중 증상 추가)의 확인 소리도 이것을 쓴다. 아래 "TextToSpeech 수명주기" |
 | 증상 → 진료 카드 | Claude API, 구조화 출력(JSON 스키마). 진단하지 않고 말한 내용만 정리한다. 카드 생성이 길안내·병원 연결을 막지 않게 뒤에서 따로 돈다 | 정해진 형식으로 증상·복용약·병력만 뽑는다 | **임시: `claude-opus-5-5` (effort `low`). 모델과 AI 범위는 팀 논의 필요.** **지금(009)은 AI 없이 규칙으로 조합한다**: 등록된 프로필 + 큰 버튼으로 고른 증상(12개 프리셋) → `medicalCardOf`. Claude API는 A1 뒤 |
 | 서버 | **Firebase** | AI 키와 장소 검색 키를 앱에 넣지 않는다 (Pleos 보안 가이드: 키 하드코딩 금지, HTTPS·TLS 1.2+). 팀의 웹 경험과 가깝다 | **구현함 (012): Firestore + 익명 Auth, Spark(무료) 요금제, Functions 없음.** 익명 토큰은 만료 5분 전에 같은 uid로 미리 갱신한다 (013). 개발·시연은 PC의 Firebase 에뮬레이터 (`firebase/`). 진짜 프로젝트("MeongCare", Spark, Firestore 서울) 연결은 아직이다. Functions(카카오·Claude 키 숨기기)는 Blaze가 필요해 배포하지 않는다. **015: 근처 동물병원 함수 `nearbyVets`(카카오 키를 이 함수만 안다)를 PC의 Functions 에뮬레이터에서만 돌린다** (`firebase/functions/`, `npm --prefix firebase run emulators:nearby`). 배포할 때 할 일: Blaze, 비밀 관리자, App Check·속도 제한 다시 정하기 |
 | 병원 목록 | **제휴 병원** (병원 웹으로 대기 시간을 알리는 병원, Firestore `hospitals`). 시연 병원 5곳 | 응급에서 "현실적으로 가장 빨리 진료받을 곳"을 알려면 병원이 알린 대기 시간이 필요하다 (사용자 결정 2026-11-06) | **구현함 (012)**. **015: 카카오 로컬 검색 병원(반경 5km, 최대 15곳)을 더했다.** 시연용 예시 대기(5~60분, "(예시)" 표시)를 붙여 제휴 병원과 한 순위에 섞고 5개씩 쪽으로 보인다. 진료 카드는 제휴 병원에만. 결과는 저장하지 않는다 (카카오 운영정책). debug + PC 에뮬레이터에서만 (release는 제휴 병원만). 형식: [docs/data/nearby-vets.md](data/nearby-vets.md) |
@@ -99,6 +99,7 @@ app/src/main/java/com/meongcare/app/
     DataModeStore.kt          debug에서 고른 모드를 저장 (release는 항상 DEMO)
     AppRestarter.kt           모드를 저장하고 앱을 다시 시작 (debug)
     VoicePlan.kt              모드 × 차량 기기 → 음성 입력 종류(NONE/FAKE/REAL). 화면에서 빼는 스위치 VOICE_INPUT_ENABLED
+    SpeechPlan.kt             (017) 모드 × 차량 기기 → 소리 안내 종류(NONE/FAKE/REAL). 끄는 스위치 SPEECH_OUTPUT_ENABLED
   domain/driving/
     DrivingState.kt           PARKED / DRIVING / UNKNOWN
     DrivingStateSource.kt     주행 상태를 Flow로 주는 인터페이스
@@ -137,6 +138,8 @@ app/src/main/java/com/meongcare/app/
                               HospitalBoardSource(목록 인터페이스), TravelEstimate(직선 거리 어림), HospitalRanking(순위 규칙) (012)
                               015: NearbyVetSource·NearbyVets, nearbyVetRowsOf(거리순·5km·제휴와 겹침 제거), exampleStatusOf(예시 대기)
   domain/trip/                CaseCard(보낼 카드, 사진 제외)·CaseSender(전송 + 병원 확인 읽기 AckRead), HospitalTrip(출발·전송·갱신·도착/취소·확인 읽기·진행 시작값, FinderStep) (012·013)
+                              (017) TripAnnouncement(소리로 읽을 사건과 문장), TripAnnouncer(HospitalTrip.trip·길안내 상태를 보고 사건을 순서대로 말한다)
+  domain/speech/              (017) Speaker(짧은 문장을 읽고 끝 결과를 돌려준다, 한 번에 하나), SpeakResult, SpeakFailure
   domain/phone/               PhoneDialer(전화 앱 열기)
   data/hospital/
     SampleHospitals.kt        010의 고정 시연 병원(demo)과 시연용 제휴 병원 5곳(partners, hospitals.sample.json과 같은 값)
@@ -165,6 +168,12 @@ app/src/main/java/com/meongcare/app/
     SpeechToTextClient.kt     Pleos STT 경계 (SttEvent. Pleos 타입 없음)
     RealVoiceInput.kt         STT 이벤트 → VoiceEvent, 시간 제한 (Pleos 없음, JVM 테스트)
     PleosSpeechToTextClient.kt  Pleos SpeechToText ON_DEVICE를 부르는 유일한 파일
+  data/speech/                (017)
+    FakeSpeaker.kt            소리 없이 글자 수만큼 기다리는 Fake
+    TextToSpeechClient.kt     Pleos TTS 경계 (TtsEvent. Pleos 타입 없음)
+    RealSpeaker.kt            TTS 이벤트 → SpeakResult, 한 번에 하나(Mutex), 시간 제한, 오디오 포커스 (Pleos 없음, JVM 테스트)
+    AudioFocusGate.kt         오디오 포커스 경계. AndroidAudioFocusGate.kt가 AudioManager로 길안내 음성 포커스를 잡는다
+    PleosTextToSpeechClient.kt  Pleos TextToSpeech ON_DEVICE를 부르는 유일한 파일
   di/TripTiming.kt            시연·실제 길안내별 도착 예정 갱신·병원 확인 읽기 간격 (013)
   di/PetPlan.kt               (014) 반려견 프로필·보호자 연결 구성 (petPlanOf, petProfileIsSampleOf)
   ui/theme/                   Color(+ TripColors), Type(글자 크기, DrivingText), Dimens(터치 크기), Theme
@@ -280,6 +289,19 @@ ui ──▶ domain ◀── data
 
   - 시연용 표시: 음성 영역 안 작은 글씨 "시연용 음성 입력이에요. 실제로 듣지 않고 예시 문장을 받아써요." 주행 화면에는 음성 영역이 없다.
   - 음성 입력이 없으면 증상 고르기 화면에 음성 영역이 없고, 버튼 흐름은 그대로다.
+- **소리 안내(TTS)는 `di/SpeechPlan.kt`의 `speechOutputKindOf(mode, isAutomotive)`가 따로 정한다** (017). 표는 음성 입력과 같다.
+
+  | 모드 | 차량 기기 | 소리 안내 |
+  |---|---|---|
+  | Fake | 상관없음 | Fake (소리 없음, 로그만) |
+  | 시연 (release) | 예 | Real (`ON_DEVICE`) |
+  | 시연 | 아니오 (일반 폰) | Fake |
+  | Real | 예 | Real |
+  | Real | 아니오 | 없음 |
+  | 스위치(`SPEECH_OUTPUT_ENABLED`) 꺼짐 | 모두 | 없음 |
+
+  - 화면은 바뀌지 않는다. 소리가 없는 구성에도 시연용 표시가 없다 (보일 것이 없다).
+  - `TripAnnouncer`는 `applicationScope`에서 돈다. 앱이 화면에 없어도 말한다.
 - Fake 주행 상태에서는 Pleos `Vehicle`을 만들지 않는다. 일반 에뮬레이터에는 차량 서비스가 없기 때문이다.
 - **반려견 프로필과 보호자 연결은 `di/PetPlan.kt`의 `petPlanOf`가 정한다** (014). `SourcePlan`은 바꾸지 않았다.
 
@@ -412,6 +434,26 @@ ui ──▶ domain ◀── data
   - 2026-11-05에 확인했다: 두 커밋을 되돌린 상태에서 `assembleDebug`와 단위 테스트(433개)가 통과했다.
 - 주행 화면, 길안내, 진료 카드 조합 코드는 음성 작업(010)에서 바뀌지 않았다. 음성을 빼도 버튼 흐름은 그대로다.
 
+## TextToSpeech 수명주기 (017, 2026-11-12)
+
+- **말하기 한 번 = `TextToSpeech` 객체 하나.** `RealSpeaker.speak()`가 오디오 포커스를 받고 `PleosTextToSpeechClient.speak()`를 부른다. 그러면 새 객체를 만들어 `initialize` → (성공) `addEventListener` → `setLocale(Locale.KOREA)` → `setAudioAttributes(길안내 음성)` → `speak(text, true)`까지 한다. 끝나면 `removeEventListener()` → `release()`하고 포커스를 반납한다.
+  - 초기화는 9~16ms라 매번 만들어도 느리지 않다 (spike). 느린 것은 객체가 아니라 음성 엔진의 첫 합성이다: 부팅 뒤 첫 안내만 약 6초 늦다.
+  - SDK 호출은 메인 스레드에서 한다. 콜백은 binder 스레드로 온다. `RealSpeaker`는 이벤트를 `Channel`로 받는다.
+- **한 번에 하나.** 음성 서비스는 읽는 중에 새 문장을 받으면 앞 문장을 끊고, 끊긴 문장에는 끝 콜백을 보내지 않는다 (spike S6). 그래서 `RealSpeaker`가 `Mutex`로 앞 문장이 끝난 뒤에 다음 문장을 맡긴다.
+- 닫기: 읽는 중이면 `stop()` → `onStop`(약 16ms)이 오거나 1초가 지나면 놓는다. `stop()` 바로 뒤 `release()`하지 않는다 (STT 010과 같은 경쟁). 끝난 뒤면 바로 놓는다. `onDone`은 재생이 끝난 뒤에 와서 끝소리가 잘리지 않는다.
+- 시간 제한: 시작 뒤 3초 안에 응답(`onReady`·`onStart`)이 없으면 쓸 수 없음. 시작 뒤 10초 + 글자당 0.25초가 지나면 쓸 수 없음. 시간은 이벤트마다 다시 재지 않는다.
+- 오디오 포커스: `AndroidAudioFocusGate`가 `AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK` + `USAGE_ASSISTANCE_NAVIGATION_GUIDANCE`로 요청한다. 거절되면 그 안내는 읽지 않는다 (`Failed(AUDIO)`). 이 usage 값은 `PleosTextToSpeechClient`와 `AndroidAudioFocusGate` 두 곳에 있다. 바꿀 때는 같이 바꾼다.
+- 로그: `PleosTts`(이벤트·오류 이름, 초기화 ms, 글자 수), `SpeechFocus`(받음·거절·반납), `TripAnnouncer`(사건 종류와 결과). 문장과 병원 이름은 남기지 않는다. **다만 Pleos SDK와 음성 서비스가 문장을 기기 로그에 남긴다** (spike S13). 그래서 문장에 반려견 이름·증상을 넣지 않는다.
+
+## 소리 안내 빼는 법 (017)
+
+- **소리만 끄기**: `di/SpeechPlan.kt`의 `SPEECH_OUTPUT_ENABLED = false` 한 줄. 모든 모드가 "없음"이 되어 안내자가 시작되지 않는다. 화면은 원래 바뀐 것이 없다. SDK와 권한은 APK에 남는다.
+- **APK에서 완전히 빼기**: 위 한 줄 + 아래 두 커밋을 새것부터 `git revert` (한 번에: `git revert <2의 해시> <1의 해시>`).
+  1. `feat(data): Pleos TextToSpeech ON_DEVICE 래퍼 추가` (의존성, `TTS_SERVICE` 권한, `PleosTextToSpeechClient.kt`, `AppContainer`의 Real 연결)
+  2. `feat(data): 소리 안내 동안 오디오 포커스 요청` (`AppContainer`의 Real 줄을 다시 고쳤다)
+  - Real 자리는 `null`(소리 없음)이 된다. 안내자·Fake·판단 로직은 남는다.
+  - 이 파일과 줄은 다른 커밋에서 되도록 건드리지 않는다.
+
 ## 보호자 웹 (008, 2026-11-05)
 
 보호자가 폰 브라우저에서 반려견 1마리의 프로필(사진, 이름, 품종, 생년월일 또는 나이, 성별)과 의료정보(주요 질환, 알레르기, 복용 약)를 등록하고 보고 고친다. 서버 저장에 동의하면 차와 연결해 차 앱의 진료 카드가 이 정보를 쓴다 (014).
@@ -495,5 +537,6 @@ web/src/
 - Real 구현은 Pleos 에뮬레이터(GPU PC)에서 확인한다.
   - `android.car`를 부르는 어댑터는 JVM으로 시험하지 않는다. 판단 로직(`RealDrivingStateSource`)만 가짜 client로 시험한다.
   - Pleos SpeechToText를 부르는 어댑터(`PleosSpeechToTextClient`)도 같다. 판단 로직(`RealVoiceInput`)만 가짜 client로 시험한다.
+  - Pleos TextToSpeech(`PleosTextToSpeechClient`)와 `AndroidAudioFocusGate`도 같다. 판단 로직(`RealSpeaker`)을 가짜 client·가짜 포커스로, 안내 규칙(`TripAnnouncer`)을 가짜 `Speaker`로 시험한다.
 - 증상 키워드 규칙은 이름 붙은 테스트와 함께, 받아쓴 문장 모음(`app/src/test/resources/voice/symptom-sentences.tsv`)으로도 시험한다. Pleos 에뮬레이터에서 실제로 받아쓴 문장은 출처에 "관찰 날짜"를 적어 더한다.
   - 주행 상태는 Virtual Console HTTP 요청으로 바꾼다 (docs/pleos/emulator-setup.md "Pleos 에뮬레이터에서 직접 해 본 것").

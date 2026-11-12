@@ -963,6 +963,19 @@ implementation("ai.pleos.playground:FusedLocation:1.1.3")
 
 - 텍스트를 음성으로 합성해 차량 오디오로 재생한다. Pleos Connect Speech Service에 연결된다. [tts-intro]
 - 모드: `HYBRID`(기본), `SERVER`, `ON_DEVICE`. 서버 기반 모드(`HYBRID`, `SERVER`)는 "Pleos Playground의 My Project 자격 증명을 사용한 앱 등록"이 필요하고, `ON_DEVICE`는 필요 없다. [tts-intro]
+  - 모드 설명 원문 (2026-11-12) [tts-intro]:
+    - `HYBRID`: "기본 모드입니다. 서버 기반 streaming TextToSpeech를 우선 사용하고, 네트워크 연결에 실패하면 SDK가 On-device 엔진으로 자동 전환합니다."
+    - `SERVER`: "서버 기반 streaming TextToSpeech만 사용합니다. 네트워크 연결과 앱 등록이 필요하며, 네트워크 연결에 실패하면 On-device 엔진으로 전환하지 않고 오류 이벤트를 전달합니다."
+    - `ON_DEVICE`: "차량의 On-device 엔진에서 Streaming TextToSpeech를 실행합니다. 네트워크 연결이 필요하지 않으며, 서버 기반 합성을 사용하지 않으므로 앱 등록이 필요하지 않습니다."
+- 사용 순서 (원문, 2026-11-12) [tts-intro]:
+  1. "TextToSpeech 객체를 생성합니다."
+  2. "initialize()로 SDK를 초기화합니다."
+  3. "addEventListener()로 이벤트 리스너를 등록합니다."
+  4. "필요한 경우 setLocale()로 음성 합성 언어/지역을 설정합니다."
+  5. "서버 기반 합성 모드(HYBRID, SERVER)를 사용하는 경우 앱 등록을 완료합니다."
+  6. "서버 연결이 필요한 모드에서는 OnServerConnectionListener.onConnected() 이후 speak()를 호출합니다."
+  7. "인식이 끝나면 stop()을 호출합니다." (TTS 페이지인데 "인식"이라고 적혀 있다. 원문 그대로)
+  8. "SDK 사용이 끝나면 removeEventListener() 후 release()로 리소스를 해제합니다."
 - 의존성:
 
 ```kotlin
@@ -984,13 +997,130 @@ val textToSpeech = TextToSpeech(applicationContext, Mode.HYBRID)
   - 원문: "`Mode`를 생략하면 `HYBRID`가 적용됩니다." 모드는 생성자 인자로 넘긴다. TTS 프로그래밍 가이드 페이지(초기화, 합성 시작·중지, 앱 등록)에는 모드를 바꾸는 API가 없다. [tts-intro] [tts-init] [tts-start] [tts-appreg]
   - 원문: "합성된 음성을 차량의 오디오 시스템으로 재생합니다." [tts-intro]
 - 초기화·해제: `textToSpeech.initialize(object : OnInitializeListener { ... })` 또는 `textToSpeech.initialize()`. 해제는 `textToSpeech.removeEventListener(eventListener)` 후 `textToSpeech.release()`. release 후 다시 쓰려면 새 객체를 만든다. [tts-init]
+  - 초기화 결과 리스너 (문서 코드, 2026-11-12) [tts-init]:
+
+```kotlin
+import ai.pleos.playground.tts.listener.OnInitializeListener
+import ai.pleos.playground.tts.constant.ErrorType
+
+textToSpeech.initialize(object : OnInitializeListener {
+    override fun onSuccess() {
+        // TextToSpeech API를 사용할 수 있습니다.
+    }
+
+    override fun onFailure(errorType: ErrorType) {
+        // 초기화 실패 원인을 처리합니다.
+    }
+})
+```
+
+  - `onSuccess()`/`onFailure()`를 설명하는 본문 문장은 없고 위 코드 주석뿐이다. 인자 없는 형태 원문: "결과 콜백이 필요하지 않으면 인자 없이 호출할 수 있습니다." [tts-init]
+  - 같은 페이지 요지: 등록한 이벤트 리스너는 `release()` 전에 먼저 해제하는 것을 권장하고, 예시는 Activity `onDestroy()`에서 리스너 해제와 `release()`를 부른다. [tts-init]
+- 이벤트 리스너 `EventListener` (원문, 2026-11-12) [tts-listener]:
+  - 등록 `textToSpeech.addEventListener(eventListener)`, 해제 `textToSpeech.removeEventListener(eventListener)`. 패키지는 `ai.pleos.playground.tts.listener` (API Reference 목차). [tts-listener] [tts-api-ref]
+  - 원문: "EventListener를 등록하면 음성 합성 요청의 준비, 시작, 완료, 중지, 음량 변화 및 오류 이벤트를 받을 수 있습니다."
+  - 원문: "리스너가 더 이상 필요하지 않거나 SDK를 해제하기 전에는 등록할 때 사용한 동일한 인스턴스를 제거합니다."
+  - 콜백 (문서 코드의 시그니처와 설명 원문):
+    - `override fun onReady() = Unit`: "`speak()` 요청을 처리할 준비가 되었을 때 호출됩니다." (영문 "Called when the SDK is ready to process a `speak()` request.")
+    - `override fun onStart() = Unit`: "음성 재생이 시작될 때 호출됩니다."
+    - `override fun onUpdatedRms(rms: Double) = Unit`: "재생 중 RMS(Root Mean Square) 값이 갱신될 때 호출됩니다." 값의 범위는 없다.
+    - `override fun onDone() = Unit`: "요청한 음성 재생이 정상적으로 끝나면 호출됩니다."
+    - `override fun onStop() = Unit`: "진행 중인 재생이 중지되면 호출됩니다."
+    - `override fun onError(errorType: ErrorType)`: "처리 중 오류가 발생하면 호출됩니다."
+  - 문서 코드는 다섯 콜백을 `= Unit`으로 직접 재정의한다. 인터페이스에 기본 구현이 있는지(필요한 것만 재정의해도 되는지)는 문서에 없다 → AAR `javap`.
+  - 콜백 스레드, 발화 id, `onReady()`가 언제 몇 번 오는지(초기화 뒤 한 번인지 `speak()`마다인지), `onStart`/`onDone`/`onStop`의 순서는 문서에 없다 (한글판·영문판 모두). [tts-listener]
 - 언어: `setLocale(locale: Locale)`. `speak()` 전에 호출한다. 예: `textToSpeech.setLocale(Locale.KOREA)` [tts-locale]
   - 지원 locale: `ko-KR`, `en-US`, `fr-CA`, `es-US`, `es-MX` [tts-locale]
   - 호출하지 않으면 같은 앱에서 이전에 설정한 값, 그것도 없으면 시스템 locale을 쓴다. [tts-locale]
 - 합성 (원문): `textToSpeech.speak("안녕하세요. 무엇을 도와드릴까요?")`, 중지 `textToSpeech.stop()`. 여러 조각은 마지막 조각 전까지 `isFinal = false`. 중지되면 `EventListener`의 `onStop()`이 호출된다. [tts-start]
+  - `speak()` 원문 (2026-11-12) [tts-start]:
+    - "`speak()`에 읽을 텍스트를 전달하여 음성 합성을 시작합니다."
+    - "기본적으로 `isFinal`은 `true`이며, 전달한 텍스트를 하나의 완성된 요청으로 처리합니다."
+    - "여러 텍스트 조각을 하나의 발화로 전달할 때는 마지막 조각을 제외한 요청의 `isFinal`을 `false`로 지정합니다."
+    - "진행 상태와 결과는 Event listeners에서 확인할 수 있습니다."
+    - 문서 코드: `textToSpeech.speak("안녕하세요. ", isFinal = false)`, `textToSpeech.speak("TextToSpeech SDK입니다.", isFinal = true)`. Java 예시는 `textToSpeech.speak("Hello. How can I help you?", true);` (영문판)
+  - **영문판에만 있는 문장:** "If you omit `isFinal` on a non-final call, the default value `true` is applied and the request ends with only the text sent up to that point." 한글판에는 이 문장이 없다 ("생략", "기본값" 단어 검색으로 확인). 내용이 서로 어긋나지는 않는다. [tts-start]
+  - `stop()` 원문: "진행 중인 음성 합성과 재생을 중지하려면 `stop()`을 호출합니다." "중지가 완료되면 등록된 `EventListener`의 `onStop()`이 호출됩니다." [tts-start]
+  - 문서에 없는 것 (한글판·영문판, API Reference `speak` 페이지 모두): 말하는 중에 다시 `speak()`하면 줄을 서는지 끊는지, 글자 수 제한, 발화 id, `stop()` 뒤 다시 `speak()`해도 되는지, 말하는 중이 아닐 때 `stop()`하면 `onStop()`이 오는지. [tts-start] [tts-api-ref]
 - 앱 등록 (서버 모드만): 초기화 후 `textToSpeech.registerApp(clientID = clientId, clientSecret = clientSecret, listener = object : OnServerConnectionListener { onConnected() / onFailed(errorType: ErrorType) })`. `onConnected()` 이후에 서버 요청을 시작한다. `ON_DEVICE`만 쓰면 등록하지 않아도 된다. [tts-appreg]
+- `ErrorType` (`ai.pleos.playground.tts.constant.ErrorType`) 값·설명·권장 조치 (원문, 2026-11-12) [tts-error]:
+  - 전달 위치 원문: "오류는 `OnInitializeListener`, `OnServerConnectionListener` 또는 `EventListener`에서 처리할 수 있습니다." 초기화, 앱 등록, 음성 합성 중 오류가 `ErrorType`으로 온다.
+  - `AUDIO_ERROR`: "오디오 출력 또는 재생 처리에 실패했습니다." / "오디오 설정과 출력 장치 상태를 확인한 후 다시 요청합니다."
+  - `INVALID_REQUEST_ERROR`: "요청 값이나 요청 상태가 올바르지 않습니다." / "텍스트와 호출 순서 등 요청 조건을 확인합니다."
+  - `MIC_ERROR`: "오디오 입력 장치 처리 중 오류가 발생했습니다." / "실행 환경의 오디오 장치 상태를 확인합니다."
+  - `NETWORK_ERROR`: "네트워크 통신에 실패했습니다." / "네트워크 연결을 확인하고 다시 요청합니다."
+  - `NOT_SUPPORTED_API`: "현재 모드 또는 실행 환경에서 지원하지 않는 API입니다." / "선택한 `Mode`와 플랫폼 지원 범위를 확인합니다."
+  - `ON_DEVICE_ENGINE_ERROR`: "On-device 음성 합성 엔진에서 오류가 발생했습니다." / "엔진 상태를 확인하거나 HYBRID 또는 SERVER 모드를 검토합니다."
+  - `PERMISSION_DENIED`: "TextToSpeech 서비스 접근 권한이 없습니다." / "manifest의 `TTS_SERVICE` 권한과 실행 환경의 권한 상태를 확인합니다."
+  - `SERVER_INTERNAL_ERROR`: "Speech Service 내부 오류가 발생했습니다." / "잠시 후 다시 요청하고, 반복되면 서비스 관리자에게 문의합니다."
+  - `TIMEOUT`: "제한 시간 안에 요청을 완료하지 못했습니다." / "네트워크와 서버 상태를 확인한 후 다시 요청합니다."
+  - `UNAUTHENTICATED`: "앱 인증에 실패했습니다." / "Pleos Playground의 My Project 자격 증명 또는 UA 앱 정보와 접속 환경을 확인합니다."
+  - `UNAVAILABLE_LANGUAGE`: "요청한 언어를 사용할 수 없습니다." / "지원되는 `Locale`로 변경합니다."
+  - `UNKNOWN`: "분류되지 않은 오류가 발생했습니다." / "호출 시점과 환경 정보를 수집하여 서비스 관리자에게 문의합니다."
+  - 원문: "`ErrorType`은 새로운 오류 타입이 추가될 수 있으므로 `when` 또는 `switch` 문에 기본 분기를 두는 것을 권장합니다." "각 오류 타입의 정확한 선언은 TextToSpeech API Reference에서 확인할 수 있습니다." (그 API Reference 페이지는 본문이 비어 있다)
+  - 페이지의 처리 예시 구조: `PERMISSION_DENIED`는 권한 확인, `UNAUTHENTICATED`는 자격 증명 확인, `NETWORK_ERROR`·`TIMEOUT`은 네트워크 복구 후 재시도, 나머지는 `else`에서 로그. [tts-error]
+  - STT `ErrorType`과 값 이름 12개가 같다. STT의 `INVALID_REQUEST_ERROR` 권장 조치에는 "중복 요청"이 있지만 TTS 쪽에는 없다. [tts-error] [stt-error]
+- `TextToSpeech` 클래스 멤버 (API Reference 목차, 2026-11-12) [tts-api-ref]: `Companion`, `Constructor`, `addEventListener`, `initialize`, `registerApp`, `release`, `removeEventListener`, **`setAudioAttributes`**, **`setAudioZoneId`**, `setLocale`, **`setSpeakerType`**, `speak`, `stop`.
+  - 굵게 표시한 세 멤버는 프로그래밍 가이드 어느 페이지에도 나오지 않는다. 상세 페이지는 제목만 있고 본문이 비어 있다 (한글판, 영문판, `/api-reference/...` 경로 모두). 무엇을 받는지, 기본값, 언제 부르는지는 문서에 없다 → AAR `javap`.
+  - 패키지: `ai.pleos.playground.tts`(`TextToSpeech`), `ai.pleos.playground.tts.constant`(`ErrorType`, `Mode`), `ai.pleos.playground.tts.listener`(`EventListener`, `OnInitializeListener`, `OnServerConnectionListener`). 클래스·enum·인터페이스 상세 페이지 본문은 모두 비어 있다.
+- SDK 릴리스 노트의 TextToSpeech v3.3.1 항목 (원문, 2026-11-12 확인. 릴리스 날짜는 페이지 전체의 "2026년 10월 19일") [sdk-release-note]:
+  - 호환성 깨짐: "오류 콜백 인자 타입 변경 (String → ErrorType)". 변경: "EventListener.onError(errMsg: String) → EventListener.onError(errorType: ErrorType)", "OnServerConnectionListener.onFailed(msg: String) → OnServerConnectionListener.onFailed(errorType: ErrorType)"
+  - 추가: "초기화 결과 콜백 지원 추가 (TextToSpeech.initialize(listener: OnInitializeListener), OnInitializeListener)", "SDK 버전 조회 속성 추가 (TextToSpeech.version)", "오류 유형 enum 추가 (ErrorType)"
+  - 삭제·공개 API 노출 제거: "ai.pleos.playground.tts.constant.ServerType enum 삭제", "ai.pleos.playground.tts.utils.Log, ai.pleos.playground.tts.utils.StringUtils 공개 API 노출 제거". 사용 중단(Deprecated): "없음"
+  - 릴리스 노트에 TTS 3.3.0, 2.x 항목은 없다. `setAudioAttributes`, `setAudioZoneId`, `setSpeakerType`이 언제 생겼는지도 없다.
 - Pleos Maven 게시 버전: 2.1.2, 2.1.3, 2.1.3.1, 2.1.3.2, 2.1.5.1, 3.3.0, 3.3.1 (latest/release 3.3.1, lastUpdated 2026-10-13). [maven-meta]
 - 호환성: API 호환성 표에서 TextToSpeech·SpeechToText SDK는 "전체 호환". [api-compat]
+
+#### AAR에서 직접 확인한 것 (2026-11-12, `TextToSpeech-3.3.1.aar`를 Pleos Maven에서 받아 javap) [aar-tts]
+
+문서가 아니라 산출물에서 본 것이다. 동작(소리가 나는지, 겹칠 때 어떻게 되는지)은 실행해서 봐야 한다.
+
+- `ai.pleos.playground.tts.TextToSpeech`의 public 멤버:
+  - 생성자 `TextToSpeech(Context, Mode)` (Mode 생략 시 `HYBRID`)
+  - `initialize()`, `initialize(OnInitializeListener)`, `release()`
+  - `addEventListener(EventListener)`, `removeEventListener(EventListener)`
+  - **`setAudioAttributes(android.media.AudioAttributes)`**: 앱이 재생 usage를 정할 수 있다.
+  - `speak(String, Boolean)`: 둘째 인자(`isFinal`)는 기본값이 있다 (`speak$default`).
+  - `stop()`, `setLocale(Locale)`, `setSpeakerType(String)`, `setAudioZoneId(Int)`
+  - `registerApp(...)` 3가지, `getAmbientAi()`
+  - `Companion.getVersion()`은 `"3.3.1"`이다.
+- **기본 재생 속성**: `setAudioAttributes`를 부르지 않으면 `AudioAttributes.Builder().setContentType(1).setUsage(1)`이다. 상수 1은 `CONTENT_TYPE_SPEECH`, `USAGE_MEDIA`다. 바이트코드 문자열에도 `...USAGE_MEDIA).build()`가 있다 (`ai.pleos.playground.tts.factory.Tts.d()`). 그러니 **그대로 두면 음악과 같은 미디어로 재생된다.** 안내 음성으로 내려면 앱이 usage를 바꿔야 한다. 어느 usage가 맞는지, 서비스가 그 값을 따르는지는 실행해서 봐야 한다.
+- `EventListener` (추상 메서드 6개, 기본 구현 없음): `onStart()`, `onReady()`, `onDone()`, `onError(ErrorType)`, `onStop()`, `onUpdatedRms(Double)`
+- `OnInitializeListener`: `onSuccess()`, `onFailure(ErrorType)`
+- `ErrorType` 12개: `AUDIO_ERROR`, `MIC_ERROR`, `SERVER_INTERNAL_ERROR`, `NETWORK_ERROR`, `INVALID_REQUEST_ERROR`, `TIMEOUT`, `UNAUTHENTICATED`, `PERMISSION_DENIED`, `ON_DEVICE_ENGINE_ERROR`, `UNKNOWN`, `UNAVAILABLE_LANGUAGE`, `NOT_SUPPORTED_API`
+- `Mode`: `SERVER`, `ON_DEVICE`, `HYBRID`
+- 공개되지 않은 내부 구조 (참고용이다. 바뀔 수 있다):
+  - `TtsServiceManager`는 `speak` 요청을 용량이 `Int.MAX_VALUE`인 코루틴 `Channel`에 넣는다. 그래서 말하는 중에 다시 `speak()`하면 **줄을 설 가능성이 높다** (추정). 서비스 쪽에서 앞 문장을 끊는지는 실행해서 봐야 한다.
+  - `TtsJobMode`(`Auto`, `New`, `Continue`)가 있지만 `speak`가 이 값을 받지 않는다.
+  - `ON_DEVICE`는 `OnDeviceStreamTts`가 Speech Service(`ITtsOnDeviceStream`, AIDL)에 bind해서 처리한다.
+- AAR 매니페스트:
+  - `INTERNET` 권한을 더한다 (주석: "CCG Validation 체크를 위한 권한").
+  - `<queries>`에 `ai.pleos.playground.caas.intent.action.SPEECH_START`를 넣는다.
+  - meta-data로 Speech Service(CAAS) 최소 버전 `4.1.29`(`4001029`)를 적는다.
+  - `TTS_SERVICE` 권한은 AAR이 더하지 않는다. 앱 매니페스트에 직접 넣는다.
+  - minSdk는 23이다.
+- 의존성 (POM): `core-ktx` 1.8.0, `kotlinx-coroutines-android` 1.6.3, `gson` 2.10.1, `universal-access` 0.6.0. STT와 같은 `universal-access`다.
+
+#### TTS 문서 조사 (017 선행, 2026-11-12)
+
+017 "TTS 음성 안내", 018 "주행 중 음성 입력"의 선행 질문 T1~T7. 문서에 있는 원문은 위 항목에 넣었고, 여기에는 질문별 결론만 둔다. 실행해서 볼 것은 아래 "미확인"의 "017·018 음성 안내·음성 대화 관련"에 있다.
+
+- **T1. `EventListener` 콜백, `OnInitializeListener` → 있음.** 콜백 6개(`onReady`, `onStart`, `onUpdatedRms`, `onDone`, `onStop`, `onError`)의 설명 원문이 event-listeners 페이지에 있다. `OnInitializeListener`는 `onSuccess()`/`onFailure(errorType: ErrorType)`이고 설명은 코드 주석뿐이다. 콜백 순서, 스레드, `onReady` 횟수는 없다. [tts-listener] [tts-init]
+- **T2. `ErrorType` → 있음.** STT처럼 error-code 페이지가 있고, 12개 값의 설명과 권장 조치가 있다. 오류는 세 리스너(`OnInitializeListener`, `OnServerConnectionListener`, `EventListener`)로 온다. [tts-error]
+- **T3. `speak()` → 일부만 있음.** `isFinal`의 뜻(기본 `true`, 여러 조각이면 마지막 전까지 `false`)과 `stop()` → `onStop()`은 있다. 말하는 중 다시 `speak()`할 때 줄을 서는지 끊는지, 글자 수 제한, 발화 id, `stop()` 뒤 동작은 없다. [tts-start]
+- **T4. 릴리스 노트와 API Reference 목차 → 있음.** 릴리스 노트에는 v3.3.1 항목만 있고 3.3.0 항목은 없다. 목차에는 가이드에 없는 `setAudioAttributes`, `setAudioZoneId`, `setSpeakerType`이 있지만 상세 본문이 비어 있다. [sdk-release-note] [tts-api-ref]
+- **T5. 재생 usage, 오디오 포커스, 내비 음성과 겹칠 때, 선행 묵음 → 문서에 없음.**
+  - TTS 가이드는 "합성된 음성을 차량의 오디오 시스템으로 재생합니다."뿐이다. 어느 `AudioAttributes` usage로 재생하는지, SDK(Speech Service)가 포커스를 잡는지, 앱이 따로 포커스를 요청해야 하는지 없다. [tts-intro] [tts-start] [tts-listener]
+  - API Reference 목차의 `setAudioAttributes`는 이름만 있다. 기본 usage와 받는 타입은 `javap`로 봐야 한다. [tts-api-ref]
+  - 오디오 포커스 가이드에는 TTS, 음성 합성, Speech Service라는 말이 없다. NAVIGATION 재생 중에 다른 NAVIGATION·ANNOUNCEMENT·VOICE_COMMAND 요청이 오면 어떻게 되는지는 Interaction Matrix 이미지에만 있다. 텍스트로 있는 것은 "MUSIC 재생 중 NAVIGATION 요청 → C (뮤직 duck + 내비 재생)"와 "C를 기대하는 컨텍스트(예: NAVIGATION이 MUSIC과 동시)라면 요청은 원칙적으로 `AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK`을 사용해야 합니다."다. [audio-focus]
+  - 선행 묵음 가이드는 적용 범위에 "TTS 기반 음성 안내"를 넣지만, TextToSpeech SDK나 Speech Service가 묵음을 알아서 넣는지는 없다. TTS SDK 페이지들에도 선행 묵음 언급이 없다. TTS 가이드와 API Reference 목차에는 합성된 오디오 데이터를 앱에 돌려주는 API가 없다 (재생은 SDK가 한다: "합성된 음성을 차량의 오디오 시스템으로 재생합니다."). 그래서 가이드가 권장하는 "오디오 데이터 앞단" 패딩을 앱이 할 방법도 문서로는 알 수 없다. [voice-preroll] [tts-intro] [tts-api-ref] → [ux-guidelines.md](ux-guidelines.md#오디오-포커스와-음성-안내)
+  - Maps/Navigation 앱 가이드의 "복수 Navigation 앱의 음성 안내·경로 출력은 허용하지 않습니다."는 Navigation 앱끼리의 규칙이다. 다른 카테고리 앱의 안내 음성이 내비 음성과 겹치는 경우는 말하지 않는다. [navi-app-guide]
+- **T6. STT와 TTS 번갈아 쓰기 → 문서에 없음.** STT 가이드(intro, start-and-stop)와 TTS 가이드 어디에도 서로를 언급하는 문장이 없다. TTS가 말하는 중 `request()`해도 되는지, 차 스피커 소리를 STT가 듣는지(에코 제거), 권장 순서가 없다. Pleos 문서 검색에서도 에코 제거(AEC) 언급을 찾지 못했다. 쓸 수 있는 문서 사실은 TTS `onDone()`("요청한 음성 재생이 정상적으로 끝나면 호출됩니다.")과 STT `onReady()`뿐이다. [stt-intro] [stt-start] [tts-listener] [stt-listener]
+- **T7. 주행 중 음성 인터랙션 UX 기준 → 일부 있음.** UI 디자인 가이드의 "음성 인터랙션 강화" 4문장과 주행 안전 설계 원칙 원문을 [ux-guidelines.md](ux-guidelines.md#음성-입력에-대한-다른-근거)에 넣었다. 음성 안내 문장 길이, 음성 확인 방식, Maps/Navigation이 아닌 앱의 주행 중 단일 터치 허용 범위는 없다.
+- 확인한 페이지 (모두 2026-11-12):
+  - TTS 가이드: intro, importing-sdk(목차), initialization-and-release, event-listeners(영문판 대조), start-and-stop(영문판 대조), error-code
+  - TTS API Reference: entry, `ai.pleos.playground.tts/entry`, `.../text-to-speech/entry`, `.../speak`, `.../set-audio-attributes`(영문판, `/api-reference/...` 경로도), `.../set-audio-zone-id`, `.../set-speaker-type`, `ai.pleos.playground.tts.constant/entry`, `.../error-type/entry`, `ai.pleos.playground.tts.listener/entry`, `.../event-listener/entry`. **목차 아래 상세 페이지는 제목만 있고 본문이 비어 있다.**
+  - SDK 릴리스 노트, STT intro·start-and-stop, 오디오 포커스 개발 가이드, TTS 선행 묵음 가이드, Music/Audio 앱 가이드, Maps/Navigation 앱 가이드, 차량 앱 FAQ, ADB Command 가이드, 성능 및 리소스 효율 설계 가이드, 주행 안전 설계 원칙, UI 디자인 가이드 intro(영문판 대조), Status bar, System Notification(디자인 컴포넌트 목록), 앱 심사 주의분산 기준. [sdk-release-note] [stt-intro] [stt-start] [audio-focus] [voice-preroll] [music-app-guide] [navi-app-guide] [faq] [adb-guide] [perf-resource] [driver-distraction] [design-intro] [review-distraction]
 
 ### SpeechToText SDK (v3.3.1) [stt-intro] [stt-import] [stt-perm]
 
@@ -1090,6 +1220,7 @@ val speechToText = SpeechToText(applicationContext, Mode.HYBRID)
   - 관련 정책 문장: "동일하거나 유사한 기능의 API가 AAOS 표준에 이미 존재하는 경우, 해당 표준 API 사용을 권장하며 Pleos Connect SDK에서는 중복 기능을 제공하지 않습니다." [sdk-api-policy] Pleos가 STT/TTS SDK를 따로 제공하므로, 이 문장만으로 표준 API 사용 가능 여부를 판단할 수 없다.
   - **2026-11-12 (대회 공지, 공모전 범위):** "차량 마이크 음성을 외부 음성 인식 서비스로 보내는 방식은 공식 개발 문서에서 지원하지 않아 사용할 수 없습니다." "음성 인식은 SpeechToText SDK를 이용해 주세요." 공지는 `SpeechRecognizer`를 이름으로 말하지 않는다. TTS(음성 출력)에 대한 문장은 없다. [contest-notice-scope]
 - **음성 출력의 오디오 포커스:** 재생 전 `AudioAttributes` + `AudioFocusRequest`로 포커스를 요청한다. 컨텍스트 매핑에서 NAVIGATION은 `NAVIGATION`, `ASSISTANCE_NAVIGATION_GUIDANCE`, VOICE_COMMAND는 `VOICE_COMMAND`, `ASSISTANT`. TTS SDK가 어느 usage로 재생하는지는 문서에 없다. 자세한 내용은 [ux-guidelines.md](ux-guidelines.md#오디오-포커스와-음성-안내) [audio-focus]
+  - 2026-11-12: TTS API Reference 목차에 `setAudioAttributes`, `setAudioZoneId`, `setSpeakerType`이 있다. 상세 본문은 비어 있다. 기본 usage는 여전히 문서에 없다 → 위 "TTS 문서 조사 (017 선행, 2026-11-12)" T5. [tts-api-ref]
 
 ### STT `ON_DEVICE` 실행 확인 (관찰, 2026-11-05)
 
@@ -1481,6 +1612,7 @@ fun sendGleoBroadcast(
 - [x] 공모전 출품작·PT에서 콘솔 "준비 중"인 STT/TTS를 문서에 안내된 방법(`ON_DEVICE` 포함)으로 써도 되는지 → 된다. 대회 공지 "Pleos Playground 워크스페이스에 '준비 중'으로 표시되어 있더라도 개발 문서에 안내된 방법으로 에뮬레이터에서 개발·시험할 수 있습니다" (2026-11-12) [contest-notice-scope]
 - [ ] App Market 입점 심사 제출 앱에서 콘솔 "준비 중"인 STT/TTS를 `ON_DEVICE` 모드로 써도 되는지. `STT_SERVICE`/`TTS_SERVICE` 권한에 사전 승인이 필요한지. (문서에 없음. 대회 공지는 "이번 공모전의 심사는 Pleos App Market 입점 심사가 아닙니다."라고 해서 이 부분은 답하지 않는다)
 - [ ] Pleos 에뮬레이터에 On-device STT/TTS 엔진이 있어 실제로 인식·합성되는지 (GPU PC에서 직접 실행해 확인)
+  - STT는 된다 (2026-11-05 관찰, 위 "STT `ON_DEVICE` 실행 확인"). **TTS `ON_DEVICE` 한국어 합성은 아직 실행해 보지 않았다** → 아래 "017·018" 목록.
 - [x] `Mode.ON_DEVICE` 상수 이름 → `HYBRID`, `SERVER`, `ON_DEVICE` 확인 (AAR `javap`, 2026-11-03)
 - [ ] Android 표준 `SpeechRecognizer`, `android.speech.tts.TextToSpeech`를 Pleos에서 써도 되는지, `RECORD_AUDIO`가 필요한지
   - 2026-11-12: 공모전에서는 대회 공지가 "음성 인식은 SpeechToText SDK를 이용해 주세요."라고 한다. `SpeechRecognizer`를 이름으로 금지하지는 않는다. TTS와 `RECORD_AUDIO`에 대한 문장은 없다. [contest-notice-scope]
@@ -1508,6 +1640,31 @@ fun sendGleoBroadcast(
 - [ ] Gleo Action의 extra 형식: 본문(key별 `putExtra`)과 코드(`ACTION_PARAM` JSON 하나)가 다르다 (불일치)
 - [ ] App Schema의 `invokeWord` 필드 정의 (예시에만 있음)
 - [ ] `component`="service"일 때 `<receiver>` 선언 방법, `android:exported` 값, 응답 broadcast(`APP_ACTION_RESPONSE`)에 필요한 권한
+
+### 017·018 음성 안내·음성 대화 관련 (2026-11-12 조사)
+
+문서에 없어서 AAR(`javap`)이나 에뮬레이터 실행으로 봐야 하는 것이다. 근거는 위 "TTS 문서 조사 (017 선행, 2026-11-12)" T1~T7.
+
+- AAR(`javap`)로 볼 것:
+  - [ ] `speak()`의 정확한 시그니처 (`isFinal` 기본값 인자인지, 반환형)
+  - [ ] `setAudioAttributes`, `setAudioZoneId`, `setSpeakerType`의 인자 타입. `setSpeakerType`이 받는 enum이 있다면 그 값 (API Reference 목차의 constant 패키지에는 `ErrorType`, `Mode`뿐이다)
+  - [ ] `EventListener`에 기본 구현이 있는지 (필요한 콜백만 재정의해도 되는지)
+  - [ ] AAR 매니페스트가 더하는 권한·`<queries>`, 요구 음성 서비스 최소 버전 (STT 3.3.1은 `INTERNET`, `SPEECH_START`, CAAS 4.1.29였다)
+- 에뮬레이터에서 볼 것 (TTS):
+  - [ ] `ON_DEVICE` 한국어 합성이 Client ID/Secret 없이 소리 나는지, `initialize` 성공까지 걸리는 시간
+  - [ ] `pleos.car.permission.TTS_SERVICE`의 보호 수준 (`STT_SERVICE`는 `normal`이었다. `adb shell dumpsys package`로 확인)
+  - [ ] 콜백 순서와 횟수: `onReady`가 초기화 뒤 한 번인지 `speak()`마다인지, `onStart` → `onDone` 순서, 콜백 스레드
+  - [ ] 말하는 중 다시 `speak()`하면 앞 문장 뒤에 줄을 서는지, 앞 문장을 끊는지, 오류(`INVALID_REQUEST_ERROR`)가 나는지
+  - [ ] `stop()` 뒤 `onStop`만 오는지(`onDone`은 안 오는지), 말하지 않을 때 `stop()`하면 무엇이 오는지, `stop()` 바로 뒤 `speak()`가 되는지
+  - [ ] 긴 문장(예: 200자 이상)도 끝까지 읽는지, 글자 수 제한 오류가 있는지
+  - [ ] 재생 usage와 오디오 포커스: `speak()` 중 `adb shell dumpsys audio`의 포커스 스택과 usage. 앱이 따로 포커스를 요청하지 않아도 내비 음성·미디어가 줄어드는지(duck) 멈추는지
+  - [ ] 내비(NaviHelper 길안내) TBT 음성이 나오는 중에 `speak()`하면 둘 다 들리는지, 한쪽이 줄거나 멈추는지, 우리 TTS가 `AUDIO_ERROR`로 거절되는지
+  - [ ] 첫 음절이 잘리는지 (선행 묵음을 SDK가 넣는지 간접 확인). 잘리면 문장 앞에 쉼표·공백을 넣는 우회가 듣는지
+- 에뮬레이터에서 볼 것 (STT와 TTS 번갈아 쓰기, 018):
+  - [ ] TTS `onDone` 직후 STT `request()`가 바로 되는지, 얼마나 기다려야 하는지
+  - [ ] TTS가 말하는 중 STT `request()`를 하면: 오류가 나는지, TTS가 멈추는지, STT가 TTS 소리를 받아쓰는지 (에코 제거 여부. 에뮬레이터는 PC 스피커·마이크라 실차와 다를 수 있다)
+  - [ ] STT가 듣는 중 TTS `speak()`를 하면 무엇이 되는지
+  - [ ] TTS와 STT 객체를 동시에 초기화해 둬도 되는지 (둘 다 같은 음성 서비스 `ai.pleos.playground.caas`에 붙는지)
 
 ### 010 진짜 길안내 관련 (2026-11-05 조사, 계획 `docs/plans/active/010-real-navi-guidance.md` R1~R8)
 
@@ -1556,14 +1713,14 @@ fun sendGleoBroadcast(
 - [constant-control] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/Vehicle/vehicle/ai.pleos.playground.vehicle.constant.control/entry
 - [constant-pkg] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/Vehicle/vehicle/ai.pleos.playground.vehicle.constant/entry (2026-11-05 확인)
 - [listener-pkg] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/Vehicle/vehicle/ai.pleos.playground.vehicle.listener/entry (2026-11-05 확인)
-- [sdk-release-note] https://document.pleos.ai/docs/pleos-only/release-note/sdk-release-note (Vehicle SDK v2.3.2, 2026-10-19 릴리스. SpeechToText·TextToSpeech v3.3.1 항목. 2026-11-05 확인. 같은 페이지의 "NaviHelper v3.0.5" 절도 2026-11-05 확인. 2026-11-12 재확인: 2026-10-19 릴리스 하나에 Vehicle 2.3.2, NaviHelper 3.0.5, TTS 3.3.1, STT 3.3.1, FusedLocation 1.1.3뿐. 새 항목 없음)
+- [sdk-release-note] https://document.pleos.ai/docs/pleos-only/release-note/sdk-release-note (Vehicle SDK v2.3.2, 2026-10-19 릴리스. SpeechToText·TextToSpeech v3.3.1 항목. 2026-11-05 확인. 같은 페이지의 "NaviHelper v3.0.5" 절도 2026-11-05 확인. 2026-11-12 재확인: 2026-10-19 릴리스 하나에 Vehicle 2.3.2, NaviHelper 3.0.5, TTS 3.3.1, STT 3.3.1, FusedLocation 1.1.3뿐. 새 항목 없음. 같은 날 TextToSpeech v3.3.1 항목 원문 확인)
 - [navi-intro] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/NaviHelper/intro
 - [navi-import] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/NaviHelper/importing-sdk
 - [navi-perm] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/NaviHelper/declaring-permissions
 - [fused-intro] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/FusedLocation/intro
 - [fused-setup] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/FusedLocation/project-setup
 - [fused-perm] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/FusedLocation/declaring-permissions
-- [tts-intro] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/TextToSpeech/intro
+- [tts-intro] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/TextToSpeech/intro (2026-11-12 재확인: 모드 설명·사용 순서 원문)
 - [tts-import] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/TextToSpeech/importing-sdk
 - [tts-perm] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/TextToSpeech/declaring-permissions
 - [stt-intro] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/SpeechToText/intro
@@ -1582,10 +1739,23 @@ fun sendGleoBroadcast(
     - `ai.pleos.playground.stt.constant/entry`, `ai.pleos.playground.stt.constant/error-type/entry`
     - `ai.pleos.playground.stt.data/entry`, `ai.pleos.playground.stt.data/inference-source/entry`
     - `ai.pleos.playground.stt.listener/entry`, `ai.pleos.playground.stt.listener/result-listener/entry`
-- [tts-init] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/TextToSpeech/initialization-and-release
+- [tts-init] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/TextToSpeech/initialization-and-release (2026-11-12 재확인)
 - [tts-locale] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/TextToSpeech/set-locale
-- [tts-start] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/TextToSpeech/start-and-stop
+- [tts-start] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/TextToSpeech/start-and-stop (2026-11-12 재확인. 영문판 https://document.pleos.ai/en/docs/pleos-only/connect-sdk-pleos/TextToSpeech/start-and-stop 대조: `isFinal` 생략 문장이 영문판에만 있다)
 - [tts-appreg] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/TextToSpeech/app-registration
+- [tts-listener] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/TextToSpeech/event-listeners (2026-11-12 확인. 영문판 https://document.pleos.ai/en/docs/pleos-only/connect-sdk-pleos/TextToSpeech/event-listeners 대조, 내용이 같다)
+- [tts-error] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/TextToSpeech/error-code (2026-11-12 확인)
+- [tts-api-ref] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/TextToSpeech/entry (2026-11-12 확인. 본문은 제목뿐이고 목차는 사이드바에 있다)
+  - 하위 페이지 경로 앞부분은 `https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/TextToSpeech/text-to-speech/`. 모두 제목만 있고 본문이 비어 있다:
+    - `ai.pleos.playground.tts/entry`, `ai.pleos.playground.tts/text-to-speech/entry`, `.../text-to-speech/speak`, `.../set-audio-attributes`, `.../set-audio-zone-id`, `.../set-speaker-type`
+    - `ai.pleos.playground.tts.constant/entry`, `ai.pleos.playground.tts.constant/error-type/entry`
+    - `ai.pleos.playground.tts.listener/entry`, `ai.pleos.playground.tts.listener/event-listener/entry`
+  - `set-audio-attributes`는 영문판(`/en/docs/...`)과 검색 결과에 나온 `https://document.pleos.ai/api-reference/connect-sdk-pleos/TextToSpeech/text-to-speech/ai.pleos.playground.tts/text-to-speech/set-audio-attributes`도 열어 봤다. 둘 다 비어 있다.
+- [voice-preroll] https://document.pleos.ai/docs/pleos-only/vehicle-app-developer-guide/voice-guidance-preroll-silence-guide (2026-11-12 재확인)
+- [adb-guide] https://document.pleos.ai/docs/pleos-only/vehicle-app-developer-guide/adb-command-reference-guide (FAQ - 디버깅을 위한 주요 ADB Command 활용법, 2026-11-12 확인. 오디오·마이크·음성 명령은 없다)
+- [perf-resource] https://document.pleos.ai/docs/pleos-only/vehicle-app-planning-guide/performance-resource-mgmt (성능 및 리소스 효율을 고려한 설계, 2026-11-12 확인)
+- [design-intro] https://document.pleos.ai/docs/connect/guide/docs-design/Introduction/intro (2026-11-12 "음성 인터랙션 강화" 확인, 영문판 대조)
+- [review-distraction] https://document.pleos.ai/docs/pleos-only/distribute/app-review-guide/review-driver-distraction-elements (2026-11-12 재확인)
 - [navi-init] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/NaviHelper/initialization-and-release
 - [navi-events] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/NaviHelper/event-listeners
 - [navi-dest] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/NaviHelper/destinations
@@ -1633,6 +1803,7 @@ fun sendGleoBroadcast(
   - [aar-navi-data] Pleos Maven `ai.pleos.playground:navi-data:3.0.4` AAR과 `NaviHelper:3.0.5` pom (`javap`). 2026-11-03 확인.
   - [aar-navi] Pleos Maven `ai.pleos.playground:NaviHelper:3.0.5`, `navi-data:3.0.4` AAR (`javap`, AAR 매니페스트). 2026-11-05 확인 (010 spike, 011 현재 위치).
   - [aar-stt] Pleos Maven `ai.pleos.playground:SpeechToText:3.3.1` AAR (`javap`). 2026-11-03 확인.
+  - [aar-tts] Pleos Maven `ai.pleos.playground:TextToSpeech:3.3.1` AAR·POM (`javap -c -p -constants`). 2026-11-12 확인.
   - [maven-search] Pleos Maven 검색 API, 2026-11-03 확인. `https://nexus-playground.pleos.ai/service/rest/v1/search?repository=maven-releases&q=gleo` (`q=Gleo*`도) → items 비어 있음. 대조로 `q=NaviHelper` → 2.0.2, 2.0.3, 3.0.5.
     - 2026-11-12 추가: `...search?repository=maven-releases&group=ai.pleos.playground&name=Vehicle` → `Vehicle:2.0.3`, `Vehicle:2.3.2`만. `...&name=placesense` → `placesense:V1`만 (파일 날짜 2025-03-21). `https://nexus-playground.pleos.ai/repository/maven-releases/ai/pleos/playground/Vehicle/2.3.1/Vehicle-2.3.1.pom` → 404.
   - [maven-browse] Pleos Maven 디렉터리 목록 (2026-11-12 확인): https://nexus-playground.pleos.ai/service/rest/repository/browse/maven-releases/ai/pleos/playground/ (14개), 하위 `.../placesense/`

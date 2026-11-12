@@ -5,7 +5,7 @@
 - 확인하지 못한 것은 맨 아래 "미확인"에 둔다. 추측으로 채우지 않는다.
 - SDK 좌표·API·권한은 [sdk-notes.md](sdk-notes.md)에 둔다.
 
-마지막 갱신: 2026-11-05
+마지막 갱신: 2026-11-12
 
 ## 화면 구성
 
@@ -243,6 +243,35 @@ Maps/Navigation 카테고리 앱 대상 문서다 ("Pleos Connect의 Maps/Naviga
 
 - 주행 안전 설계 원칙: 검색·로그인에 키보드보다 프리셋, 최근 항목, 즐겨찾기, 음성 입력을 우선한다. [driver-distraction]
 - 지역별 주행 규제 표: 북미의 "검색"은 주행 중 "음성한정"("`음성한정`은 음성으로만 사용 가능함을 의미합니다."). [driving-policy]
+- 주행 안전 설계 원칙 원문 (2026-11-12 확인) [driver-distraction]:
+  - "터치스크린 조작을 최소화하고, 음성 명령이나 물리 버튼 등 차량에서 제공하는 입력 방식과 연계한 인터랙션을 지원합니다." (터치 조작 최적화)
+  - "검색·로그인에서도 키보드 입력보다 프리셋 선택, 최근 항목 및 음성 입력을 우선하도록 설계합니다." (텍스트 입력 최소화)
+  - "운전에 중요한 오디오 안내가 재생될 때는 오디오 포커스 정책에 따라 미디어 재생을 일시 중지하거나 볼륨을 조정하는 등 적절히 대응합니다." (정보 구조·인터랙션)
+  - "주행 규제 상태에서 영상 재생을 시작하거나 재개하지 않도록 처리하고, 오디오 재생은 오디오 포커스 개발 가이드에 정의된 정책을 준수합니다."
+
+### 음성 인터랙션 (UI 디자인 가이드, 2026-11-12) [design-intro]
+
+카테고리 구분 없이 모든 앱에 쓰는 디자인 원칙이다.
+
+- "음성 인터랙션 강화" (유연성 및 확장성 고려) 원문:
+  - "Pleos Connect는 Gleo AI를 통해 음성 인터랙션을 지원합니다."
+  - "앱 설계 시 음성 인터랙션을 적절히 활용하여 사용성과 주행 안전을 높일 수 있는지 검토합니다."
+  - "음성 기반 통신 시스템은 핸즈프리로 말하고 들을 수 있어야 합니다."
+  - "핸즈프리 음성 인터페이스는 음성 대화를 시작, 종료 또는 중단하는 작업은 수동으로 실행할 수 있습니다."
+  - 영문판: "A hands-free voice interface may allow manual operation to start, end, or interrupt voice conversations." ("may allow", 허용하는 문장이다. 의무는 아니다)
+- 아이콘 및 터치 피드백: "터치 시 진동 피드백(Haptic Feedback)이나 음성 피드백을 제공하여 조작의 정확성을 높입니다."
+- 사용성과 안전성: "앱 조작은 한 손만으로도 가능해야 하며, 양손을 모두 사용하게 해서는 안 됩니다." "운전 중 동영상, 애니메이션 이미지, 텍스트 자동 스크롤과 같이 운전자의 시선을 유도하면 안 됩니다."
+- 즉시성: "운전자는 짧은 시간(1~2초) 내에 정보를 파악해야 하므로, 핵심 정보만 노출하고 불필요한 요소는 배제합니다." "응답이 지연되거나 시간이 필요한 경우에는 시각적으로 응답 중인 상태를 알리세요."
+- 이 페이지의 글자 수 기준(영어 120자 또는 24단어 등)은 화면 텍스트 기준이다. 음성 안내 문장 길이에 대한 기준은 아니다 (위 "텍스트와 가독성").
+
+### 주행 중 음성 인터랙션에 대해 문서에 없는 것 (2026-11-12 조사)
+
+- 음성 안내(TTS) 문장 길이, 한 번에 읽을 문장 수
+- 음성으로 묻고 확인받는 방식 (예/아니요 확인, 다시 묻기, 실패 시 안내)
+- 듣는 중임을 보여 주는 UI 규격. 디자인 컴포넌트 목록(Actions, Bar, Controllers, Indicator, Dropdown, Fields, Page Navigation, Popups, Tabs, Selections, Spinner, System Notification, Toast, Widgets)에 음성 전용 컴포넌트가 없다. Status bar 페이지에는 "privacy indicator가 표시됩니다."만 있고 마이크 사용과의 관계는 없다. [design-statusbar]
+- Maps/Navigation이 아닌 앱의 주행 중 "단일 터치 기반 주요 기능" 허용 범위 (허용 목록은 Maps/Navigation 앱 가이드에만 있다) [navi-app-guide]
+- 앱 심사 주의분산 기준의 일반 앱 문장은 "주행 중 상태에서도 운전자와 지속적인 상호작용을 하는 앱을 디자인하기 위해서는 운전자 주의 분산 요소를 최소화한 디자인 원칙 준수가 필요합니다."뿐이고, 음성·오디오 기준은 없다. [review-distraction]
+- 확인한 페이지: UI 디자인 가이드 intro(영문판 대조), Status bar, System Notification, 주행 안전 설계 원칙, 앱 심사 주의분산 기준, Maps/Navigation·Music/Audio 앱 가이드, 앱 기획 가이드 목차(하위 10쪽 제목), 개발 가이드 목차, 차량 앱 FAQ, ADB Command 가이드, 성능 및 리소스 효율 설계 가이드.
 
 ## 오디오 포커스와 음성 안내
 
@@ -271,12 +300,28 @@ Maps/Navigation 카테고리 앱 대상 문서다 ("Pleos Connect의 Maps/Naviga
 
 - 검증 예: CALL 중 MUSIC 요청은 R(실패), MUSIC 중 CALL 요청은 E(통화가 선점), EMERGENCY 중 MUSIC/NOTIFICATION 요청은 R.
 - Interaction Matrix의 셀 값은 이미지로만 있다. 서드파티 앱이 쓸 수 있는 usage 목록은 문서에 없다 → 미확인.
+- 성능 설계 가이드 (2026-11-12) [perf-resource]: "오디오·미디어 앱은 시스템 전체 오디오 포커스 정책을 따라야 하며, 다른 앱이나 알림과 충돌하지 않도록 설계합니다." "Pleos Connect 오디오 포커스 정책을 준수합니다."
+
+#### 우리 TTS 안내가 내비 음성과 겹칠 때 (2026-11-12 조사, 017)
+
+- **문서에 없다.** 오디오 포커스 가이드 본문에 TTS, 음성 합성, Speech Service라는 말이 없다. NAVIGATION이 재생 중일 때 다른 NAVIGATION·ANNOUNCEMENT·VOICE_COMMAND·ASSISTANT 요청이 오면 E/C/R 중 무엇인지는 Interaction Matrix 이미지에만 있다. [audio-focus]
+- 텍스트로 있는 것: "두 앱은 C로 공존을 기본으로 합니다." (NAVIGATION ↔ MUSIC 항목), 검증 시나리오 "MUSIC 재생 중 NAVIGATION 요청 → C (뮤직 duck + 내비 재생)", "C로 동시 홀더 2명(MUSIC+NAVIGATION) 상태에서 VOICE_COMMAND 요청" / "각각의 결과를 비교하여 최종이 보수적으로 적용되는지 확인합니다. (R/E 우선)". [audio-focus]
+- TextToSpeech SDK가 어느 usage로 재생하는지, 포커스를 SDK가 잡는지 앱이 잡는지는 TTS 가이드에도 없다. API Reference 목차에 `setAudioAttributes`가 있지만 본문이 비어 있다 → [sdk-notes.md](sdk-notes.md#tts-문서-조사-017-선행-2026-11-12) T5. 에뮬레이터에서 `adb shell dumpsys audio`로 관찰해야 한다 (아래 "미확인").
 
 ### TTS·음성 안내 선행 묵음 [voice-preroll]
 
 - 적용 범위: TTS 음성 안내, 녹음 음원 안내 멘트, 내비게이션·알림·상태 안내 등 모든 음성 출력.
 - 선행 묵음은 최소 150ms, 기본 권장 150~200ms. 오디오 데이터 앞에 무음 패딩을 넣는 방식을 우선하고, 재생 지연만으로 처리하는 방식은 권장하지 않는다.
 - Pleos TextToSpeech SDK가 이를 자동으로 처리하는지는 문서에 없다 → 미확인.
+- 원문 (2026-11-12 재확인) [voice-preroll]:
+  - 적용 범위: "TTS 기반 음성 안내", "녹음 음원 기반 안내 멘트", "내비게이션, 알림, 상태 안내 등 모든 음성 출력 경로"
+  - "150 ms 미만은 디바이스 및 재생 환경에 따라 첫 음절 손실 가능성이 있음", "200 ms 초과 적용은 체감 지연을 유발할 수 있으므로 필요 시에만 예외적으로 사용"
+  - 적용 원칙: "음성 안내는 묵음 없이 즉시 재생하지 않습니다."
+  - 적용 위치 우선순위: "PCM/WAV 등 오디오 데이터 앞단에 사일런스 패딩(silence padding) 삽입" → "TTS 결과물 생성 후 후처리로 묵음 추가" → "플레이어 재생 지연 방식". "재생 지연만으로 처리하는 방식은 스케줄링 편차가 커서 권장하지 않습니다."
+  - 연속 재생: "단일 안내 시작 시에는 선행 묵음을 적용합니다." "하나의 자연스러운 발화 단위로 이어지는 연속 음성에는 불필요한 추가 묵음을 삽입하지 않습니다." "스트림 재생이 끊기거나 새 세션으로 시작되는 경우에는 다시 적용합니다."
+  - 구현 시 유의사항: "오디오 출력 경로가 사전에 초기화되어 있을 것", "오디오 포커스 또는 오디오 세션 확보가 완료되어 있을 것", "디코더/플레이어/출력 디바이스가 재생 가능한 상태일 것". "선행 묵음은 초기 클리핑(clipping) 완화 수단이며, 출력 경로 초기화 문제 자체를 대체하지는 않습니다."
+  - 구현 예시 코드는 없다. TextToSpeech SDK, Speech Service 언급도 없다.
+- TextToSpeech SDK 가이드(intro, start-and-stop, event-listeners)에도 선행 묵음 언급이 없고, 합성 오디오 데이터를 앱에 돌려주는 API도 없다 (재생은 SDK가 한다: "합성된 음성을 차량의 오디오 시스템으로 재생합니다."). 앱이 위 우선순위 1·2번 방식을 쓸 수 있는지 문서로는 알 수 없다. [sdk-notes.md](sdk-notes.md#texttospeech-sdk-v331-tts-intro-tts-import-tts-perm) (2026-11-12)
 
 ## 앱 심사·보안·개인정보 정책
 
@@ -397,6 +442,11 @@ dialog.show()
 - [ ] Window Policy의 두 가지 앱 실행 정책 중 현재 적용되는 것
 - [ ] Lifestyle, Mobility Services 등 Maps/Navigation·Music/Audio 외 카테고리의 매니페스트 선언 값과 주행 중 허용 범위 (2026-11-03 조사, 문서에 없음)
 - [ ] Maps/Navigation 앱이 아닌 앱도 주행 중 "음성 입력"이 허용되는지 (허용 목록은 Maps/Navigation 앱 가이드에만 있음)
+  - 2026-11-12: 카테고리별 허용 문장은 여전히 없다. 다만 모든 앱 대상 디자인 원칙이 "앱 설계 시 음성 인터랙션을 적절히 활용하여 사용성과 주행 안전을 높일 수 있는지 검토합니다."라고 하고 [design-intro], 주행 안전 설계 원칙이 "음성 명령이나 물리 버튼 등 차량에서 제공하는 입력 방식과 연계한 인터랙션을 지원합니다."라고 한다 [driver-distraction]. → 위 "음성 인터랙션 (UI 디자인 가이드, 2026-11-12)"
+- [ ] 음성 안내(TTS) 문장 길이, 음성 확인 방식, 듣는 중 표시 UI 규격 (2026-11-12 조사, 문서에 없음) → 위 "주행 중 음성 인터랙션에 대해 문서에 없는 것"
+- [ ] Maps/Navigation이 아닌 앱의 주행 중 단일 터치(예: 큰 버튼 하나로 듣기 시작) 허용 범위 (2026-11-12 조사, 문서에 없음)
+- [ ] 우리 TTS 안내와 내비 TBT 음성이 겹칠 때의 실제 동작 (duck, 일시정지, 거절). Interaction Matrix 셀이 이미지라 문서로 못 읽는다. 에뮬레이터에서 `adb shell dumpsys audio`로 관찰한다 → [sdk-notes.md](sdk-notes.md#017018-음성-안내음성-대화-관련-2026-11-12-조사)
+- [ ] TextToSpeech SDK가 선행 묵음(150~200ms)을 알아서 넣는지. 문서에 없다 (2026-11-12 재확인). 에뮬레이터에서 첫 음절이 잘리는지 들어 본다.
 - [ ] 카테고리에 따라 DO 선언이 허용·거부되는지
 - [ ] 건강·의료 정보(반려동물 병력·복용약 포함)에 대한 심사 기준, "진단" 같은 의료 표현 제한 (콘텐츠 안전·개인정보 심사 페이지에 없음)
 - [ ] LLM API, 지도·장소 검색 API 등 외부 서비스 호출에 대한 별도 조건 (금지 문장은 못 찾음. HTTPS/TLS 1.2+, 도메인 증빙(웹 페이지 연결 시), 심사 중 서버 활성화 조건만 확인)
@@ -436,6 +486,9 @@ dialog.show()
 - [review-function] https://document.pleos.ai/docs/pleos-only/distribute/app-review-guide/review-functionality-performance-stability
 - [review-registration] https://document.pleos.ai/docs/pleos-only/distribute/app-review-guide/review-app-registration-info
 - [review-privacy] https://document.pleos.ai/docs/pleos-only/distribute/app-review-guide/review-user-privacy-security
+- [perf-resource] https://document.pleos.ai/docs/pleos-only/vehicle-app-planning-guide/performance-resource-mgmt (성능 및 리소스 효율을 고려한 설계, 2026-11-12 확인)
+- [design-statusbar] https://document.pleos.ai/docs/connect/guide/docs-design/components/status-bar (2026-11-12 확인)
+- 2026-11-12 재확인한 페이지: [design-intro](영문판 https://document.pleos.ai/en/docs/connect/guide/docs-design/Introduction/intro 대조), [driver-distraction], [review-distraction], [audio-focus], [voice-preroll], [navi-app-guide], [music-app-guide], [faq]. 디자인 컴포넌트 목록은 https://document.pleos.ai/en/docs/connect/guide/docs-design/components/notification/system-notification 의 사이드바로 봤다.
 - Pleos 외 출처 (Pleos [driver-distraction]이 직접 링크한 Google 공식 문서):
   - [aaos-dd] https://source.android.com/docs/automotive/driver_distraction/guidelines?hl=ko
 - Pleos 외 출처 (Pleos [driving-restriction-dev]가 직접 링크한 Google 공식 문서, 2026-11-05 확인):

@@ -236,6 +236,17 @@ Apple Silicon Mac용이다. 순서는 위 Windows와 같다. SDK 경로는 Andro
 - 기어나 속도가 `CarUxRestrictions`를 바꾼다는 문장은 Pleos 문서 어디에도 없다. 확인한 곳: Virtual Console 셋업·사용 가이드, 에뮬레이터 설정 페이지, 에뮬레이터 릴리스 노트, 주행 규제 개발 가이드. [vc-overview] [vc-guide] [configure] [emulator-release-note] [driving-restriction-dev]
   - 에뮬레이터 설정 페이지는 Extended Controls를 마이크 설정에서만 말한다. "Car data"(차량 데이터) 패널 언급은 없다. VHAL은 "quick boot로 설정할 경우에는 VHAL을 이용할 수 없습니다."에만 나온다. [configure]
   - 에뮬레이터 릴리스 노트 v2.1.0: "도메인별 차량 상태/이벤트를 설정하고 앱 반응을 검증할 수 있는 테스트 환경 추가". 주행 규제 언급은 없다. [emulator-release-note]
+- **2026-11-12 추가: Pleos ADB 가이드에 주행 규제를 켜고 끄는 명령이 있다.** [adb-guide]
+  - 절 "주행 규제 활성화/해제". 설명 원문: "주행 규제를 활성화하는 단계별 명령어와 활성화한 주행 규제를 해제하는 명령어입니다." "모든 차종에서 공통으로 사용할 수 있는 명령어입니다."
+
+    ```
+    adb shell cmd hmg_car_service --service drivingstate driving_regulation on
+    adb shell cmd hmg_car_service --service drivingstate driving_regulation off
+    ```
+
+  - 이 명령이 `CarUxRestrictions`(`isRequiresDistractionOptimization()`, `ActiveRestrictions`)를 바꾼다고 적혀 있지는 않다. Pleos 에뮬레이터에서 실행해 보지 않았다. 되면 Virtual Console 없이 주행 중 화면(018 주행 중 음성 입력 등)을 시험할 수 있다.
+  - 같은 페이지의 "기어 상태 변경" 절에는 터미널 명령이 없고 Virtual Console 가이드를 보라고만 한다. "모드 변경" 절은 유틸리티 모드 전환(차속 0, 주차 브레이크, 기어 P 상태에서 `/dev/vcs_simulator_rx`에 쓰는 명령)이다. [adb-guide]
+  - 출처 [adb-guide]: https://document.pleos.ai/docs/pleos-only/vehicle-app-developer-guide/adb-command-reference-guide (FAQ - 디버깅을 위한 주요 ADB Command 활용법, 2026-11-12 확인)
 
 ### Google AAOS 에뮬레이터의 주행 시뮬레이션 (참고. Pleos 에뮬레이터에서 되는지는 미확인)
 

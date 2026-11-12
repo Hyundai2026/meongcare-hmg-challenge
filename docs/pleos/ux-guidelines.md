@@ -307,6 +307,7 @@ Maps/Navigation 카테고리 앱 대상 문서다 ("Pleos Connect의 Maps/Naviga
 - **문서에 없다.** 오디오 포커스 가이드 본문에 TTS, 음성 합성, Speech Service라는 말이 없다. NAVIGATION이 재생 중일 때 다른 NAVIGATION·ANNOUNCEMENT·VOICE_COMMAND·ASSISTANT 요청이 오면 E/C/R 중 무엇인지는 Interaction Matrix 이미지에만 있다. [audio-focus]
 - 텍스트로 있는 것: "두 앱은 C로 공존을 기본으로 합니다." (NAVIGATION ↔ MUSIC 항목), 검증 시나리오 "MUSIC 재생 중 NAVIGATION 요청 → C (뮤직 duck + 내비 재생)", "C로 동시 홀더 2명(MUSIC+NAVIGATION) 상태에서 VOICE_COMMAND 요청" / "각각의 결과를 비교하여 최종이 보수적으로 적용되는지 확인합니다. (R/E 우선)". [audio-focus]
 - TextToSpeech SDK가 어느 usage로 재생하는지, 포커스를 SDK가 잡는지 앱이 잡는지는 TTS 가이드에도 없다. API Reference 목차에 `setAudioAttributes`가 있지만 본문이 비어 있다 → [sdk-notes.md](sdk-notes.md#tts-문서-조사-017-선행-2026-11-12) T5. 에뮬레이터에서 `adb shell dumpsys audio`로 관찰해야 한다 (아래 "미확인").
+- **관찰 (2026-11-12, Pleos 에뮬레이터, 계획 017 spike)**: TTS SDK도 음성 서비스도 오디오 포커스를 잡지 않는다 (말하는 동안 포커스 스택이 비어 있음). 재생 usage는 기본 `USAGE_MEDIA`이고, 앱이 `setAudioAttributes`로 준 값이 서비스의 AudioTrack에 그대로 쓰인다. 그래서 포커스 가이드를 지키려면 **앱이 직접** 고른 usage로 포커스를 요청해야 한다. 내비 음성과 실제로 겹쳤을 때 어떻게 되는지는 아직 못 봤다 → [sdk-notes.md](sdk-notes.md#tts-on_device-실행-확인-관찰-2026-11-12)
 
 ### TTS·음성 안내 선행 묵음 [voice-preroll]
 

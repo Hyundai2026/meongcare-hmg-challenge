@@ -266,9 +266,10 @@ fun speechOutputKindOf(mode: DataMode, isAutomotive: Boolean, enabled: Boolean =
 ### 8. 소리 안내 빼는 법 (010 "음성 입력 빼는 법"과 같은 구조)
 
 - **소리만 끄기**: `di/SpeechPlan.kt`의 `SPEECH_OUTPUT_ENABLED = false` 한 줄. 모든 모드가 NONE → 안내자가 시작되지 않는다. 화면은 원래 바뀐 것이 없다. SDK와 권한은 APK에 남는다.
-- **APK에서 완전히 빼기**: 위 한 줄 + 단계 5-2 커밋을 `git revert`.
+- **APK에서 완전히 빼기**: 위 한 줄 + 단계 5-3·5-2 커밋을 새것부터 `git revert` (한 번에: `git revert <5-3 해시> <5-2 해시>`).
+  - 5-3이 `AppContainer`의 REAL 줄에 포커스 인자를 더해서, 5-2만 되돌리면 그 줄이 충돌한다 ("결정 / 배운 점" 참고). 그래서 둘을 함께 되돌린다. 010 STT도 커밋 두 개를 함께 되돌린다.
   - 그래서 단계 5-2 커밋에는 이 다섯 가지만 넣는다: `gradle/libs.versions.toml`, `app/build.gradle.kts`, `app/src/main/AndroidManifest.xml`(`TTS_SERVICE`), `data/speech/PleosTextToSpeechClient.kt`, `AppContainer`의 REAL 한 줄. 이후 커밋이 이 줄들을 되도록 건드리지 않게 한다. 건드리면 그 커밋도 되돌리기 목록에 적는다.
-  - 단계 7에서 확인한다: `git revert --no-commit <5-2 해시>` → `./gradlew assembleDebug testDebugUnitTest` 통과 → `git revert --abort`.
+  - 단계 7에서 확인한다: `git revert --no-commit <5-3 해시> <5-2 해시>` → `./gradlew assembleDebug testDebugUnitTest` 통과 → `git revert --abort`.
 
 ### 9. 주행 중 안전 (AGENTS.md 규칙 3)
 
@@ -454,7 +455,7 @@ fun speechOutputKindOf(mode: DataMode, isAutomotive: Boolean, enabled: Boolean =
   - 1-4. 갈림길을 정하고 이 계획의 설계 결정 5·6, 단계 5-2·5-3, 출발 안내 시점을 고친다 → `docs(plans): 017 spike 결과로 재생 방식 확정`
   - **소리가 안 나면**: "갈림길" 마지막 줄과 U4의 답대로 한다. 1-3 커밋까지 하고 멈춘다.
 
-- [ ] 2. 말하기 인터페이스와 Fake → `feat(data): 말하기 인터페이스와 Fake 구현 추가`
+- [x] 2. 말하기 인터페이스와 Fake → `feat(data): 말하기 인터페이스와 Fake 구현 추가` (`c1b2e1e`)
   - `domain/speech/Speaker.kt` (`Speaker`, `SpeakResult`, `SpeakFailure`. 설계 결정 3)
   - `data/speech/FakeSpeaker.kt` (설계 결정 4)
   - `FakeSpeakerTest` (가상 시간):
@@ -462,7 +463,7 @@ fun speechOutputKindOf(mode: DataMode, isAutomotive: Boolean, enabled: Boolean =
     - `` `한 번에 하나씩 부른 순서대로 읽는다`() ``
     - `` `취소하면 읽기를 멈추고 기다리던 다음 요청을 바로 시작한다`() ``
 
-- [ ] 3. 길안내 사건 안내 (Fake로 동작)
+- [x] 3. 길안내 사건 안내 (Fake로 동작) (`580b4e0`, `33e1b01`)
   - 3-1. → `feat(domain): 길안내 사건별 소리 안내 문장 추가`
     - `domain/trip/TripAnnouncement.kt` (설계 결정 1의 표, U1·U2의 답)
     - `TripAnnouncementTextTest`:
@@ -488,7 +489,7 @@ fun speechOutputKindOf(mode: DataMode, isAutomotive: Boolean, enabled: Boolean =
       - `` `남은 시간이 바뀌어도 말하지 않는다`() ``
       - `` `로그에는 사건 종류와 결과만 남고 병원 이름은 없다`() ``
 
-- [ ] 4. 구성과 연결 → `feat(di): 데이터 모드별 소리 안내 구성 추가`
+- [x] 4. 구성과 연결 → `feat(di): 데이터 모드별 소리 안내 구성 추가` (`90c0ffa`)
   - `di/SpeechPlan.kt` (`SpeechOutputKind`, `SPEECH_OUTPUT_ENABLED`, `speechOutputKindOf`. 설계 결정 7)
   - `AppContainer`: `speechOutputKind`, `speaker` (FAKE → `FakeSpeaker()`, REAL → **임시 `null`**), `init`에서 `TripAnnouncer(...).start()` (로그 태그 `TripAnnouncer`)
   - `SpeechPlanTest`:
@@ -497,7 +498,7 @@ fun speechOutputKindOf(mode: DataMode, isAutomotive: Boolean, enabled: Boolean =
     - `` `release 빌드는 차량 기기에서 Real 소리 안내다`() `` (`resolveDataMode(isDebugBuild = false, ...)`와 함께)
   - 확인: 일반 폰 에뮬레이터에서 F1 (로그). 화면이 바뀌지 않으므로 스크린샷은 흐름 확인용으로만.
 
-- [ ] 5. Real 구현
+- [x] 5. Real 구현 (5-1 `d148ea9`, 5-2 `7062938`, 5-3 `3c706d2`)
   - 5-1. → `feat(data): TTS 이벤트를 말하기 결과로 바꾸는 Real 구현 추가`
     - `data/speech/TextToSpeechClient.kt` (`TtsEvent`, `TextToSpeechClient`), `data/speech/RealSpeaker.kt` (설계 결정 5의 표. spike 값 반영)
     - Pleos SDK는 아직 넣지 않는다. `AppContainer`도 아직 `REAL -> null`이다.
@@ -643,6 +644,16 @@ fun speechOutputKindOf(mode: DataMode, isAutomotive: Boolean, enabled: Boolean =
     - 출발 안내 시점은 기본안(출발 직후) 그대로, D7에서 확인.
     - close 순서는 기본안 그대로.
   - 이번 확인은 사용자가 아니라 에이전트가 켠 에뮬레이터로 했다 (진행 로그 위 항목).
+- 2026-11-12: 단계 2~5 구현.
+  - 단위 테스트를 더했다: FakeSpeaker 3, TripAnnouncementText 5, TripAnnouncer 13, SpeechPlan 3, RealSpeaker 12.
+  - TripAnnouncer 테스트는 안내자를 `backgroundScope`에서 돌린다. 그래서 `advanceUntilIdle()` 대신 가상 시간을 30초 넘기는 `settle()`을 쓴다 (`advanceUntilIdle`은 백그라운드 작업만 남으면 시간을 넘기지 않는다).
+  - Pleos 에뮬레이터가 단계 5-2 확인(D1) 중에 꺼졌다. 로그에는 오류 없이 "Boot completed"까지만 있다. `/verify` 규칙대로 다시 켜지 않았다. D1은 단계 7에서 사용자에게 Cold boot를 부탁해 본다.
 
 ## 결정 / 배운 점
+
+- 단계 5-3을 `RealSpeaker`의 생성자 인자(`focus: AudioFocusGate`, 기본 `NONE`)로 넣었다. 그래서 `AppContainer`의 REAL 줄(5-2)을 고쳤다.
+  - 계획의 "5-2의 다섯 줄을 건드리지 않는다"와 다르다.
+  - 버린 대안: `Speaker`를 감싸는 별도 클래스. `AppContainer.speaker`를 두 번 정의해야 하고 018에서 헷갈린다.
+  - 대신 되돌리기 단위를 "5-3 + 5-2 두 커밋"으로 바꿨다 (설계 결정 8).
+- `AndroidAudioFocusGate`는 `PleosTextToSpeechClient`와 같은 usage 값을 따로 들고 있다. 5-2 파일을 건드리지 않으려고 상수를 공유하지 않았다. 바꿀 때는 두 곳을 같이 바꾼다.
 

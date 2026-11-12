@@ -29,6 +29,9 @@ import kotlinx.coroutines.withTimeoutOrNull
  * | 끝난 뒤 오는 이벤트 | 무시 |
  * | client.speak가 예외 | Failed(UNAVAILABLE) |
  * | 부른 코루틴 취소 | 닫는다 (한 번만) |
+ * | 오디오 포커스 거절 ([focus]) | 읽지 않고 Failed(AUDIO) |
+ *
+ * 오디오 포커스는 읽기 전에 받고, 끝나면 반납한다 (017 단계 5-3, spike S8: SDK와 음성 서비스가 잡지 않는다).
  *
  * - **한 번에 하나씩** 읽는다 ([Mutex]). Pleos 음성 서비스는 읽는 중에 새 문장을 받으면 앞 문장을 끊고,
  *   끊긴 문장에는 끝 이벤트를 보내지 않는다 (017 spike S6). 그래서 앞 문장이 끝난 뒤에 다음 문장을 맡긴다.
@@ -37,6 +40,7 @@ import kotlinx.coroutines.withTimeoutOrNull
  */
 class RealSpeaker(
     private val client: TextToSpeechClient,
+    private val focus: AudioFocusGate = AudioFocusGate.NONE,
     private val initTimeout: Duration = 3.seconds,
     private val baseSpeakTime: Duration = 10.seconds,
     private val perCharSpeakTime: Duration = 250.milliseconds,
@@ -44,7 +48,28 @@ class RealSpeaker(
 
     private val oneAtATime = Mutex()
 
-    override suspend fun speak(text: String): SpeakResult = oneAtATime.withLock { speakNow(text) }
+    override suspend fun speak(text: String): SpeakResult = oneAtATime.withLock { withFocus(text) }
+
+    /**
+     * 오디오 포커스를 받은 뒤 읽고, 끝나면(결과·실패·취소 모두) 반납한다 (017 단계 5-3).
+     * 거절되거나 요청이 예외면 읽지 않고 소리 문제([SpeakFailure.AUDIO])다.
+     */
+    private suspend fun withFocus(text: String): SpeakResult {
+        val held = try {
+            focus.request()
+        } catch (e: Exception) {
+            null
+        } ?: return SpeakResult.Failed(SpeakFailure.AUDIO)
+        try {
+            return speakNow(text)
+        } finally {
+            try {
+                held.close()
+            } catch (_: Exception) {
+                // 반납하다 난 예외로 결과를 막지 않는다.
+            }
+        }
+    }
 
     private suspend fun speakNow(text: String): SpeakResult {
         val events = Channel<TtsEvent>(Channel.UNLIMITED)

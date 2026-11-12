@@ -42,6 +42,7 @@ import com.meongcare.app.data.server.FunctionNearbyVetSource
 import com.meongcare.app.data.server.nearbyFunctionUrlOf
 import com.meongcare.app.domain.hospital.HospitalBoard
 import com.meongcare.app.data.phone.AndroidPhoneDialer
+import com.meongcare.app.data.speech.AndroidAudioFocusGate
 import com.meongcare.app.data.speech.FakeSpeaker
 import com.meongcare.app.data.speech.PleosTextToSpeechClient
 import com.meongcare.app.data.speech.RealSpeaker
@@ -344,7 +345,7 @@ class AppContainer(context: Context, val dataMode: DataMode) {
     val speaker: Speaker? = when (speechOutputKind) {
         SpeechOutputKind.NONE -> null
         SpeechOutputKind.FAKE -> FakeSpeaker()
-        SpeechOutputKind.REAL -> RealSpeaker(PleosTextToSpeechClient(context))
+        SpeechOutputKind.REAL -> RealSpeaker(PleosTextToSpeechClient(context), focus = AndroidAudioFocusGate(context))
     }
 
     /** Pleos Vehicle 연결. Real 구성에서만 만든다 (Fake에서는 Vehicle을 만들지 않는다). */

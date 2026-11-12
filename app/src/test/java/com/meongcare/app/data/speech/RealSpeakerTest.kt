@@ -173,6 +173,60 @@ class RealSpeakerTest {
         assertEquals(1, client.closeCount)
     }
 
+    /** 포커스 요청·반납을 기록한다. [grant]가 false면 거절한다. */
+    private class RecordingFocus(private val grant: Boolean = true) : AudioFocusGate {
+        val calls = mutableListOf<String>()
+        override fun request(): AutoCloseable? {
+            calls += "요청"
+            if (!grant) return null
+            return AutoCloseable { calls += "반납" }
+        }
+    }
+
+    @Test
+    fun `포커스를 받은 뒤 읽고 끝나면 반납한다`() = runTest {
+        val client = FakeClient()
+        val focus = RecordingFocus()
+        val speaker = RealSpeaker(client, focus = focus)
+
+        val result = async { speaker.speak(short) }
+        runCurrent()
+        assertEquals(listOf("요청"), focus.calls)
+        assertEquals(listOf(short), client.texts)
+        client.send(TtsEvent.Ready, TtsEvent.Started, TtsEvent.Done)
+
+        assertEquals(SpeakResult.Done, result.await())
+        assertEquals(listOf("요청", "반납"), focus.calls)
+    }
+
+    @Test
+    fun `포커스가 거절되면 읽지 않고 소리 문제다`() = runTest {
+        val client = FakeClient()
+        val speaker = RealSpeaker(client, focus = RecordingFocus(grant = false))
+
+        assertEquals(SpeakResult.Failed(SpeakFailure.AUDIO), speaker.speak(short))
+        assertEquals(emptyList<String>(), client.texts)
+        assertEquals(0, client.closeCount)
+    }
+
+    @Test
+    fun `취소하거나 실패해도 포커스를 반납한다`() = runTest {
+        val client = FakeClient()
+        val focus = RecordingFocus()
+        val speaker = RealSpeaker(client, focus = focus)
+
+        val cancelled = launch { speaker.speak(short) }
+        runCurrent()
+        cancelled.cancel()
+        runCurrent()
+        val failed = async { speaker.speak(short) }
+        runCurrent()
+        client.send(TtsEvent.Error("AUDIO_ERROR"))
+        failed.await()
+
+        assertEquals(listOf("요청", "반납", "요청", "반납"), focus.calls)
+    }
+
     @Test
     fun `클라이언트가 예외를 던지면 쓸 수 없음이다`() = runTest {
         val speaker = RealSpeaker(FakeClient(failWith = IllegalStateException("서비스 없음")))

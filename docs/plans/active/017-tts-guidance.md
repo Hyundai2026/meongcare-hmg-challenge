@@ -649,6 +649,24 @@ fun speechOutputKindOf(mode: DataMode, isAutomotive: Boolean, enabled: Boolean =
   - TripAnnouncer 테스트는 안내자를 `backgroundScope`에서 돌린다. 그래서 `advanceUntilIdle()` 대신 가상 시간을 30초 넘기는 `settle()`을 쓴다 (`advanceUntilIdle`은 백그라운드 작업만 남으면 시간을 넘기지 않는다).
   - Pleos 에뮬레이터가 단계 5-2 확인(D1) 중에 꺼졌다. 로그에는 오류 없이 "Boot completed"까지만 있다. `/verify` 규칙대로 다시 켜지 않았다. D1은 단계 7에서 사용자에게 Cold boot를 부탁해 본다.
 
+- 2026-11-12: **여기서 멈춤** (사용자: "개발은 많이 안 할 거고, 오늘은 적당히 하고 종료").
+  - 끝난 것:
+    - 단계 0~5와 `docs/architecture.md` (단계 8의 첫 항목, `dda39de`).
+    - 커밋할 때마다 `assembleDebug`가 통과했다.
+    - 새 단위 테스트 36개(FakeSpeaker 3, TripAnnouncementText 5, TripAnnouncer 13, SpeechPlan 3, RealSpeaker 12)가 통과했다.
+    - 전체 `testDebugUnitTest`와 `lintDebug`는 이 브랜치에서 아직 돌리지 않았다 (`/ship`의 검증 파이프라인이 돌린다).
+  - 남은 것 (다시 시작할 때 이 순서):
+    1. 단계 6 `tester`. 시작했다가 멈췄고, 테스트 파일은 남지 않았다.
+    2. 단계 7 확인.
+       - Pleos 에뮬레이터 D1~D9: 사용자가 Cold boot하고 소리를 듣는다. S4 첫 음절, S10 내비 음성 겹침, 포커스 스택에 우리 앱이 보이는지(`SpeechFocus` 로그·`dumpsys audio`)도 본다.
+       - `my_avd` F1~F3.
+       - 되돌리기 점검: `git revert --no-commit 3c706d2 7062938` → 빌드·테스트 → `--abort`.
+    3. 단계 8의 나머지: sdk-notes·ux-guidelines 구현 관찰, README, `feature-facts.md`. feature-facts는 단계 7에서 확인한 것만 쓴다.
+    4. 단계 9 노트 → 계획을 completed로 → `/ship`.
+  - **dev에는 아직 없다.** `feat/tts-guidance` 로컬 브랜치에만 있다. 작업 브랜치는 push하지 않는다.
+    - 그래서 dev의 feature-facts "음성으로 안내한다 → 아직 만들지 않았다"는 dev 기준으로 맞다. 기획서에는 "PT 전 구현 예정(소리 안내)"으로 쓴다.
+  - spike probe는 로컬 `spike/tts-ondevice`(`ceaf842`)에 남겼다. 018 spike(S14)에 다시 쓸 수 있다.
+
 ## 결정 / 배운 점
 
 - 단계 5-3을 `RealSpeaker`의 생성자 인자(`focus: AudioFocusGate`, 기본 `NONE`)로 넣었다. 그래서 `AppContainer`의 REAL 줄(5-2)을 고쳤다.

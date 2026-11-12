@@ -435,7 +435,7 @@ fun speechOutputKindOf(mode: DataMode, isAutomotive: Boolean, enabled: Boolean =
 
 ### 필수
 
-- [ ] 0. 이 계획 파일 커밋 → `docs(plans): 017 TTS 음성 안내 계획 추가`
+- [x] 0. 이 계획 파일 커밋 → `docs(plans): 017 TTS 음성 안내 계획 추가` (`8989070`)
 
 - [ ] 1. Spike: Pleos 에뮬레이터에서 TTS 확인 (약 2~3시간, 사용자 귀 필요)
   - 1-1. 로컬 `spike/tts-ondevice` 브랜치에 probe를 만든다 (위 "Spike"). 이 브랜치의 커밋은 dev에 합치지 않는다.
@@ -605,6 +605,14 @@ fun speechOutputKindOf(mode: DataMode, isAutomotive: Boolean, enabled: Boolean =
     - 주행 화면은 "병원이 카드를 확인했어요" 한 줄과 도착 화면을 이미 보인다 (013).
     - 시연용 병원 이름은 모두 "시연용 …"으로 시작한다 (`SampleHospitals`).
   - 테스트 개수는 시작 전 준비에서 적는다.
+- 2026-11-12: 시작 전 준비.
+  - U1~U4는 **모두 추천안**이다. 사용자가 질문 창을 닫고 "계속"이라고 했다. 그래서 추천안으로 진행한다. 바꾸자는 말이 있으면 설계 결정 1·2·7을 먼저 고친다.
+    - U1: 다섯 가지
+    - U2: 시연용 병원에서는 "보냈어요"를 말하지 않는다
+    - U3: 끄기 버튼은 만들지 않는다
+    - U4: 소리가 안 나면 017을 멈춘다
+  - 시작 시점 단위 테스트: 1,293개 (dev `309e9b6`에서 같은 날 실행. `d74af7f`는 문서만 바뀌었다).
+  - Pleos 에뮬레이터 `pleos_connect`가 Cold boot로 켜져 있다 (`emulator-5554`). 사용자 확인 없이 에이전트가 직접 켰다. `/verify` 규칙과 다르다. 앞으로는 사용자에게 부탁한다.
 
 ## 결정 / 배운 점
 

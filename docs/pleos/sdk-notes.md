@@ -6,7 +6,7 @@
 - 이 파일이나 공식 문서에 없는 API 이름·시그니처·의존성 좌표를 추측해서 코드에 쓰지 않는다.
 - UX·주행 규제·디자인 가이드는 [ux-guidelines.md](ux-guidelines.md)에 둔다.
 
-마지막 갱신: 2026-11-05
+마지막 갱신: 2026-11-12
 
 ## 빌드 설정
 
@@ -40,6 +40,11 @@ implementation("ai.pleos.playground:Vehicle:2.3.2")
 [vehicle-intro] [project-setup] [sample-app]
 
 > **불일치:** Getting Started 페이지에는 같은 좌표가 `2.3.1`로 적혀 있다. 공식 샘플 저장소의 `gradle/libs.versions.toml`도 `vehicleSdk = "2.3.1"`이다 (README와 튜토리얼 페이지는 2.3.2). 2.3.2를 쓰고, 의존성 해결에 실패하면 2.3.1로 시도한다. [getting-started] [gh-vehicle] [sample-app]
+>
+> **2026-11-12 재확인: 2.3.1은 공개 Pleos Maven에 없다.** 대신 시도할 버전으로 쓸 수 없다.
+> - `Vehicle/maven-metadata.xml`의 버전은 `2.0.3`, `2.3.2` 둘뿐이다 (`<latest>2.3.2</latest>`, `<release>2.3.2</release>`, `<lastUpdated>20261019002245</lastUpdated>`). [maven-meta]
+> - Nexus 검색 API(`name=Vehicle`)도 `Vehicle:2.0.3`(파일 날짜 2025-03-10), `Vehicle:2.3.2`(2026-10-19) 두 개만 돌려준다. `.../Vehicle/2.3.1/Vehicle-2.3.1.pom`은 404다. 같은 경로 형식의 `.../Vehicle/2.3.2/Vehicle-2.3.2.pom`은 열린다. [maven-search]
+> - 그런데도 Getting Started는 여전히 `implementation("ai.pleos.playground:Vehicle:2.3.1")`이고, 샘플의 `vehicleSdk = "2.3.1"`도 그대로다 (2026-11-12). [getting-started] [gh-vehicle]
 
 ### 공식 샘플 앱의 빌드 값 (튜토리얼 페이지 "Sample App release 기준" 표) [sample-app]
 
@@ -171,6 +176,7 @@ vehicle-sdk = { module = "ai.pleos.playground:Vehicle", version.ref = "vehicleSd
 - **해석 (2026-11-03 팀 판단): "준비 중"인 SDK는 지금 쓸 수 없는 것으로 본다.** `ON_DEVICE`가 앱 등록 없이 동작한다는 STT/TTS 문서의 문장은 사용 허가가 아니다. 열리는 시점은 주최측에 묻는다 ([architecture.md](../architecture.md#pleos주최측에-문의할-것) B2).
   - 기술적으로는 STT `ON_DEVICE`가 지금도 Pleos 에뮬레이터에서 동작한다 (2026-11-05 관찰, 아래 "STT `ON_DEVICE` 실행 확인"). 써도 되는지(허가)는 여전히 B2 답에 달렸다.
   - **결정 변경 (2026-11-05 사용자 결정): STT는 `ON_DEVICE`로 쓴다.** 근거는 대회 FAQ의 사용 가능 SDK 목록에 STT가 있는 것, 운영사무국의 "따로 신청받는 절차는 없다"는 답 ([architecture.md](../architecture.md#pleos주최측에-문의할-것) B2), 에뮬레이터 동작 확인이다. 대신 음성은 추가 입력 수단으로만 둔다. 증상 버튼 흐름은 그대로 두어서 음성이 안 되거나 쓰지 말라는 답이 와도 앱이 돈다. TTS는 시험하지 않았으므로 이 결정에 들어가지 않는다.
+  - **2026-11-12 재확인: 대회 공지가 공모전 안에서는 이 질문에 답한다.** "Pleos Playground 워크스페이스에 '준비 중'으로 표시되어 있더라도 개발 문서에 안내된 방법으로 에뮬레이터에서 개발·시험할 수 있습니다" [contest-notice-scope] 공지의 범위는 공모전이다. "이번 공모전의 심사는 Pleos App Market 입점 심사가 아닙니다."라고 하므로 App Market 입점 심사에서도 되는지는 이 공지로 알 수 없다. 아래 "2026-11-12 재확인" 소절.
 
 - 그 밖의 SDK는 사용 신청이 필요하고, 일부는 제휴 계약이 필요하다.
 - **"준비 중"인 SDK에 핵심 기능을 걸지 않는다.** 기획 전에 콘솔에서 상태를 다시 확인한다.
@@ -179,7 +185,71 @@ vehicle-sdk = { module = "ai.pleos.playground:Vehicle", version.ref = "vehicleSd
 - > **불일치 (2026-11-03):** 대회 FAQ "어떤 SDK와 API를 쓸 수 있나요?"의 답은 "Vehicle SDK, NaviHelper SDK, TextToSpeech SDK, SpeechToText SDK, FusedLocation SDK입니다."다. 콘솔에서 "준비 중"인 3개가 들어 있다. FAQ는 "각 SDK의 현재 제공 상태와 사용 조건은 SDK 문서 페이지에서 확인해 주세요."라고만 한다. [contest-faq]
   > 대회 개발 가이드의 앱 예시에도 "음성 메모 앱"이 있다: "SpeechToText SDK로 운전 중 음성을 받아 메모로 남깁니다." [contest-dev]
   > 주최측이 STT를 쓰는 앱을 기대한다는 근거다. 다만 실제로 쓰는 방법(콘솔 신청, `ON_DEVICE`)은 여전히 미확인이다 → 주최측 문의 ([architecture.md](../architecture.md#pleos주최측에-문의할-것) B2)
+  >
+  > **2026-11-12 재확인: 공모전 안에서는 불일치가 풀렸다.** FAQ 답은 그대로이고, 대회 공지가 다섯 SDK를 "공모전 출품작에 사용할 수 있습니다"라고 하고, 워크스페이스의 '준비 중' 표시와 상관없이 "개발 문서에 안내된 방법으로 에뮬레이터에서 개발·시험할 수 있습니다"라고 한다. 콘솔의 "준비 중" 표시 자체는 문서상 그대로다. [contest-faq] [contest-notice-scope] [create-project]
 - 앱 심사에는 "프로젝트 ID(Key)"가 필요하다. 에뮬레이터 2.1.0부터는 CRN이 필요 없다.
+
+### 2026-11-12 재확인 (공개 페이지 기준, 콘솔은 못 봄)
+
+**콘솔(Workspace)은 로그인해야 보여서 이번에는 읽지 못했다.** 위 표는 여전히 2026-11-03·11-05 콘솔 기록이다. 아래는 로그인 없이 읽은 공개 페이지에서 확인한 것이다.
+
+- **Playground 홈 [pg-home]과 Resources [resources]에는 상태 표기가 없다.** "사용 가능", "신청 필요", "준비 중", "Coming Soon" 배지가 SDK에 붙어 있지 않다. 두 페이지 모두 영문이고 본문이 서버에서 그려져 WebFetch로 읽혔다.
+  - 홈의 "Pleos Connect SDK" 카드는 3개다: "Vehicle SDK", "NaviHelper SDK", "TextToSpeech SDK". SpeechToText, FusedLocation 카드는 홈에 없다. [pg-home]
+    - Vehicle SDK: "Use the Vehicle SDK to implement vehicle status monitoring and control features, all while maintaining compatibility with Android APIs." [pg-home]
+    - TextToSpeech SDK: "Enables in-vehicle apps to convert text into speech and play it back using on-device and cloud-based speech synthesis APIs." [pg-home]
+  - 홈의 "More resources"에 Gleo 카드가 있다: "Gleo Interface" / "Refer to the Gleo Interface implementation guide to enable Gleo AI voice commands in your app." 상태 표기는 없다. [pg-home]
+  - Resources의 SDK 카드는 5개(번호 1~5)이고 배지가 없다: Vehicle SDK, NaviHelper SDK, FusedLocation SDK, TextToSpeech SDK, SpeechToText SDK. [resources]
+    - FusedLocation SDK: "Combines vehicle sensor data—including GPS, IMU, and camera inputs— to deliver precise and reliable vehicle location information." [resources]
+    - SpeechToText SDK: "Enables in-vehicle apps to recognize speech and receive text results using on-device and cloud-based speech recognition APIs." [resources]
+- **문서의 상태 목록은 바뀌지 않았다.** 프로젝트 생성 문서 (원문, 2026-11-12): 준비 중 "FusedLocation, TextToSpeech, SpeechToText, Vehicle Control SDK가 이 상태에 해당합니다.", 사용 가능 "Vehicle State와 NaviHelper SDK가 이 상태에 해당합니다." 페이지에 갱신 날짜와 제공 예정 시점은 없다. Gleo는 나오지 않는다. [create-project]
+  - 같은 문서의 다른 상태 (원문): 검토 중 "신청 후 승인 전까지는 **검토 중** 상태로 표시됩니다.", 반려됨 "사용 신청을 했으나 신청이 반려된 경우에는 **반려됨** 상태로 표시됩니다." [create-project]
+- **대회 공지가 "준비 중" SDK의 사용을 허용한다** (공지 "공모전 개발 범위 및 기술 문의 안내", 게시일은 페이지에 없음. 2026-11-12 확인) [contest-notice-scope]:
+  - "개발 문서에 공개된 SDK(Vehicle SDK, NaviHelper SDK, TextToSpeech SDK, SpeechToText SDK, FusedLocation SDK)는 공모전 출품작에 사용할 수 있습니다."
+  - "Pleos Playground 워크스페이스에 '준비 중'으로 표시되어 있더라도 개발 문서에 안내된 방법으로 에뮬레이터에서 개발·시험할 수 있습니다"
+  - "개발 문서에 공개되지 않은 SDK와 Pleos LLM SDK는 공모전 기간 중 제공되지 않습니다"
+  - Vehicle Control을 따로 말하는 문장은 없다. Vehicle Control은 Vehicle SDK 안의 기능 묶음이다(위 "제어 함수는 SDK에 이미 들어 있다").
+
+### SDK 로드맵·제공 예정 시점 (2026-11-12 조사)
+
+- **"준비 중" SDK가 언제 열리는지, 날짜·분기·버전 계획은 어느 공개 페이지에도 없다.** 확인한 페이지: Playground 홈, Resources, Developer Journey, 프로젝트 생성, SDK 개요, SDK 릴리스 노트, 에뮬레이터 릴리스 노트, 대회 FAQ·개발 환경·공지. [pg-home] [resources] [dev-journey] [create-project] [sdk-overview] [sdk-release-note] [emulator-release-note] [contest-faq] [contest-dev] [contest-notice-scope]
+- 앞으로의 SDK에 대해 공개된 것은 Resources의 "New SDKs Coming Soon" 절뿐이다. SDK 이름, 날짜, 버전은 없다 (원문) [resources]:
+  - "We are developing new SDKs to help you build apps for vehicles faster and smarter."
+  - Cloud-connected personalization: "SDK support will be expanded to enable a continuously connected user experience by leveraging cloud-managed driver profiles, vehicle settings, and personalization data."
+  - Location-based lifestyle services: "SDKs will support the development of lifestyle apps by utilizing various location-based data, such as maps, address search, place search, and real-time traffic information."
+  - Expanded user experience: "Upcoming SDKs will allow smartphones and other devices to interact with the vehicle for services such as remote control, OTA updates, and vehicle event notifications." "Support will also be extended to the development of compatible peripheral devices for Pleos Connect."
+- SDK 릴리스 노트의 앞날 이야기는 NaviHelper 한 줄뿐이다: "경로 탐색 완료 콜백 사용 중단 예정(onRouteEnded → onRoutingCompleted 사용 권장)". 제거 시점은 없다. [sdk-release-note]
+- SDK 개요의 호환 정책 (원문): "향후 Pleos Connect Vehicle SDK로 제공되던 기능이 Android Automotive에 수용될 경우 해당 기능은 최소 2개 major version 동안 backward compatibility를 보장하고" "그 이후의 유지·변경·제거 여부는 별도 정책과 릴리스 노트를 통해 안내합니다." [sdk-overview]
+- 대회 공지는 지원되지 않는 기능을 이렇게 다루라고 한다 (원문): "문서에서 지원되지 않는 기능은 사용할 수 없습니다." "필요한 경우 기획서에 향후 계획으로 적어 주세요" [contest-notice-scope]
+
+### 최신 버전 (2026-11-12 확인)
+
+| SDK | Pleos Maven `latest`/`release` | 게시된 버전 | `lastUpdated` | SDK 릴리스 노트 |
+|---|---|---|---|---|
+| Vehicle | 2.3.2 | 2.0.3, 2.3.2 | 20261019002245 | Vehicle SDK v2.3.2 |
+| NaviHelper | 3.0.5 | 2.0.2, 2.0.3, 3.0.5 | 20261019002623 | NaviHelper v3.0.5 |
+| SpeechToText | 3.3.1 | 2.1.2, 2.1.3, 2.1.3.1, 2.1.3.1.1, 2.1.3.2, 3.3.0, 3.3.1 | 20261013083357 | SpeechToText v3.3.1 |
+| TextToSpeech | 3.3.1 | 2.1.2, 2.1.3, 2.1.3.1, 2.1.3.2, 2.1.5.1, 3.3.0, 3.3.1 | 20261013083427 | TextToSpeech v3.3.1 |
+| FusedLocation | 1.1.3 | 1.0.4, 1.1.3 | 20261019002701 | FusedLocation SDK v1.1.3 |
+
+- 출처: [maven-meta], [sdk-release-note]. 릴리스 노트에는 릴리스 하나("2026년 10월 19일")에 위 다섯 항목만 있고 더 새 버전은 없다.
+- **우리가 쓰는 Vehicle 2.3.2, NaviHelper 3.0.5, SpeechToText 3.3.1과 문서 기준 TextToSpeech 3.3.1이 모두 최신이다.** 2026-11-03 기록에서 바뀐 것이 없다.
+- 에뮬레이터도 그대로 v2.1.0이다.
+  - 에뮬레이터 릴리스 노트에는 "Pleos Connect Emulator v2.1.0" ("2026년 10월 19일") 하나뿐이다. [emulator-release-note]
+  - SDK Manager 배포 XML 두 개(Windows/Linux `crp-sys-img.xml`, Mac `crp-arm64-sys-img.xml`)도 패키지가 하나씩이다: 표시 이름 "Pleos Connect v2.1.0 APIs Intel x86_64 Atom System Image" / "Pleos Connect v2.1.0 APIs arm64 System Image", api-level 34, revision 2. [emulator-feed]
+- Pleos Maven `ai.pleos.playground` 아래 디렉터리는 14개다: `fused-location-aidl`, `fused-location-data`, `FusedLocation`, `LLM`, `navi-aidl`, `navi-data`, `NaviHelper`, `placesense`, `security`, `SpeechToText`, `TextToSpeech`, `Vehicle`, `vehicle-aidl`, `vehicle-data`. [maven-browse]
+  - `placesense`는 문서에 없는 아티팩트다. 버전은 `V1` 하나(`placesense-V1.jar`, `.pom`), 파일 날짜 2025-03-21이다. 새 SDK가 올라온 흔적은 아니다. 쓰지 않는다. [maven-browse] [maven-search]
+  - `LLM`은 에뮬레이터 2.1.0에서 "LLM SDK 제공 종료"된 것이고, 대회 공지도 "Pleos LLM SDK는 공모전 기간 중 제공되지 않습니다"라고 한다. [emulator-release-note] [contest-notice-scope]
+
+### 공모전 참가자에게 해당하는 안내 (2026-11-12 조사) [contest-notice-scope] [contest-faq]
+
+- 대회 공지 "공모전 개발 범위 및 기술 문의 안내"의 나머지 원문:
+  - 절 제목 "1. 공개된 SDK·API 범위에서 개발합니다": "이번 공모전은 현재 공개된 Pleos Playground 개발 문서의 SDK·API 범위에서 개발하는 공모전입니다"
+  - "공모전 참가팀은 Gleo Interface(App Schema) 검토·승인을 신청할 수 없습니다"
+  - "차량 마이크 음성을 외부 음성 인식 서비스로 보내는 방식은 공식 개발 문서에서 지원하지 않아 사용할 수 없습니다." "음성 인식은 SpeechToText SDK를 이용해 주세요."
+  - 절 제목 "2. 심사는 기획서와 에뮬레이터 시연으로 진행합니다": "2차 PT는 Pleos Connect 에뮬레이터에서 구동되는 앱 시연으로 진행합니다." "실제 차량은 필요하지 않습니다" "이번 공모전의 심사는 Pleos App Market 입점 심사가 아닙니다." "실제 입점 시의 정책은 Pleos Playground 사이트의 안내를 따릅니다"
+  - 절 제목 "3. 기술 문의 안내": "운영사무국은 참가 자격·접수·제출·심사 일정 등 공모전 운영에 관한 문의에 답변드립니다." "개별 기능의 구현 방법이나 특정 API의 동작에 대한 문의에는 따로 답변드리지 않습니다" "개발 장비 대여, 실차 측정 장소, 별도 기술 지원 창구는 제공하지 않습니다"
+- 대회 FAQ "개발은 어떻게 시작하나요?"의 답 (원문, 2026-11-12): "접수양식 5번(개발 계획)에는 Pleos Connect 환경에서 앱을 어떻게 구현할지, 주요 개발 범위와 SDK/API 사용계획을 구체적으로 작성해 주세요." [contest-faq]
+- 대회 사이트에 SDK 신청 절차를 바꾼다는 안내, 대회 전용 에뮬레이터 버전 안내는 없다 (FAQ, 개발 환경, 공지 목록 5건 확인). [contest-faq] [contest-dev] [contest-notice-scope]
 
 ### 프로젝트 생성 화면의 입력 항목 [create-project] [app-submission]
 
@@ -1014,9 +1084,11 @@ val speechToText = SpeechToText(applicationContext, Mode.HYBRID)
 - **콘솔 "준비 중"의 의미:** 신청 버튼이 없고 "Comming Soon" 배지가 붙는다(문서 표기 그대로). 원문: "해당 상태에서는 신청할 수 없으므로 **신청 필요** 상태로 변경된 후 진행하시기 바랍니다." [create-project]
 - **Client ID/Secret:** 콘솔 프로젝트 정보의 SDK 항목에서 확인한다. 원문: "앱 등록 등 서버 연결을 요구하는 SDK를 사용할 때 필요한 정보입니다." 해당 SDK는 TextToSpeech, SpeechToText. [create-project]
 - **`ON_DEVICE`와 "준비 중"의 관계:** STT/TTS 문서는 `ON_DEVICE`에 앱 등록이 필요 없다고만 하고, 콘솔 상태와의 관계는 어느 문서에도 없다. 권한(`STT_SERVICE`/`TTS_SERVICE`)에 "사전 협의 및 승인"이 필요한지도 STT/TTS 권한 페이지에는 없다. 반면 SDK 개요는 "퍼미션은 Pleos App Market과 사전 협의 및 승인된 범위 내에서만 사용할 수 있습니다."라고 한다. [sdk-overview] → **심사 제출 앱에서 `ON_DEVICE`를 써도 되는지는 미확인.**
+  - **2026-11-12 재확인 (공모전 범위):** 대회 공지 원문 "Pleos Playground 워크스페이스에 '준비 중'으로 표시되어 있더라도 개발 문서에 안내된 방법으로 에뮬레이터에서 개발·시험할 수 있습니다", "2차 PT는 Pleos Connect 에뮬레이터에서 구동되는 앱 시연으로 진행합니다." 공모전 출품작과 PT에서는 문서에 안내된 STT/TTS 사용법(`ON_DEVICE` 포함)으로 에뮬레이터에서 써도 된다. App Market 입점 심사에서 되는지는 여전히 미확인이다 ("이번 공모전의 심사는 Pleos App Market 입점 심사가 아닙니다."). [contest-notice-scope]
 - **에뮬레이터:** STT/TTS intro 원문 "SpeechToText SDK를 사용하려면 Android Studio에 Pleos Connect Emulator를 설치하고 AVD를 설정합니다." 설정 항목에 "마이크 접근 설정", "Cold boot 설정"이 있다. [stt-intro] [tts-intro] 에뮬레이터에 On-device 엔진이 들어 있는지, 실제로 인식되는지는 문서에 없다. → **Pleos 에뮬레이터에서 직접 실행해 동작을 확인했다** (2026-11-05, 아래 "STT `ON_DEVICE` 실행 확인"). 마이크 설정은 [emulator-setup.md](emulator-setup.md#주의) 참고.
 - **Android 표준 `SpeechRecognizer` / `android.speech.tts.TextToSpeech`:** Pleos 문서(SDK 개요, SDK API 정책, 하드웨어 접근 정책, API 호환성, FAQ, 오디오 포커스 가이드, TTS 선행 묵음 가이드)에 허용·금지 언급이 없다 → 미확인.
   - 관련 정책 문장: "동일하거나 유사한 기능의 API가 AAOS 표준에 이미 존재하는 경우, 해당 표준 API 사용을 권장하며 Pleos Connect SDK에서는 중복 기능을 제공하지 않습니다." [sdk-api-policy] Pleos가 STT/TTS SDK를 따로 제공하므로, 이 문장만으로 표준 API 사용 가능 여부를 판단할 수 없다.
+  - **2026-11-12 (대회 공지, 공모전 범위):** "차량 마이크 음성을 외부 음성 인식 서비스로 보내는 방식은 공식 개발 문서에서 지원하지 않아 사용할 수 없습니다." "음성 인식은 SpeechToText SDK를 이용해 주세요." 공지는 `SpeechRecognizer`를 이름으로 말하지 않는다. TTS(음성 출력)에 대한 문장은 없다. [contest-notice-scope]
 - **음성 출력의 오디오 포커스:** 재생 전 `AudioAttributes` + `AudioFocusRequest`로 포커스를 요청한다. 컨텍스트 매핑에서 NAVIGATION은 `NAVIGATION`, `ASSISTANCE_NAVIGATION_GUIDANCE`, VOICE_COMMAND는 `VOICE_COMMAND`, `ASSISTANT`. TTS SDK가 어느 usage로 재생하는지는 문서에 없다. 자세한 내용은 [ux-guidelines.md](ux-guidelines.md#오디오-포커스와-음성-안내) [audio-focus]
 
 ### STT `ON_DEVICE` 실행 확인 (관찰, 2026-11-05)
@@ -1087,6 +1159,11 @@ xxj15 Mac, AVD `pleos_connect`, 앱 debug 빌드 "시연 (주행 Real)" 모드 (
 
 #### 사용 가능 상태와 신청 (2026-11-03 조사)
 
+- **2026-11-12 재확인: 공모전 참가팀은 Gleo를 신청할 수 없다.** 대회 공지 원문: "공모전 참가팀은 Gleo Interface(App Schema) 검토·승인을 신청할 수 없습니다" [contest-notice-scope]
+  - 스키마 승인 없이는 통합이 켜지지 않으므로("승인 후에는 통합이 자동으로 활성화됩니다." [gleo-deliver]) 공모전 기간에는 Gleo 음성 명령 연동을 쓸 수 없다. 기획서에 넣는다면 "향후 계획"으로 적는다 (공지 원문 "필요한 경우 기획서에 향후 계획으로 적어 주세요"). [contest-notice-scope]
+  - Playground 홈에는 Gleo가 "More resources" 카드로만 나온다: "Gleo Interface" / "Refer to the Gleo Interface implementation guide to enable Gleo AI voice commands in your app." 상태 표기와 일정은 없다. [pg-home]
+  - 프로젝트 생성 문서의 SDK 상태 목록에는 2026-11-12에도 Gleo가 없다. [create-project]
+  - 일반 개발자(공모전 밖)의 신청 자격·방법은 여전히 문서에 없다.
 - **신청 자격, 신청 방법, 제휴·계약 필요 여부: 문서에 없다.** 아래 페이지에 해당 문장이 없다.
   - Gleo 가이드 6개 페이지 [gleo-core] [gleo-schema] [gleo-callback] [gleo-examples] [gleo-deliver] [gleo-radio]
   - 프로젝트 생성·SDK 사용 신청 [create-project], SDK 개요 [sdk-overview], 개발 가이드 소개 [dev-guide-intro]
@@ -1392,16 +1469,21 @@ fun sendGleoBroadcast(
 - [ ] 차량 서비스 연결 실패를 앱이 알 수 있는 방법 (도메인 API `onFailed`로 오는지, 별도 콜백이 있는지)
 - [ ] Gear 도메인(`getGear()`): 필요한 권한, `VehicleGear` 값, 실제 지원 여부. 문서에는 없고 AAR에만 있다. **2026-11-05 재확인: API Reference(패키지 목록, `gear/entry` 404, constant·listener 패키지), SDK 릴리스 노트 v2.3.2, 공식 샘플 카탈로그 모두에 없음.**
 - [ ] 같은 `Vehicle` 인스턴스를 `release()`한 뒤 다시 `initialize()`해도 되는지. 우리 앱은 매번 새로 만들어 이 문제를 피한다.
+- [ ] 콘솔(Workspace)의 SDK 상태를 2026-11-12에 다시 보지 못했다. 로그인이 필요하다. 공개 문서의 상태 목록은 2026-11-03과 같다 → "SDK 사용 가능 상태"의 "2026-11-12 재확인". 팀원이 로그인해서 Vehicle Control 8개, FusedLocation, TTS, STT가 아직 "준비 중"인지 봐야 한다.
+- [ ] "준비 중" SDK(FusedLocation, TextToSpeech, SpeechToText, Vehicle Control)가 "신청 필요"나 "사용 가능"으로 바뀌는 시점. **2026-11-12 조사: 날짜·분기·버전 계획이 공개 페이지 어디에도 없다** → "SDK 로드맵·제공 예정 시점"
+- [ ] Getting Started와 공식 vehicle 샘플이 공개 Maven에 없는 `Vehicle:2.3.1`을 가리키는 이유. 2026-11-12 Maven에는 2.0.3, 2.3.2만 있다 → "빌드 설정"의 불일치 메모. 우리 앱은 2.3.2라 영향이 없다.
 
 ### PawCare 기획 관련 (2026-11-03 조사)
 
 - [x] STT/TTS 생성자, 모드 지정, `setLocale`과 지원 언어(`ko-KR` 포함), 결과 리스너, 앱 등록 방법 → 위 TextToSpeech / SpeechToText 절
 - [x] NaviHelper 목적지 요청(`requestRoute(RouteInfo)`), 도착 이벤트(`onDestinationArrived`), 권한별 API → 위 NaviHelper 절
 - [x] Pleos 에뮬레이터에서 STT `ON_DEVICE`가 Client ID/Secret 없이 동작하는지 → 동작한다 (PCM 입력과 마이크 입력 모두 한국어 인식 확인, 2026-11-05). 위 "STT `ON_DEVICE` 실행 확인"
-- [ ] 콘솔에서 "준비 중"인 STT/TTS를 `ON_DEVICE` 모드로 심사 제출 앱에서 써도 되는지. `STT_SERVICE`/`TTS_SERVICE` 권한에 사전 승인이 필요한지. (문서에 없음. Pleos 문의 필요)
+- [x] 공모전 출품작·PT에서 콘솔 "준비 중"인 STT/TTS를 문서에 안내된 방법(`ON_DEVICE` 포함)으로 써도 되는지 → 된다. 대회 공지 "Pleos Playground 워크스페이스에 '준비 중'으로 표시되어 있더라도 개발 문서에 안내된 방법으로 에뮬레이터에서 개발·시험할 수 있습니다" (2026-11-12) [contest-notice-scope]
+- [ ] App Market 입점 심사 제출 앱에서 콘솔 "준비 중"인 STT/TTS를 `ON_DEVICE` 모드로 써도 되는지. `STT_SERVICE`/`TTS_SERVICE` 권한에 사전 승인이 필요한지. (문서에 없음. 대회 공지는 "이번 공모전의 심사는 Pleos App Market 입점 심사가 아닙니다."라고 해서 이 부분은 답하지 않는다)
 - [ ] Pleos 에뮬레이터에 On-device STT/TTS 엔진이 있어 실제로 인식·합성되는지 (GPU PC에서 직접 실행해 확인)
 - [x] `Mode.ON_DEVICE` 상수 이름 → `HYBRID`, `SERVER`, `ON_DEVICE` 확인 (AAR `javap`, 2026-11-03)
 - [ ] Android 표준 `SpeechRecognizer`, `android.speech.tts.TextToSpeech`를 Pleos에서 써도 되는지, `RECORD_AUDIO`가 필요한지
+  - 2026-11-12: 공모전에서는 대회 공지가 "음성 인식은 SpeechToText SDK를 이용해 주세요."라고 한다. `SpeechRecognizer`를 이름으로 금지하지는 않는다. TTS와 `RECORD_AUDIO`에 대한 문장은 없다. [contest-notice-scope]
 - [ ] STT `request()`로 듣는 동안의 오디오 포커스: 음성 서비스가 잡는지(미디어가 줄거나 멈추는지), 앱이 `USAGE_VOICE_COMMAND`/`USAGE_ASSISTANT`로 요청해야 하는지. **문서에 없음** (2026-11-05, 위 "듣는 동안의 오디오 포커스, 콜백 스레드, 끝점 검출" Q1). 에뮬레이터에서 미디어 재생 중 `request()`하고 `adb shell dumpsys audio`의 포커스 스택으로 관찰해야 한다.
 - [ ] STT `ResultListener` 콜백 스레드, `initialize`/`request`/`stop`/`release` 호출 스레드 제약. **문서에 없음** (2026-11-05, Q2). 래퍼에서 스레드를 정해 두고 실행해서 콜백 스레드를 찍어 본다.
 - [ ] STT `stop()` 뒤에 `onUpdated(completed = true)` 최종 결과가 오는지, `onEndedRecognition()`이 `stop()`에서도 오는지. 문서는 "인식이 종료되면 `onEndedRecognition()`이 호출됩니다."뿐이다 (2026-11-05, Q2).
@@ -1419,7 +1501,8 @@ fun sendGleoBroadcast(
 - [ ] `requestTrip(TripRequest)`의 동작 (설명 문서 없음)
 - [ ] 샘플 매니페스트의 `NAVI_CUSTOM_ROUTE`, `NAVI_CUSTOM_ETC`가 어느 API에 필요한지
 - [ ] Pleos 에뮬레이터에서 NaviHelper 요청을 받는 기본 Navigation 앱이 동작하는지
-- [ ] Gleo Interface(음성 명령 연동) 신청 자격과 사용 가능 상태: **문서에 없음** (2026-11-03 조사). Gleo 가이드 6쪽, 프로젝트 생성·SDK 신청, SDK 개요, 앱 제출·심사 가이드에 자격·신청·제휴 문장이 없다. SDK 목록과 콘솔에도 Gleo가 없다. Pleos·주최측에 문의해야 한다 → 위 "Gleo Interface" 절
+- [x] 공모전 참가팀이 Gleo Interface를 쓸 수 있는지 → 신청할 수 없다. 대회 공지 "공모전 참가팀은 Gleo Interface(App Schema) 검토·승인을 신청할 수 없습니다" (2026-11-12) [contest-notice-scope] → 위 "Gleo Interface" 절
+- [ ] Gleo Interface(음성 명령 연동)의 일반 신청 자격과 사용 가능 상태 (공모전 밖): **문서에 없음** (2026-11-03 조사, 2026-11-12 프로젝트 생성 문서 재확인). Gleo 가이드 6쪽, 프로젝트 생성·SDK 신청, SDK 개요, 앱 제출·심사 가이드에 자격·신청·제휴 문장이 없다. SDK 목록과 콘솔에도 Gleo가 없다.
 - [ ] Gleo 스키마 검토 기간, 전달 경로(앱 심사와 함께인지 따로인지): 문서에 없음 (2026-11-03)
 - [ ] Pleos 에뮬레이터에 Gleo AI가 들어 있는지, 승인 전 스키마를 로컬에서 시험하는 방법: 문서에 없음 (setup, 에뮬레이터 릴리스 노트, 앱 테스트 가이드 확인, 2026-11-03). GPU PC에서 직접 확인하거나 문의해야 한다.
 - [ ] Gleo Action의 extra 형식: 본문(key별 `putExtra`)과 코드(`ACTION_PARAM` JSON 하나)가 다르다 (불일치)
@@ -1444,15 +1527,17 @@ fun sendGleoBroadcast(
 
 ## 출처
 
-- [contest-faq] https://appdevchallenge.auto-hmg.io/faq (대회 사이트, 2026-11-03 확인)
-- [contest-dev] https://appdevchallenge.auto-hmg.io/guide/development (대회 사이트, 2026-11-03 확인)
-- [setup] https://document.pleos.ai/docs/connect/guide/getting-started/application-development/setup-connect-sdk-emulator
-- [getting-started] https://document.pleos.ai/docs/pleos-only/getting-started
+- [contest-faq] https://appdevchallenge.auto-hmg.io/faq (대회 사이트, 2026-11-03 확인. 2026-11-12 재확인: SDK 목록 답은 그대로, "접수양식 5번(개발 계획)" 문장 확인)
+- [contest-dev] https://appdevchallenge.auto-hmg.io/guide/development (대회 사이트, 2026-11-03 확인. 2026-11-12 재확인: 바뀐 것 없음)
+- [contest-notice-scope] https://appdevchallenge.auto-hmg.io/notice/c0a1a000-2026-4923-8000-000000000008 (대회 공지 "공모전 개발 범위 및 기술 문의 안내". 게시일은 페이지에 없다. 공지 목록 https://appdevchallenge.auto-hmg.io/notice 에서 맨 위. 2026-11-12 확인. 같은 목록의 0006 "공모전 참가 및 출품 유의사항 안내"에는 SDK 문장이 없다)
+- [setup] https://document.pleos.ai/docs/connect/guide/getting-started/application-development/setup-connect-sdk-emulator (2026-11-12 재확인: 에뮬레이터 "버전 2.1.0", API 34 그대로)
+- [getting-started] https://document.pleos.ai/docs/pleos-only/getting-started (2026-11-12 재확인: 여전히 `Vehicle:2.3.1`)
 - [project-setup] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/Vehicle/project-setup
 - [vehicle-intro] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/Vehicle/intro
-- [sdk-overview] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/
-- [create-project] https://document.pleos.ai/docs/pleos-only/create-my-project
-- [console-2026-11-03] Pleos Playground 콘솔 (https://pleos.ai/playground, 로그인 필요). 2026-11-03 팀원이 직접 확인한 SDK 항목 목록
+- [sdk-overview] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/ (2026-11-12 재확인: 상태·일정 표기 없음)
+- [create-project] https://document.pleos.ai/docs/pleos-only/create-my-project (2026-11-12 재확인: 상태별 SDK 목록 그대로)
+- [console-2026-11-03] Pleos Playground 콘솔 (https://pleos.ai/playground, 로그인 필요). 2026-11-03 팀원이 직접 확인한 SDK 항목 목록. 2026-11-12에는 보지 못했다 (로그인 필요. WebFetch로 `https://developers.pleos.ai/playground/workspace`는 404)
+- [pg-home] https://developers.pleos.ai/playground (Playground 홈, 영문. 2026-11-12 사용자가 준 페이지. 본문은 읽혔지만 WebFetch 결과에 링크 주소(href)는 나오지 않았다)
 - [app-submission] https://document.pleos.ai/docs/pleos-only/distribute/app-submission-guide
 - [planning-guide] https://document.pleos.ai/docs/pleos-only/vehicle-app-planning-guide/intro
 - [sample-app] https://document.pleos.ai/docs/pleos-only/tutorial/vehicle-sdk-sample-app
@@ -1471,7 +1556,7 @@ fun sendGleoBroadcast(
 - [constant-control] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/Vehicle/vehicle/ai.pleos.playground.vehicle.constant.control/entry
 - [constant-pkg] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/Vehicle/vehicle/ai.pleos.playground.vehicle.constant/entry (2026-11-05 확인)
 - [listener-pkg] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/Vehicle/vehicle/ai.pleos.playground.vehicle.listener/entry (2026-11-05 확인)
-- [sdk-release-note] https://document.pleos.ai/docs/pleos-only/release-note/sdk-release-note (Vehicle SDK v2.3.2, 2026-10-19 릴리스. SpeechToText·TextToSpeech v3.3.1 항목. 2026-11-05 확인. 같은 페이지의 "NaviHelper v3.0.5" 절도 2026-11-05 확인)
+- [sdk-release-note] https://document.pleos.ai/docs/pleos-only/release-note/sdk-release-note (Vehicle SDK v2.3.2, 2026-10-19 릴리스. SpeechToText·TextToSpeech v3.3.1 항목. 2026-11-05 확인. 같은 페이지의 "NaviHelper v3.0.5" 절도 2026-11-05 확인. 2026-11-12 재확인: 2026-10-19 릴리스 하나에 Vehicle 2.3.2, NaviHelper 3.0.5, TTS 3.3.1, STT 3.3.1, FusedLocation 1.1.3뿐. 새 항목 없음)
 - [navi-intro] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/NaviHelper/intro
 - [navi-import] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/NaviHelper/importing-sdk
 - [navi-perm] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/NaviHelper/declaring-permissions
@@ -1517,7 +1602,10 @@ fun sendGleoBroadcast(
 - [music-app-guide] https://document.pleos.ai/docs/pleos-only/vehicle-app-developer-guide/music-audio-app-developement-guide (2026-11-05 확인)
 - [driving-policy] https://document.pleos.ai/docs/pleos-only/vehicle-app-planning-guide/driving-restiction-policy
 - [design-colors] https://document.pleos.ai/docs/connect/guide/docs-design/foundations/colors
-- [emulator-release-note] https://document.pleos.ai/docs/pleos-only/release-note/emulator-release-note
+- [emulator-release-note] https://document.pleos.ai/docs/pleos-only/release-note/emulator-release-note (2026-11-12 재확인: v2.1.0 하나뿐)
+- [emulator-feed] Pleos 에뮬레이터 SDK Manager 배포 XML (2026-11-12 확인. [setup]이 안내하는 주소):
+  - https://nexus-playground.pleos.ai/repository/raw-releases/connect-avd/2.x/crp-sys-img.xml (Windows/Linux)
+  - https://nexus-playground.pleos.ai/repository/raw-releases/connect-avd/2.x/crp-arm64-sys-img.xml (Mac)
 - [gleo-core] https://document.pleos.ai/docs/pleos-only/app-integration-guide/guide/core-concepts
 - [gleo-deliver] https://document.pleos.ai/docs/pleos-only/app-integration-guide/guide/deliver-schema (영문판 `/en/docs/...`도 대조)
 - [gleo-schema] https://document.pleos.ai/docs/pleos-only/app-integration-guide/guide/app-capability (영문판 대조)
@@ -1528,10 +1616,10 @@ fun sendGleoBroadcast(
 - [app-review] https://document.pleos.ai/docs/pleos-only/distribute/app-review-guide (하위 `review-functionality-performance-stability`, `review-app-registration-info`도 확인)
 - [form-factor-test] https://document.pleos.ai/docs/pleos-only/app-test-guide/form-factor-test-guide
 - [virtual-console] https://document.pleos.ai/docs/pleos-only/app-test-guide/virtual-console-guide
-- [resources] https://developers.pleos.ai/playground/discover/resources (`pleos.ai/playground/discover/resources`가 301로 옮겨 감, 2026-11-03)
-- [dev-journey] https://developers.pleos.ai/playground/discover/developer-journey
+- [resources] https://developers.pleos.ai/playground/discover/resources (`pleos.ai/playground/discover/resources`가 301로 옮겨 감, 2026-11-03. 2026-11-12 재확인: SDK 카드 5개와 "New SDKs Coming Soon" 절, 영문)
+- [dev-journey] https://developers.pleos.ai/playground/discover/developer-journey (2026-11-12 재확인: 상태·일정 표기 없음)
 - 공식 샘플 저장소 ([sample-app] 페이지가 링크한 Pleos-Playground 조직, main 브랜치):
-  - [gh-vehicle] https://github.com/Pleos-Playground/pleos-sample-vehicle-app (`README.md`, `app/build.gradle.kts`, `gradle/libs.versions.toml`, `gradle/wrapper/gradle-wrapper.properties`, `app/src/main/AndroidManifest.xml`)
+  - [gh-vehicle] https://github.com/Pleos-Playground/pleos-sample-vehicle-app (`README.md`, `app/build.gradle.kts`, `gradle/libs.versions.toml`, `gradle/wrapper/gradle-wrapper.properties`, `app/src/main/AndroidManifest.xml`. 2026-11-12 재확인: `libs.versions.toml`의 `vehicleSdk = "2.3.1"` 그대로)
   - [gh-navi] https://github.com/Pleos-Playground/pleos-sample-navi-app (`app/build.gradle.kts`, `gradle/libs.versions.toml`)
   - [gh-fused] https://github.com/Pleos-Playground/pleos-sample-fusedlocation-app (`app/build.gradle.kts`, `gradle/libs.versions.toml`)
   - [gh-vehicle-src] https://github.com/Pleos-Playground/pleos-sample-vehicle-app (`app/src/main/java/.../MainViewModel.kt`, `.../vehicle/VehicleClient.kt`, 커밋 959981d)
@@ -1546,10 +1634,14 @@ fun sendGleoBroadcast(
   - [aar-navi] Pleos Maven `ai.pleos.playground:NaviHelper:3.0.5`, `navi-data:3.0.4` AAR (`javap`, AAR 매니페스트). 2026-11-05 확인 (010 spike, 011 현재 위치).
   - [aar-stt] Pleos Maven `ai.pleos.playground:SpeechToText:3.3.1` AAR (`javap`). 2026-11-03 확인.
   - [maven-search] Pleos Maven 검색 API, 2026-11-03 확인. `https://nexus-playground.pleos.ai/service/rest/v1/search?repository=maven-releases&q=gleo` (`q=Gleo*`도) → items 비어 있음. 대조로 `q=NaviHelper` → 2.0.2, 2.0.3, 3.0.5.
-  - [maven-meta] Pleos Maven `maven-metadata.xml` (2026-11-03 확인):
+    - 2026-11-12 추가: `...search?repository=maven-releases&group=ai.pleos.playground&name=Vehicle` → `Vehicle:2.0.3`, `Vehicle:2.3.2`만. `...&name=placesense` → `placesense:V1`만 (파일 날짜 2025-03-21). `https://nexus-playground.pleos.ai/repository/maven-releases/ai/pleos/playground/Vehicle/2.3.1/Vehicle-2.3.1.pom` → 404.
+  - [maven-browse] Pleos Maven 디렉터리 목록 (2026-11-12 확인): https://nexus-playground.pleos.ai/service/rest/repository/browse/maven-releases/ai/pleos/playground/ (14개), 하위 `.../placesense/`
+  - [maven-meta] Pleos Maven `maven-metadata.xml` (2026-11-03 확인. 2026-11-12에 다섯 개 모두 다시 확인, 값은 "최신 버전 (2026-11-12 확인)" 표):
     - https://nexus-playground.pleos.ai/repository/maven-releases/ai/pleos/playground/SpeechToText/maven-metadata.xml
     - https://nexus-playground.pleos.ai/repository/maven-releases/ai/pleos/playground/TextToSpeech/maven-metadata.xml
     - https://nexus-playground.pleos.ai/repository/maven-releases/ai/pleos/playground/NaviHelper/maven-metadata.xml (versions 2.0.2, 2.0.3, 3.0.5; latest 3.0.5; lastUpdated 2026-10-19)
+    - https://nexus-playground.pleos.ai/repository/maven-releases/ai/pleos/playground/Vehicle/maven-metadata.xml (2026-11-12 추가)
+    - https://nexus-playground.pleos.ai/repository/maven-releases/ai/pleos/playground/FusedLocation/maven-metadata.xml (2026-11-12 추가)
 - 관찰:
   - [obs-no-service] 우리 앱(Real 모드)을 일반 폰 에뮬레이터(`my_avd`, API 34 google_apis)에서 실행하고 `adb logcat`으로 확인. 2026-11-03.
 - Pleos 외 출처 (Pleos [faq]가 직접 링크한 Google 공식 문서):

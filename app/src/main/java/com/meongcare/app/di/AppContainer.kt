@@ -43,6 +43,8 @@ import com.meongcare.app.data.server.nearbyFunctionUrlOf
 import com.meongcare.app.domain.hospital.HospitalBoard
 import com.meongcare.app.data.phone.AndroidPhoneDialer
 import com.meongcare.app.data.speech.FakeSpeaker
+import com.meongcare.app.data.speech.PleosTextToSpeechClient
+import com.meongcare.app.data.speech.RealSpeaker
 import com.meongcare.app.data.voice.FakeVoiceInput
 import com.meongcare.app.data.voice.PleosSpeechToTextClient
 import com.meongcare.app.data.voice.RealVoiceInput
@@ -342,8 +344,7 @@ class AppContainer(context: Context, val dataMode: DataMode) {
     val speaker: Speaker? = when (speechOutputKind) {
         SpeechOutputKind.NONE -> null
         SpeechOutputKind.FAKE -> FakeSpeaker()
-        // 017 단계 5-2에서 Pleos TextToSpeech 구현을 끼운다. 그 전까지는 소리 안내가 없다.
-        SpeechOutputKind.REAL -> null
+        SpeechOutputKind.REAL -> RealSpeaker(PleosTextToSpeechClient(context))
     }
 
     /** Pleos Vehicle 연결. Real 구성에서만 만든다 (Fake에서는 Vehicle을 만들지 않는다). */

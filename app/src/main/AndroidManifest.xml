@@ -16,6 +16,12 @@
     -->
     <uses-permission android:name="pleos.car.permission.STT_SERVICE" />
 
+    <!--
+        소리 안내 (Pleos TextToSpeech ON_DEVICE, docs/plans 017).
+        2026-11-03 팀 승인 권한 (docs/architecture.md "사용하기로 한 Pleos 권한"). 에뮬레이터에서 보호 수준 normal (2026-11-12 확인).
+    -->
+    <uses-permission android:name="pleos.car.permission.TTS_SERVICE" />
+
     <application
         android:name=".MeongCareApplication"
         android:allowBackup="false"

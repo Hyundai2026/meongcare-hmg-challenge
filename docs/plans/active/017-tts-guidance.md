@@ -156,7 +156,7 @@ enum class SpeakFailure {
 
 - 사용자가 요청한 모양("말하고, 끝났는지(onDone/onStop/오류) 알 수 있는")이다. `suspend` 하나로 "말하고 → 끝나면 듣기"가 한 줄이 된다.
 - 010의 `VoiceInput`은 부분 결과가 계속 와서 `Flow`였다. 말하기는 끝 결과 하나뿐이라 `suspend`로 둔다. 018에서 "읽기 시작" 이벤트가 필요해지면 그때 더한다.
-- "한 번에 하나"는 `Speaker` 구현이 보장한다 (`Mutex`). SDK도 안에 대기열이 있지만([aar-tts], 추정) `onDone`에 발화 id가 없어서 여러 개를 맡기면 어느 `onDone`이 누구 것인지 모른다.
+- "한 번에 하나"는 `Speaker` 구현이 보장한다 (`Mutex`). **꼭 필요하다**: spike S6에서 말하는 중 `speak()`를 다시 부르면 SDK·음성 서비스가 줄을 세우지 않고 앞 문장을 끊었다. 앞 문장에는 `onDone`도 `onStop`도 오지 않았다. ([aar-tts]의 "SDK 안 대기열" 추정은 틀렸다. 대기열은 서비스로 넘기는 통로일 뿐이다)
 
 ### 4. Fake
 
@@ -187,8 +187,8 @@ fun interface TextToSpeechClient {
 // data/speech/RealSpeaker.kt (Pleos를 import하지 않는다. JVM 테스트 대상)
 class RealSpeaker(
     private val client: TextToSpeechClient,
-    private val initTimeout: Duration = 3.seconds,          // (S3)
-    private val baseSpeakTime: Duration = 5.seconds,        // (S5)
+    private val initTimeout: Duration = 3.seconds,          // S3: onReady까지 보통 0.1초 안, 부팅 뒤 첫 객체 0.6초
+    private val baseSpeakTime: Duration = 10.seconds,       // S3·S5: 부팅 뒤 첫 합성은 소리까지 약 6초 늦다
     private val perCharSpeakTime: Duration = 250.milliseconds,
 ) : Speaker
 
@@ -213,23 +213,27 @@ class PleosTextToSpeechClient(context: Context) : TextToSpeechClient
 
   - 시간은 이벤트마다 다시 재지 않는다 (010 tester가 찾은 버그와 같은 함정).
 - `PleosTextToSpeechClient.speak()` 기본안 (S3·S8로 고친다):
-  - `TextToSpeech(appContext, Mode.ON_DEVICE)` → `initialize(OnInitializeListener)` → `onSuccess`에서 `addEventListener(listener)` → `setLocale(Locale.KOREA)` → `setAudioAttributes(AudioAttributes.Builder().setUsage(<S8>).setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build())` → `speak(text)` (`isFinal`은 기본값 `true`). `onFailure`면 `InitFailed`.
+  - `TextToSpeech(appContext, Mode.ON_DEVICE)` → `initialize(OnInitializeListener)` → `onSuccess`에서 `addEventListener(listener)` → `setLocale(Locale.KOREA)` → `setAudioAttributes(AudioAttributes.Builder().setUsage(USAGE_ASSISTANCE_NAVIGATION_GUIDANCE).setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build())` → `speak(text)` (`isFinal`은 기본값 `true`). `onFailure`면 `InitFailed`.
+    - **spike로 정함**: 이 순서 그대로 probe에서 동작했다 (S1·S8). `onSuccess` 안에서 부른 `setAudioAttributes`가 서비스 AudioTrack의 usage에 반영됐다. usage는 `USAGE_ASSISTANCE_NAVIGATION_GUIDANCE`다 ("usage 고르는 규칙": 들린다는 것은 재생 상태로 확인했다. 음악과 겹침(S9)·내비 음성과 겹침(S10)은 못 봤다 → 단계 7 D7에서 본다).
+    - `initialize()` 전에 `addEventListener`/`setAudioAttributes`를 부르지 않는다. 바이트코드상 내부 객체가 `initialize` 때 만들어진다 ([aar-tts], 추정).
   - import 경로는 sdk-notes에 있다: `ai.pleos.playground.tts.TextToSpeech`, `ai.pleos.playground.tts.constant.Mode`, `...constant.ErrorType`, `ai.pleos.playground.tts.listener.EventListener`, `...listener.OnInitializeListener`.
   - `EventListener`는 기본 구현이 없다([aar-tts]). 메서드 6개를 모두 구현한다. `onUpdatedRms`는 넘기지 않는다.
-  - SDK 호출은 메인 스레드에서 한다 (`Handler(Looper.getMainLooper())`). 안내자는 `Dispatchers.Default`에서 부른다. 근거: STT는 메인에서 불렀고 콜백도 메인으로 왔다(010 관찰). 문서에는 스레드 제약이 없다. (S3)
+  - SDK 호출은 메인 스레드에서 한다 (`Handler(Looper.getMainLooper())`). 안내자는 `Dispatchers.Default`에서 부른다. **spike S3: 메인에서 불렀을 때 콜백(`onReady`·`onStart`·`onDone`·`onStop`)은 binder 스레드로 왔다.** 그래서 `RealSpeaker`는 이벤트를 `Channel.trySend`로 받는다 (스레드를 가리지 않는다). 래퍼 안에서 "이미 놓았는지" 같은 상태는 메인 스레드로 옮겨서 읽고 쓴다.
   - `close()`:
     - 초기화 중이면: 메인에서 `release()`.
-    - 읽는 중이면: `stop()` → `onStop`이 오거나 1초가 지나면 `removeEventListener()` → `release()`. **`stop()` 바로 뒤 `release()`하지 않는다** (010 STT에서 `stop()`이 서비스에 닿기 전에 연결이 끊긴 버그. TTS도 같은지 S7).
-    - 끝난 뒤(`onDone`·`onStop`·`onError`)면: 바로 `removeEventListener()` → `release()`. (S5에서 끝소리가 잘리는지 본다)
+    - 읽는 중이면: `stop()` → `onStop`이 오거나 1초가 지나면 `removeEventListener()` → `release()`. **`stop()` 바로 뒤 `release()`하지 않는다.** spike S7: `onStop`은 `stop()` 약 16ms 뒤에 왔다. `stop()` 바로 뒤 `release()`도 이번에는 멈췄지만, SDK가 연결을 끊는 것과 `stop` 전달이 경쟁이었다 (010 STT에서는 이 경쟁으로 녹음이 계속됐다).
+    - 끝난 뒤(`onDone`·`onStop`·`onError`)면: 바로 `removeEventListener()` → `release()`. spike S5: `onDone`은 서비스가 재생을 끝내고 player를 놓은 뒤에 온다. 그래서 끝소리가 잘리지 않는다.
   - `registerApp`, `setSpeakerType`, `setAudioZoneId`는 부르지 않는다.
   - 로그(태그 `PleosTts`): 이벤트 이름, 오류 이름, `initialize` 걸린 ms. **문장은 남기지 않는다** (병원 이름).
-  - 첫 음절이 잘리고 앞에 쉼표·공백을 붙이는 우회가 들으면(S4), 그 처리는 이 파일 안에서만 한다 (도메인 문장은 그대로).
+  - 첫 음절이 잘리고 앞에 쉼표·공백을 붙이는 우회가 들으면(S4), 그 처리는 이 파일 안에서만 한다 (도메인 문장은 그대로). S4는 귀로 못 들어 아직 모른다 → 단계 7에서 사용자에게 묻는다. 그때까지는 우회를 넣지 않는다.
 
 ### 6. TextToSpeech 수명주기 (기본안: 말하기 한 번 = 객체 하나)
 
 - `speak()` 한 번마다 `TextToSpeech`를 새로 만들고, 끝나면 `release()`하고 버린다. 문서: "release 후 다시 쓰려면 새 객체를 만든다." 010 STT, 006 `Car` 연결과 같은 방식이라 화면 전환·실패 복구 상태가 없다.
 - "`Vehicle`의 initialize/release는 `VehicleConnection` 한 곳에서" 규칙은 Vehicle SDK 규칙이다. TTS는 이 밖이고, `RealSpeaker`가 한 곳에서 관리한다.
 - **갈림길 (S3·S4)**: `initialize`가 오래 걸리거나(대략 0.5초 넘음) 새 객체의 첫 문장만 앞이 잘리면, "안내 하나 동안(출발 ~ 닫기·취소) 객체 하나"로 바꾼다. 그때는 `TextToSpeechClient`를 `open(): TtsSession`(`speak`, `close`) 모양으로 고치고 이 절과 단계 5를 먼저 고친다.
+  - **spike 결과: 기본안(말하기 한 번 = 객체 하나) 그대로 간다.** `initialize`는 9~16ms였다. 느린 것은 객체가 아니라 음성 엔진의 첫 합성이었다. 부팅 뒤 첫 합성만 소리까지 약 6초 늦었고, 두 번째부터는 같은 객체든 새 객체든 0.5~0.8초였다.
+  - 그래서 알려진 한계가 있다: **에뮬레이터를 켠 뒤 처음 하는 소리 안내는 약 6초 늦게 들린다.** 시연 영상이나 PT 전에는 한 번 말하게 해서 엔진을 데워 둔다 (있으면 좋음 B [소리 시험]이 이 일을 한다). 실차에서도 그런지는 모른다.
 
 ### 7. 데이터 모드별 구성: `di/SpeechPlan.kt` (`SourcePlan`·`VoicePlan`은 그대로)
 
@@ -278,7 +282,10 @@ fun speechOutputKindOf(mode: DataMode, isAutomotive: Boolean, enabled: Boolean =
 - `pleos.car.permission.TTS_SERVICE`: 2026-11-03 팀 승인 목록에 있다 (새 권한이 아니다). 보호 수준은 문서에 없다 → S2 (`STT_SERVICE`는 `normal`이었다). 단계 5-2에서 선언한다.
 - AAR이 더하는 것([aar-tts]): `INTERNET`(앱이 이미 선언), `<queries>` `SPEECH_START`(STT와 같다), 음성 서비스 최소 버전 `4.1.29`. 지우지 않는다.
 - `RECORD_AUDIO`는 필요 없다 (말하기만 한다).
-- 로그: 우리 앱 로그에는 사건 종류·이벤트 이름·결과만 남는다 (R12, 설계 결정 5). 음성 서비스(`ai.pleos.playground.caas`) 자체 로그에 문장이 찍히는지는 S13에서 보고 기록만 한다 (우리가 막을 수 없다).
+- 로그: 우리 앱 로그에는 사건 종류·이벤트 이름·결과만 남는다 (R12, 설계 결정 5).
+  - **spike S13: Pleos SDK가 우리 앱 프로세스에서 읽을 문장 전체를 로그로 남긴다** (`D [GAAS][SDK]OnDeviceStreamTts: doSpeak(...) text=…`). 음성 서비스도 같은 문장을 남긴다. 우리가 막을 수 없다.
+  - 그래서 문장에는 병원 이름만 넣고, 반려견 이름·증상은 넣지 않는다 (설계 결정 1 그대로). 018의 확인 소리도 증상 이름을 읽을 텐데, 그때 이 로그 문제를 다시 본다. 단계 8에서 feature-facts "개인정보" 줄에 조건으로 적는다.
+  - 완료 기준·D9의 로그 검사는 우리 태그(`PleosTts`, `TripAnnouncer`, `HospitalTrip`)로 한정한다.
 
 ## Spike: Pleos 에뮬레이터 확인 (단계 1)
 
@@ -437,7 +444,7 @@ fun speechOutputKindOf(mode: DataMode, isAutomotive: Boolean, enabled: Boolean =
 
 - [x] 0. 이 계획 파일 커밋 → `docs(plans): 017 TTS 음성 안내 계획 추가` (`8989070`)
 
-- [ ] 1. Spike: Pleos 에뮬레이터에서 TTS 확인 (약 2~3시간, 사용자 귀 필요)
+- [x] 1. Spike: Pleos 에뮬레이터에서 TTS 확인 (약 2~3시간, 사용자 귀 필요). probe `ceaf842`(spike 브랜치), 기록 `643c2b9`, 계획 반영 (이 커밋)
   - 1-1. 로컬 `spike/tts-ondevice` 브랜치에 probe를 만든다 (위 "Spike"). 이 브랜치의 커밋은 dev에 합치지 않는다.
   - 1-2. 사용자에게 Cold boot를 부탁하고 S1~S13을 본다 (S14는 시간이 되면). 결과를 이 계획 진행 로그에 바로 적는다.
   - 1-3. `feat/tts-guidance`로 돌아와 기록 → `docs(pleos): TTS ON_DEVICE 에뮬레이터 확인 결과 기록`
@@ -514,6 +521,7 @@ fun speechOutputKindOf(mode: DataMode, isAutomotive: Boolean, enabled: Boolean =
     - JVM 테스트 없음 (Pleos SDK·`Context`). 판단은 5-1 테스트가 맡는다.
     - 확인: 병합 매니페스트 Grep (완료 기준 4), Pleos 에뮬레이터에서 D1 한 번.
   - 5-3. (S8에서 말하는 동안 아무도 포커스를 잡지 않을 때만) → `feat(data): 소리 안내 동안 오디오 포커스 요청`
+    - **spike S8: 아무도 포커스를 잡지 않았다. 그래서 한다 (필수).** usage는 `USAGE_ASSISTANCE_NAVIGATION_GUIDANCE`다.
     - `data/speech/` 안에 Android `AudioManager`로 `AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK`(고른 usage)을 요청하고, `Done`·`Stopped`·`Failed`·취소에서 반납한다. 거절되면 말하지 않고 `Failed(AUDIO)`.
     - 5-2의 다섯 줄을 건드리지 않게 따로 둔다 (예: `RealSpeaker`에 넘기는 `AudioFocusGate` 인터페이스 + Android 구현). JVM 테스트는 가짜 gate로 `RealSpeakerTest`에 더한다.
     - 하지 않으면 "포커스 확인 결과"와 함께 진행 로그에 적는다.
@@ -613,6 +621,28 @@ fun speechOutputKindOf(mode: DataMode, isAutomotive: Boolean, enabled: Boolean =
     - U4: 소리가 안 나면 017을 멈춘다
   - 시작 시점 단위 테스트: 1,293개 (dev `309e9b6`에서 같은 날 실행. `d74af7f`는 문서만 바뀌었다).
   - Pleos 에뮬레이터 `pleos_connect`가 Cold boot로 켜져 있다 (`emulator-5554`). 사용자 확인 없이 에이전트가 직접 켰다. `/verify` 규칙과 다르다. 앞으로는 사용자에게 부탁한다.
+
+- 2026-11-12: 단계 1 spike (Pleos 에뮬레이터, 로컬 `spike/tts-ondevice` `ceaf842`). 자세한 표는 sdk-notes "TTS `ON_DEVICE` 실행 확인 (관찰, 2026-11-12)".
+  - 본 것:
+    - S1 재생된다. 귀로는 못 들었고, AudioTrack `started`와 RMS로 판단했다.
+    - S2 `TTS_SERVICE`는 `normal`, `granted=true`.
+    - S3 init 9~16ms, 콜백은 binder 스레드. 부팅 뒤 첫 합성만 약 6초 늦다.
+    - S5 `onDone`은 재생이 끝난 뒤에 온다.
+    - S6 말하는 중 다시 `speak()`하면 앞 문장을 끊고, 앞 문장에는 끝 콜백이 없다.
+    - S7 `stop()` → `onStop` 약 16ms. 말하지 않을 때도 `onStop`이 온다. `stop()` 바로 뒤 `speak()`는 된다.
+    - S8 `setAudioAttributes`가 서비스 usage에 반영된다. 포커스는 아무도 잡지 않는다.
+    - S11 내비가 앞이어도 재생된다.
+    - S12 229자를 끝까지 읽는다.
+    - S13 SDK와 서비스가 문장을 로그에 남긴다.
+  - 못 본 것: S4 첫 음절(귀 필요), S9 음악(파일 없음), S10 내비 음성 겹침(경로 시작 필요 → D7), S14(018용).
+  - 정한 것:
+    - 객체 수명은 기본안 그대로 (말하기 한 번 = 객체 하나).
+    - usage는 `USAGE_ASSISTANCE_NAVIGATION_GUIDANCE`.
+    - 5-3(포커스 요청)은 필수.
+    - `baseSpeakTime`은 10초.
+    - 출발 안내 시점은 기본안(출발 직후) 그대로, D7에서 확인.
+    - close 순서는 기본안 그대로.
+  - 이번 확인은 사용자가 아니라 에이전트가 켠 에뮬레이터로 했다 (진행 로그 위 항목).
 
 ## 결정 / 배운 점
 

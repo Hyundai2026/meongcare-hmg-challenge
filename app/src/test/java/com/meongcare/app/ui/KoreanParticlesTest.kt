@@ -12,4 +12,14 @@ class KoreanParticlesTest {
         assertEquals("ABC를", withObjectParticle("ABC"))
         assertEquals("", withObjectParticle(""))
     }
+
+    @Test
+    fun `받침에 따라 이와 가를 고른다`() {
+        assertEquals("보리가", withSubjectParticle("보리"))
+        assertEquals("왕건이가", withSubjectParticle("왕건이"))
+        assertEquals("콩콩이가", withSubjectParticle("콩콩이"))
+        assertEquals("별이", withSubjectParticle("별"))
+        assertEquals("Max가", withSubjectParticle("Max"))
+        assertEquals("", withSubjectParticle(""))
+    }
 }

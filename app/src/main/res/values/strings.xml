@@ -214,4 +214,47 @@
     <string name="home_pet_linked">연결됨</string>
     <string name="home_pet_sample">시연용 샘플</string>
     <string name="home_pet_none">반려견 정보 없음</string>
+    <!-- 반려동물 카드 (계획 019, 프로토타입 12번. 보기 전용) -->
+    <string name="page_back">뒤로</string>
+    <string name="pet_card_title">반려동물 카드</string>
+    <string name="pet_card_species">강아지</string>
+    <string name="pet_card_section_health">건강 정보</string>
+    <string name="pet_card_section_basic">기본 정보</string>
+    <string name="pet_card_section_env">환경 설정</string>
+    <string name="pet_card_conditions">지병</string>
+    <string name="pet_card_medications">복용약</string>
+    <string name="pet_card_allergies">알레르기</string>
+    <string name="pet_card_vet">주치 병원</string>
+    <string name="pet_card_species_breed">종 · 품종</string>
+    <string name="pet_card_birth">생년월일</string>
+    <string name="pet_card_weight">체중</string>
+    <string name="pet_card_traits">특징</string>
+    <string name="pet_card_relax">릴렉스 기본 설정</string>
+    <string name="pet_card_unregistered">미등록</string>
+    <string name="pet_card_birth_value">%1$d.%2$02d.%3$02d 출생</string>
+    <string name="pet_card_edit_hint">정보 수정은 보호자 웹에서 할 수 있어요.</string>
+    <string name="pet_card_records">진료 기록</string>
+    <string name="pet_card_no_records">아직 진료 기록이 없어요</string>
+    <string name="pet_card_separator">" · "</string>
+    <!-- 릴렉스 모드 (계획 019, 프로토타입 11번. 시연용 화면: 차량에 적용하지 않는다) -->
+    <string name="relax_title">릴렉스 모드</string>
+    <string name="relax_heading_with_eul">%1$s을 위한 편안한 이동</string>
+    <string name="relax_heading_with_reul">%1$s를 위한 편안한 이동</string>
+    <string name="relax_heading_no_name">반려동물을 위한 편안한 이동</string>
+    <string name="relax_status_off">꺼짐 · 저장한 설정은 그대로 유지됩니다.</string>
+    <string name="relax_status_on">병원 이동 시 저장한 환경 설정을 적용합니다.</string>
+    <string name="relax_section_pet">반려동물 환경</string>
+    <string name="relax_sound">실내 사운드</string>
+    <string name="relax_sound_quiet">조용히</string>
+    <string name="relax_sound_calm">잔잔한 음악</string>
+    <string name="relax_env">현재 환경 (예시)</string>
+    <string name="relax_env_value">22°C · 바람 보통 · 환기 후 내기</string>
+    <string name="relax_section_guardian">보호자 안심</string>
+    <string name="relax_reassurance">추가 안심 안내</string>
+    <string name="relax_reassurance_description">병원 진행 상황을 필요할 때 짧게 안내합니다.</string>
+    <string name="relax_done">완료</string>
+    <string name="relax_demo_notice">시연용 화면이에요. 차량 공조·음악에는 아직 적용하지 않아요.</string>
+    <string name="relax_summary_default">기본 설정</string>
+    <string name="relax_summary_on">켜짐</string>
+    <string name="relax_summary_off">꺼짐</string>
 </resources>

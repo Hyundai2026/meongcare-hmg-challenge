@@ -214,6 +214,7 @@ private fun ParkedFlow(
                 onConfirm = cardActions.onConfirmSymptoms,
                 voice = voice,
                 voiceActions = voiceActions,
+                petName = (cardUiState.card.pet as? com.meongcare.app.ui.card.PetHeader.Registered)?.name,
             )
         }
         ParkedContent.CARD -> {

@@ -79,13 +79,12 @@ fun LinkScreen(
             .fillMaxSize()
             .background(colors.homeBackground),
     ) {
-        val wide = maxWidth >= 840.dp
-        val metrics = if (wide) LinkMetrics.Wide else LinkMetrics.Narrow
+        val metrics = LinkMetrics.of(maxWidth)
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = metrics.edge, vertical = DesignSpace.l),
+                .padding(horizontal = metrics.edge, vertical = metrics.gap(DesignSpace.l)),
         ) {
             Text(
                 text = stringResource(R.string.link_title),
@@ -108,13 +107,30 @@ fun LinkScreen(
     }
 }
 
-/** 넓은 화면(프로토타입 기준 1682×1210)과 좁은 화면(폰 세로)의 크기 */
-private enum class LinkMetrics(val edge: Dp, val bodyStart: Dp, val bodyBottom: Dp, val barWidth: Dp, val textScale: Float) {
-    Wide(edge = DesignSpace.xxxl, bodyStart = 56.dp, bodyBottom = DesignSpace.page, barWidth = 640.dp, textScale = 1f),
-    Narrow(edge = DesignSpace.l, bodyStart = 0.dp, bodyBottom = DesignSpace.xxxl, barWidth = 320.dp, textScale = DesignType.NARROW_SCALE),
-    ;
+/**
+ * 화면 크기에 맞춘 비율. 프로토타입은 앱 영역 1682×1210(차량 화면) 기준이라, 더 작은 화면(태블릿·폰)에서는
+ * 글자·간격·막대·버튼을 같은 비율로 줄인다. 차량 화면에서는 1.0 (프로토타입과 같은 크기).
+ */
+private class LinkMetrics(val s: Float) {
+    val edge: Dp = DesignSpace.xxxl * s
+    val bodyStart: Dp = 56.dp * s
+    val bodyBottom: Dp = DesignSpace.page * s
+    val barWidth: Dp = 640.dp * s
+    val buttonHeight: Dp = (DesignHeight.buttonLarge * s).coerceAtLeast(56.dp)
+    val avatar: Dp = 96.dp * s
+    val primaryWidth: Dp = 480.dp * s
+    val icon: Dp = 36.dp * s
 
-    fun style(base: TextStyle): TextStyle = if (textScale == 1f) base else DesignType.narrow(base)
+    fun gap(d: Dp): Dp = d * s
+
+    fun style(base: TextStyle): TextStyle = if (s == 1f) base else base.copy(fontSize = base.fontSize * s, lineHeight = base.lineHeight * s)
+
+    companion object {
+        private val BASE_WIDTH = 1682.dp
+
+        /** 폭 비율. 너무 작아지지 않게 0.45에서 멈춘다 (폰 세로) */
+        fun of(width: Dp): LinkMetrics = LinkMetrics((width / BASE_WIDTH).coerceIn(0.45f, 1f))
+    }
 }
 
 @Composable
@@ -131,7 +147,7 @@ private fun WaitingBody(
         style = metrics.style(DesignType.bodyLarge),
         color = colors.subText,
     )
-    Spacer(Modifier.height(DesignSpace.xl))
+    Spacer(Modifier.height(metrics.gap(DesignSpace.xl)))
 
     val expired = state == LinkUiState.Expired
     val code = (state as? LinkUiState.Waiting)?.code ?: "· · ·  · · ·"
@@ -146,16 +162,16 @@ private fun WaitingBody(
         softWrap = false,
     )
 
-    Spacer(Modifier.height(DesignSpace.xxxl))
+    Spacer(Modifier.height(metrics.gap(DesignSpace.xxxl)))
     val fraction = when (state) {
         is LinkUiState.Waiting -> countdown?.fraction ?: (state.remainingMinutes / 10f).coerceIn(0f, 1f)
         else -> 0f
     }
     ProgressBar(fraction, metrics.barWidth, colors)
 
-    Spacer(Modifier.height(DesignSpace.m))
+    Spacer(Modifier.height(metrics.gap(DesignSpace.m)))
     val status = metrics.style(DesignType.body)
-    Box(Modifier.heightIn(min = 44.dp)) {
+    Box(Modifier.heightIn(min = metrics.gap(44.dp))) {
         when (state) {
             is LinkUiState.Waiting -> Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.link_remaining_label), style = status, color = colors.subText)
@@ -171,8 +187,8 @@ private fun WaitingBody(
         }
     }
 
-    Spacer(Modifier.height(DesignSpace.section))
-    Row(horizontalArrangement = Arrangement.spacedBy(DesignSpace.l), verticalAlignment = Alignment.CenterVertically) {
+    Spacer(Modifier.height(metrics.gap(DesignSpace.section)))
+    Row(horizontalArrangement = Arrangement.spacedBy(metrics.gap(DesignSpace.l)), verticalAlignment = Alignment.CenterVertically) {
         if (state != LinkUiState.Creating && state != LinkUiState.Closed) {
             // 만료·실패면 [새 코드]가 주 버튼(메인색), 기다리는 중이면 보조 버튼(sf2)
             val emphasize = state == LinkUiState.Expired || state == LinkUiState.Failed
@@ -186,7 +202,7 @@ private fun WaitingBody(
         }
         TextButton(
             onClick = onClose,
-            modifier = Modifier.heightIn(min = buttonHeight(metrics)),
+            modifier = Modifier.heightIn(min = metrics.buttonHeight),
             shape = RoundedCornerShape(DesignRadius.m),
         ) {
             Text(
@@ -201,27 +217,27 @@ private fun WaitingBody(
 @Composable
 private fun LinkedBody(state: LinkUiState.Linked, metrics: LinkMetrics, colors: DesignColors, onClose: () -> Unit) {
     val body = metrics.style(DesignType.body)
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(DesignSpace.s)) {
-        Icon(Icons.Filled.Check, contentDescription = null, tint = colors.success, modifier = Modifier.size(36.dp))
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(metrics.gap(DesignSpace.s))) {
+        Icon(Icons.Filled.Check, contentDescription = null, tint = colors.success, modifier = Modifier.size(metrics.icon))
         Text(stringResource(R.string.link_done), style = body.copy(fontWeight = FontWeight.Medium), color = colors.success)
     }
-    Spacer(Modifier.height(DesignSpace.m))
+    Spacer(Modifier.height(metrics.gap(DesignSpace.m)))
     val pet = state.pet
     Text(
         text = if (pet != null) stringResource(R.string.link_linked_title, pet.name) else stringResource(R.string.link_linked_no_profile_title),
         style = metrics.style(DesignType.headline),
         color = colors.text,
     )
-    Spacer(Modifier.height(DesignSpace.xxxl))
+    Spacer(Modifier.height(metrics.gap(DesignSpace.xxxl)))
 
     HorizontalDivider(thickness = 2.dp, color = colors.line)
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = DesignSpace.xl),
+        modifier = Modifier.fillMaxWidth().padding(vertical = metrics.gap(DesignSpace.xl)),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(DesignSpace.xl),
+        horizontalArrangement = Arrangement.spacedBy(metrics.gap(DesignSpace.xl)),
     ) {
-        if (pet != null) PetAvatar(initial = pet.name.take(1), size = if (metrics == LinkMetrics.Wide) 96.dp else 64.dp)
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(DesignSpace.xxs)) {
+        if (pet != null) PetAvatar(initial = pet.name.take(1), size = metrics.avatar)
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(metrics.gap(DesignSpace.xxs))) {
             Text(
                 text = pet?.name ?: stringResource(R.string.link_linked_no_profile_hint),
                 style = metrics.style(DesignType.title),
@@ -237,14 +253,14 @@ private fun LinkedBody(state: LinkUiState.Linked, metrics: LinkMetrics, colors: 
     }
     HorizontalDivider(thickness = 2.dp, color = colors.line)
 
-    Spacer(Modifier.height(DesignSpace.section))
+    Spacer(Modifier.height(metrics.gap(DesignSpace.section)))
     FilledButton(
         text = stringResource(R.string.link_confirm),
         container = colors.primary,
         content = colors.onPrimary,
         metrics = metrics,
         onClick = onClose,
-        modifier = Modifier.width(if (metrics == LinkMetrics.Wide) 480.dp else 280.dp),
+        modifier = Modifier.width(metrics.primaryWidth),
     )
 }
 
@@ -265,8 +281,6 @@ private fun ProgressBar(fraction: Float, width: Dp, colors: DesignColors) {
     }
 }
 
-private fun buttonHeight(metrics: LinkMetrics): Dp = if (metrics == LinkMetrics.Wide) DesignHeight.buttonLarge else 64.dp
-
 @Composable
 private fun FilledButton(
     text: String,
@@ -281,8 +295,8 @@ private fun FilledButton(
         colors = ButtonDefaults.buttonColors(containerColor = container, contentColor = content),
         shape = RoundedCornerShape(DesignRadius.m),
         elevation = null,
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = DesignSpace.xxxl),
-        modifier = modifier.heightIn(min = buttonHeight(metrics)),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = metrics.gap(DesignSpace.xxxl)),
+        modifier = modifier.heightIn(min = metrics.buttonHeight),
     ) {
         Text(text, style = metrics.style(DesignType.button))
     }

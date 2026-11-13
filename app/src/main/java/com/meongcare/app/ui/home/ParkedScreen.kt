@@ -89,7 +89,7 @@ private val HomePetStatus = TextStyle(fontSize = 26.sp, lineHeight = 34.sp, font
  *
  * - 위: 왼쪽 로고 글자, 오른쪽 반려견 줄(아바타·이름·상태) + 보호자 웹 연결 버튼(프로토타입 [⇄ 변경] 자리, D2).
  * - 왼쪽 열: (안내 중·도착이면 [GuidancePanel]) → "응급 진료" → 두 줄 안내 → [응급 진료 시작 >].
- *   만든 카드가 있으면 안내 두 줄 자리에 카드 요약, 주 버튼은 [카드 보기 >], 안내가 없을 때만 [새로 만들기].
+ *   진료 카드로 가는 버튼은 두지 않는다 (사용자 지시 2026-11-13).
  *   프로토타입 음성 힌트 자리에는 시연용 샘플 안내를 둔다 (음성 명령 기능은 없다).
  * - 오른쪽 열: 세로선 + 바로가기 3개 (병원 찾기, 릴렉스, 반려동물 카드).
  *
@@ -292,7 +292,6 @@ private fun MainColumn(
     colors: DesignColors,
     modifier: Modifier,
 ) {
-    val showsCurrent = card.hasCard || guidance !is GuidanceUiState.Idle
     Column(modifier = modifier, horizontalAlignment = Alignment.Start) {
         panel?.let {
             GuidancePanel(it, onResend, Modifier.fillMaxWidth())
@@ -300,36 +299,19 @@ private fun MainColumn(
         }
         Text(stringResource(R.string.home_title), style = scale.style(HomeTitle), color = colors.homeText)
         Spacer(Modifier.height(scale.gap(28.dp)))
-        val (line1, line2) = if (showsCurrent) {
-            val symptoms = card.card.symptoms
-                .takeIf { it.isNotEmpty() }
-                ?.let { list -> stringResource(R.string.home_symptoms_line, joinedText(list.map { stringResource(symptomLabelRes(it)) })) }
-                ?: stringResource(R.string.card_value_no_symptoms)
-            stringResource(R.string.home_current_card_title) to symptoms
-        } else {
-            stringResource(R.string.home_subtitle_1) to stringResource(R.string.home_subtitle_2)
-        }
         Column(verticalArrangement = Arrangement.spacedBy(scale.gap(6.dp))) {
-            Text(line1, style = scale.style(HomeSubtitle), color = colors.homeSubText)
-            Text(line2, style = scale.style(HomeSubtitle).copy(fontWeight = FontWeight.Medium), color = colors.homeText)
+            Text(stringResource(R.string.home_subtitle_1), style = scale.style(HomeSubtitle), color = colors.homeSubText)
+            Text(stringResource(R.string.home_subtitle_2), style = scale.style(HomeSubtitle).copy(fontWeight = FontWeight.Medium), color = colors.homeText)
         }
         Spacer(Modifier.height(scale.gap(DesignSpace.xxxl)))
+        // 처음 화면에는 진료 카드로 가는 버튼([카드 보기]·[새로 만들기])을 두지 않는다 (사용자 지시 2026-11-13).
+        // [응급 진료 시작]은 늘 증상 선택으로 간다: 안내 전에 만든 카드가 있으면 새로 시작, 안내 중이면 고른 증상을 고친다.
         PrimaryButton(
-            text = stringResource(if (showsCurrent) R.string.home_open_card else R.string.home_start_emergency),
-            onClick = if (showsCurrent) actions.onOpenCard else actions.onStartCard,
+            text = stringResource(R.string.home_start_emergency),
+            onClick = if (card.hasCard && guidance is GuidanceUiState.Idle) actions.onStartNewCard else actions.onStartCard,
             scale = scale,
             colors = colors,
         )
-        if (showsCurrent && guidance is GuidanceUiState.Idle) {
-            Spacer(Modifier.height(scale.gap(DesignSpace.m)))
-            TextButton(
-                onClick = actions.onStartNewCard,
-                shape = RoundedCornerShape(DesignRadius.m),
-                modifier = Modifier.heightIn(min = scale.touch(DesignHeight.buttonMedium)),
-            ) {
-                Text(stringResource(R.string.home_new_card), style = scale.style(HomeLabel), color = colors.primary)
-            }
-        }
         if (isSample && card.card.pet is PetHeader.Registered) {
             Spacer(Modifier.height(scale.gap(DesignSpace.l)))
             Text(

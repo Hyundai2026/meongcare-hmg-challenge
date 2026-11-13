@@ -201,8 +201,8 @@ private fun ParkedFlow(
             linkScreen()
         }
         ParkedContent.SYMPTOMS -> {
-            // 시스템 뒤로 = [취소]
-            BackHandler(onBack = cardActions.onCancelPicking)
+            // [←]·시스템 뒤로 = 처음 화면 (고르던 것은 취소하고, 만든 카드는 남긴다). 카드로 되돌아가지 않는다 (사용자 지시 2026-11-13)
+            BackHandler(onBack = cardActions.onGoHome)
             // 이 화면이 사라지면(주행으로 바뀜, 다른 화면으로 감) 또는 앱이 뒤로 가면 듣기를 멈추고 들은 것을 버린다 (010 "설계 결정 2").
             val stopVoice by rememberUpdatedState(voiceActions.onStop)
             DisposableEffect(Unit) { onDispose { stopVoice() } }
@@ -210,7 +210,7 @@ private fun ParkedFlow(
             SymptomPickerScreen(
                 selected = cardUiState.pickingDraft,
                 onToggle = cardActions.onToggleSymptom,
-                onCancel = cardActions.onCancelPicking,
+                onCancel = cardActions.onGoHome,
                 onConfirm = cardActions.onConfirmSymptoms,
                 voice = voice,
                 voiceActions = voiceActions,

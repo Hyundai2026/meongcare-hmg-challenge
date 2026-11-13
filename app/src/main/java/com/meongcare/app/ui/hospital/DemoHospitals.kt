@@ -13,7 +13,8 @@ import kotlin.time.Duration.Companion.minutes
 /**
  * 홈 [병원 찾기]의 시연용 병원 (계획 019, 사용자 결정 2026-11-13: 디자인 시안의 이름으로 고정, 카카오 API 안 씀).
  * **가상의 병원**이다: 이름·거리·이동 시간은 시안 값이고 대기 시간은 알 수 없다("대기시간 미확인").
- * 카드를 받지 않는 병원(근처 검색과 같은 출처)이라 확인 화면에서 [길 안내 시작]만 있다. 전화번호는 없다.
+ * 앱에 넣어 둔 시연 병원(BUILT_IN)이라 진료 카드를 받는다 (사용자 결정 2026-11-13): 카드에서 열면 [출발]로 카드를 보낸다.
+ * 전송은 시연용(Fake)이라 서버·병원 웹으로는 가지 않는다. 홈에서 카드 없이 열면 [길 안내 시작]만 있다. 전화번호는 없다.
  *
  * @param mapX 시연 지도 위 위치 (0~1, 왼쪽 → 오른쪽). 지도 가운데(0.5, 0.5)가 현재 위치
  * @param mapY 시연 지도 위 위치 (0~1, 위 → 아래)
@@ -55,7 +56,7 @@ object DemoHospitals {
             isSample = true,
         )
         val row = RankedHospital(
-            candidate = HospitalCandidate(hospital, status = null, origin = HospitalOrigin.NEARBY_SEARCH),
+            candidate = HospitalCandidate(hospital, status = null, origin = HospitalOrigin.BUILT_IN),
             travel = minutes.minutes,
             freshness = StatusFreshness.NONE,
             statusAge = null,

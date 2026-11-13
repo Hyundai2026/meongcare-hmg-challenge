@@ -49,10 +49,10 @@ class DemoHospitalsTest {
     }
 
     @Test
-    fun `카드를 받지 않고 서버로 보내지도 않는 병원이다`() {
+    fun `카드를 받지만 서버로는 보내지 않는 시연 병원이다`() {
         for (h in all) {
-            assertEquals(h.name, HospitalOrigin.NEARBY_SEARCH, h.row.candidate.origin)
-            assertFalse(h.name, h.row.candidate.canReceiveCard)
+            assertEquals(h.name, HospitalOrigin.BUILT_IN, h.row.candidate.origin)
+            assertTrue(h.name, h.row.candidate.canReceiveCard)
             assertFalse(h.name, h.row.candidate.sendsCardToServer)
         }
     }

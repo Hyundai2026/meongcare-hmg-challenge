@@ -1,6 +1,7 @@
 package com.meongcare.app.domain.trip
 
 import app.cash.turbine.test
+import com.meongcare.app.data.hospital.FakeCaseSender
 import com.meongcare.app.data.pet.SamplePetProfiles
 import com.meongcare.app.domain.card.Symptom
 import com.meongcare.app.domain.guidance.Destination
@@ -44,19 +45,34 @@ class HospitalTripHomeFinderBoundaryTest {
     private val card = caseCardOf(SamplePetProfiles.demoPet, setOf(Symptom.COUGH))
 
     @Test
-    fun `시연 병원으로 출발하면 카드가 있어도 보내지 않고 길안내만 한다`() = runTest {
+    fun `시연 병원으로 카드와 함께 출발하면 시연 전송을 고르고 서버로는 보내지 않는다`() = runTest {
+        // 사용자 결정 2026-11-13: 시안 병원도 카드를 받는다 (앱 안에서만, BUILT_IN → Fake 전송)
         val guidance = FakeGuidance()
         val asked = mutableListOf<HospitalCandidate>()
-        val trip = HospitalTrip(guidance, { asked += it; error("시연 병원에는 전송 구현을 고르지 않는다") }, backgroundScope)
+        val trip = HospitalTrip(guidance, { asked += it; FakeCaseSender() }, backgroundScope)
 
-        trip.openFinderWithoutCard()
+        trip.openFinder()
         trip.choose(demo.row)
         trip.depart(demo.row, card)
         runCurrent()
 
-        assertEquals(TripState(demo.row.candidate, CardDelivery.NotSent), trip.trip.value)
+        assertEquals(listOf(demo.row.candidate), asked)
+        assertTrue(trip.trip.value?.delivery != CardDelivery.NotSent)
+        assertFalse(demo.row.candidate.sendsCardToServer)
         assertEquals(listOf(demo.row.hospital.destination.copy(expectedTravel = demo.travelMinutes.minutes)), guidance.started)
-        assertTrue(asked.isEmpty())
+    }
+
+    @Test
+    fun `홈에서 카드 없이 출발하면 보내지 않고 길안내만 한다`() = runTest {
+        val guidance = FakeGuidance()
+        val trip = HospitalTrip(guidance, { error("카드가 없으면 전송 구현을 고르지 않는다") }, backgroundScope)
+
+        trip.openFinderWithoutCard()
+        trip.choose(demo.row)
+        trip.depart(demo.row, card = null)
+        runCurrent()
+
+        assertEquals(TripState(demo.row.candidate, CardDelivery.NotSent), trip.trip.value)
         assertFalse(trip.finderWithoutCard.value)
     }
 

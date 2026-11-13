@@ -72,10 +72,10 @@ class HospitalTripHomeFinderTest {
     }
 
     @Test
-    fun `시연 병원은 카드를 받지 않고 가까운 순이다`() {
+    fun `시연 병원은 카드를 받는 앱 내장 병원이고 가까운 순이다`() {
         val all = DemoHospitals.all
         assertEquals(listOf(1, 2, 3, 4, 5), all.map { it.rank })
-        assertTrue(all.all { !it.row.candidate.canReceiveCard && it.row.hospital.isSample })
+        assertTrue(all.all { it.row.candidate.canReceiveCard && !it.row.candidate.sendsCardToServer && it.row.hospital.isSample })
         assertEquals(all.sortedBy { it.distanceKm }, all)
     }
 }

@@ -187,6 +187,7 @@ class MainActivity : ComponentActivity() {
                             onCall = cardViewModel::onCallNumber,
                             onDepartWithoutCard = { trip.depart(choice, card = null) },
                             onDepart = { trip.depart(choice, cardViewModel.caseCard()) },
+                            withCard = !finderWithoutCard,
                             phoneNumberPanel = {
                                 cardUiState.shownPhoneNumber?.let {
                                     PhoneNumberPanel(number = it, isSample = choice.hospital.isSample, onDismiss = cardViewModel::onDismissPhoneNumber)

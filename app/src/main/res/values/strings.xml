@@ -277,4 +277,5 @@
     <string name="card_emergency_mode">응급 모드</string>
     <string name="card_row_vet_summary">수의사 전달</string>
     <string name="card_find_vet">동물병원 찾기</string>
+    <string name="confirm_no_card_home">진료 카드 없이 길 안내만 해요. 증상을 함께 보내려면 홈의 [응급 진료 시작]으로 카드를 만들어 주세요.</string>
 </resources>

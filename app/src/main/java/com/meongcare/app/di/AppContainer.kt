@@ -228,9 +228,12 @@ class AppContainer(context: Context, val dataMode: DataMode) {
         isDebugBuild = BuildConfig.DEBUG,
     )
 
-    /** 근처 동물병원 출처 (계획 015 "설계 결정 3"). Fake 모드는 시연용 3곳, 시연·Real은 함수가 있을 때만. */
+    /**
+     * 근처 동물병원 출처 (계획 015 "설계 결정 3"). **지금은 끔**: 카카오 API는 더 쓰지 않는다 (사용자 결정 2026-11-13, 계획 019).
+     * 홈 [병원 찾기]는 디자인 시안의 시연용 병원 5곳을 보인다. 다시 켜려면 [NEARBY_VETS_ENABLED]를 true로.
+     */
     val nearbyVetKind: NearbyVetKind =
-        nearbyVetKindOf(dataMode, hasFunction = nearbyFunctionUrl != null && serverClient != null)
+        if (NEARBY_VETS_ENABLED) nearbyVetKindOf(dataMode, hasFunction = nearbyFunctionUrl != null && serverClient != null) else NearbyVetKind.OFF
 
     /** null = 근처 병원 묶음 없음. 결과는 저장하지 않는다 (카카오 운영정책). 익명 계정은 병원·반려견과 같은 것 */
     val nearbyVetSource: NearbyVetSource? = when (nearbyVetKind) {
@@ -388,3 +391,6 @@ private const val ANNOUNCER_LOG_TAG = "TripAnnouncer"
 
 /** 보호자 웹 연결 로그 태그 (014). `adb logcat -s OwnerLink` */
 private const val OWNER_LINK_LOG_TAG = "OwnerLink"
+
+/** 근처 동물병원(카카오 로컬 API, 015). 사용자 결정 2026-11-13: 더 쓰지 않는다 */
+private const val NEARBY_VETS_ENABLED = false

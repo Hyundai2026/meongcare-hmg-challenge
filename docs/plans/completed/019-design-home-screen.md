@@ -160,13 +160,13 @@
     - 새 `ui/relax/RelaxScreen.kt`: "← 릴렉스 모드", 시연용 안내(늘 보임), "{이름}를 위한 편안한 이동" + 큰 토글(꺼짐 설명 "꺼짐 · 저장한 설정은 그대로 유지됩니다."), "반려동물 환경"(실내 사운드 세그먼트 [조용히|잔잔한 음악], 현재 환경(예시)), "보호자 안심"(토글 + 설명), [완료]. 꺼지면 아래 항목 투명도를 낮추고 `enabled = false`. 터치 타깃은 높이 80 이상(비율 적용 후 최소 56). 글자 입력 없음.
     - 이름이 없으면(미등록 등) "반려동물을 위한 편안한 이동".
     - 반려동물 카드의 "환경 설정" 칸이 이 상태의 요약을 보인다 (같은 ViewModel, 액티비티 범위).
-- [ ] 8. 테스트 (`tester`) → `test(ui): 홈 디자인·바로가기 경계 테스트`
+- [x] 8. 테스트 (`tester`) → `test(ui): 홈 디자인·바로가기 경계 테스트`
   - 넘길 것: 이 계획 파일 경로, 대상 `ui/theme/DesignScale.kt`, `domain/trip/HospitalTrip.kt`(`openFinderWithoutCard`), `ui/home/ParkedContent.kt`, `ui/pet/PetCardContent.kt`, `ui/relax/RelaxViewModel.kt`, `data/pet/SamplePetProfiles.kt`.
   - `testDebugUnitTest` 전체 통과. 완료 기준 2·3의 diff 확인 결과를 진행 로그에 적는다.
-- [ ] 9. 화면 확인 (`/verify`) → 고칠 것이 있으면 `fix(ui): ...`
+- [x] 9. 화면 확인 (`/verify`) → 고칠 것이 있으면 `fix(ui): ...`
   - 완료 기준 4의 절차. 태블릿 에뮬레이터, 시연 모드, 라이트, 가로만. 프로토타입 캡처와 비교 결과, 주행 전환 결과를 진행 로그에 적는다. 다 되면 사용자에게 에뮬레이터 화면을 바로 보여 준다.
   - `docs(architecture): DesignScale·홈 토큰·새 정차 화면 기록` — 완료 기준 5. `docs/product/feature-facts.md`에 "릴렉스: 시연용 화면, 차량 공조·음악에 적용하지 않음", "반려동물 카드: 보기 전용, 체중·주치 병원은 아직 필드 없음"을 적는다.
-- [ ] 10. 개발 노트 작성 (`docs/notes/CYJhub/2026-11-13-design-home-screen.md`) → `docs(notes): design-home-screen`
+- [x] 10. 개발 노트 작성 (`docs/notes/CYJhub/2026-11-13-design-home-screen.md`) → `docs(notes): design-home-screen`
   - 계획 파일을 `docs/plans/completed/`로 옮기는 것도 같이 커밋한다 (`docs(plans): 019 완료로 옮김`).
 
 ## 진행 로그
@@ -180,3 +180,4 @@
 - 2026-11-13: 3단계 완료. 아이콘은 Material Symbols 대신 프로토타입 SVG 경로를 그대로 옮겼다 (`HomeIcons.kt`, 팀 디자인 자료라 라이선스 문제 없음, 모양이 시안과 같다). 쓰지 않게 된 문자열 5개(parked_status, home_card_hint, home_start_card, link_start_hint, link_status_linked) 삭제. 태블릿 에뮬레이터(시연, 라이트, 가로)에서 시안과 같은 배치 확인.
 - 2026-11-13: 사용자 지시 "병원찾기는 우선 제껴두고, 릴렉스·반려동물카드는 프로토타입 그대로, 차량 연동 없이". 4단계 보류, 5~7단계 완료. 프로토타입과 다른 점: 반려동물 카드 진료 기록에 "진료가 완료되면 기록이 표시됩니다." 문구는 넣지 않음(D4, 기록 기능 없음), 사진 대신 이름 첫 글자, 나이는 앱 규칙("12세 3개월"). 릴렉스 아래 "환경 설정 >" 자리에 시연용 안내를 늘 보임, 현재 환경은 "(예시)". STT/TTS는 이번 범위 밖(사용자).
 - 2026-11-13: 사용자 결정 (CYJhub): 홈 [병원 찾기] 화면을 프로토타입 5번으로, 이 브랜치에서. (1) 병원 데이터는 **시안 이름 5곳 고정**(`DemoHospitals`, 가상 병원, 대기시간 미확인, 카드 안 받음) (2) [진료 가능 여부 문의]는 버튼만, 누르면 준비 중 안내 (3) 음성은 자리만: [음성 명령] 버튼(준비 중 안내)·"음성 안내" 멘트 줄(`ui/voice/VoiceSlots.kt`, 나중에 STT/TTS를 붙일 곳) (4) **카카오 API는 더 쓰지 않는다** → `AppContainer.NEARBY_VETS_ENABLED = false`(코드는 남김). 지도는 실제 지도가 아닌 그림이고 "시연용 지도 · 가상 병원"을 늘 보인다. 카드가 있을 때 홈 [병원 찾기]는 지금 흐름(카드 + 제휴 병원 목록, D3). 고른 뒤 확인 화면은 아직 이전 모양(프로토타입 7번은 다음 화면). 대기시간을 시안대로 넣는 요청은 사용자가 취소.
+- 2026-11-13: tester 경계 테스트 7파일 48개. 버그 2개(`DesignScale.style`: 지정 안 된 TextUnit에서 예외, em 줄 간격에 비율 두 번) → 고침. `testDebugUnitTest` 전체 통과. 화면은 태블릿 에뮬레이터(시연, 라이트, 가로)에서 홈·반려동물 카드·릴렉스·병원 찾기 확인. 개발 노트 작성, 계획 완료.

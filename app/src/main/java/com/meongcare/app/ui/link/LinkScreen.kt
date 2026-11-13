@@ -48,6 +48,7 @@ import com.meongcare.app.ui.card.PetAvatar
 import com.meongcare.app.ui.theme.DesignColors
 import com.meongcare.app.ui.theme.DesignHeight
 import com.meongcare.app.ui.theme.DesignRadius
+import com.meongcare.app.ui.theme.DesignScale
 import com.meongcare.app.ui.theme.DesignSpace
 import com.meongcare.app.ui.theme.DesignType
 import com.meongcare.app.ui.theme.LocalDesignTokens
@@ -111,25 +112,23 @@ fun LinkScreen(
  * 화면 크기에 맞춘 비율. 프로토타입은 앱 영역 1682×1210(차량 화면) 기준이라, 더 작은 화면(태블릿·폰)에서는
  * 글자·간격·막대·버튼을 같은 비율로 줄인다. 차량 화면에서는 1.0 (프로토타입과 같은 크기).
  */
-private class LinkMetrics(val s: Float) {
-    val edge: Dp = DesignSpace.xxxl * s
-    val bodyStart: Dp = 56.dp * s
-    val bodyBottom: Dp = DesignSpace.page * s
-    val barWidth: Dp = 640.dp * s
-    val buttonHeight: Dp = (DesignHeight.buttonLarge * s).coerceAtLeast(56.dp)
-    val avatar: Dp = 96.dp * s
-    val primaryWidth: Dp = 480.dp * s
-    val icon: Dp = 36.dp * s
+private class LinkMetrics(private val scale: DesignScale) {
+    val s: Float get() = scale.s
+    val edge: Dp = scale.gap(DesignSpace.xxxl)
+    val bodyStart: Dp = scale.gap(56.dp)
+    val bodyBottom: Dp = scale.gap(DesignSpace.page)
+    val barWidth: Dp = scale.gap(640.dp)
+    val buttonHeight: Dp = scale.touch(DesignHeight.buttonLarge)
+    val avatar: Dp = scale.gap(96.dp)
+    val primaryWidth: Dp = scale.gap(480.dp)
+    val icon: Dp = scale.gap(36.dp)
 
-    fun gap(d: Dp): Dp = d * s
+    fun gap(d: Dp): Dp = scale.gap(d)
 
-    fun style(base: TextStyle): TextStyle = if (s == 1f) base else base.copy(fontSize = base.fontSize * s, lineHeight = base.lineHeight * s)
+    fun style(base: TextStyle): TextStyle = scale.style(base)
 
     companion object {
-        private val BASE_WIDTH = 1682.dp
-
-        /** 폭 비율. 너무 작아지지 않게 0.45에서 멈춘다 (폰 세로) */
-        fun of(width: Dp): LinkMetrics = LinkMetrics((width / BASE_WIDTH).coerceIn(0.45f, 1f))
+        fun of(width: Dp): LinkMetrics = LinkMetrics(DesignScale.of(width))
     }
 }
 

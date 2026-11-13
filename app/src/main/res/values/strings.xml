@@ -257,4 +257,22 @@
     <string name="relax_summary_default">기본 설정</string>
     <string name="relax_summary_on">켜짐</string>
     <string name="relax_summary_off">꺼짐</string>
+    <!-- 음성 자리 (계획 019). STT/TTS는 아직 연결하지 않았다: 버튼은 준비 중 안내, 멘트는 화면 글자로만 -->
+    <string name="voice_command">음성 명령</string>
+    <string name="voice_guide_label">음성 안내</string>
+    <string name="voice_not_ready">음성 기능은 준비 중이에요. 화면의 버튼으로 진행해 주세요.</string>
+    <!-- 홈 [병원 찾기] (계획 019, 프로토타입 5번. 시연용 병원) -->
+    <string name="demo_finder_title">병원 찾기</string>
+    <string name="demo_finder_voice_found">주변 동물병원을 찾았어요. 진료 가능한지 문의해 볼까요?</string>
+    <string name="demo_finder_voice_selected">%1$s 골랐어요. 바로 출발할 수 있어요.</string>
+    <string name="demo_finder_caption">가까운 순 · 진료 가능 여부는 문의 후 확인</string>
+    <string name="demo_finder_row_detail">%1$skm · 대기시간 미확인</string>
+    <string name="demo_finder_travel">이동 %1$d분</string>
+    <string name="demo_finder_go_direct">문의 없이 바로 이동</string>
+    <string name="demo_finder_inquire">진료 가능 여부 문의</string>
+    <string name="demo_finder_hint">병원을 고르면 문의 없이 바로 출발할 수 있어요.</string>
+    <string name="demo_finder_inquiry_not_ready">진료 가능 여부 문의는 준비 중인 기능이에요. 병원을 골라 바로 이동할 수 있어요.</string>
+    <string name="demo_finder_map_title">주변 동물병원 %1$d곳</string>
+    <string name="demo_finder_map_subtitle">이동시간만 확인 · 대기시간 미확인</string>
+    <string name="demo_finder_map_badge">시연용 지도 · 가상 병원</string>
 </resources>

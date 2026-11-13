@@ -31,3 +31,42 @@ class ParkedContentPageTest {
         assertEquals(ParkedContent.LINK, parkedContentOf(idle, CardSessionState.None, linking = true, page = HomePage.PET_CARD))
     }
 }
+
+class ParkedContentHomeFinderTest {
+    private val idle = GuidanceUiState.Idle("병원")
+    private val choice = com.meongcare.app.ui.hospital.DemoHospitals.all.first().row
+
+    @Test
+    fun `카드 없이 연 병원 찾기는 카드 세션과 상관없이 목록·확인이다`() {
+        assertEquals(ParkedContent.HOSPITALS, parkedContentOf(idle, CardSessionState.None, finder = FinderStep.Hospitals, finderWithoutCard = true))
+        assertEquals(
+            ParkedContent.CONFIRM_HOSPITAL,
+            parkedContentOf(idle, CardSessionState.None, atHome = true, finder = FinderStep.Confirm(choice), finderWithoutCard = true),
+        )
+    }
+
+    @Test
+    fun `표시가 없으면 지금처럼 처음 화면이다`() {
+        assertEquals(ParkedContent.HOME, parkedContentOf(idle, CardSessionState.None, finder = FinderStep.Hospitals))
+    }
+
+    @Test
+    fun `안내 중이면 카드다`() {
+        assertEquals(
+            ParkedContent.CARD,
+            parkedContentOf(GuidanceUiState.Guiding("병원", 5), CardSessionState.None, finder = FinderStep.Hospitals, finderWithoutCard = true),
+        )
+    }
+
+    @Test
+    fun `증상 고르기와 쪽이 먼저다`() {
+        assertEquals(
+            ParkedContent.SYMPTOMS,
+            parkedContentOf(idle, CardSessionState.Picking(emptySet(), null), finder = FinderStep.Hospitals, finderWithoutCard = true),
+        )
+        assertEquals(
+            ParkedContent.RELAX,
+            parkedContentOf(idle, CardSessionState.None, finder = FinderStep.Hospitals, page = HomePage.RELAX, finderWithoutCard = true),
+        )
+    }
+}

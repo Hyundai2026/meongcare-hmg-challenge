@@ -51,6 +51,7 @@ enum class HomePage { NONE, PET_CARD, RELAX }
  * @param finder 병원 찾기 단계 (012). 주행으로 바뀌었다가 정차하면 같은 단계로 돌아온다.
  * @param linking 보호자 웹 연결 화면이 열려 있으면 true (014). 증상 고르기가 먼저고, 안내 중에는 보이지 않는다.
  * @param page 처음 화면 바로가기로 연 쪽 (019). 증상 고르기·연결 화면 다음이고, 처음 화면·카드·병원 찾기보다 먼저다.
+ * @param finderWithoutCard 홈 [병원 찾기]로 카드 없이 연 병원 찾기 (019). 안내가 없으면 카드 세션·[atHome]과 상관없이 목록·확인이다.
  */
 fun parkedContentOf(
     guidance: GuidanceUiState,
@@ -59,12 +60,15 @@ fun parkedContentOf(
     finder: FinderStep = FinderStep.None,
     linking: Boolean = false,
     page: HomePage = HomePage.NONE,
+    finderWithoutCard: Boolean = false,
 ): ParkedContent =
     when {
         session is CardSessionState.Picking -> ParkedContent.SYMPTOMS
         linking && guidance is GuidanceUiState.Idle -> ParkedContent.LINK
         page == HomePage.PET_CARD -> ParkedContent.PET_CARD
         page == HomePage.RELAX -> ParkedContent.RELAX
+        finderWithoutCard && guidance is GuidanceUiState.Idle && finder is FinderStep.Hospitals -> ParkedContent.HOSPITALS
+        finderWithoutCard && guidance is GuidanceUiState.Idle && finder is FinderStep.Confirm -> ParkedContent.CONFIRM_HOSPITAL
         atHome -> ParkedContent.HOME
         session is CardSessionState.Ready && guidance is GuidanceUiState.Idle && finder is FinderStep.Hospitals ->
             ParkedContent.HOSPITALS

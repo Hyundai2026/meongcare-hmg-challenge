@@ -5,6 +5,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import com.meongcare.app.ui.card.PetHeader
 import com.meongcare.app.ui.home.HomePage
+import com.meongcare.app.ui.hospital.DemoHospitalFindScreen
 import com.meongcare.app.ui.home.PageExtras
 import com.meongcare.app.ui.pet.PetCardScreen
 import com.meongcare.app.ui.pet.petCardOf
@@ -80,6 +81,7 @@ class MainActivity : ComponentActivity() {
                 )
                 val trip = container.hospitalTrip
                 val finder by trip.finder.collectAsStateWithLifecycle()
+                val finderWithoutCard by trip.finderWithoutCard.collectAsStateWithLifecycle()
                 val tripState by trip.trip.collectAsStateWithLifecycle()
                 val cardUiState by cardViewModel.uiState.collectAsStateWithLifecycle()
                 val linkViewModel: LinkViewModel = viewModel(
@@ -150,8 +152,22 @@ class MainActivity : ComponentActivity() {
                     isPetProfileSample = isPetProfileSample,
                     isRouteOnNavi = container.naviUse == NaviUse.ROUTE_ONLY,
                     finder = finder,
+                    finderWithoutCard = finderWithoutCard,
+                    // 홈 [병원 찾기] (019 D3): 카드가 있으면 카드와 함께(지금 흐름), 없으면 카드 없이 시연용 병원 목록
+                    onFindHospitalFromHome = {
+                        if (cardUiState.hasCard) {
+                            cardViewModel.onOpenCard()
+                            trip.openFinder()
+                        } else {
+                            trip.openFinderWithoutCard()
+                        }
+                    },
                     onFinderBack = trip::back,
-                    hospitalList = {
+                    hospitalList = hospitalList@{
+                        if (finderWithoutCard) {
+                            DemoHospitalFindScreen(onBack = trip::back, onGoDirect = { trip.choose(it.row) })
+                            return@hospitalList
+                        }
                         val finderViewModel: HospitalFinderViewModel = viewModel(
                             factory = HospitalFinderViewModel.factory(
                                 container.hospitalBoardSource,

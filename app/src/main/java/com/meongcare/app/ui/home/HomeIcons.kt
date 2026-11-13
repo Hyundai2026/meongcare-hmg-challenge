@@ -59,6 +59,23 @@ object HomeIcons {
         }.build()
     }
 
+    /** 음성 명령: 마이크 (프로토타입 음성 힌트 아이콘) */
+    val Mic: ImageVector by lazy {
+        lineIcon("Mic", "M12 3a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3z", "M5.5 11a6.5 6.5 0 0 0 13 0", "M12 17.5V21")
+    }
+
+    /** 음성 안내: 스피커 (채운 모양) */
+    val Speaker: ImageVector by lazy {
+        ImageVector.Builder("Speaker", 24.dp, 24.dp, 24f, 24f).apply {
+            addPath(
+                PathParser().parsePathString(
+                    "M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z",
+                ).toNodes(),
+                fill = SolidColor(Color.Black),
+            )
+        }.build()
+    }
+
     /** 화면 머리 [←] (프로토타입 머리 화살표) */
     val Back: ImageVector by lazy { lineIcon("Back", "M19 12H5", "M11 6l-6 6 6 6", strokeWidth = 2f) }
 

@@ -46,6 +46,8 @@ import com.meongcare.app.ui.voice.VoiceScreenState
  * @param isPetProfileSample 반려견 정보가 시연용 샘플이면 정차 화면·카드에 알린다.
  * @param onCloseArrival 도착 카드 [닫기]. 도착 상태를 지우고 카드도 비운다.
  * @param finder 병원 찾기 단계 (012). 목록·확인 화면은 [hospitalList]·[hospitalConfirm]이 그린다.
+ * @param finderWithoutCard 홈 [병원 찾기]로 카드 없이 연 병원 찾기인지 (019)
+ * @param onFindHospitalFromHome 홈 바로가기 [병원 찾기]
  * @param onFinderBack 병원 찾기 화면의 시스템 뒤로 (= 화면의 [뒤로])
  * @param voice 증상 고르기 화면의 음성 영역 (010). `null`이면 음성 영역이 없다.
  * @param voiceActions 음성 영역 동작. 증상 고르기 화면이 사라지거나 앱이 뒤로 가면 `onStop`을 부른다.
@@ -68,6 +70,8 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     isRouteOnNavi: Boolean = false,
     finder: FinderStep = FinderStep.None,
+    finderWithoutCard: Boolean = false,
+    onFindHospitalFromHome: () -> Unit = {},
     onFinderBack: () -> Unit = {},
     hospitalList: @Composable () -> Unit = {},
     hospitalConfirm: @Composable (RankedHospital) -> Unit = {},
@@ -106,6 +110,8 @@ fun HomeScreen(
                         isPetProfileSample = isPetProfileSample,
                         isRouteOnNavi = isRouteOnNavi,
                         finder = finder,
+                        finderWithoutCard = finderWithoutCard,
+                        onFindHospitalFromHome = onFindHospitalFromHome,
                         onFinderBack = onFinderBack,
                         hospitalList = hospitalList,
                         hospitalConfirm = hospitalConfirm,
@@ -140,6 +146,8 @@ private fun ParkedFlow(
     isPetProfileSample: Boolean,
     isRouteOnNavi: Boolean,
     finder: FinderStep,
+    finderWithoutCard: Boolean,
+    onFindHospitalFromHome: () -> Unit,
     onFinderBack: () -> Unit,
     hospitalList: @Composable () -> Unit,
     hospitalConfirm: @Composable (RankedHospital) -> Unit,
@@ -153,7 +161,7 @@ private fun ParkedFlow(
     voice: VoiceScreenState?,
     voiceActions: VoiceActions,
 ) {
-    when (parkedContentOf(guidanceUiState, cardUiState.session, cardUiState.atHome, finder, link.linking, pages.page)) {
+    when (parkedContentOf(guidanceUiState, cardUiState.session, cardUiState.atHome, finder, link.linking, pages.page, finderWithoutCard)) {
         ParkedContent.HOME -> {
             // 처음 화면이 보이는 동안(앱이 앞에 있을 때만) 연결된 반려견 정보를 1분마다 다시 읽는다 (014 K4)
             val lifecycleOwner = LocalLifecycleOwner.current
@@ -175,6 +183,7 @@ private fun ParkedFlow(
                 linkRow = link.row,
                 onOpenLink = link.onOpen,
                 onUnlink = link.onUnlink,
+                onFindHospital = onFindHospitalFromHome,
                 onOpenRelax = { pages.onOpen(HomePage.RELAX) },
                 onOpenPetCard = { pages.onOpen(HomePage.PET_CARD) },
             )

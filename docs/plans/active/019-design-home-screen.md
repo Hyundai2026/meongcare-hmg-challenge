@@ -120,7 +120,7 @@
     - 미리보기 값(`MedicalCardScreen.kt` 499~501행 "보리")과 주석("보리")도 왕건이로 맞춘다 (`PetPlan.kt`, `PetProfileSource.kt`, `AppContainer.kt`, `FakePetProfileSource.kt`). 웹 파일은 건드리지 않는다.
   - `docs: 차 앱 시연 샘플 반려견 이름을 왕건이로`
     - `README.md` 21행, `docs/product/feature-facts.md` 48~49행, `docs/architecture.md` 158·310~312·357행. `docs/data/`는 그대로(D1 A).
-- [ ] 3. 홈 화면 레이아웃 (Fake·시연 모드로 확인) → 커밋 2개
+- [x] 3. 홈 화면 레이아웃 (Fake·시연 모드로 확인) → 커밋 2개
   - `feat(ui): 홈 바로가기 아이콘 추가` — `ui/home/HomeIcons.kt` (D6).
   - `feat(ui): 정차 처음 화면을 디자인 시안의 응급 진료 화면으로`
     - `ParkedScreen.kt`를 다시 그린다. `BoxWithConstraints` + `DesignScale.of(maxWidth)`, 바탕 `homeBackground`, 세로 스크롤은 남긴다 (태블릿은 높이가 1210보다 낮다).
@@ -177,3 +177,4 @@
 
 ## 결정 / 배운 점
 - 2026-11-13: 사용자 재결정 (CYJhub): "그냥 보리로 해" → 샘플 반려견은 **보리 그대로**. 왕건이 값 변경과 테스트 수정(13개)은 되돌렸다. D1은 더 이상 해당 없음 (예시 JSON = 샘플 유지). 2단계 완료 처리.
+- 2026-11-13: 3단계 완료. 아이콘은 Material Symbols 대신 프로토타입 SVG 경로를 그대로 옮겼다 (`HomeIcons.kt`, 팀 디자인 자료라 라이선스 문제 없음, 모양이 시안과 같다). 쓰지 않게 된 문자열 5개(parked_status, home_card_hint, home_start_card, link_start_hint, link_status_linked) 삭제. 태블릿 에뮬레이터(시연, 라이트, 가로)에서 시안과 같은 배치 확인.

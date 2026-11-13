@@ -58,6 +58,12 @@ data class DesignColors(
     /** 비활성 바탕 / 글자 (dis / dist) */
     val disabled: Color,
     val disabledText: Color,
+    /** 처음 화면(응급 진료) 글자 / 보조 글자 / 바로가기 아이콘 바탕 / 구분선 / 눌린 주 버튼 (htx·hsub·hic·hln·hprh, 계획 019) */
+    val homeText: Color = text,
+    val homeSubText: Color = subText,
+    val homeIcon: Color = surface,
+    val homeLine: Color = line,
+    val homePrimaryPressed: Color = primary,
 )
 
 val LightDesignColors = DesignColors(
@@ -80,6 +86,11 @@ val LightDesignColors = DesignColors(
     errorBackground = Color(0xFFFDEDEC),
     disabled = Color(0xFFEEF0F3),
     disabledText = Color(0xFF8A93A3),
+    homeText = Color(0xFF222938),
+    homeSubText = Color(0xFF697386),
+    homeIcon = Color(0xFFF1F3F7),
+    homeLine = Color(0xFFE8EBF1),
+    homePrimaryPressed = Color(0xFF33509F),
 )
 
 val DarkDesignColors = DesignColors(

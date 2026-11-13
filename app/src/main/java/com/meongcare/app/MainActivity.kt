@@ -29,6 +29,7 @@ import com.meongcare.app.ui.home.CardExtras
 import com.meongcare.app.ui.home.LinkExtras
 import com.meongcare.app.ui.home.linkRowOf
 import com.meongcare.app.ui.link.LinkScreen
+import com.meongcare.app.ui.link.rememberLinkCountdown
 import com.meongcare.app.ui.link.LinkViewModel
 import com.meongcare.app.ui.home.HomeScreen
 import com.meongcare.app.ui.hospital.HospitalConfirmScreen
@@ -182,7 +183,13 @@ class MainActivity : ComponentActivity() {
                     ),
                     linkScreen = {
                         val linkUiState by linkViewModel.uiState.collectAsStateWithLifecycle()
-                        LinkScreen(state = linkUiState, onNewCode = linkViewModel::onNewCode, onClose = linkViewModel::close)
+                        val waitingSince by linkViewModel.waitingSince.collectAsStateWithLifecycle()
+                        LinkScreen(
+                            state = linkUiState,
+                            onNewCode = linkViewModel::onNewCode,
+                            onClose = linkViewModel::close,
+                            countdown = rememberLinkCountdown(waitingSince, linkViewModel::now),
+                        )
                     },
                     voice = voiceUiState,
                     voiceActions = voiceActions,

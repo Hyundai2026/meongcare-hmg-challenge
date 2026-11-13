@@ -5,6 +5,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 
 private val LightColors = lightColorScheme(
     primary = Navy700,
@@ -48,9 +49,14 @@ fun MeongCareTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit,
 ) {
-    MaterialTheme(
-        colorScheme = if (darkTheme) DarkColors else LightColors,
-        typography = MeongCareTypography,
-        content = content,
-    )
+    // 디자인 프로토타입 토큰 (018). 디자인을 적용한 화면만 쓴다
+    CompositionLocalProvider(
+        LocalDesignTokens provides DesignTokens(if (darkTheme) DarkDesignColors else LightDesignColors),
+    ) {
+        MaterialTheme(
+            colorScheme = if (darkTheme) DarkColors else LightColors,
+            typography = MeongCareTypography,
+            content = content,
+        )
+    }
 }

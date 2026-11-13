@@ -115,14 +115,14 @@
 
 단계 하나 = 커밋 1~3개.
 
-- [ ] 1. 디자인 토큰 기반 → `feat(ui): 디자인 프로토타입 토큰 추가`
+- [x] 1. 디자인 토큰 기반 → `feat(ui): 디자인 프로토타입 토큰 추가`
   - 새 파일 `ui/theme/DesignTokens.kt`
     - `DesignColors`: 위 TH 표의 light/dark 값. 다크에 없는 pg·hbg는 비워 두고 주석으로 Q2를 남긴다.
     - 글자 단계(`DesignType`), 간격(`DesignSpace`), 둥글기, 버튼 높이
     - `LocalDesignTokens`
   - `Theme.kt`: `MeongCareTheme`이 `darkTheme`에 맞는 토큰을 `CompositionLocalProvider`로 내려 준다. colorScheme·typography는 그대로다.
   - 아직 아무 화면도 쓰지 않으므로 화면은 바뀌지 않는다. `assembleDebug` 통과.
-- [ ] 2. 연결 화면에 디자인 적용 → 커밋 1~2개
+- [x] 2. 연결 화면에 디자인 적용 → 커밋 1~2개
   - `feat(ui): 연결 화면 대기 상태를 디자인 시안에 맞춤`
     - 새 파일 `ui/link/LinkProgress.kt`의 순수 함수 `linkProgressOf(remainingMinutes: Int): Float`: `remainingMinutes / 10`을 0~1로 자른다. 기준은 `LinkCode.VALIDITY`다.
     - 새 테스트 `LinkProgressTest`(같은 커밋): 10분이면 1, 5분이면 0.5, 0 이하면 0, 10 초과면 1
@@ -135,14 +135,14 @@
     - 새 문자열은 "연결 완료" 하나뿐이다.
   - Preview를 갱신한다: Wide 라이트·다크 × 대기·연결됨·만료, Narrow × 대기·연결됨.
   - 각 커밋마다 `assembleDebug` 통과.
-- [ ] 3. 테스트 (`tester`) → `test(ui): 연결 화면 진행 막대 비율 경계 테스트`
+- [x] 3. 테스트 (`tester`) → `test(ui): 연결 화면 진행 막대 비율 경계 테스트`
   - 넘길 것: 이 계획 파일 경로, 대상 `ui/link/LinkProgress.kt`, `ui/theme/DesignTokens.kt`
   - `testDebugUnitTest` 전체 통과. 완료 기준 2의 diff 출력이 비어 있는지 확인한다.
-- [ ] 4. 화면 확인 + 문서 → `docs(architecture): 디자인 토큰 위치와 적용 범위 기록`
+- [x] 4. 화면 확인 + 문서 → `docs(architecture): 디자인 토큰 위치와 적용 범위 기록`
   - 완료 기준 5의 `/verify` 절차를 한다. 비교 결과와 D2 폰트 관찰을 진행 로그에 적는다. 화면이 시안과 다르면 2단계로 돌아가 `fix(ui): ...`로 고친다.
   - `docs/architecture.md`에 기록한다: 토큰 파일, 원천(프로토타입 TH 표), 적용 범위, "다음 화면은 LocalDesignTokens로 옮긴다". 완료 기준 6.
   - 완료 기준 3·4의 `git diff dev` 확인 결과도 진행 로그에 적는다.
-- [ ] 5. 개발 노트 작성 (`docs/notes/CYJhub/2026-11-13-design-link-screen.md`) → `docs(notes): design-link-screen`
+- [x] 5. 개발 노트 작성 (`docs/notes/CYJhub/2026-11-13-design-link-screen.md`) → `docs(notes): design-link-screen`
   - 계획 파일을 `docs/plans/completed/`로 옮기는 것도 같이 커밋한다.
 
 ## 진행 로그
@@ -154,5 +154,10 @@
   - D2 → 폰트 파일을 넣지 않는다 (Pleos는 Asta Sans가 시스템 UI 폰트, 이 PC 에뮬레이터는 기본 한글 글꼴).
   - D3 → 기본안 (아바타 첫 글자·이름·품종). D4 → 기본안 (지금 문구, 새 문자열 "연결 완료"·"남은 시간"). D5 → 기본안 (주 버튼 앞, [닫기] 글자 버튼, 체험 모드 없음).
   - 프로토타입 HTML(`docs/product/design/prototype/MeongCare car.html`, 3.3MB)을 디자인 원본으로 이 브랜치에 커밋한다.
+
+- 2026-11-13: 단계 1 토큰 (`78b4397`), 단계 2 연결 화면 (`24d5657`). 태블릿 에뮬레이터(앱 영역 약 1280dp)에서 프로토타입 크기(1682 기준) 그대로는 넘쳐서, 화면 폭 비율(0.45~1.0)로 글자·간격·버튼을 같이 줄이게 고쳤다 (`e6dea05`). 차량 화면(1682)에서는 1.0.
+- 2026-11-13: 에뮬레이터(시연 모드, 서버 있음)에서 대기 화면 확인: 왼쪽 정렬 안내문 → 큰 코드 → 진행 막대 → "남은 시간 09:53"(1초마다) → [새 코드] + 글자 버튼 [닫기]. 사용자 결정: **다크 모드·세로 화면 확인은 빼고 이 모습으로 마무리**, 다음 화면으로 넘어간다. 만료·실패·연결됨 상태는 화면으로 보지 않았다 (미리보기 코드만).
+
+- 2026-11-13: tester 37개 (전체 1366). 버그 1개: 기기 언어가 페르시아어 등이면 "۰۲:۵۹" → `Locale.ROOT`로 고침. 완료 기준 예외: `MainActivity.kt`(waitingSince 수집·`rememberLinkCountdown`)와 `LinkViewModel.kt`는 D1 결정으로 바뀌었다. 파일 이름은 계획의 `LinkProgress`가 아니라 `LinkCountdown`이다.
 
 ## 결정 / 배운 점

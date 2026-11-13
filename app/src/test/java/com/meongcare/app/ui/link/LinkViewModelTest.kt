@@ -37,7 +37,7 @@ class LinkViewModelTest {
     val mainDispatcherRule = MainDispatcherRule(dispatcher)
 
     private val start = Instant.parse("2026-11-06T09:00:00Z")
-    private val kongi = SamplePetProfiles.bori.copy(name = "콩이", breed = "말티즈")
+    private val kongi = SamplePetProfiles.demoPet.copy(name = "콩이", breed = "말티즈")
 
     /** 묻기 횟수와 지운 코드를 센다 */
     private class CountingLink(private val inner: FakeOwnerLink) : OwnerLinkService by inner {

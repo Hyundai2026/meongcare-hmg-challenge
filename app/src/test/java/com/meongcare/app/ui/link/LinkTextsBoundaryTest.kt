@@ -13,7 +13,7 @@ class LinkTextsBoundaryTest {
 
     @Test
     fun `품종이 없어도 이름만으로 요약한다`() {
-        val noBreed = SamplePetProfiles.bori.copy(name = "콩이", breed = null)
+        val noBreed = SamplePetProfiles.demoPet.copy(name = "콩이", breed = null)
         assertEquals(LinkedPet("콩이", null), linkedPetOf(PetProfileLoad.Loaded(noBreed)))
     }
 

@@ -101,7 +101,7 @@ class FirestoreJsonTest {
 
     @Test
     fun `환자 건을 형식 문서대로 쓴다`() {
-        val card = caseCardOf(SamplePetProfiles.bori, setOf(Symptom.COUGH, Symptom.BREATHING_DIFFICULTY))
+        val card = caseCardOf(SamplePetProfiles.demoPet, setOf(Symptom.COUGH, Symptom.BREATHING_DIFFICULTY))
         val eta = CaseEta(remainingMinutes = 12, measuredAt = Instant.parse(at))
         val labels = mapOf(Symptom.BREATHING_DIFFICULTY to "호흡 곤란", Symptom.COUGH to "기침")
         val fields = FirestoreJson.newCaseFields(card, eta, createdBy = "anon-uid-example") { labels.getValue(it) }
@@ -114,7 +114,7 @@ class FirestoreJsonTest {
 
     @Test
     fun `사진과 위치는 쓰지 않는다`() {
-        val card = caseCardOf(SamplePetProfiles.bori.copy(photoDataUrl = "data:image/jpeg;base64,AAAA"), setOf(Symptom.COUGH))
+        val card = caseCardOf(SamplePetProfiles.demoPet.copy(photoDataUrl = "data:image/jpeg;base64,AAAA"), setOf(Symptom.COUGH))
         val text = FirestoreJson.newCaseFields(card, CaseEta(5, Instant.parse(at)), "u") { it.name }.toString()
         assertFalse(text.contains("photo"))
         assertFalse(text.contains("latitude") || text.contains("longitude"))

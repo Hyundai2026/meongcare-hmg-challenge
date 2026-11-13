@@ -80,7 +80,7 @@ class HospitalTripAckTest {
         statusAge = 2.minutes,
     )
 
-    private val card = caseCardOf(SamplePetProfiles.bori, setOf(Symptom.COUGH))
+    private val card = caseCardOf(SamplePetProfiles.demoPet, setOf(Symptom.COUGH))
 
     private class Fixture(val trip: HospitalTrip, val guidance: Guidance, val log: MutableList<String>)
 

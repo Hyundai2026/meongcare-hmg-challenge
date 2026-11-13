@@ -46,12 +46,15 @@ import com.meongcare.app.ui.voice.VoiceScreenState
  * @param isPetProfileSample 반려견 정보가 시연용 샘플이면 정차 화면·카드에 알린다.
  * @param onCloseArrival 도착 카드 [닫기]. 도착 상태를 지우고 카드도 비운다.
  * @param finder 병원 찾기 단계 (012). 목록·확인 화면은 [hospitalList]·[hospitalConfirm]이 그린다.
+ * @param finderWithoutCard 홈 [병원 찾기]로 카드 없이 연 병원 찾기인지 (019)
+ * @param onFindHospitalFromHome 홈 바로가기 [병원 찾기]
  * @param onFinderBack 병원 찾기 화면의 시스템 뒤로 (= 화면의 [뒤로])
  * @param voice 증상 고르기 화면의 음성 영역 (010). `null`이면 음성 영역이 없다.
  * @param voiceActions 음성 영역 동작. 증상 고르기 화면이 사라지거나 앱이 뒤로 가면 `onStop`을 부른다.
  * @param bottomBar 화면 아래에 붙는 영역. debug 빌드의 개발자 패널이 들어간다.
  * @param cardExtras 고른 병원과 카드 전송 상태 (012). 안내 영역([tripPanelOf], 013)을 여기서 만든다.
  * @param link 보호자 웹 연결 (014): 처음 화면의 연결 줄과 연결 화면. 연결 화면은 [linkScreen]이 그린다.
+ * @param pages 처음 화면 바로가기로 여는 쪽 (019). 반려동물 카드는 [petCardScreen], 릴렉스는 [relaxScreen]이 그린다.
  */
 @Composable
 fun HomeScreen(
@@ -67,12 +70,17 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     isRouteOnNavi: Boolean = false,
     finder: FinderStep = FinderStep.None,
+    finderWithoutCard: Boolean = false,
+    onFindHospitalFromHome: () -> Unit = {},
     onFinderBack: () -> Unit = {},
     hospitalList: @Composable () -> Unit = {},
     hospitalConfirm: @Composable (RankedHospital) -> Unit = {},
     cardExtras: CardExtras = CardExtras(),
     link: LinkExtras = LinkExtras(),
     linkScreen: @Composable () -> Unit = {},
+    pages: PageExtras = PageExtras(),
+    petCardScreen: @Composable () -> Unit = {},
+    relaxScreen: @Composable () -> Unit = {},
     voice: VoiceScreenState? = null,
     voiceActions: VoiceActions = VoiceActions(),
     bottomBar: @Composable () -> Unit = {},
@@ -102,6 +110,8 @@ fun HomeScreen(
                         isPetProfileSample = isPetProfileSample,
                         isRouteOnNavi = isRouteOnNavi,
                         finder = finder,
+                        finderWithoutCard = finderWithoutCard,
+                        onFindHospitalFromHome = onFindHospitalFromHome,
                         onFinderBack = onFinderBack,
                         hospitalList = hospitalList,
                         hospitalConfirm = hospitalConfirm,
@@ -109,6 +119,9 @@ fun HomeScreen(
                         onResend = cardExtras.onResend,
                         link = link,
                         linkScreen = linkScreen,
+                        pages = pages,
+                        petCardScreen = petCardScreen,
+                        relaxScreen = relaxScreen,
                         voice = voice,
                         voiceActions = voiceActions,
                     )
@@ -133,6 +146,8 @@ private fun ParkedFlow(
     isPetProfileSample: Boolean,
     isRouteOnNavi: Boolean,
     finder: FinderStep,
+    finderWithoutCard: Boolean,
+    onFindHospitalFromHome: () -> Unit,
     onFinderBack: () -> Unit,
     hospitalList: @Composable () -> Unit,
     hospitalConfirm: @Composable (RankedHospital) -> Unit,
@@ -140,10 +155,13 @@ private fun ParkedFlow(
     onResend: () -> Unit,
     link: LinkExtras,
     linkScreen: @Composable () -> Unit,
+    pages: PageExtras,
+    petCardScreen: @Composable () -> Unit,
+    relaxScreen: @Composable () -> Unit,
     voice: VoiceScreenState?,
     voiceActions: VoiceActions,
 ) {
-    when (parkedContentOf(guidanceUiState, cardUiState.session, cardUiState.atHome, finder, link.linking)) {
+    when (parkedContentOf(guidanceUiState, cardUiState.session, cardUiState.atHome, finder, link.linking, pages.page, finderWithoutCard)) {
         ParkedContent.HOME -> {
             // 처음 화면이 보이는 동안(앱이 앞에 있을 때만) 연결된 반려견 정보를 1분마다 다시 읽는다 (014 K4)
             val lifecycleOwner = LocalLifecycleOwner.current
@@ -165,7 +183,18 @@ private fun ParkedFlow(
                 linkRow = link.row,
                 onOpenLink = link.onOpen,
                 onUnlink = link.onUnlink,
+                onFindHospital = onFindHospitalFromHome,
+                onOpenRelax = { pages.onOpen(HomePage.RELAX) },
+                onOpenPetCard = { pages.onOpen(HomePage.PET_CARD) },
             )
+        }
+        ParkedContent.PET_CARD -> {
+            BackHandler(onBack = pages.onClose)
+            petCardScreen()
+        }
+        ParkedContent.RELAX -> {
+            BackHandler(onBack = pages.onClose)
+            relaxScreen()
         }
         ParkedContent.LINK -> {
             BackHandler(onBack = link.onClose)
@@ -237,6 +266,17 @@ data class LinkExtras(
     val onUnlink: () -> Unit = {},
     val onClose: () -> Unit = {},
     val onRefreshPet: () -> Unit = {},
+)
+
+/**
+ * 처음 화면 바로가기로 여는 쪽 (019).
+ * @param page 지금 열린 쪽. 주행으로 바뀌었다가 정차하면 같은 쪽으로 돌아온다
+ * @param onClose 쪽을 닫고 처음 화면으로 (화면의 [←]·[완료], 시스템 뒤로)
+ */
+data class PageExtras(
+    val page: HomePage = HomePage.NONE,
+    val onOpen: (HomePage) -> Unit = {},
+    val onClose: () -> Unit = {},
 )
 
 private const val PANEL_REFRESH_MILLIS = 30_000L

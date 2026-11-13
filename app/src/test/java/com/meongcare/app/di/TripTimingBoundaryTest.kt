@@ -83,7 +83,7 @@ class TripTimingBoundaryTest {
         freshness = StatusFreshness.FRESH,
         statusAge = 2.minutes,
     )
-    private val card: CaseCard = caseCardOf(SamplePetProfiles.bori, setOf(Symptom.COUGH))
+    private val card: CaseCard = caseCardOf(SamplePetProfiles.demoPet, setOf(Symptom.COUGH))
 
     private fun TestScope.advance(d: Duration) {
         advanceTimeBy(d)

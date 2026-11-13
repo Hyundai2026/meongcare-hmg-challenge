@@ -1,5 +1,18 @@
 package com.meongcare.app
 
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import com.meongcare.app.ui.card.PetHeader
+import com.meongcare.app.ui.home.HomePage
+import com.meongcare.app.ui.hospital.DemoHospitalFindScreen
+import com.meongcare.app.ui.home.PageExtras
+import com.meongcare.app.ui.pet.PetCardScreen
+import com.meongcare.app.ui.pet.petCardOf
+import com.meongcare.app.ui.relax.RelaxScreen
+import com.meongcare.app.ui.relax.RelaxViewModel
+import com.meongcare.app.ui.relax.relaxSummaryOf
+import java.time.LocalDate
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -68,6 +81,7 @@ class MainActivity : ComponentActivity() {
                 )
                 val trip = container.hospitalTrip
                 val finder by trip.finder.collectAsStateWithLifecycle()
+                val finderWithoutCard by trip.finderWithoutCard.collectAsStateWithLifecycle()
                 val tripState by trip.trip.collectAsStateWithLifecycle()
                 val cardUiState by cardViewModel.uiState.collectAsStateWithLifecycle()
                 val linkViewModel: LinkViewModel = viewModel(
@@ -76,6 +90,10 @@ class MainActivity : ComponentActivity() {
                 val linking by linkViewModel.isOpen.collectAsStateWithLifecycle()
                 val linkState by container.ownerLink.state.collectAsStateWithLifecycle()
                 val isPetProfileSample by container.petProfileIsSample.collectAsStateWithLifecycle()
+                // 처음 화면 바로가기로 연 쪽 (019). 주행으로 바뀌었다가 정차하면 같은 쪽으로 돌아온다
+                var homePage by rememberSaveable { mutableStateOf(HomePage.NONE) }
+                val relaxViewModel: RelaxViewModel = viewModel()
+                val relaxSettings by relaxViewModel.settings.collectAsStateWithLifecycle()
                 val cardActions = remember(cardViewModel) {
                     MedicalCardActions(
                         // [진료 카드 만들기] 때 연결된 반려견 정보를 다시 읽는다 (014 K4)
@@ -134,8 +152,22 @@ class MainActivity : ComponentActivity() {
                     isPetProfileSample = isPetProfileSample,
                     isRouteOnNavi = container.naviUse == NaviUse.ROUTE_ONLY,
                     finder = finder,
+                    finderWithoutCard = finderWithoutCard,
+                    // 홈 [병원 찾기] (019 D3): 카드가 있으면 카드와 함께(지금 흐름), 없으면 카드 없이 시연용 병원 목록
+                    onFindHospitalFromHome = {
+                        if (cardUiState.hasCard) {
+                            cardViewModel.onOpenCard()
+                            trip.openFinder()
+                        } else {
+                            trip.openFinderWithoutCard()
+                        }
+                    },
                     onFinderBack = trip::back,
-                    hospitalList = {
+                    hospitalList = hospitalList@{
+                        if (finderWithoutCard) {
+                            DemoHospitalFindScreen(onBack = trip::back, onGoDirect = { trip.choose(it.row) })
+                            return@hospitalList
+                        }
                         val finderViewModel: HospitalFinderViewModel = viewModel(
                             factory = HospitalFinderViewModel.factory(
                                 container.hospitalBoardSource,
@@ -189,6 +221,27 @@ class MainActivity : ComponentActivity() {
                             onNewCode = linkViewModel::onNewCode,
                             onClose = linkViewModel::close,
                             countdown = rememberLinkCountdown(waitingSince, linkViewModel::now),
+                        )
+                    },
+                    pages = PageExtras(page = homePage, onOpen = { homePage = it }, onClose = { homePage = HomePage.NONE }),
+                    petCardScreen = {
+                        // 열려 있을 때만 프로필을 구독한다
+                        val profile by container.petProfileSource.profile.collectAsStateWithLifecycle(initialValue = null)
+                        PetCardScreen(
+                            state = petCardOf(profile, LocalDate.now()),
+                            relaxSummary = relaxSummaryOf(relaxSettings),
+                            isSample = isPetProfileSample,
+                            onBack = { homePage = HomePage.NONE },
+                        )
+                    },
+                    relaxScreen = {
+                        RelaxScreen(
+                            settings = relaxSettings,
+                            petName = (cardUiState.card.pet as? PetHeader.Registered)?.name,
+                            onSetEnabled = relaxViewModel::setEnabled,
+                            onSetSound = relaxViewModel::setSound,
+                            onSetExtraReassurance = relaxViewModel::setExtraReassurance,
+                            onDone = { homePage = HomePage.NONE },
                         )
                     },
                     voice = voiceUiState,

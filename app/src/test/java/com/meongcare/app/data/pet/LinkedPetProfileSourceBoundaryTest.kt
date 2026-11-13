@@ -24,8 +24,8 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class LinkedPetProfileSourceBoundaryTest {
 
-    private val bori = PetProfileLoad.Loaded(SamplePetProfiles.bori)
-    private val kongiProfile = SamplePetProfiles.bori.copy(name = "콩이", breed = "말티즈")
+    private val bori = PetProfileLoad.Loaded(SamplePetProfiles.demoPet)
+    private val kongiProfile = SamplePetProfiles.demoPet.copy(name = "콩이", breed = "말티즈")
     private val kongi = PetProfileLoad.Loaded(kongiProfile)
 
     /** 차례로 돌려줄 읽기 결과. 다 쓰면 마지막 값을 계속 준다 */

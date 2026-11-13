@@ -23,7 +23,7 @@ class LinkTextsTest {
 
     @Test
     fun `연결됨 문구에 반려견 이름이 들어간다`() {
-        val kongi = SamplePetProfiles.bori.copy(name = "콩이", breed = "말티즈")
+        val kongi = SamplePetProfiles.demoPet.copy(name = "콩이", breed = "말티즈")
         assertEquals(LinkedPet("콩이", "말티즈"), linkedPetOf(PetProfileLoad.Loaded(kongi)))
     }
 

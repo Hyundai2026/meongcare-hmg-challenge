@@ -91,7 +91,7 @@ class HospitalTripNearbyBoundaryTest {
         statusAge = 0.minutes,
     )
 
-    private val card = caseCardOf(SamplePetProfiles.bori, setOf(Symptom.COUGH))
+    private val card = caseCardOf(SamplePetProfiles.demoPet, setOf(Symptom.COUGH))
 
     @Test
     fun `예시 대기를 단 근처 병원 줄로 출발해도 카드를 보내지 않고 이동 어림을 실어 길안내한다`() = runTest {

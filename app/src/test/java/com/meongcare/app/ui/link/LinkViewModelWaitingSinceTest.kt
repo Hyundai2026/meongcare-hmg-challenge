@@ -63,7 +63,7 @@ class LinkViewModelWaitingSinceTest {
         val link = GatedLink(fake)
         val vm = LinkViewModel(
             link,
-            MutableStateFlow(PetProfileLoad.Loaded(SamplePetProfiles.bori)),
+            MutableStateFlow(PetProfileLoad.Loaded(SamplePetProfiles.demoPet)),
             now = clock,
         )
         return Setup(vm, link, fake)

@@ -52,7 +52,7 @@ class HospitalTripNearbyTest {
         statusAge = null,
     )
 
-    private val card = caseCardOf(SamplePetProfiles.bori, setOf(Symptom.COUGH))
+    private val card = caseCardOf(SamplePetProfiles.demoPet, setOf(Symptom.COUGH))
 
     @Test
     fun `카드가 있어도 보내지 않고 길안내만 시작한다`() = runTest {

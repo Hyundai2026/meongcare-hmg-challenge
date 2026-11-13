@@ -87,7 +87,7 @@ class HospitalTripTest {
     )
 
     private val card = caseCardOf(
-        SamplePetProfiles.bori.copy(photoDataUrl = "data:image/jpeg;base64,AAAA"),
+        SamplePetProfiles.demoPet.copy(photoDataUrl = "data:image/jpeg;base64,AAAA"),
         setOf(Symptom.COUGH, Symptom.BREATHING_DIFFICULTY),
     )
 

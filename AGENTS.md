@@ -24,7 +24,7 @@
 - minSdk 28 (Pleos 보안 요구사항), compile/target SDK 35
 - AGP 8.8.2, Gradle wrapper 8.10.2 (Pleos 요구는 8.0 이상), JDK 17 이상 (소스·타깃은 17)
 - 단일 `app` 모듈, MVVM (ViewModel + StateFlow), 수동 DI. 구조와 결정 근거: [docs/architecture.md](docs/architecture.md)
-- 서비스 기능 스택: Room(암호화), Pleos STT/TTS `ON_DEVICE`, Pleos NaviHelper, Firebase(Firestore + 익명 Auth. Functions는 PC 에뮬레이터에서만: 근처 동물병원 `nearbyVets`, 015), Claude API(임시 Opus, 팀 논의 중), 카카오 로컬 API(함수에서만 키를 안다). 표와 승인된 Pleos 권한: [docs/architecture.md](docs/architecture.md) "서비스 기능 스택"
+- 서비스 기능 스택: Room(암호화), Pleos STT/TTS `ON_DEVICE`, Pleos NaviHelper, Firebase(Firestore + 익명 Auth. Functions는 PC 에뮬레이터에서만: 근처 동물병원 `nearbyVets`, 015), Claude API(임시 Opus, 팀 논의 중), 카카오 로컬 API(함수에서만 키를 안다. **2026-11-13부터 끔**: 홈 [병원 찾기]는 시안의 시연 병원 5곳, 019). 표와 승인된 Pleos 권한: [docs/architecture.md](docs/architecture.md) "서비스 기능 스택"
 - applicationId `com.meongcare.app`, 앱 이름 **MeongCare** (2026-11-05 사용자 결정). 이름은 Android `strings.xml`의 `app_name`과 `web/src/config.ts`의 `APP_NAME` 두 곳에 있다
 - Pleos Maven: `https://nexus-playground.pleos.ai/repository/maven-releases/`
 - Vehicle SDK: `ai.pleos.playground:Vehicle:2.3.2`, NaviHelper SDK: `ai.pleos.playground:NaviHelper:3.0.5` (권한 `NAVI_ROUTE_SEARCH`, `NAVI_ROUTE`)

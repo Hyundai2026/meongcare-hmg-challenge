@@ -244,7 +244,7 @@ vehicle-sdk = { module = "ai.pleos.playground:Vehicle", version.ref = "vehicleSd
 
 - 대회 공지 "공모전 개발 범위 및 기술 문의 안내"의 나머지 원문:
   - 절 제목 "1. 공개된 SDK·API 범위에서 개발합니다": "이번 공모전은 현재 공개된 Pleos Playground 개발 문서의 SDK·API 범위에서 개발하는 공모전입니다"
-  - "공모전 참가팀은 Gleo Interface(App Schema) 검토·승인을 신청할 수 없습니다"
+  - ~~"공모전 참가팀은 Gleo Interface(App Schema) 검토·승인을 신청할 수 없습니다"~~ → **2026-11-13 정정됨.** 지금 공지 원문: "공모전 참가팀은 Gleo Interface(App Schema) 별도 검토, 승인 없이 사용 가능합니다" [contest-notice-scope] [office-mail-1113] (아래 "Gleo Interface" 절)
   - "차량 마이크 음성을 외부 음성 인식 서비스로 보내는 방식은 공식 개발 문서에서 지원하지 않아 사용할 수 없습니다." "음성 인식은 SpeechToText SDK를 이용해 주세요."
   - 절 제목 "2. 심사는 기획서와 에뮬레이터 시연으로 진행합니다": "2차 PT는 Pleos Connect 에뮬레이터에서 구동되는 앱 시연으로 진행합니다." "실제 차량은 필요하지 않습니다" "이번 공모전의 심사는 Pleos App Market 입점 심사가 아닙니다." "실제 입점 시의 정책은 Pleos Playground 사이트의 안내를 따릅니다"
   - 절 제목 "3. 기술 문의 안내": "운영사무국은 참가 자격·접수·제출·심사 일정 등 공모전 운영에 관한 문의에 답변드립니다." "개별 기능의 구현 방법이나 특정 API의 동작에 대한 문의에는 따로 답변드리지 않습니다" "개발 장비 대여, 실차 측정 장소, 별도 기술 지원 창구는 제공하지 않습니다"
@@ -1325,8 +1325,11 @@ xxj15 Mac, AVD `pleos_connect`, 앱 debug 빌드 "시연 (주행 Real)" 모드 (
 
 #### 사용 가능 상태와 신청 (2026-11-03 조사)
 
-- **2026-11-12 재확인: 공모전 참가팀은 Gleo를 신청할 수 없다.** 대회 공지 원문: "공모전 참가팀은 Gleo Interface(App Schema) 검토·승인을 신청할 수 없습니다" [contest-notice-scope]
-  - 스키마 승인 없이는 통합이 켜지지 않으므로("승인 후에는 통합이 자동으로 활성화됩니다." [gleo-deliver]) 공모전 기간에는 Gleo 음성 명령 연동을 쓸 수 없다. 기획서에 넣는다면 "향후 계획"으로 적는다 (공지 원문 "필요한 경우 기획서에 향후 계획으로 적어 주세요"). [contest-notice-scope]
+- **2026-11-13 정정: 공모전 참가팀은 Gleo를 별도 검토·승인 없이 쓸 수 있다.** (11-12 공지의 "신청할 수 없다"를 운영사무국이 바로잡았다.)
+  - 대회 공지 지금 원문 (2026-11-13 대조): "공모전 참가팀은 Gleo Interface(App Schema) 별도 검토, 승인 없이 사용 가능합니다". 옛 문장은 공지에서 빠졌다. 게시일·수정일·정정 표시는 페이지에 없다. [contest-notice-scope]
+  - 운영사무국 메일 원문 (2026-11-13, 사용자 전달): "공모전 참가팀은 Gleo Interface(App Schema)를 별도 검토·승인 없이 사용하실 수 있습니다." "Gleo Interface(App Schema)의 구현 방법은 Pleos Playground 개발 문서의 Gleo Interface 구현 가이드(https://document.pleos.ai/docs/pleos-only/app-integration-guide/guide/core-concepts)를 기준으로 확인해 주시기 바랍니다." [office-mail-1113]
+  - **아직 모르는 것: 승인 없이 어떻게 켜지는가.** 가이드는 "승인 후에는 통합이 자동으로 활성화됩니다."라고 한다 [gleo-deliver]. 공지와 메일은 승인 없이 쓰는 방법을 말하지 않는다. Pleos 에뮬레이터에 Gleo AI가 들어 있는지도 문서에 없다 (아래 "에뮬레이터와 개발 중 테스트"). → 쓰려면 먼저 GPU PC의 에뮬레이터에서 `assets/schema.json`이 실제로 불리는지 확인해야 한다. 확인 전에는 기획서에 "된다"고 쓰지 않는다.
+  - 11-12 기록 (정정 전): 공지 원문 "공모전 참가팀은 Gleo Interface(App Schema) 검토·승인을 신청할 수 없습니다"였고, 운영사무국의 앞선 답장에도 같은 내용이 있었다. 그래서 "향후 계획으로만"으로 정했었다. [contest-notice-scope] [office-mail-1113]
   - Playground 홈에는 Gleo가 "More resources" 카드로만 나온다: "Gleo Interface" / "Refer to the Gleo Interface implementation guide to enable Gleo AI voice commands in your app." 상태 표기와 일정은 없다. [pg-home]
   - 프로젝트 생성 문서의 SDK 상태 목록에는 2026-11-12에도 Gleo가 없다. [create-project]
   - 일반 개발자(공모전 밖)의 신청 자격·방법은 여전히 문서에 없다.
@@ -1668,7 +1671,8 @@ fun sendGleoBroadcast(
 - [ ] `requestTrip(TripRequest)`의 동작 (설명 문서 없음)
 - [ ] 샘플 매니페스트의 `NAVI_CUSTOM_ROUTE`, `NAVI_CUSTOM_ETC`가 어느 API에 필요한지
 - [ ] Pleos 에뮬레이터에서 NaviHelper 요청을 받는 기본 Navigation 앱이 동작하는지
-- [x] 공모전 참가팀이 Gleo Interface를 쓸 수 있는지 → 신청할 수 없다. 대회 공지 "공모전 참가팀은 Gleo Interface(App Schema) 검토·승인을 신청할 수 없습니다" (2026-11-12) [contest-notice-scope] → 위 "Gleo Interface" 절
+- [x] 공모전 참가팀이 Gleo Interface를 쓸 수 있는지 → **쓸 수 있다 (2026-11-13 정정).** 공지 "공모전 참가팀은 Gleo Interface(App Schema) 별도 검토, 승인 없이 사용 가능합니다" [contest-notice-scope] [office-mail-1113]. 11-12에는 "신청할 수 없습니다"였다 → 위 "Gleo Interface" 절
+- [ ] 승인 없이 쓸 때 Gleo AI가 우리 앱의 `schema.json`을 실제로 읽고 부르는지 (가이드는 "승인 후에는 통합이 자동으로 활성화됩니다."): 공지·메일·문서에 방법이 없다 (2026-11-13). 에뮬레이터에서 직접 확인해야 한다.
 - [ ] Gleo Interface(음성 명령 연동)의 일반 신청 자격과 사용 가능 상태 (공모전 밖): **문서에 없음** (2026-11-03 조사, 2026-11-12 프로젝트 생성 문서 재확인). Gleo 가이드 6쪽, 프로젝트 생성·SDK 신청, SDK 개요, 앱 제출·심사 가이드에 자격·신청·제휴 문장이 없다. SDK 목록과 콘솔에도 Gleo가 없다.
 - [ ] Gleo 스키마 검토 기간, 전달 경로(앱 심사와 함께인지 따로인지): 문서에 없음 (2026-11-03)
 - [ ] Pleos 에뮬레이터에 Gleo AI가 들어 있는지, 승인 전 스키마를 로컬에서 시험하는 방법: 문서에 없음 (setup, 에뮬레이터 릴리스 노트, 앱 테스트 가이드 확인, 2026-11-03). GPU PC에서 직접 확인하거나 문의해야 한다.
@@ -1721,7 +1725,8 @@ fun sendGleoBroadcast(
 
 - [contest-faq] https://appdevchallenge.auto-hmg.io/faq (대회 사이트, 2026-11-03 확인. 2026-11-12 재확인: SDK 목록 답은 그대로, "접수양식 5번(개발 계획)" 문장 확인)
 - [contest-dev] https://appdevchallenge.auto-hmg.io/guide/development (대회 사이트, 2026-11-03 확인. 2026-11-12 재확인: 바뀐 것 없음)
-- [contest-notice-scope] https://appdevchallenge.auto-hmg.io/notice/c0a1a000-2026-4923-8000-000000000008 (대회 공지 "공모전 개발 범위 및 기술 문의 안내". 게시일은 페이지에 없다. 공지 목록 https://appdevchallenge.auto-hmg.io/notice 에서 맨 위. 2026-11-12 확인. 같은 목록의 0006 "공모전 참가 및 출품 유의사항 안내"에는 SDK 문장이 없다)
+- [contest-notice-scope] https://appdevchallenge.auto-hmg.io/notice/c0a1a000-2026-4923-8000-000000000008 (대회 공지 "공모전 개발 범위 및 기술 문의 안내". 게시일은 페이지에 없다. 공지 목록 https://appdevchallenge.auto-hmg.io/notice 에서 맨 위. 2026-11-12 확인. 같은 목록의 0006 "공모전 참가 및 출품 유의사항 안내"에는 SDK 문장이 없다. 2026-11-13 재확인: Gleo 문장만 "별도 검토, 승인 없이 사용 가능합니다"로 바뀌었다. 본문에 Gleo 가이드 링크는 없다)
+- [office-mail-1113] 운영사무국 메일 (2026-11-13, 사용자가 대화에 붙여 넣어 전달. 메일 원본 파일은 저장소에 없다). 요지: ① 앞선 답장의 Gleo 안내("신청하실 수 없습니다")를 바로잡아 "별도 검토·승인 없이 사용하실 수 있습니다" ② 구현은 Gleo 구현 가이드(core-concepts)를 기준으로 ③ 공지 "공모전 개발 범위 및 기술 문의 안내"에도 반영 ④ 마감(11/15(일) 23:59) 전 수정 제출 가능 → [../contest/requirements.md](../contest/requirements.md) "제출물"
 - [setup] https://document.pleos.ai/docs/connect/guide/getting-started/application-development/setup-connect-sdk-emulator (2026-11-12 재확인: 에뮬레이터 "버전 2.1.0", API 34 그대로)
 - [getting-started] https://document.pleos.ai/docs/pleos-only/getting-started (2026-11-12 재확인: 여전히 `Vehicle:2.3.1`)
 - [project-setup] https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/Vehicle/project-setup

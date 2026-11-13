@@ -28,6 +28,6 @@ https://www.hyundaimotorgroup.com/ko/story/hyundai-motor-company-pleos-connect-a
 
 - **차량 기능을 여러 개 엮을수록 좋게 본다.** 우리는 지금 NaviHelper와 주행 상태 정도다. 콘솔에서 "사용 가능"인 Vehicle State 항목(실내 온도·공조, 도어, 창문 등)을 엮을 여지가 있다 → 회의 안건.
 - **"지금 제공되는 기능으로 개발할 수 있는가"를 본다.** "준비 중"인 STT에 핵심을 걸지 않는 방향과 맞는다.
-- Gleo AI가 음성 입력의 다른 길일 수 있다. 다만 우리 대회 FAQ의 SDK 목록과 콘솔에는 Gleo가 없고, 신청 조건도 미확인이다 ([../pleos/sdk-notes.md](../pleos/sdk-notes.md) "Gleo Interface").
+- Gleo AI가 음성 입력의 다른 길일 수 있다. 대회 FAQ의 SDK 목록과 콘솔에는 Gleo가 없지만, 2026-11-13 대회 공지가 공모전 참가팀은 "별도 검토, 승인 없이 사용 가능합니다"라고 정정했다. 에뮬레이터에서 실제로 동작하는지는 미확인이다 ([../pleos/sdk-notes.md](../pleos/sdk-notes.md) "Gleo Interface").
 - 반려동물 이동은 현대차가 인지한 사용 맥락인데, 아직 수상작이 없다. 차별점으로 쓸 수 있다.
 - AI 생성물(우리는 진료 카드)의 안전성을 따로 검토할 과제로 본다. "진단하지 않는다"는 원칙을 기획서에 분명히 쓴다.

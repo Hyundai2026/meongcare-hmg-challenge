@@ -58,6 +58,17 @@ class LinkViewModel(
     private val phase = MutableStateFlow<Phase>(Phase.Closed)
     private var createJob: Job? = null
 
+    /**
+     * 기다리는 코드를 만든 시각 (대기 중이 아니면 null). 화면이 1초마다 "남은 시간 mm:ss"와 진행 막대를 계산한다
+     * ([linkCountdownOf], 계획 018). [uiState]의 `Waiting`은 그대로 둔다.
+     */
+    val waitingSince: StateFlow<Instant?> = phase
+        .map { (it as? Phase.Waiting)?.createdAt }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    /** 화면이 남은 시간을 계산할 때 쓰는 시계 (테스트와 같은 시계) */
+    fun now(): Instant = now.invoke()
+
     /** 연결 화면이 열려 있는지. 처음 화면 대신 연결 화면을 보인다 (`parkedContentOf`) */
     val isOpen: StateFlow<Boolean> = phase
         .map { it != Phase.Closed }

@@ -132,7 +132,7 @@
     - 지금의 `LinkRowPanel` 확인 대화는 그대로 쓰고, 버튼 모양만 토큰으로 바꾼다.
     - 새 문자열(`home_title` "응급 진료", `home_subtitle` 두 줄, `home_start_emergency` "응급 진료 시작", `home_shortcut_hospital` "병원 찾기", `home_shortcut_pet_card` "반려동물 카드", `home_shortcut_relax` "릴렉스", `home_pet_linked` "연결됨", `home_pet_sample` "시연용 샘플"). 쓰지 않게 된 문자열(`parked_status`, `home_card_hint`, `home_start_card` 등)은 린트가 경고하면 지운다.
     - Preview: Wide 라이트 × (카드 없음 / 카드 있음 / 안내 중).
-- [ ] 4. (보류: 사용자 2026-11-13 "병원찾기는 우선 제껴두고") 홈 [병원 찾기] (카드 없이 열기) → 커밋 2개
+- [x] 4. (보류했다가 같은 날 진행, 아래 진행 로그) 홈 [병원 찾기] (카드 없이 열기) → 커밋 2개
   - `feat(trip): 카드 없이 병원 찾기 열기`
     - `HospitalTrip`에 `openFinderWithoutCard()`와 `val finderWithoutCard: StateFlow<Boolean>`을 더한다. 출발 전에만 열리고, `back()`으로 None이 되거나 `closeFinder()`·`depart()`·`clear()`이면 false로 돌아간다. 기존 `openFinder()`는 바꾸지 않는다(false 유지).
     - 새 테스트 `HospitalTripHomeFinderTest`: 열면 Hospitals + true / 출발한 뒤에는 열리지 않음 / 목록 [뒤로]·닫기·출발이면 false / 기존 `openFinder()`는 false.
@@ -179,3 +179,4 @@
 - 2026-11-13: 사용자 재결정 (CYJhub): "그냥 보리로 해" → 샘플 반려견은 **보리 그대로**. 왕건이 값 변경과 테스트 수정(13개)은 되돌렸다. D1은 더 이상 해당 없음 (예시 JSON = 샘플 유지). 2단계 완료 처리.
 - 2026-11-13: 3단계 완료. 아이콘은 Material Symbols 대신 프로토타입 SVG 경로를 그대로 옮겼다 (`HomeIcons.kt`, 팀 디자인 자료라 라이선스 문제 없음, 모양이 시안과 같다). 쓰지 않게 된 문자열 5개(parked_status, home_card_hint, home_start_card, link_start_hint, link_status_linked) 삭제. 태블릿 에뮬레이터(시연, 라이트, 가로)에서 시안과 같은 배치 확인.
 - 2026-11-13: 사용자 지시 "병원찾기는 우선 제껴두고, 릴렉스·반려동물카드는 프로토타입 그대로, 차량 연동 없이". 4단계 보류, 5~7단계 완료. 프로토타입과 다른 점: 반려동물 카드 진료 기록에 "진료가 완료되면 기록이 표시됩니다." 문구는 넣지 않음(D4, 기록 기능 없음), 사진 대신 이름 첫 글자, 나이는 앱 규칙("12세 3개월"). 릴렉스 아래 "환경 설정 >" 자리에 시연용 안내를 늘 보임, 현재 환경은 "(예시)". STT/TTS는 이번 범위 밖(사용자).
+- 2026-11-13: 사용자 결정 (CYJhub): 홈 [병원 찾기] 화면을 프로토타입 5번으로, 이 브랜치에서. (1) 병원 데이터는 **시안 이름 5곳 고정**(`DemoHospitals`, 가상 병원, 대기시간 미확인, 카드 안 받음) (2) [진료 가능 여부 문의]는 버튼만, 누르면 준비 중 안내 (3) 음성은 자리만: [음성 명령] 버튼(준비 중 안내)·"음성 안내" 멘트 줄(`ui/voice/VoiceSlots.kt`, 나중에 STT/TTS를 붙일 곳) (4) **카카오 API는 더 쓰지 않는다** → `AppContainer.NEARBY_VETS_ENABLED = false`(코드는 남김). 지도는 실제 지도가 아닌 그림이고 "시연용 지도 · 가상 병원"을 늘 보인다. 카드가 있을 때 홈 [병원 찾기]는 지금 흐름(카드 + 제휴 병원 목록, D3). 고른 뒤 확인 화면은 아직 이전 모양(프로토타입 7번은 다음 화면). 대기시간을 시안대로 넣는 요청은 사용자가 취소.

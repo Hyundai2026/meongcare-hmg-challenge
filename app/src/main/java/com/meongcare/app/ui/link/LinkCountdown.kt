@@ -3,6 +3,7 @@ package com.meongcare.app.ui.link
 import com.meongcare.app.domain.link.LinkCode
 import com.meongcare.app.domain.link.remainingOf
 import java.time.Instant
+import java.util.Locale
 
 /**
  * 연결 코드 화면의 "남은 시간 02:59"와 진행 막대 (계획 018, 디자인 프로토타입 1번 화면).
@@ -16,7 +17,7 @@ data class LinkCountdown(val text: String, val fraction: Float)
 fun linkCountdownOf(createdAt: Instant, now: Instant): LinkCountdown {
     val left = remainingOf(createdAt, now)
     val seconds = left.seconds
-    val text = "%02d:%02d".format(seconds / 60, seconds % 60)
+    val text = String.format(Locale.ROOT, "%02d:%02d", seconds / 60, seconds % 60)
     val fraction = (left.toMillis().toDouble() / LinkCode.VALIDITY.toMillis()).toFloat().coerceIn(0f, 1f)
     return LinkCountdown(text, fraction)
 }

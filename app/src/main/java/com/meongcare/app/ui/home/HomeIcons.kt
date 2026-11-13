@@ -47,6 +47,21 @@ object HomeIcons {
     /** 버튼 끝 화살표 (선 굵기 2) */
     val Chevron: ImageVector by lazy { lineIcon("Chevron", "M9.5 6l6 6-6 6", strokeWidth = 2f) }
 
+    /** 진료 기록: 문서 (프로토타입 진료 기록 칸, 채운 모양) */
+    val Record: ImageVector by lazy {
+        ImageVector.Builder("Record", 24.dp, 24.dp, 24f, 24f).apply {
+            addPath(
+                PathParser().parsePathString(
+                    "M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z",
+                ).toNodes(),
+                fill = SolidColor(Color.Black),
+            )
+        }.build()
+    }
+
+    /** 화면 머리 [←] (프로토타입 머리 화살표) */
+    val Back: ImageVector by lazy { lineIcon("Back", "M19 12H5", "M11 6l-6 6 6 6", strokeWidth = 2f) }
+
     private fun circle(cx: Float, cy: Float, r: Float) =
         "M${cx - r} $cy a$r $r 0 1 0 ${2 * r} 0 a$r $r 0 1 0 ${-2 * r} 0z"
 

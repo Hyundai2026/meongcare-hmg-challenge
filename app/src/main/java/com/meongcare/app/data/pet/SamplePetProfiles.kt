@@ -14,7 +14,7 @@ import java.time.LocalDate
  * 화면에는 시연용 샘플이라고 알린다 (출품 유의사항: 사실과 다르면 선정 취소).
  */
 object SamplePetProfiles {
-    val bori = PetProfile(
+    val demoPet = PetProfile(
         name = "보리",
         breed = "골든리트리버",
         sex = Sex.MALE,

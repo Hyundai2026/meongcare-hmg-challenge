@@ -9,7 +9,7 @@ import org.junit.Test
 
 /** PetProfileSource 계약: "구독하면 현재 값을 먼저 내보내고, 바뀔 때마다 새 값을 내보낸다." */
 class FakePetProfileSourceBoundaryTest {
-    private val bori = SamplePetProfiles.bori
+    private val bori = SamplePetProfiles.demoPet
 
     @Test
     fun `처음 값을 정해 만들면 그 값을 먼저 받는다`() = runTest {

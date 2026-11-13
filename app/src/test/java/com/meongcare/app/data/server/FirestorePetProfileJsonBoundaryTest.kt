@@ -163,7 +163,7 @@ class FirestorePetProfileJsonBoundaryTest {
             getJSONObject("medical").getJSONArray("medications").getJSONObject(0).put("note", "식후")
         }
         val profile = read(document(json))!!
-        assertEquals(SamplePetProfiles.bori.medical, profile.medical)
+        assertEquals(SamplePetProfiles.demoPet.medical, profile.medical)
     }
 
     @Test

@@ -178,7 +178,7 @@ class MedicalCardViewModelHospitalBoundaryTest {
 
     @Test
     fun `카드에는 사진을 지운 반려견 정보와 프리셋 순서의 증상이 들어간다`() = runTest {
-        val withPhoto = SamplePetProfiles.bori.copy(photoDataUrl = "data:image/jpeg;base64,AAAA")
+        val withPhoto = SamplePetProfiles.demoPet.copy(photoDataUrl = "data:image/jpeg;base64,AAAA")
         val vm = viewModel(FakePetProfileSource(PetProfileLoad.Loaded(withPhoto)))
         show(vm)
         session.makeCard(COUGH, BREATHING_DIFFICULTY)
@@ -212,7 +212,7 @@ class MedicalCardViewModelHospitalBoundaryTest {
         val vm = viewModel(source)
         show(vm)
         session.makeCard(COUGH)
-        source.set(PetProfileLoad.Loaded(SamplePetProfiles.bori.copy(name = "콩이")))
+        source.set(PetProfileLoad.Loaded(SamplePetProfiles.demoPet.copy(name = "콩이")))
         runCurrent()
         assertEquals("콩이", vm.caseCard().pet?.name)
         source.set(PetProfileLoad.Unavailable)

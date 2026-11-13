@@ -96,7 +96,7 @@ class FirestoreClientsTest {
     }
 
     private val hospital = Hospital(Destination("바른", 37.367, 127.1083), "02-0000-0001", isSample = true, id = "demo-fast")
-    private val card = caseCardOf(SamplePetProfiles.bori, setOf(Symptom.COUGH))
+    private val card = caseCardOf(SamplePetProfiles.demoPet, setOf(Symptom.COUGH))
 
     @Test
     fun `카드는 POST로 만들고 문서 이름에서 ID를 돌려준다`() = runTest {

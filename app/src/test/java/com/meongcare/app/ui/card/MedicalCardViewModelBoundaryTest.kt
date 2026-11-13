@@ -47,7 +47,7 @@ class MedicalCardViewModelBoundaryTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    private val bori = SamplePetProfiles.bori
+    private val bori = SamplePetProfiles.demoPet
     private val seoulClock = Clock.fixed(Instant.parse("2026-11-05T00:30:00Z"), ZoneId.of("Asia/Seoul"))
     private val session = MedicalCardSession()
     private val dialed = mutableListOf<String>()

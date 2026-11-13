@@ -16,14 +16,14 @@ class FakePetProfileSourceTest {
     @Test
     fun `처음 구독하면 보리 프로필을 받는다`() = runTest {
         FakePetProfileSource().profile.test {
-            assertEquals(PetProfileLoad.Loaded(SamplePetProfiles.bori), awaitItem())
+            assertEquals(PetProfileLoad.Loaded(SamplePetProfiles.demoPet), awaitItem())
         }
     }
 
     @Test
     fun `보리는 예시 JSON과 같은 값이다`() {
         // docs/data/pet-profile.example.json
-        val bori = SamplePetProfiles.bori
+        val bori = SamplePetProfiles.demoPet
         assertEquals("보리", bori.name)
         assertEquals("골든리트리버", bori.breed)
         assertEquals(Sex.MALE, bori.sex)

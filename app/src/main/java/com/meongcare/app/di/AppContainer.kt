@@ -268,7 +268,7 @@ class AppContainer(context: Context, val dataMode: DataMode) {
 
     private val linkedProfileReader: LinkedProfileReader = when (petPlan.link) {
         // Fake 연결은 연결해도 샘플 보리다 (화면에 시연용이라고 알린다)
-        LinkKind.FAKE -> LinkedProfileReader { LinkedProfileRead.Loaded(SamplePetProfiles.bori) }
+        LinkKind.FAKE -> LinkedProfileReader { LinkedProfileRead.Loaded(SamplePetProfiles.demoPet) }
         LinkKind.SERVER -> serverClient?.let { (config, auth) ->
             FirestorePetProfileReader(
                 config = config,

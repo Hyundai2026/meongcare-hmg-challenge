@@ -203,7 +203,7 @@ class FirestoreJsonBoundaryTest {
 
     @Test
     fun `새 환자 건의 키는 보안 규칙이 받는 키뿐이고 필수 키가 다 있다`() {
-        val fields = FirestoreJson.newCaseFields(caseCardOf(SamplePetProfiles.bori, setOf(Symptom.COUGH)), eta, "uid-1") { it.name }
+        val fields = FirestoreJson.newCaseFields(caseCardOf(SamplePetProfiles.demoPet, setOf(Symptom.COUGH)), eta, "uid-1") { it.name }
         val allowed = setOf("schemaVersion", "createdBy", "createdAt", "status", "remainingMinutes", "etaAt", "etaUpdatedAt", "card", "acknowledgedAt")
         val required = setOf("schemaVersion", "createdBy", "createdAt", "status", "card")
         val keys = fields.keySet()
@@ -214,7 +214,7 @@ class FirestoreJsonBoundaryTest {
 
     @Test
     fun `새 환자 건 값의 타입이 보안 규칙과 맞다`() {
-        val fields = FirestoreJson.newCaseFields(caseCardOf(SamplePetProfiles.bori, setOf(Symptom.COUGH)), eta, "uid-1") { it.name }
+        val fields = FirestoreJson.newCaseFields(caseCardOf(SamplePetProfiles.demoPet, setOf(Symptom.COUGH)), eta, "uid-1") { it.name }
         assertEquals("1", fields.v("schemaVersion").getString("integerValue"))
         assertEquals("uid-1", fields.v("createdBy").getString("stringValue"))
         assertTrue(fields.v("createdAt").has("timestampValue"))
@@ -241,7 +241,7 @@ class FirestoreJsonBoundaryTest {
 
     @Test
     fun `증상이 없으면 values 없는 빈 배열이다`() {
-        val fields = FirestoreJson.newCaseFields(caseCardOf(SamplePetProfiles.bori, emptySet()), eta, "u") { it.name }
+        val fields = FirestoreJson.newCaseFields(caseCardOf(SamplePetProfiles.demoPet, emptySet()), eta, "u") { it.name }
         val symptoms = fields.v("card").v("mapValue").v("fields").v("symptoms").v("arrayValue")
         assertFalse(symptoms.has("values"))
     }
@@ -261,7 +261,7 @@ class FirestoreJsonBoundaryTest {
 
     @Test
     fun `반려견 정보의 키는 pet-profile에서 사진과 형식 버전을 뺀 것과 같다`() {
-        val pet = SamplePetProfiles.bori.copy(photoDataUrl = "data:image/jpeg;base64,AAAA")
+        val pet = SamplePetProfiles.demoPet.copy(photoDataUrl = "data:image/jpeg;base64,AAAA")
         val fields = FirestoreJson.newCaseFields(caseCardOf(pet, setOf(Symptom.COUGH)), eta, "u") { it.name }
         val petFields = fields.v("card").v("mapValue").v("fields").v("pet").v("mapValue").v("fields")
         assertEquals(setOf("name", "breed", "sex", "birthDate", "birthDateIsEstimated", "medical", "updatedAt"), petFields.keySet())
@@ -271,7 +271,7 @@ class FirestoreJsonBoundaryTest {
 
     @Test
     fun `반려견의 비어 있는 값은 null 값으로, 빈 목록은 values 없는 빈 배열로 쓴다`() {
-        val pet = SamplePetProfiles.bori.copy(
+        val pet = SamplePetProfiles.demoPet.copy(
             breed = null,
             sex = null,
             birthDate = null,
@@ -287,7 +287,7 @@ class FirestoreJsonBoundaryTest {
 
     @Test
     fun `성별은 male과 female로 쓴다`() {
-        fun sexOf(sex: Sex) = FirestoreJson.newCaseFields(caseCardOf(SamplePetProfiles.bori.copy(sex = sex), emptySet()), eta, "u") { it.name }
+        fun sexOf(sex: Sex) = FirestoreJson.newCaseFields(caseCardOf(SamplePetProfiles.demoPet.copy(sex = sex), emptySet()), eta, "u") { it.name }
             .v("card").v("mapValue").v("fields").v("pet").v("mapValue").v("fields").v("sex").getString("stringValue")
         assertEquals("male", sexOf(Sex.MALE))
         assertEquals("female", sexOf(Sex.FEMALE))
@@ -297,7 +297,7 @@ class FirestoreJsonBoundaryTest {
     fun `반려견 갱신 시각과 생년월일은 pet-profile 문자열 형식이다`() {
         val pattern = Regex("""\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z""")
         listOf("2026-11-05T00:00:00Z", "2026-11-05T09:30:00.120Z", "2026-11-05T09:30:15.000000001Z").forEach { text ->
-            val pet = SamplePetProfiles.bori.copy(updatedAt = Instant.parse(text))
+            val pet = SamplePetProfiles.demoPet.copy(updatedAt = Instant.parse(text))
             val petFields = FirestoreJson.newCaseFields(caseCardOf(pet, emptySet()), eta, "u") { it.name }
                 .v("card").v("mapValue").v("fields").v("pet").v("mapValue").v("fields")
             val written = petFields.v("updatedAt").getString("stringValue")

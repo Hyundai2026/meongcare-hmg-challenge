@@ -67,7 +67,7 @@ class HospitalTripProgressTest {
         statusAge = 2.minutes,
     )
 
-    private val card = caseCardOf(SamplePetProfiles.bori, setOf(Symptom.COUGH))
+    private val card = caseCardOf(SamplePetProfiles.demoPet, setOf(Symptom.COUGH))
 
     private fun TestScope.departed(): Pair<HospitalTrip, Guidance> {
         val guidance = Guidance()

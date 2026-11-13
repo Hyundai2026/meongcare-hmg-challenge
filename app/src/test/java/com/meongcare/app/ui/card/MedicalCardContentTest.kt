@@ -19,7 +19,7 @@ import org.junit.Test
 class MedicalCardContentTest {
     private val today = LocalDate.of(2026, 11, 5)
     private val seoul = ZoneId.of("Asia/Seoul")
-    private val bori = SamplePetProfiles.bori
+    private val bori = SamplePetProfiles.demoPet
 
     private fun card(profile: PetProfileLoad?, vararg symptoms: com.meongcare.app.domain.card.Symptom) =
         medicalCardOf(profile, symptoms.toSet(), today, seoul)

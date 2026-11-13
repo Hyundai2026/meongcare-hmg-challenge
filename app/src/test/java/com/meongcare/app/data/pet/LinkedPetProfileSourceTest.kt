@@ -13,7 +13,7 @@ import org.junit.Test
 /** 계획 014 설계 5절, docs/data/owner-link.md "차가 읽을 때" */
 class LinkedPetProfileSourceTest {
 
-    private val kongi = SamplePetProfiles.bori.copy(name = "콩이", breed = "말티즈")
+    private val kongi = SamplePetProfiles.demoPet.copy(name = "콩이", breed = "말티즈")
 
     /** 차례로 돌려줄 읽기 결과. 다 쓰면 마지막 값을 계속 준다 */
     private class ScriptedReader(vararg results: LinkedProfileRead) : LinkedProfileReader {
@@ -38,7 +38,7 @@ class LinkedPetProfileSourceTest {
     fun `연결 전에는 샘플을 낸다`() = runTest {
         val reader = ScriptedReader(LinkedProfileRead.Loaded(kongi))
         source(FakeOwnerLink(), reader).profile.test {
-            assertEquals(PetProfileLoad.Loaded(SamplePetProfiles.bori), awaitItem())
+            assertEquals(PetProfileLoad.Loaded(SamplePetProfiles.demoPet), awaitItem())
         }
         assertEquals(0, reader.reads)
     }
@@ -47,7 +47,7 @@ class LinkedPetProfileSourceTest {
     fun `연결되면 서버 프로필을 낸다`() = runTest {
         val link = FakeOwnerLink()
         source(link, ScriptedReader(LinkedProfileRead.Loaded(kongi))).profile.test {
-            assertEquals(PetProfileLoad.Loaded(SamplePetProfiles.bori), awaitItem())
+            assertEquals(PetProfileLoad.Loaded(SamplePetProfiles.demoPet), awaitItem())
             link.linkNow()
             assertEquals(PetProfileLoad.Loaded(kongi), awaitItem())
         }
@@ -85,7 +85,7 @@ class LinkedPetProfileSourceTest {
         source.profile.test {
             assertEquals(PetProfileLoad.Loaded(kongi), awaitItem())
             source.refresh()
-            assertEquals(PetProfileLoad.Loaded(SamplePetProfiles.bori), awaitItem())
+            assertEquals(PetProfileLoad.Loaded(SamplePetProfiles.demoPet), awaitItem())
             assertEquals(OwnerLinkState.Revoked, link.state.value)
             link.acknowledgeRevoked()
             assertEquals(OwnerLinkState.Unlinked, link.state.value)
@@ -117,7 +117,7 @@ class LinkedPetProfileSourceTest {
         source(link, ScriptedReader(LinkedProfileRead.Loaded(kongi))).profile.test {
             assertEquals(PetProfileLoad.Loaded(kongi), awaitItem())
             link.unlink()
-            assertEquals(PetProfileLoad.Loaded(SamplePetProfiles.bori), awaitItem())
+            assertEquals(PetProfileLoad.Loaded(SamplePetProfiles.demoPet), awaitItem())
         }
     }
 }

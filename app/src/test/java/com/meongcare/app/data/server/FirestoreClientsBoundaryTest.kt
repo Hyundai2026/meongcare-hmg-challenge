@@ -173,7 +173,7 @@ class FirestoreClientsBoundaryTest {
     // ---- 카드 전송 ----
 
     private val hospital = Hospital(Destination("시연용 바른 동물병원", 37.367, 127.1083), "02-0000-0001", isSample = true, id = "demo-fast")
-    private val card = caseCardOf(SamplePetProfiles.bori, setOf(Symptom.COUGH))
+    private val card = caseCardOf(SamplePetProfiles.demoPet, setOf(Symptom.COUGH))
     private val created: suspend (HttpRequest) -> HttpResponse =
         { HttpResponse(200, """{"name": "projects/demo-meongcare/databases/(default)/documents/hospitals/demo-fast/cases/abc"}""") }
 

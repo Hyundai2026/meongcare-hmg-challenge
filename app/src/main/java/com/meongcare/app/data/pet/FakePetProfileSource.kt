@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.asStateFlow
 
 /** 메모리에 든 반려견 프로필. 처음에는 시연용 샘플 "보리"다. */
 class FakePetProfileSource(
-    initial: PetProfileLoad = PetProfileLoad.Loaded(SamplePetProfiles.bori),
+    initial: PetProfileLoad = PetProfileLoad.Loaded(SamplePetProfiles.demoPet),
 ) : PetProfileSource {
 
     private val state = MutableStateFlow(initial)

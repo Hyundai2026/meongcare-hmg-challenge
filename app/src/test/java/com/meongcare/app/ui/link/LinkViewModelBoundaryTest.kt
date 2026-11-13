@@ -47,7 +47,7 @@ class LinkViewModelBoundaryTest {
     val mainDispatcherRule = MainDispatcherRule(dispatcher)
 
     private val start = Instant.parse("2026-11-06T09:00:00Z")
-    private val kongiProfile = SamplePetProfiles.bori.copy(name = "콩이", breed = "말티즈")
+    private val kongiProfile = SamplePetProfiles.demoPet.copy(name = "콩이", breed = "말티즈")
 
     /** 묻기 횟수·지운 코드를 세고, 만들기·묻기 결과를 테스트가 정한다 */
     private class ScriptedLink(private val inner: FakeOwnerLink) : OwnerLinkService by inner {

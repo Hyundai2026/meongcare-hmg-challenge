@@ -108,12 +108,27 @@ class HospitalTrip(
     val selectedHospital: StateFlow<Hospital?> =
         _trip.map { it?.candidate?.hospital }.stateIn(scope, SharingStarted.Eagerly, null)
 
+    private val _finderWithoutCard = MutableStateFlow(false)
+
+    /**
+     * 홈 [병원 찾기]로 카드 없이 연 병원 찾기인지 (계획 019). 목록을 닫거나([back]·[closeFinder]) 출발·[clear]하면 false.
+     * 이때 목록은 디자인 시안의 시연용 병원이고, 카드를 보내지 않는다.
+     */
+    val finderWithoutCard: StateFlow<Boolean> = _finderWithoutCard.asStateFlow()
+
     private var job: Job? = null
     private var retry = Channel<Unit>(Channel.CONFLATED)
 
     /** 카드의 [가장 빨리 진료받을 곳 찾기]. 이미 출발했으면 아무것도 하지 않는다 */
     fun openFinder() {
         if (_trip.value == null) _finder.value = FinderStep.Hospitals
+    }
+
+    /** 홈 [병원 찾기]: 카드 없이 병원 찾기를 연다 (019). 이미 출발했으면 아무것도 하지 않는다 */
+    fun openFinderWithoutCard() {
+        if (_trip.value != null) return
+        _finderWithoutCard.value = true
+        _finder.value = FinderStep.Hospitals
     }
 
     /** 목록에서 병원 한 곳을 골랐다 → 확인 단계 */
@@ -124,11 +139,13 @@ class HospitalTrip(
     /** 확인 화면 [뒤로] → 목록, 목록 [뒤로] → 카드 */
     fun back() {
         _finder.update { if (it is FinderStep.Confirm) FinderStep.Hospitals else FinderStep.None }
+        if (_finder.value == FinderStep.None) _finderWithoutCard.value = false
     }
 
     /** 병원 찾기를 닫는다 (카드로 돌아간다) */
     fun closeFinder() {
         _finder.value = FinderStep.None
+        _finderWithoutCard.value = false
     }
 
     /**
@@ -143,6 +160,7 @@ class HospitalTrip(
         val state = TripState(choice.candidate, delivery)
         if (!_trip.compareAndSet(null, state)) return
         _finder.value = FinderStep.None
+        _finderWithoutCard.value = false
         retry = Channel(Channel.CONFLATED)
         job = scope.launch { run(state, choice, sendable) }
     }
@@ -158,6 +176,7 @@ class HospitalTrip(
         job = null
         _trip.value = null
         _finder.value = FinderStep.None
+        _finderWithoutCard.value = false
     }
 
     private suspend fun run(state: TripState, choice: RankedHospital, card: CaseCard?) = coroutineScope {

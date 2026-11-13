@@ -37,6 +37,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.Box
+import com.meongcare.app.ui.theme.DesignScale
+import com.meongcare.app.ui.theme.DesignSpace
+import com.meongcare.app.ui.theme.DesignType
+import com.meongcare.app.ui.theme.LocalDesignTokens
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -100,13 +109,17 @@ data class CardScale(
 val LocalCardScale = staticCompositionLocalOf { CardScale.Narrow }
 
 /**
- * 진료 카드 화면 (정차 중에만). 안내 상태에 따라 머리와 버튼이 다르다:
- * - 안내 없음: "진료 카드 생성 완료" + [홈] [수정] / [가장 빨리 진료받을 곳 찾기] (병원을 고르기 전이라 [병원에 전화]는 없다, 012)
- * - 안내 중: "진료 카드" + [홈] [수정], 머리 아래 안내 영역 / [병원에 전화] [안내 취소]
- * - 도착: "진료 카드" + [홈] [수정], 머리 아래 도착 안내 영역 / [병원에 전화] [닫기]
+ * 진료 카드 화면 (정차 중에만) = 확정 디자인 시안 4번 "진료 카드 확인". 모양만 바꾸고 동작은 이전과 같다.
+ * 안내 상태에 따라 머리와 버튼이 다르다:
+ * - 안내 없음: "진료 카드 확인" / [동물병원 찾기] (병원을 고르기 전이라 [병원에 전화]는 없다, 012)
+ * - 안내 중: "진료 카드", 머리 아래 안내 영역 / [병원에 전화] [안내 취소]
+ * - 도착: "진료 카드", 머리 아래 도착 안내 영역 / [병원에 전화] [닫기]
  *
- * [홈]은 카드를 지우지 않고 처음 화면으로 간다 (처음 화면에 [카드 보기]가 있다).
+ * 버튼은 시안 그대로 [←]·[음성 명령]·[동물병원 찾기]다 (사용자 지시 2026-11-13).
+ * [←]는 이전으로: 안내 전이면 증상 선택(이전 [수정], 고른 증상이 남는다), 안내 중·도착이면 처음 화면(이전 [홈], 카드는 남는다).
+ * 시스템 뒤로는 지금처럼 처음 화면이다 (HomeScreen의 BackHandler).
  * 안내 영역([GuidancePanel], 013)은 목적지·남은 시간·도착 예정·진행 막대·카드 전송과 병원 확인을 보인다 ([panel]).
+ * [음성 명령]은 자리만 있다 (누르면 준비 중 안내, STT는 나중).
  * 카드 몸통은 세로로 스크롤하고, 아래 버튼 줄은 스크롤 밖에 고정한다 (긴 목록이어도 버튼이 밀려나지 않게).
  */
 @Composable
@@ -124,138 +137,71 @@ fun MedicalCardScreen(
     panel: TripPanel? = null,
     onResend: () -> Unit = {},
 ) {
-    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+    val colors = LocalDesignTokens.current.colors
+    var voiceNotice by rememberSaveable { mutableStateOf(false) }
+    BoxWithConstraints(modifier = modifier.fillMaxSize().background(colors.homeBackground)) {
         val wide = maxWidth >= WideBreakpoint
-        val buttonsSideBySide = maxWidth >= SideBySideButtonsBreakpoint
+        val scale = DesignScale.of(maxWidth)
+        // 안내 영역(GuidancePanel)은 이전 크기 단계를 쓴다
         CompositionLocalProvider(LocalCardScale provides if (wide) CardScale.Wide else CardScale.Narrow) {
-            Column(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = scale.gap(DesignSpace.xxxl), vertical = scale.gap(DesignSpace.l)),
+            ) {
+                CardTopBar(
+                    guidance = guidance,
+                    // 이전으로: 안내 전이면 증상 선택(이전 [수정]), 안내 중·도착이면 홈(이전 [홈])
+                    onBack = if (guidance is GuidanceUiState.Idle) actions.onEditSymptoms else actions.onGoHome,
+                    onVoiceCommand = { voiceNotice = true },
+                    scale = scale,
+                    colors = colors,
+                )
+                if (voiceNotice) {
+                    Text(
+                        stringResource(R.string.voice_not_ready),
+                        style = scale.style(DesignType.body),
+                        color = colors.selectedText,
+                        modifier = Modifier.padding(start = scale.gap(DesignSpace.xxxl), top = scale.gap(DesignSpace.xs)),
+                    )
+                }
                 Column(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth()
                         .verticalScroll(rememberScrollState())
-                        .padding(horizontal = Dimens.ScreenPadding, vertical = 24.dp),
-                    verticalArrangement = Arrangement.spacedBy(24.dp),
+                        .padding(horizontal = scale.gap(DesignSpace.xxxl), vertical = scale.gap(DesignSpace.l)),
+                    verticalArrangement = Arrangement.spacedBy(scale.gap(DesignSpace.l)),
                 ) {
-                    CardHeader(state, guidance, actions, wide)
                     if (panel != null) GuidancePanel(panel, onResend)
                     state.shownPhoneNumber?.let {
                         PhoneNumberPanel(number = it, isSample = state.isHospitalSample, onDismiss = actions.onDismissPhoneNumber)
                     }
-                    CardBody(card = state.card, wide = wide)
-                    DemoNotices(
+                    CardPetLine(state.card.pet, scale, colors)
+                    CardRows(state.card, scale, colors)
+                    CardNotes(
+                        card = state.card,
                         showsPetSample = isPetProfileSample && state.card.pet is PetHeader.Registered,
                         hospitalSamplePhone = state.hospitalPhone.takeIf { state.isHospitalSample },
                         showsGuidanceSimulated = isGuidanceSimulated,
                         routeOnNavi = isRouteOnNavi,
+                        scale = scale,
+                        colors = colors,
                     )
                 }
-                ActionArea(
-                    state = state,
-                    guidance = guidance,
-                    sideBySide = buttonsSideBySide,
-                    onCallHospital = actions.onCallHospital,
-                    onFindHospital = onFindHospital,
-                    onCancelGuidance = onCancelGuidance,
-                    onCloseArrival = onCloseArrival,
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun CardHeader(state: CardFlowUiState, guidance: GuidanceUiState, actions: MedicalCardActions, wide: Boolean) {
-    val scale = LocalCardScale.current
-    val pet = state.card.pet
-    // 안내 중·도착이면 남은 시간·병원은 머리 아래 안내 영역이 보인다. 머리는 "진료 카드"로 둔다 (013)
-    val title = stringResource(if (guidance is GuidanceUiState.Idle) R.string.card_title_ready else R.string.card_title_trip)
-    val subtitle = if (pet is PetHeader.Registered) stringResource(R.string.card_subtitle_ready, pet.name)
-    else stringResource(R.string.card_subtitle_ready_no_pet)
-    val titleBlock: @Composable (Modifier) -> Unit = { modifier ->
-        Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
-            Surface(shape = CircleShape, color = ActionBlue, modifier = Modifier.size(if (wide) 64.dp else 52.dp)) {
-                Icon(PawIcon, contentDescription = null, tint = Color.White, modifier = Modifier.padding(12.dp))
-            }
-            Spacer(Modifier.width(16.dp))
-            Column {
-                Text(text = title, style = MaterialTheme.typography.headlineMedium.copy(fontSize = scale.title, lineHeight = scale.title * 1.25f))
-                Text(text = subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
-    }
-    val homeButton: @Composable () -> Unit = {
-        PillButton(text = stringResource(R.string.card_home), icon = Icons.Filled.Home, onClick = actions.onGoHome)
-    }
-    val editButton: @Composable () -> Unit = {
-        PillButton(text = stringResource(R.string.card_edit), icon = null, onClick = actions.onEditSymptoms)
-    }
-    if (wide) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            homeButton()
-            Spacer(Modifier.width(24.dp))
-            titleBlock(Modifier.weight(1f))
-            editButton()
-        }
-    } else {
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                homeButton()
-                editButton()
-            }
-            titleBlock(Modifier)
-        }
-    }
-}
-
-@Composable
-private fun PillButton(text: String, icon: ImageVector?, onClick: () -> Unit) {
-    OutlinedButton(
-        onClick = onClick,
-        shape = CircleShape,
-        border = BorderStroke(2.dp, MaterialTheme.colorScheme.outline),
-        modifier = Modifier.heightIn(min = Dimens.MinTouchTarget),
-    ) {
-        icon?.let {
-            Icon(it, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(28.dp))
-            Spacer(Modifier.width(8.dp))
-        }
-        Text(text = text, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurface)
-    }
-}
-
-@Composable
-private fun CardBody(card: MedicalCardUiState, wide: Boolean) {
-    val scale = LocalCardScale.current
-    Surface(
-        shape = RoundedCornerShape(28.dp),
-        color = CardColors.Surface,
-        contentColor = CardColors.Text,
-        border = BorderStroke(1.dp, CardColors.Border),
-        shadowElevation = 2.dp,
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Column {
-            if (wide) {
-                Row(modifier = Modifier.padding(32.dp)) {
-                    PetAvatar(initial = (card.pet as? PetHeader.Registered)?.initial, size = scale.avatar)
-                    Spacer(Modifier.width(36.dp))
-                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(20.dp)) {
-                        PetTitle(card.pet)
-                        InfoRows(card)
-                    }
-                }
-            } else {
-                Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        PetAvatar(initial = (card.pet as? PetHeader.Registered)?.initial, size = scale.avatar)
-                        Spacer(Modifier.width(20.dp))
-                        PetTitle(card.pet, modifier = Modifier.weight(1f))
-                    }
-                    InfoRows(card)
+                Box(Modifier.padding(horizontal = scale.gap(DesignSpace.xxxl))) {
+                    CardActions(
+                        state = state,
+                        guidance = guidance,
+                        onCallHospital = actions.onCallHospital,
+                        onFindHospital = onFindHospital,
+                        onCancelGuidance = onCancelGuidance,
+                        onCloseArrival = onCloseArrival,
+                        scale = scale,
+                        colors = colors,
+                    )
                 }
             }
-            DisclaimerBand(updatedOn = card.medical?.updatedOn)
         }
     }
 }
@@ -296,106 +242,6 @@ fun PetTitle(pet: PetHeader, modifier: Modifier = Modifier, color: Color = CardC
     }
 }
 
-@Composable
-private fun InfoRows(card: MedicalCardUiState) {
-    val none = stringResource(R.string.card_value_none_registered)
-    Column {
-        // 주요 증상은 이번 진료의 핵심이라 강조 띠로 보인다
-        InfoRow(
-            icon = Icons.Outlined.Info,
-            label = stringResource(R.string.card_row_symptoms),
-            value = card.symptoms.takeIf { it.isNotEmpty() }?.let { list -> joinedText(list.map { stringResource(symptomLabelRes(it)) }) },
-            emptyText = stringResource(R.string.card_value_no_symptoms),
-            highlighted = true,
-        )
-        card.medical?.let { medical ->
-            HorizontalDivider(color = CardColors.Border)
-            InfoRow(Icons.Outlined.FavoriteBorder, stringResource(R.string.card_row_conditions), medical.conditions.joinedOrNull(), none)
-            HorizontalDivider(color = CardColors.Border)
-            InfoRow(Icons.Outlined.Warning, stringResource(R.string.card_row_allergies), medical.allergies.joinedOrNull(), none)
-            HorizontalDivider(color = CardColors.Border)
-            InfoRow(
-                Icons.Outlined.CheckCircle,
-                stringResource(R.string.card_row_medications),
-                medical.medications.takeIf { it.isNotEmpty() }?.let { list -> joinedText(list.map { medicationText(it) }) },
-                none,
-            )
-        }
-    }
-}
-
-@Composable
-private fun List<String>.joinedOrNull(): String? = takeIf { it.isNotEmpty() }?.let { joinedText(it) }
-
-@Composable
-private fun InfoRow(icon: ImageVector, label: String, value: String?, emptyText: String, highlighted: Boolean = false) {
-    val scale = LocalCardScale.current
-    val style = MaterialTheme.typography.bodyLarge.copy(fontSize = scale.row, lineHeight = scale.row * 1.35f)
-    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 14.dp), verticalAlignment = Alignment.Top) {
-        Icon(icon, contentDescription = null, tint = CardColors.Accent, modifier = Modifier.padding(top = 4.dp).size(28.dp))
-        Spacer(Modifier.width(12.dp))
-        Text(text = label, style = style, color = CardColors.Muted, modifier = Modifier.width(scale.labelWidth))
-        val valueModifier = if (highlighted && value != null) {
-            Modifier
-                .background(CardColors.SymptomBackground, RoundedCornerShape(10.dp))
-                .padding(horizontal = 14.dp, vertical = 2.dp)
-        } else {
-            Modifier
-        }
-        Text(
-            text = value ?: emptyText,
-            style = style,
-            color = when {
-                value == null -> CardColors.Muted
-                highlighted -> CardColors.SymptomText
-                else -> CardColors.Text
-            },
-            fontWeight = if (value == null) FontWeight.Normal else FontWeight.Bold,
-            modifier = Modifier.weight(1f, fill = false).then(valueModifier),
-        )
-    }
-}
-
-@Composable
-private fun DisclaimerBand(updatedOn: LocalDate?) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(CardColors.LabelBackground)
-            .padding(horizontal = 28.dp, vertical = 18.dp),
-        verticalAlignment = Alignment.Top,
-    ) {
-        Icon(Icons.Outlined.Info, contentDescription = null, tint = CardColors.Accent, modifier = Modifier.size(24.dp))
-        Spacer(Modifier.width(12.dp))
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(stringResource(R.string.card_disclaimer), style = MaterialTheme.typography.bodyMedium, color = CardColors.Muted)
-            updatedOn?.let {
-                Text(updatedOnText(it), style = MaterialTheme.typography.labelMedium, color = CardColors.Muted)
-            }
-        }
-    }
-}
-
-/** 시연용 표시를 한 상자에 모은다 (출품 유의사항: 사실과 다르면 선정 취소). 주행 화면에는 넣지 않는다. */
-@Composable
-private fun DemoNotices(showsPetSample: Boolean, hospitalSamplePhone: String?, showsGuidanceSimulated: Boolean, routeOnNavi: Boolean = false) {
-    if (!showsPetSample && hospitalSamplePhone == null && !showsGuidanceSimulated) return
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f), RoundedCornerShape(16.dp))
-            .padding(horizontal = 20.dp, vertical = 14.dp),
-    ) {
-        Icon(Icons.Outlined.Info, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
-        Spacer(Modifier.width(10.dp))
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            if (showsPetSample) Notice(stringResource(R.string.card_sample_pet_notice))
-            hospitalSamplePhone?.let { Notice(stringResource(R.string.card_sample_hospital_notice, it)) }
-            if (showsGuidanceSimulated) SimulatedGuidanceNotice(routeOnNavi = routeOnNavi)
-        }
-    }
-}
-
 /** 전화 앱을 열지 못했을 때: 번호를 크게 보여 준다. 팝업 창이 아니라 화면 안 영역이다. 병원 확인 화면(012)도 쓴다. */
 @Composable
 internal fun PhoneNumberPanel(number: String, isSample: Boolean, onDismiss: () -> Unit) {
@@ -416,77 +262,6 @@ internal fun PhoneNumberPanel(number: String, isSample: Boolean, onDismiss: () -
                 modifier = Modifier.heightIn(min = Dimens.MinTouchTarget).widthIn(min = 160.dp),
             ) { Text(stringResource(R.string.card_phone_panel_ok), style = MaterialTheme.typography.labelLarge) }
         }
-    }
-}
-
-@Composable
-private fun ActionArea(
-    state: CardFlowUiState,
-    guidance: GuidanceUiState,
-    sideBySide: Boolean,
-    onCallHospital: () -> Unit,
-    onFindHospital: () -> Unit,
-    onCancelGuidance: () -> Unit,
-    onCloseArrival: () -> Unit,
-) {
-    val scale = LocalCardScale.current
-    val label = MaterialTheme.typography.labelLarge.copy(fontSize = scale.button)
-    Column(
-        modifier = Modifier.fillMaxWidth().padding(start = Dimens.ScreenPadding, end = Dimens.ScreenPadding, top = 8.dp, bottom = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        val call: (@Composable (Modifier) -> Unit)? = state.hospitalPhone?.let {
-            { modifier ->
-                OutlinedButton(
-                    onClick = onCallHospital,
-                    border = BorderStroke(2.dp, ActionBlue),
-                    shape = RoundedCornerShape(20.dp),
-                    modifier = modifier.heightIn(min = scale.buttonHeight),
-                ) {
-                    Icon(Icons.Filled.Phone, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(30.dp))
-                    Spacer(Modifier.width(12.dp))
-                    Text(stringResource(R.string.card_call_hospital), style = label, color = MaterialTheme.colorScheme.onSurface)
-                }
-            }
-        }
-        val main: @Composable (Modifier) -> Unit = { modifier ->
-            when (guidance) {
-                is GuidanceUiState.Idle -> FilledAction(stringResource(R.string.card_find_hospital), Icons.Filled.Search, onFindHospital, modifier)
-                is GuidanceUiState.Guiding -> OutlinedButton(
-                    onClick = onCancelGuidance,
-                    border = BorderStroke(2.dp, MaterialTheme.colorScheme.outline),
-                    shape = RoundedCornerShape(20.dp),
-                    modifier = modifier.heightIn(min = scale.buttonHeight),
-                ) { Text(stringResource(R.string.guidance_cancel), style = label, color = MaterialTheme.colorScheme.onSurface) }
-                is GuidanceUiState.Arrived -> FilledAction(stringResource(R.string.card_close), null, onCloseArrival, modifier)
-            }
-        }
-        if (sideBySide) {
-            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                call?.invoke(Modifier.weight(1f))
-                main(Modifier.weight(1f))
-            }
-        } else {
-            call?.invoke(Modifier.fillMaxWidth())
-            main(Modifier.fillMaxWidth())
-        }
-    }
-}
-
-@Composable
-private fun FilledAction(text: String, icon: ImageVector?, onClick: () -> Unit, modifier: Modifier) {
-    val scale = LocalCardScale.current
-    Button(
-        onClick = onClick,
-        colors = ButtonDefaults.buttonColors(containerColor = ActionBlue, contentColor = Color.White),
-        shape = RoundedCornerShape(20.dp),
-        modifier = modifier.heightIn(min = scale.buttonHeight),
-    ) {
-        icon?.let {
-            Icon(it, contentDescription = null, modifier = Modifier.size(30.dp))
-            Spacer(Modifier.width(12.dp))
-        }
-        Text(text, style = MaterialTheme.typography.labelLarge.copy(fontSize = scale.button))
     }
 }
 
@@ -525,7 +300,7 @@ internal fun previewCardState(shown: String? = null) = CardFlowUiState(
 @Preview(widthDp = 1682, heightDp = 1210)
 @Composable
 private fun MedicalCardWidePreview() {
-    MeongCareTheme(darkTheme = true) {
+    MeongCareTheme(darkTheme = false) {
         Surface {
             MedicalCardScreen(previewCardState(), GuidanceUiState.Idle("시연용 동물병원"), MedicalCardActions(), {}, {}, {}, true, true)
         }

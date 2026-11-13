@@ -153,15 +153,8 @@ class MainActivity : ComponentActivity() {
                     isRouteOnNavi = container.naviUse == NaviUse.ROUTE_ONLY,
                     finder = finder,
                     finderWithoutCard = finderWithoutCard,
-                    // 홈 [병원 찾기] (019 D3): 카드가 있으면 카드와 함께(지금 흐름), 없으면 카드 없이 시연용 병원 목록
-                    onFindHospitalFromHome = {
-                        if (cardUiState.hasCard) {
-                            cardViewModel.onOpenCard()
-                            trip.openFinder()
-                        } else {
-                            trip.openFinderWithoutCard()
-                        }
-                    },
+                    // 홈 [병원 찾기]: 카드와 상관없이 늘 시연용 병원 목록 (처음 화면에서 카드로 가지 않는다, 사용자 지시 2026-11-13)
+                    onFindHospitalFromHome = trip::openFinderWithoutCard,
                     onFinderBack = trip::back,
                     hospitalList = hospitalList@{
                         if (finderWithoutCard) {

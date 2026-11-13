@@ -6,6 +6,9 @@ import androidx.compose.runtime.setValue
 import com.meongcare.app.ui.card.PetHeader
 import com.meongcare.app.ui.home.HomePage
 import com.meongcare.app.ui.hospital.DemoHospitalFindScreen
+import com.meongcare.app.ui.hospital.DepartConfirmScreen
+import com.meongcare.app.ui.hospital.VetInquiryScreen
+import com.meongcare.app.ui.hospital.VetInquiryViewModel
 import com.meongcare.app.ui.home.PageExtras
 import com.meongcare.app.ui.pet.PetCardScreen
 import com.meongcare.app.ui.pet.petCardOf
@@ -80,6 +83,7 @@ class MainActivity : ComponentActivity() {
                     ),
                 )
                 val trip = container.hospitalTrip
+                val inquiryViewModel: VetInquiryViewModel = viewModel()
                 val finder by trip.finder.collectAsStateWithLifecycle()
                 val finderWithoutCard by trip.finderWithoutCard.collectAsStateWithLifecycle()
                 val tripState by trip.trip.collectAsStateWithLifecycle()
@@ -139,8 +143,11 @@ class MainActivity : ComponentActivity() {
                     guidanceUiState = guidanceUiState,
                     cardUiState = cardUiState,
                     cardActions = cardActions,
-                    // 012: 카드의 주 버튼은 [가장 빨리 진료받을 곳 찾기]다. 길안내는 병원 확인 화면의 [출발]이 시작한다.
-                    onFindHospital = trip::openFinder,
+                    // 020: 카드 [동물병원 찾기] = 시안 병원 3곳에 새로 문의하고 "동물병원 응답 확인"을 연다 (답변은 앱 안 시연 응답)
+                    onFindHospital = {
+                        inquiryViewModel.restart()
+                        trip.openFinder()
+                    },
                     onCancelGuidance = guidanceViewModel::onCancelGuidance,
                     // 도착 상태를 먼저 지우고 카드를 비운다. 중간 프레임이 "생성 완료" 카드라 거의 보이지 않는다.
                     onCloseArrival = {
@@ -159,6 +166,25 @@ class MainActivity : ComponentActivity() {
                     hospitalList = hospitalList@{
                         if (finderWithoutCard) {
                             DemoHospitalFindScreen(onBack = trip::back, onGoDirect = { trip.choose(it.row) })
+                            return@hospitalList
+                        }
+                        // 020: 카드에서 연 병원 찾기 = 동물병원 응답 확인 / 비교. 제휴 병원 목록(012)은 아래에 코드로 남는다
+                        if (SHOW_INQUIRY_FLOW) {
+                            val snapshot by inquiryViewModel.snapshot.collectAsStateWithLifecycle()
+                            val page by inquiryViewModel.page.collectAsStateWithLifecycle()
+                            val compareSelected by inquiryViewModel.compareSelected.collectAsStateWithLifecycle()
+                            val promptSelected by inquiryViewModel.promptSelected.collectAsStateWithLifecycle()
+                            val expandNotice by inquiryViewModel.expandNotice.collectAsStateWithLifecycle()
+                            VetInquiryScreen(
+                                vm = inquiryViewModel,
+                                snapshot = snapshot,
+                                page = page,
+                                compareSelected = compareSelected,
+                                promptSelected = promptSelected,
+                                expandNotice = expandNotice,
+                                onBack = trip::back,
+                                onChoose = { trip.choose(it.row) },
+                            )
                             return@hospitalList
                         }
                         val finderViewModel: HospitalFinderViewModel = viewModel(
@@ -180,7 +206,22 @@ class MainActivity : ComponentActivity() {
                             onRelocate = finderViewModel::onRelocate,
                         )
                     },
-                    hospitalConfirm = { choice ->
+                    hospitalConfirm = hospitalConfirm@{ choice ->
+                        val demo = inquiryViewModel.hospitalNamed(choice.hospital.name)
+                        if (SHOW_INQUIRY_FLOW && !finderWithoutCard && demo != null) {
+                            DepartConfirmScreen(
+                                hospital = demo,
+                                startMinutes = inquiryViewModel.current().searchRows.firstOrNull { it.key == demo.name }?.startMinutes,
+                                petName = (cardUiState.card.pet as? PetHeader.Registered)?.name,
+                                now = inquiryViewModel.now(),
+                                onBack = {
+                                    inquiryViewModel.onBackFromConfirm()
+                                    trip.back()
+                                },
+                                onDepart = { trip.depart(choice, cardViewModel.caseCard()) },
+                            )
+                            return@hospitalConfirm
+                        }
                         HospitalConfirmScreen(
                             choice = choice,
                             onBack = trip::back,
@@ -298,3 +339,6 @@ private fun debugModeLabel(mode: DataMode, plan: SourcePlan): String {
     val drivingSource = if (plan.driving == SourceKind.REAL) "Real" else "Fake"
     return if (mode == DataMode.DEMO) "DEBUG · 시연 (주행 $drivingSource)" else "DEBUG · ${mode.debugName()}"
 }
+
+/** 카드 [동물병원 찾기]를 동물병원 문의 흐름(020)으로 연다. false면 예전 제휴 병원 목록(012) */
+private const val SHOW_INQUIRY_FLOW = true

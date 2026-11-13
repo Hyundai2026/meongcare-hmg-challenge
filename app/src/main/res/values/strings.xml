@@ -19,17 +19,8 @@
     <string name="guidance_simulated_notice">시연용 길안내예요. 실제 내비게이션과는 아직 연결되지 않았어요.</string>
 
     <!-- 진료 카드 (009). 정차 중에만 보인다 -->
-    <string name="card_title_ready">진료 카드 생성 완료</string>
-    <string name="card_subtitle_ready">%1$s의 정보를 바탕으로 진료 카드를 준비했어요</string>
-    <string name="card_subtitle_ready_no_pet">고른 증상으로 진료 카드를 준비했어요</string>
-    <string name="card_edit">수정</string>
     <string name="card_close">닫기</string>
-    <string name="card_home">홈</string>
     <!-- 처음 화면에 남은 카드 (009 홈 버튼) -->
-    <string name="home_current_card_title">만든 진료 카드</string>
-    <string name="home_open_card">카드 보기</string>
-    <string name="home_new_card">새로 만들기</string>
-    <string name="home_symptoms_line">주요 증상: %1$s</string>
     <string name="card_row_symptoms">주요 증상</string>
     <string name="card_row_conditions">기존 병력</string>
     <string name="card_row_allergies">알레르기</string>
@@ -78,7 +69,6 @@
     <string name="symptom_limping">절뚝거림</string>
     <string name="symptom_bloated_belly">배 부풂</string>
     <!-- 가장 빨리 진료받을 병원 (012). 정차 중에만 보인다. 순위·문구 규칙: docs/plans 012 "설계 결정 2·6·8" -->
-    <string name="card_find_hospital">가장 빨리 진료받을 곳 찾기</string>
     <string name="finder_title">가장 빨리 진료받을 수 있는 곳</string>
     <string name="finder_back">뒤로</string>
     <string name="finder_refresh">새로 고침</string>
@@ -282,4 +272,9 @@
     <string name="symptoms_check">증상 확인하기</string>
     <string name="symptoms_voice_explain">음성으로 설명하기</string>
     <string name="symptoms_voice_hint">목록에 없는 증상은 말로 알려 주세요.</string>
+    <!-- 진료 카드 확인 (디자인 시안 4번) -->
+    <string name="card_design_title">진료 카드 확인</string>
+    <string name="card_emergency_mode">응급 모드</string>
+    <string name="card_row_vet_summary">수의사 전달</string>
+    <string name="card_find_vet">동물병원 찾기</string>
 </resources>

@@ -1,6 +1,7 @@
 package com.meongcare.app.ui.theme
 
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -13,9 +14,19 @@ class DesignScale(val s: Float) {
     /** 간격·크기를 비율대로 */
     fun gap(d: Dp): Dp = d * s
 
-    /** 글자 크기와 줄 간격을 비율대로. 굵기·자간은 그대로 */
-    fun style(base: TextStyle): TextStyle =
-        if (s == 1f) base else base.copy(fontSize = base.fontSize * s, lineHeight = base.lineHeight * s)
+    /**
+     * 글자 크기와 줄 간격을 비율대로. 굵기·자간은 그대로.
+     * 지정되지 않은 값은 그대로 두고, 줄 간격이 글자 크기 배수(em)면 배수를 그대로 둔다 (글자 크기를 따라 이미 줄어든다).
+     */
+    fun style(base: TextStyle): TextStyle {
+        if (s == 1f) return base
+        return base.copy(
+            fontSize = base.fontSize.scaledSp(),
+            lineHeight = base.lineHeight.scaledSp(),
+        )
+    }
+
+    private fun TextUnit.scaledSp(): TextUnit = if (isSp) this * s else this
 
     /** 버튼 높이: 비율대로 줄이되 터치 타깃이 56dp보다 작아지지 않게 */
     fun touch(d: Dp): Dp = (d * s).coerceAtLeast(MIN_TOUCH)

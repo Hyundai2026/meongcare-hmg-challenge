@@ -18,7 +18,7 @@ data class RelaxSettings(
     val sound: RelaxSound = RelaxSound.QUIET,
     val extraReassurance: Boolean = false,
 ) {
-    /** 한 번도 바꾸지 않은 기본값인지 (반려동물 카드에 "기본 설정"으로 보인다) */
+    /** 지금 값이 기본값과 같은지 (바꿨다가 되돌려도 true). 반려동물 카드에 "기본 설정"으로 보인다 */
     val isDefault: Boolean get() = this == RelaxSettings()
 }
 

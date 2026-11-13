@@ -9,6 +9,7 @@ import com.meongcare.app.ui.hospital.DemoHospitalFindScreen
 import com.meongcare.app.ui.hospital.DepartConfirmScreen
 import com.meongcare.app.ui.hospital.VetInquiryScreen
 import com.meongcare.app.ui.hospital.VetInquiryViewModel
+import com.meongcare.app.domain.inquiry.InquiryScripts
 import com.meongcare.app.ui.home.PageExtras
 import com.meongcare.app.ui.pet.PetCardScreen
 import com.meongcare.app.ui.pet.petCardOf
@@ -84,6 +85,7 @@ class MainActivity : ComponentActivity() {
                 )
                 val trip = container.hospitalTrip
                 val inquiryViewModel: VetInquiryViewModel = viewModel()
+                var inquiryNoResponse by rememberSaveable { mutableStateOf(false) }
                 val finder by trip.finder.collectAsStateWithLifecycle()
                 val finderWithoutCard by trip.finderWithoutCard.collectAsStateWithLifecycle()
                 val tripState by trip.trip.collectAsStateWithLifecycle()
@@ -313,6 +315,11 @@ class MainActivity : ComponentActivity() {
                                     null
                                 },
                                 onAskLocation = locationViewModel::onAsk,
+                                inquiryScenarioLabel = if (inquiryNoResponse) "문의 시연: 응답 없음" else "문의 시연: 보통",
+                                onToggleInquiryScenario = {
+                                    inquiryNoResponse = !inquiryNoResponse
+                                    inquiryViewModel.script = if (inquiryNoResponse) InquiryScripts.NO_RESPONSE else InquiryScripts.DEFAULT
+                                },
                                 onFakeOwnerClaim = container.fakeOwnerLink?.let { fakeLink ->
                                     val pending by fakeLink.pendingCode.collectAsStateWithLifecycle()
                                     val claim: () -> Unit = { fakeLink.claim() }

@@ -311,19 +311,44 @@ git branch -d feat/<이름>
 
 ### 화면
 
-| 홈 · 응급 진료 | 증상 선택 |
+**1. 증상은 눌러서 고른다** — 정차 중 4×3 카드에서 고르고, 목록에 없는 증상은 말로 알린다.
+
+<p align="center"><img src="docs/readme/scene-02-symptoms.png" alt="증상 선택" width="820"></p>
+
+**2. 근처 동물병원 5곳에 동시에 묻는다** — 20초 동안 답을 기다리며, 답한 병원·진료 불가를 색으로 바로 보여 준다.
+
+<p align="center"><img src="docs/readme/scene-04-inquiry.png" alt="동물병원 응답 확인" width="820"></p>
+
+**3. 가장 빨리 진료받을 곳을 먼저 제안한다** — 이동 시간과 대기 시간을 합쳐 고르고, 경로를 지도에 그린다.
+
+<p align="center"><img src="docs/readme/scene-05-suggest.png" alt="출발 제안" width="820"></p>
+
+**4. 도착하면 진료 카드는 이미 병원에 있다** — 차 안에서 기다리다 진료 차례가 되면 알려 준다.
+
+<p align="center"><img src="docs/readme/scene-08-arrive.png" alt="병원 도착" width="820"></p>
+
+### 정차 중 vs 주행 중
+
+같은 이동 화면이라도 차가 움직이면 운전에 방해되지 않게 남은 시간만 크게 보인다 (Pleos Vehicle 주행 상태).
+
+<p align="center"><img src="docs/readme/parked-vs-driving.png" alt="정차 중과 주행 중 화면 비교" width="900"></p>
+
+<details>
+<summary><b>전체 화면 보기</b> (12장)</summary>
+
+| 홈 · 응급 진료 | 진료 카드 확인 |
 |---|---|
-| <img src="docs/readme/01-home.png" alt="홈 · 응급 진료" width="480"> | <img src="docs/readme/02-symptoms.png" alt="증상 선택" width="480"> |
-| **진료 카드 확인** | **동물병원 응답 확인** |
-| <img src="docs/readme/03-card.png" alt="진료 카드 확인" width="480"> | <img src="docs/readme/04-inquiry.png" alt="동물병원 응답 확인" width="480"> |
-| **출발 제안** | **출발 확인** |
-| <img src="docs/readme/05-suggest.png" alt="출발 제안" width="480"> | <img src="docs/readme/06-depart.png" alt="출발 확인" width="480"> |
-| **병원으로 이동 중** | **병원 도착** |
-| <img src="docs/readme/07-trip.png" alt="병원으로 이동 중" width="480"> | <img src="docs/readme/08-arrive.png" alt="병원 도착" width="480"> |
+| <img src="docs/readme/01-home.png" alt="홈 · 응급 진료" width="480"> | <img src="docs/readme/03-card.png" alt="진료 카드 확인" width="480"> |
+| **출발 확인** | **병원으로 이동 중** |
+| <img src="docs/readme/06-depart.png" alt="출발 확인" width="480"> | <img src="docs/readme/07-trip.png" alt="병원으로 이동 중" width="480"> |
 | **진료 완료** | **귀가 중** |
 | <img src="docs/readme/09-after.png" alt="진료 완료" width="480"> | <img src="docs/readme/10-going-home.png" alt="귀가 중" width="480"> |
-| **반려동물 카드** | **릴렉스 모드** |
-| <img src="docs/readme/12-pet-card.png" alt="반려동물 카드" width="480"> | <img src="docs/readme/13-relax.png" alt="릴렉스 모드" width="480"> |
+| **귀가 완료** | **반려동물 카드** |
+| <img src="docs/readme/11-home-arrived.png" alt="귀가 완료" width="480"> | <img src="docs/readme/12-pet-card.png" alt="반려동물 카드" width="480"> |
+| **릴렉스 모드** | |
+| <img src="docs/readme/13-relax.png" alt="릴렉스 모드" width="480"> | |
+
+</details>
 
 ## 사용 흐름
 

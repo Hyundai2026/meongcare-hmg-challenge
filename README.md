@@ -334,7 +334,7 @@ git branch -d feat/<이름>
 <p align="center"><img src="docs/readme/parked-vs-driving.png" alt="정차 중과 주행 중 화면 비교" width="900"></p>
 
 <details>
-<summary><b>전체 화면 보기</b> (12장)</summary>
+<summary><b>나머지 화면 보기</b> (9장)</summary>
 
 | 홈 · 응급 진료 | 진료 카드 확인 |
 |---|---|

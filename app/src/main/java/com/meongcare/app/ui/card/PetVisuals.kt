@@ -9,6 +9,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -36,13 +37,28 @@ val PawIcon: ImageVector by lazy {
 }
 
 /**
- * 반려견 아바타. 지금은 이름 첫 글자를 그린다 (사진은 저작권 때문에 아직 쓰지 않는다).
- * 나중에 사진을 보여 줄 때는 이 자리에 사진을 그린다 (`PetProfile.photoDataUrl`).
+ * 샘플 반려견(보리)의 사진을 보일지 (2026-11-14 사용자 결정: 보리 프로필 사진). `MainActivity`가
+ * 반려견 정보가 시연용 샘플일 때만 true로 둔다. 보호자 웹에서 연결한 반려견은 지금처럼 이름 첫 글자다.
+ */
+val LocalSamplePetPhoto = androidx.compose.runtime.compositionLocalOf { false }
+
+/**
+ * 반려견 아바타. 샘플 보리면 사진(둥근 원, 디자인 시안), 아니면 이름 첫 글자를 그린다.
+ * 연결한 반려견의 사진(`PetProfile.photoDataUrl`)은 아직 그리지 않는다.
  *
  * @param initial null이거나 비면 발바닥을 그린다 (반려견 정보가 없을 때)
  */
 @Composable
 fun PetAvatar(initial: String?, size: Dp, modifier: Modifier = Modifier) {
+    if (LocalSamplePetPhoto.current && !initial.isNullOrEmpty()) {
+        androidx.compose.foundation.Image(
+            painter = androidx.compose.ui.res.painterResource(com.meongcare.app.R.drawable.sample_pet_photo),
+            contentDescription = androidx.compose.ui.res.stringResource(com.meongcare.app.R.string.pet_photo_description),
+            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+            modifier = modifier.size(size).clip(androidx.compose.foundation.shape.CircleShape),
+        )
+        return
+    }
     Box(
         modifier = modifier
             .size(size)

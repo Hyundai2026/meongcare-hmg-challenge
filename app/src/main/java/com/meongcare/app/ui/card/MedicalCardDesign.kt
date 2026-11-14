@@ -197,9 +197,9 @@ internal fun CardNotes(
     Column(verticalArrangement = Arrangement.spacedBy(scale.gap(DesignSpace.xxs))) {
         Text(stringResource(R.string.card_disclaimer), style = scale.style(Small), color = colors.homeSubText)
         card.medical?.updatedOn?.let { Text(updatedOnText(it), style = scale.style(Small), color = colors.homeSubText) }
-        if (showsPetSample) Text(stringResource(R.string.card_sample_pet_notice), style = scale.style(Small), color = colors.homeSubText)
-        hospitalSamplePhone?.let { Text(stringResource(R.string.card_sample_hospital_notice, it), style = scale.style(Small), color = colors.homeSubText) }
-        if (showsGuidanceSimulated) SimulatedGuidanceNotice(routeOnNavi = routeOnNavi)
+        if (com.meongcare.app.ui.SHOW_DEMO_NOTICES && showsPetSample) Text(stringResource(R.string.card_sample_pet_notice), style = scale.style(Small), color = colors.homeSubText)
+        hospitalSamplePhone?.takeIf { com.meongcare.app.ui.SHOW_DEMO_NOTICES }?.let { Text(stringResource(R.string.card_sample_hospital_notice, it), style = scale.style(Small), color = colors.homeSubText) }
+        if (com.meongcare.app.ui.SHOW_DEMO_NOTICES && showsGuidanceSimulated) SimulatedGuidanceNotice(routeOnNavi = routeOnNavi)
     }
 }
 

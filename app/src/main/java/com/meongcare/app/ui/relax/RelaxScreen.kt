@@ -111,7 +111,7 @@ fun RelaxScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        stringResource(R.string.relax_demo_notice),
+                        if (com.meongcare.app.ui.SHOW_DEMO_NOTICES) stringResource(R.string.relax_demo_notice) else "",
                         style = scale.style(DesignType.body),
                         color = colors.homeSubText,
                         modifier = Modifier.weight(1f),

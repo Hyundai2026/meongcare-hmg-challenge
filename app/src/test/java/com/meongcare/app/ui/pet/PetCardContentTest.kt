@@ -19,7 +19,7 @@ class PetCardContentTest {
         val card = petCardOf(PetProfileLoad.Loaded(SamplePetProfiles.demoPet), today) as PetCardUiState.Registered
         assertEquals("보리", card.name)
         assertEquals("보", card.initial)
-        assertEquals("골든리트리버", card.breed)
+        assertEquals("포메라니안", card.breed)
         assertEquals(LocalDate.of(2014, 8, 1), card.birthDate)
         assertEquals(AgeLabel.YearsAndMonths(12, 3), card.age)
         assertEquals(listOf("심장질환"), card.conditions)

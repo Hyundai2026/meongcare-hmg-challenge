@@ -64,6 +64,8 @@ fun PetCardScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     records: List<String> = emptyList(),
+    sampleWeight: String? = null,
+    sampleTraits: String? = null,
 ) {
     val colors = LocalDesignTokens.current.colors
     BoxWithConstraints(modifier = modifier.fillMaxSize().background(colors.homeBackground)) {
@@ -78,7 +80,7 @@ fun PetCardScreen(
             PageHeader(stringResource(R.string.pet_card_title), onBack, scale, colors)
             Spacer(Modifier.height(scale.gap(DesignSpace.xl)))
             when (state) {
-                is PetCardUiState.Registered -> RegisteredBody(state, relaxSummary, isSample, twoColumns, scale, colors, records)
+                is PetCardUiState.Registered -> RegisteredBody(state, relaxSummary, isSample, twoColumns, scale, colors, records, sampleWeight, sampleTraits)
                 else -> Text(
                     stringResource(
                         when (state) {
@@ -105,6 +107,8 @@ private fun RegisteredBody(
     scale: DesignScale,
     colors: DesignColors,
     records: List<String>,
+    sampleWeight: String?,
+    sampleTraits: String?,
 ) {
     val sep = stringResource(R.string.pet_card_separator)
     val species = stringResource(R.string.pet_card_species)
@@ -118,7 +122,7 @@ private fun RegisteredBody(
             Column(verticalArrangement = Arrangement.spacedBy(scale.gap(6.dp))) {
                 Text(pet.name, style = scale.style(DesignType.title), color = colors.homeText)
                 Text(
-                    listOfNotNull(species, pet.breed, age).joinToString(sep),
+                    listOfNotNull(species, pet.breed, age, sampleWeight.takeIf { isSample }).joinToString(sep),
                     style = scale.style(DesignType.body),
                     color = colors.homeSubText,
                 )
@@ -149,8 +153,9 @@ private fun RegisteredBody(
                         },
                         none, scale, colors,
                     )
-                    InfoRow(stringResource(R.string.pet_card_weight), null, none, scale, colors)
-                    InfoRow(stringResource(R.string.pet_card_traits), null, none, scale, colors)
+                    // 체중·특징은 프로필 형식에 없어 샘플 보리일 때만 정해 둔 값을 보인다 (2026-11-14)
+                    InfoRow(stringResource(R.string.pet_card_weight), sampleWeight.takeIf { isSample }, none, scale, colors)
+                    InfoRow(stringResource(R.string.pet_card_traits), sampleTraits.takeIf { isSample }, none, scale, colors)
                 }
                 Spacer(Modifier.height(scale.gap(DesignSpace.xxl)))
                 Section(stringResource(R.string.pet_card_section_env), scale, colors) {
@@ -171,7 +176,7 @@ private fun RegisteredBody(
 
         Spacer(Modifier.height(scale.gap(DesignSpace.xxl)))
         Text(stringResource(R.string.pet_card_edit_hint), style = scale.style(DesignType.body), color = colors.homeSubText)
-        if (isSample) {
+        if (com.meongcare.app.ui.SHOW_DEMO_NOTICES && isSample) {
             Text(stringResource(R.string.card_sample_pet_notice), style = scale.style(DesignType.body), color = colors.homeSubText)
         }
 

@@ -156,6 +156,9 @@ class MainActivity : ComponentActivity() {
                     )
                 }
 
+                androidx.compose.runtime.CompositionLocalProvider(
+                    com.meongcare.app.ui.card.LocalSamplePetPhoto provides isPetProfileSample,
+                ) {
                 HomeScreen(
                     uiState = uiState,
                     guidanceUiState = guidanceUiState,
@@ -422,6 +425,8 @@ class MainActivity : ComponentActivity() {
                             relaxSummary = relaxSummaryOf(relaxSettings),
                             isSample = isPetProfileSample,
                             onBack = { homePage = HomePage.NONE },
+                            sampleWeight = com.meongcare.app.data.pet.SamplePetProfiles.DEMO_WEIGHT,
+                            sampleTraits = com.meongcare.app.data.pet.SamplePetProfiles.DEMO_TRAITS,
                             records = visitRecords.map { r ->
                                 listOfNotNull(
                                     r.endedAt.atZone(java.time.ZoneId.systemDefault())
@@ -494,6 +499,7 @@ class MainActivity : ComponentActivity() {
                         }
                     },
                 )
+                }
             }
         }
     }

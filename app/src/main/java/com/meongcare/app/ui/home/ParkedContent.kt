@@ -29,10 +29,19 @@ enum class ParkedContent {
 
     /** 릴렉스 모드 (019, 시연용 화면. 차량에 적용하지 않는다) */
     RELAX,
+
+    /** 진료 완료 (디자인 시안 after, 2026-11-14) */
+    AFTER_VISIT,
+
+    /** 귀가 중 (디자인 시안 trip, 2026-11-14) */
+    GOING_HOME,
+
+    /** 귀가 완료 (디자인 시안 fin, 2026-11-14) */
+    HOME_ARRIVED,
 }
 
 /** 처음 화면 바로가기로 연 쪽 (019). 정차 중에만 보인다 */
-enum class HomePage { NONE, PET_CARD, RELAX }
+enum class HomePage { NONE, PET_CARD, RELAX, AFTER_VISIT, GOING_HOME, HOME_ARRIVED }
 
 /**
  * 정차 화면 안에서 보일 것을 고른다. **주행 중에는 불리지 않는다**: [homeContentOf]가 주행·모름이면 먼저
@@ -67,6 +76,9 @@ fun parkedContentOf(
         linking && guidance is GuidanceUiState.Idle -> ParkedContent.LINK
         page == HomePage.PET_CARD -> ParkedContent.PET_CARD
         page == HomePage.RELAX -> ParkedContent.RELAX
+        page == HomePage.AFTER_VISIT -> ParkedContent.AFTER_VISIT
+        page == HomePage.GOING_HOME -> ParkedContent.GOING_HOME
+        page == HomePage.HOME_ARRIVED -> ParkedContent.HOME_ARRIVED
         finderWithoutCard && guidance is GuidanceUiState.Idle && finder is FinderStep.Hospitals -> ParkedContent.HOSPITALS
         finderWithoutCard && guidance is GuidanceUiState.Idle && finder is FinderStep.Confirm -> ParkedContent.CONFIRM_HOSPITAL
         atHome -> ParkedContent.HOME

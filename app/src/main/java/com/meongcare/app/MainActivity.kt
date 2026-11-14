@@ -22,6 +22,7 @@ import com.meongcare.app.ui.pet.petCardOf
 import com.meongcare.app.ui.relax.RelaxScreen
 import com.meongcare.app.ui.relax.RelaxViewModel
 import com.meongcare.app.ui.relax.relaxSummaryOf
+import com.meongcare.app.ui.relax.relaxSettingsText
 import java.time.LocalDate
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -105,6 +106,15 @@ class MainActivity : ComponentActivity() {
                 // 처음 화면 바로가기로 연 쪽 (019). 주행으로 바뀌었다가 정차하면 같은 쪽으로 돌아온다
                 var homePage by rememberSaveable { mutableStateOf(HomePage.NONE) }
                 val relaxViewModel: RelaxViewModel = viewModel()
+                val visitViewModel: com.meongcare.app.ui.visit.VisitViewModel = viewModel()
+                val visit by visitViewModel.visit.collectAsStateWithLifecycle()
+                val waitInCar by visitViewModel.waitInCar.collectAsStateWithLifecycle()
+                val called by visitViewModel.called.collectAsStateWithLifecycle()
+                val recordChoice by visitViewModel.record.collectAsStateWithLifecycle()
+                val visitRecords by visitViewModel.records.collectAsStateWithLifecycle()
+                val feeling by visitViewModel.feeling.collectAsStateWithLifecycle()
+                // 릴렉스 화면을 진료 완료·귀가 중에서 열면 닫을 때 그 쪽으로 돌아간다
+                var relaxReturn by rememberSaveable { mutableStateOf(HomePage.NONE) }
                 val relaxSettings by relaxViewModel.settings.collectAsStateWithLifecycle()
                 val cardActions = remember(cardViewModel) {
                     MedicalCardActions(
@@ -296,7 +306,114 @@ class MainActivity : ComponentActivity() {
                             lifecycleScope.launch { container.guidanceSource.arriveNow(container.guidanceSource.state.first()) }
                         },
                     ),
-                    pages = PageExtras(page = homePage, onOpen = { homePage = it }, onClose = { homePage = HomePage.NONE }),
+                    pages = PageExtras(
+                        page = homePage,
+                        onOpen = { homePage = it },
+                        onClose = {
+                            homePage = if (homePage == HomePage.RELAX) relaxReturn else HomePage.NONE
+                            relaxReturn = HomePage.NONE
+                        },
+                    ),
+                    // 병원 도착 → 진료 완료 → 귀가 중 (디자인 시안, 2026-11-14)
+                    arriveScreen = {
+                        val arrivedName = (guidanceUiState as? com.meongcare.app.ui.guidance.GuidanceUiState.Arrived)?.destinationName.orEmpty()
+                        val reply = inquiryViewModel.current().searchRows.firstOrNull { it.key == arrivedName }
+                        val travel = tripState?.candidate?.hospital?.destination?.expectedTravel?.inWholeMinutes?.toInt()
+                        com.meongcare.app.ui.visit.ArriveScreen(
+                            card = cardUiState.card,
+                            hospitalName = arrivedName,
+                            cardSent = tripState?.delivery is com.meongcare.app.domain.trip.CardDelivery.Sent,
+                            startText = reply?.startMinutes?.let { stringResource(R.string.trip_wait_value, it) },
+                            waitInCar = waitInCar,
+                            called = called,
+                            onToggleWaitInCar = visitViewModel::toggleWaitInCar,
+                            onHome = {
+                                visitViewModel.clear()
+                                guidanceViewModel.onDismissArrival()
+                                cardViewModel.onCloseCard()
+                                trip.clear()
+                            },
+                            onComplete = {
+                                visitViewModel.complete(
+                                    arrivedName,
+                                    travel,
+                                    cardUiState.card.symptoms.takeIf { it.isNotEmpty() }?.joinToString(", ") { s -> getString(com.meongcare.app.ui.card.symptomLabelRes(s)) },
+                                )
+                                // 시안: 진료가 끝나면 귀가용 릴렉스를 켜 둔다
+                                relaxViewModel.setEnabled(true)
+                                guidanceViewModel.onDismissArrival()
+                                cardViewModel.onCloseCard()
+                                trip.clear()
+                                homePage = HomePage.AFTER_VISIT
+                            },
+                        )
+                    },
+                    afterVisitScreen = {
+                        val v = visit
+                        if (v == null) {
+                            homePage = HomePage.NONE
+                        } else {
+                            com.meongcare.app.ui.visit.AfterVisitScreen(
+                                visit = v,
+                                relaxOn = relaxSettings.enabled,
+                                relaxSummary = if (relaxSettings.enabled) relaxSettingsText(relaxSettings) else stringResource(R.string.relax_summary_off),
+                                onToggleRelax = { relaxViewModel.setEnabled(!relaxSettings.enabled) },
+                                onRelaxSettings = {
+                                    relaxReturn = HomePage.AFTER_VISIT
+                                    homePage = HomePage.RELAX
+                                },
+                                onGoHome = { homePage = HomePage.GOING_HOME },
+                                record = recordChoice,
+                                linked = linkState is com.meongcare.app.domain.link.OwnerLinkState.Linked,
+                                onSave = visitViewModel::saveRecord,
+                                onSkip = visitViewModel::skipRecord,
+                            )
+                        }
+                    },
+                    goingHomeScreen = {
+                        val v = visit
+                        if (v == null) {
+                            homePage = HomePage.NONE
+                        } else {
+                            com.meongcare.app.ui.visit.GoingHomeScreen(
+                                visit = v,
+                                relaxOn = relaxSettings.enabled,
+                                relaxSummary = relaxSettingsText(relaxSettings),
+                                onRelax = {
+                                    relaxReturn = HomePage.GOING_HOME
+                                    homePage = HomePage.RELAX
+                                },
+                                onDone = { homePage = HomePage.HOME_ARRIVED },
+                            )
+                        }
+                    },
+                    homeArrivedScreen = {
+                        val v = visit
+                        if (v == null) {
+                            homePage = HomePage.NONE
+                        } else {
+                            com.meongcare.app.ui.visit.HomeArrivedScreen(
+                                visit = v,
+                                petName = (cardUiState.card.pet as? PetHeader.Registered)?.name,
+                                record = recordChoice,
+                                relaxOn = relaxSettings.enabled,
+                                feeling = feeling,
+                                onFeeling = { f ->
+                                    visitViewModel.recordFeeling(f)
+                                    // 시안: 불안함이면 다음 이동은 불안 완화 설정(조용히 + 추가 안심 안내)
+                                    if (f == com.meongcare.app.ui.visit.TripFeeling.ANXIOUS) {
+                                        relaxViewModel.setSound(com.meongcare.app.ui.relax.RelaxSound.QUIET)
+                                        relaxViewModel.setExtraReassurance(true)
+                                    }
+                                },
+                                onDone = {
+                                    visitViewModel.clear()
+                                    relaxViewModel.setEnabled(false)
+                                    homePage = HomePage.NONE
+                                },
+                            )
+                        }
+                    },
                     petCardScreen = {
                         // 열려 있을 때만 프로필을 구독한다
                         val profile by container.petProfileSource.profile.collectAsStateWithLifecycle(initialValue = null)
@@ -305,6 +422,15 @@ class MainActivity : ComponentActivity() {
                             relaxSummary = relaxSummaryOf(relaxSettings),
                             isSample = isPetProfileSample,
                             onBack = { homePage = HomePage.NONE },
+                            records = visitRecords.map { r ->
+                                listOfNotNull(
+                                    r.endedAt.atZone(java.time.ZoneId.systemDefault())
+                                        .format(java.time.format.DateTimeFormatter.ofPattern("M월 d일 a h:mm", java.util.Locale.KOREAN)),
+                                    r.hospitalName,
+                                    stringResource(R.string.card_emergency_mode),
+                                    r.symptoms,
+                                ).joinToString(" · ")
+                            },
                         )
                     },
                     relaxScreen = {
@@ -314,7 +440,10 @@ class MainActivity : ComponentActivity() {
                             onSetEnabled = relaxViewModel::setEnabled,
                             onSetSound = relaxViewModel::setSound,
                             onSetExtraReassurance = relaxViewModel::setExtraReassurance,
-                            onDone = { homePage = HomePage.NONE },
+                            onDone = {
+                                homePage = relaxReturn
+                                relaxReturn = HomePage.NONE
+                            },
                         )
                     },
                     voice = voiceUiState,

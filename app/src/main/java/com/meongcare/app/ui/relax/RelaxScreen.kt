@@ -249,6 +249,13 @@ private fun Reassurance(settings: RelaxSettings, onSet: (Boolean) -> Unit, scale
     }
 }
 
+/** 켜짐·꺼짐 없이 설정만 ("조용히", "잔잔한 음악 · 추가 안심 안내"). 시안 `rxSum()` */
+@Composable
+fun relaxSettingsText(settings: RelaxSettings): String = listOfNotNull(
+    stringResource(if (settings.sound == RelaxSound.QUIET) R.string.relax_sound_quiet else R.string.relax_sound_calm),
+    if (settings.extraReassurance) stringResource(R.string.relax_reassurance) else null,
+).joinToString(stringResource(R.string.pet_card_separator))
+
 /** 반려동물 카드 "환경 설정" 칸의 요약 */
 @Composable
 fun relaxSummaryOf(settings: RelaxSettings): String {

@@ -83,6 +83,10 @@ fun HomeScreen(
     tripActions: TripActions = TripActions(),
     petCardScreen: @Composable () -> Unit = {},
     relaxScreen: @Composable () -> Unit = {},
+    arriveScreen: (@Composable () -> Unit)? = null,
+    afterVisitScreen: @Composable () -> Unit = {},
+    goingHomeScreen: @Composable () -> Unit = {},
+    homeArrivedScreen: @Composable () -> Unit = {},
     voice: VoiceScreenState? = null,
     voiceActions: VoiceActions = VoiceActions(),
     bottomBar: @Composable () -> Unit = {},
@@ -127,6 +131,10 @@ fun HomeScreen(
                         tripActions = tripActions,
                         petCardScreen = petCardScreen,
                         relaxScreen = relaxScreen,
+                        arriveScreen = arriveScreen,
+                        afterVisitScreen = afterVisitScreen,
+                        goingHomeScreen = goingHomeScreen,
+                        homeArrivedScreen = homeArrivedScreen,
                         voice = voice,
                         voiceActions = voiceActions,
                     )
@@ -165,6 +173,10 @@ private fun ParkedFlow(
     tripActions: TripActions,
     petCardScreen: @Composable () -> Unit,
     relaxScreen: @Composable () -> Unit,
+    arriveScreen: (@Composable () -> Unit)?,
+    afterVisitScreen: @Composable () -> Unit,
+    goingHomeScreen: @Composable () -> Unit,
+    homeArrivedScreen: @Composable () -> Unit,
     voice: VoiceScreenState?,
     voiceActions: VoiceActions,
 ) {
@@ -203,6 +215,9 @@ private fun ParkedFlow(
             BackHandler(onBack = pages.onClose)
             relaxScreen()
         }
+        ParkedContent.AFTER_VISIT -> afterVisitScreen()
+        ParkedContent.GOING_HOME -> goingHomeScreen()
+        ParkedContent.HOME_ARRIVED -> homeArrivedScreen()
         ParkedContent.LINK -> {
             BackHandler(onBack = link.onClose)
             linkScreen()
@@ -227,6 +242,11 @@ private fun ParkedFlow(
         ParkedContent.CARD -> {
             // 카드에서 시스템 뒤로 = [홈] (카드는 남는다)
             BackHandler(onBack = cardActions.onGoHome)
+            // 도착하면 진료 카드 대신 디자인 시안 "병원 도착" (2026-11-14)
+            if (guidanceUiState is GuidanceUiState.Arrived && arriveScreen != null) {
+                arriveScreen()
+                return
+            }
             // 안내 중이면 진료 카드 대신 디자인 시안 "병원으로 이동 중" (2026-11-14)
             if (guidanceUiState is GuidanceUiState.Guiding && tripView != null) {
                 com.meongcare.app.ui.trip.ParkedTripScreen(

@@ -63,6 +63,7 @@ fun PetCardScreen(
     isSample: Boolean,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    records: List<String> = emptyList(),
 ) {
     val colors = LocalDesignTokens.current.colors
     BoxWithConstraints(modifier = modifier.fillMaxSize().background(colors.homeBackground)) {
@@ -77,7 +78,7 @@ fun PetCardScreen(
             PageHeader(stringResource(R.string.pet_card_title), onBack, scale, colors)
             Spacer(Modifier.height(scale.gap(DesignSpace.xl)))
             when (state) {
-                is PetCardUiState.Registered -> RegisteredBody(state, relaxSummary, isSample, twoColumns, scale, colors)
+                is PetCardUiState.Registered -> RegisteredBody(state, relaxSummary, isSample, twoColumns, scale, colors, records)
                 else -> Text(
                     stringResource(
                         when (state) {
@@ -103,6 +104,7 @@ private fun RegisteredBody(
     twoColumns: Boolean,
     scale: DesignScale,
     colors: DesignColors,
+    records: List<String>,
 ) {
     val sep = stringResource(R.string.pet_card_separator)
     val species = stringResource(R.string.pet_card_species)
@@ -174,16 +176,32 @@ private fun RegisteredBody(
         }
 
         Spacer(Modifier.height(scale.gap(DesignSpace.xxxl)))
-        Text(stringResource(R.string.pet_card_records), style = scale.style(RecordsTitle), color = colors.homeText)
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text(stringResource(R.string.pet_card_records), style = scale.style(RecordsTitle), color = colors.homeText)
+            Spacer(Modifier.width(scale.gap(DesignSpace.m)))
+            Text(stringResource(R.string.pet_card_records_count, records.size), style = scale.style(RowKey), color = colors.homeSubText)
+        }
         Spacer(Modifier.height(scale.gap(DesignSpace.m)))
         DesignDivider(colors, scale)
-        Row(
-            modifier = Modifier.padding(vertical = scale.gap(DesignSpace.l)),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(HomeIcons.Record, contentDescription = null, tint = colors.homeSubText, modifier = Modifier.size(scale.gap(40.dp)))
-            Spacer(Modifier.width(scale.gap(DesignSpace.l)))
-            Text(stringResource(R.string.pet_card_no_records), style = scale.style(RowValue), color = colors.homeText)
+        if (records.isEmpty()) {
+            Row(
+                modifier = Modifier.padding(vertical = scale.gap(DesignSpace.l)),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(HomeIcons.Record, contentDescription = null, tint = colors.homeSubText, modifier = Modifier.size(scale.gap(40.dp)))
+                Spacer(Modifier.width(scale.gap(DesignSpace.l)))
+                Text(stringResource(R.string.pet_card_no_records), style = scale.style(RowValue), color = colors.homeText)
+            }
+        } else {
+            // [진료 완료]에서 [저장]한 진료 기록 (2026-11-14, 시안 recs)
+            records.forEach { line ->
+                Row(Modifier.padding(vertical = scale.gap(DesignSpace.m)), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(HomeIcons.Record, contentDescription = null, tint = colors.primary, modifier = Modifier.size(scale.gap(36.dp)))
+                    Spacer(Modifier.width(scale.gap(DesignSpace.l)))
+                    Text(line, style = scale.style(RowValue), color = colors.homeText)
+                }
+                DesignDivider(colors, scale)
+            }
         }
     }
 }

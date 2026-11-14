@@ -87,7 +87,6 @@ private val TimeFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm",
  *
  * @param onBack 응답 확인 [←] (카드로)
  * @param onChoose 비교에서 고른 병원으로 출발 확인 (`HospitalTrip.choose`)
- * @param onDepartSuggested 출발 제안 팝업 [여기로 출발]: 카드와 함께 바로 출발 (비교 화면을 거치지 않는다)
  * @param onDepartNearest 응답 없음 팝업 [가장 가까운 병원으로 출발]: 카드와 함께 바로 출발 + 병원 전화 연결
  */
 @Composable
@@ -102,7 +101,6 @@ fun VetInquiryScreen(
     onChoose: (DemoHospital) -> Unit,
     modifier: Modifier = Modifier,
     onDepartNearest: (DemoHospital) -> Unit = {},
-    onDepartSuggested: (DemoHospital) -> Unit = {},
 ) {
     val colors = LocalDesignTokens.current.colors
     // 비교 쪽에서 시스템 뒤로 = 응답 확인으로 (응답 확인에서는 HomeScreen의 BackHandler가 카드로 보낸다)
@@ -113,7 +111,7 @@ fun VetInquiryScreen(
             InquiryPage.SEARCH -> {
                 SearchPage(vm, snapshot, expandNotice, onBack, scale, colors)
                 if (snapshot.showSuggestion) {
-                    SuggestionPrompt(vm, snapshot, onDepartSuggested, scale, colors)
+                    SuggestionPrompt(vm, snapshot, onChoose, scale, colors)
                 }
                 if (snapshot.showNoResponsePrompt) {
                     NoResponsePrompt(vm, snapshot, onDepartNearest, scale, colors)
@@ -395,13 +393,14 @@ internal fun FlowButton(
 
 /**
  * 출발 제안 팝업 (사용자 결정 2026-11-14): 응답 대기 시간(20초)이 끝났을 때 진료 가능 답이 있으면
- * 진료 시작까지가 가장 짧은 병원을 "○○으로 출발할까요?"로 제안한다. [여기로 출발]은 비교 없이 바로 출발한다.
+ * 진료 시작까지가 가장 짧은 병원을 "○○으로 출발할까요?"로 제안한다.
+ * [이 병원으로 출발 준비]는 비교 경로와 같은 "출발 확인" 화면으로 간다 (사용자 결정 2026-11-14).
  */
 @Composable
 private fun SuggestionPrompt(
     vm: VetInquiryViewModel,
     s: InquirySnapshot,
-    onDepartSuggested: (DemoHospital) -> Unit,
+    onChoose: (DemoHospital) -> Unit,
     scale: DesignScale,
     colors: DesignColors,
 ) {
@@ -446,8 +445,11 @@ private fun SuggestionPrompt(
                 Row(horizontalArrangement = Arrangement.spacedBy(scale.gap(DesignSpace.m))) {
                     FlowButton(stringResource(R.string.suggest_compare), vm::compareInsteadOfSuggestion, primary = false, scale = scale, colors = colors)
                     FlowButton(
-                        stringResource(R.string.suggest_go),
-                        { onDepartSuggested(h) },
+                        stringResource(R.string.compare_go),
+                        {
+                            vm.chooseSuggestion(h.name)
+                            onChoose(h)
+                        },
                         primary = true,
                         scale = scale,
                         colors = colors,

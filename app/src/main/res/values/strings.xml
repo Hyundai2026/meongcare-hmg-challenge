@@ -342,7 +342,6 @@
     <string name="suggest_body">답변한 병원 중 이동 시간과 대기 시간을 합쳐 가장 빨리 진료받을 수 있는 곳이에요.</string>
     <string name="suggest_detail_start">이동 %1$d분 · 진료 시작까지 약 %2$d분</string>
     <string name="suggest_detail_unknown">이동 %1$d분 · 대기시간 미확인</string>
-    <string name="suggest_go">여기로 출발</string>
     <string name="suggest_compare">다른 병원 비교</string>
     <string name="times_travel">이동</string>
     <string name="times_wait">대기</string>

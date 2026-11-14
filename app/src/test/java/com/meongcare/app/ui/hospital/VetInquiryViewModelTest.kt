@@ -67,4 +67,16 @@ class VetInquiryViewModelTest {
         vm.onBackFromConfirm()
         assertEquals("별숲동물의료센터", vm.compareSelected.value)
     }
+
+    @Test
+    fun `출발 제안에서 고르면 제안이 닫히고 그 병원이 비교 선택이 된다`() {
+        val vm = vm()
+        vm.restart()
+        now = now.plusSeconds(20)
+        assertTrue(vm.current().showSuggestion)
+        vm.chooseSuggestion("온유동물병원")
+        assertEquals(false, vm.current().showSuggestion)
+        assertEquals(InquiryPage.COMPARE, vm.page.value)
+        assertEquals("온유동물병원", vm.compareSelected.value)
+    }
 }

@@ -97,6 +97,17 @@ class VetInquiryViewModel(
         bump()
     }
 
+    /**
+     * 출발 제안 [이 병원으로 출발 준비]: 제안을 닫고 그 병원을 비교 선택으로 둔다.
+     * 출발 확인에서 [←]면 그 병원이 고른 채로 비교 쪽이 보인다 (비교 경로와 같은 흐름, 사용자 결정 2026-11-14)
+     */
+    fun chooseSuggestion(name: String) {
+        inquiry.dismissSuggestion()
+        _compareSelected.value = name
+        _page.value = InquiryPage.COMPARE
+        bump()
+    }
+
     /** 출발 제안 [다른 병원 비교]: 제안을 닫고 비교 쪽으로 */
     fun compareInsteadOfSuggestion() {
         inquiry.dismissSuggestion()

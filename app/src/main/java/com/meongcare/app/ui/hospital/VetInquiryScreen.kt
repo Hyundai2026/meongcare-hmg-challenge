@@ -87,7 +87,7 @@ private val TimeFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm",
  *
  * @param onBack 응답 확인 [←] (카드로)
  * @param onChoose 비교에서 고른 병원으로 출발 확인 (`HospitalTrip.choose`)
- * @param onDepartNearest 응답 없음 팝업 [가장 가까운 병원으로 출발]: 카드와 함께 바로 출발 + 병원 전화 연결
+ * @param onDepartNearest 응답 없음 팝업 [가장 가까운 병원으로 안내]: 카드와 함께 바로 출발 (전화는 걸지 않는다)
  */
 @Composable
 fun VetInquiryScreen(

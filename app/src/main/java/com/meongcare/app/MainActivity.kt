@@ -205,11 +205,8 @@ class MainActivity : ComponentActivity() {
                                 expandNotice = expandNotice,
                                 onBack = trip::back,
                                 onChoose = { trip.choose(it.row) },
-                                // 응답 없음 → 가장 가까운 병원으로 카드와 함께 바로 출발 + 병원 전화 연결 (2026-11-14)
-                                onDepartNearest = { nearest ->
-                                    trip.depart(nearest.row, cardViewModel.caseCard())
-                                    nearest.row.hospital.phoneNumber?.let(cardViewModel::onCallNumber)
-                                },
+                                // 응답 없음 → 가장 가까운 병원으로 카드와 함께 바로 출발 (전화는 걸지 않는다, 사용자 결정 2026-11-14)
+                                onDepartNearest = { nearest -> trip.depart(nearest.row, cardViewModel.caseCard()) },
                             )
                             return@hospitalList
                         }

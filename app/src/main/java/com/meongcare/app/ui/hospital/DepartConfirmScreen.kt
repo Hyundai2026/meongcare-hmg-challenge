@@ -142,6 +142,7 @@ fun DepartConfirmScreen(
                     infoSubtitle = stringResource(R.string.depart_eta, eta),
                     selectedLabel = stringResource(R.string.map_label_travel, hospital.rank, hospital.name, hospital.travelMinutes),
                     showBadge = false,
+                    showRoute = true,
                 )
             }
         }

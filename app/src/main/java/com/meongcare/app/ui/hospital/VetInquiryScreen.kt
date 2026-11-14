@@ -31,6 +31,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -38,6 +39,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -228,31 +230,94 @@ private fun SearchPage(
 
 @Composable
 private fun ProgressBar(fraction: Float, scale: DesignScale, colors: DesignColors) {
-    Box(Modifier.fillMaxWidth().height(scale.gap(8.dp)).background(colors.homeLine, RoundedCornerShape(50))) {
-        Box(Modifier.fillMaxWidth(fraction).fillMaxHeight().background(colors.primary, RoundedCornerShape(50)))
+    // 상태는 1초마다 바뀌지만 막대는 그 1초 동안 일정한 속도로 줄어들게 한다 (사용자 요청 2026-11-14)
+    val shown by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = fraction,
+        animationSpec = androidx.compose.animation.core.tween(durationMillis = 1_000, easing = androidx.compose.animation.core.LinearEasing),
+        label = "countdown",
+    )
+    Box(Modifier.fillMaxWidth().height(scale.gap(10.dp)).background(colors.homeLine, RoundedCornerShape(50))) {
+        Box(Modifier.fillMaxWidth(shown).fillMaxHeight().background(colors.primary, RoundedCornerShape(50)))
+    }
+}
+
+/** 상태 색 (사용자 요청 2026-11-14): 진료 가능 초록 / 답변 대기 파랑 / 응답 지연 주황 / 진료 불가 빨강 */
+private data class StatusTone(val accent: Color, val soft: Color)
+
+private fun toneOf(status: InquiryStatus, colors: DesignColors): StatusTone = when (status) {
+    InquiryStatus.AVAILABLE -> StatusTone(colors.success, colors.successBackground)
+    InquiryStatus.UNAVAILABLE -> StatusTone(colors.error, colors.errorBackground)
+    InquiryStatus.DELAYED -> StatusTone(colors.warning, colors.warningBackground)
+    else -> StatusTone(colors.primary, colors.selected)
+}
+
+/** 답변이 온 병원: "이동 N분 · 대기 N분 · 총 약 N분", 숫자는 파란 굵은 글씨 (사용자 요청 2026-11-14) */
+@Composable
+private fun availableTimes(row: InquiryRow, colors: DesignColors): androidx.compose.ui.text.AnnotatedString {
+    val travelLabel = stringResource(R.string.times_travel)
+    val waitLabel = stringResource(R.string.times_wait)
+    val totalLabel = stringResource(R.string.times_total)
+    val unknown = stringResource(R.string.compare_unknown)
+    val minutes = stringResource(R.string.times_minutes_suffix)
+    val about = stringResource(R.string.times_about_prefix)
+    val strong = androidx.compose.ui.text.SpanStyle(color = colors.primary, fontWeight = FontWeight.Bold)
+    val waitLeft = row.waitMinutes?.let { (it - (row.elapsedMinutes ?: 0)).coerceAtLeast(0) }
+    return androidx.compose.ui.text.buildAnnotatedString {
+        append("$travelLabel ")
+        withStyle(strong) { append("${row.travelMinutes}$minutes") }
+        append(" · $waitLabel ")
+        if (waitLeft != null) withStyle(strong) { append("$waitLeft$minutes") } else append(unknown)
+        row.startMinutes?.let {
+            append(" · $totalLabel ")
+            withStyle(strong) { append("$about$it$minutes") }
+        }
     }
 }
 
 @Composable
 private fun SearchRow(row: InquiryRow, scale: DesignScale, colors: DesignColors) {
-    // 5곳이 한 화면에 다 보이게 한 줄로: 이름 · 상태 설명 ……… 배지 (사용자 요청 2026-11-14)
+    // 5곳이 한 화면에 다 보이게 한 줄로: 색 막대 · 이름 · 시간(또는 상태 설명) ……… 배지 (사용자 요청 2026-11-14)
+    val tone = toneOf(row.status, colors)
+    val answered = row.status == InquiryStatus.AVAILABLE || row.status == InquiryStatus.UNAVAILABLE
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = scale.gap(DesignSpace.xs)),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = scale.gap(2.dp))
+            .background(if (answered) tone.soft else Color.Transparent, RoundedCornerShape(scale.gap(DesignRadius.s)))
+            .padding(end = scale.gap(DesignSpace.s), top = scale.gap(DesignSpace.xxs), bottom = scale.gap(DesignSpace.xxs)),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(row.key, style = scale.style(SearchName), color = colors.homeText, modifier = Modifier.width(scale.gap(420.dp)), maxLines = 1)
-        Text(
-            rowSubText(row),
-            style = scale.style(RowSub),
-            color = when (row.status) {
-                InquiryStatus.DELAYED -> colors.warning
-                InquiryStatus.AVAILABLE -> colors.homeText
-                else -> colors.homeSubText
-            },
-            modifier = Modifier.weight(1f),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
+        Box(
+            Modifier
+                .width(scale.gap(8.dp).coerceAtLeast(4.dp))
+                .height(scale.gap(36.dp))
+                .background(tone.accent, RoundedCornerShape(50)),
         )
+        Spacer(Modifier.width(scale.gap(DesignSpace.m)))
+        Text(row.key, style = scale.style(SearchName), color = colors.homeText, modifier = Modifier.width(scale.gap(400.dp)), maxLines = 1)
+        if (row.status == InquiryStatus.AVAILABLE) {
+            Text(
+                availableTimes(row, colors),
+                style = scale.style(RowSub),
+                color = colors.homeText,
+                modifier = Modifier.weight(1f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        } else {
+            Text(
+                rowSubText(row),
+                style = scale.style(RowSub),
+                color = when (row.status) {
+                    InquiryStatus.DELAYED -> colors.warning
+                    InquiryStatus.UNAVAILABLE -> colors.error
+                    else -> colors.homeSubText
+                },
+                modifier = Modifier.weight(1f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
         Spacer(Modifier.width(scale.gap(DesignSpace.m)))
         StatusBadge(row.status, scale, colors)
     }
@@ -276,11 +341,13 @@ private fun rowSubText(row: InquiryRow): String = when (row.status) {
 
 @Composable
 private fun StatusBadge(status: InquiryStatus, scale: DesignScale, colors: DesignColors) {
+    val tone = toneOf(status, colors)
+    // 답이 온 상태(가능·불가·지연)는 진한 바탕 + 흰 글자, 대기 중은 연한 파랑 바탕
     val (text, bg, fg) = when (status) {
-        InquiryStatus.AVAILABLE -> Triple(R.string.inquiry_badge_ok, colors.successBackground, colors.success)
-        InquiryStatus.UNAVAILABLE -> Triple(R.string.inquiry_badge_no, colors.homeIcon, colors.homeSubText)
-        InquiryStatus.DELAYED -> Triple(R.string.inquiry_badge_delay, colors.warningBackground, colors.warning)
-        else -> Triple(R.string.inquiry_badge_wait, colors.homeIcon, colors.homeSubText)
+        InquiryStatus.AVAILABLE -> Triple(R.string.inquiry_badge_ok, tone.accent, Color.White)
+        InquiryStatus.UNAVAILABLE -> Triple(R.string.inquiry_badge_no, tone.accent, Color.White)
+        InquiryStatus.DELAYED -> Triple(R.string.inquiry_badge_delay, tone.accent, Color.White)
+        else -> Triple(R.string.inquiry_badge_wait, tone.soft, tone.accent)
     }
     Text(
         stringResource(text),
@@ -368,12 +435,7 @@ private fun SuggestionPrompt(
                 Row(Modifier.fillMaxWidth().padding(vertical = scale.gap(DesignSpace.m)), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Text(h.name, style = scale.style(RowName), color = colors.homeText)
-                        Text(
-                            row.startMinutes?.let { stringResource(R.string.suggest_detail_start, h.travelMinutes, it) }
-                                ?: stringResource(R.string.suggest_detail_unknown, h.travelMinutes),
-                            style = scale.style(RowSub),
-                            color = colors.homeSubText,
-                        )
+                        Text(availableTimes(row, colors), style = scale.style(Body), color = colors.homeText)
                     }
                     StatusBadge(row.status, scale, colors)
                 }
@@ -406,6 +468,7 @@ private fun SuggestionPrompt(
                     ?: stringResource(R.string.suggest_detail_unknown, h.travelMinutes),
                 selectedLabel = stringResource(R.string.map_label_travel, h.rank, h.name, h.travelMinutes),
                 showBadge = false,
+                showRoute = true,
             )
         }
     }
@@ -485,6 +548,7 @@ private fun NoResponsePrompt(
                     ?: stringResource(R.string.prompt_map_subtitle),
                 selectedLabel = selected?.let { stringResource(R.string.map_label_travel, it.rank, it.name, it.travelMinutes) },
                 showBadge = false,
+                showRoute = true,
             )
         }
     }
@@ -602,7 +666,11 @@ private fun CompareRow(row: InquiryRow, isSelected: Boolean, isBest: Boolean, sc
                     )
                 }
             }
-            Text(rowSubText(row), style = scale.style(RowSub), color = if (row.status == InquiryStatus.DELAYED) colors.warning else colors.homeSubText)
+            if (row.status == InquiryStatus.AVAILABLE) {
+                Text(availableTimes(row, colors), style = scale.style(RowSub), color = colors.homeText)
+            } else {
+                Text(rowSubText(row), style = scale.style(RowSub), color = if (row.status == InquiryStatus.DELAYED) colors.warning else colors.homeSubText)
+            }
         }
         CellText(stringResource(R.string.compare_minutes, row.travelMinutes), scale, colors)
         CellText(

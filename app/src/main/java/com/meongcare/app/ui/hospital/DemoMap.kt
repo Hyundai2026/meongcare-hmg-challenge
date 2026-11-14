@@ -94,6 +94,7 @@ internal fun ActionButton(
  * @param infoTitle 왼쪽 위 정보 칸 제목 (null이면 "주변 동물병원 N곳")
  * @param infoSubtitle 정보 칸 둘째 줄 (null이면 "이동시간만 확인 · 대기시간 미확인")
  * @param selectedLabel 고른 병원 핀 위에 번호 대신 보일 글 (예: "1  별숲동물의료센터  이동 10분")
+ * @param showRoute 지금 위치에서 [selected]까지 대략적인 경로(꺾인 굵은 파란 선)를 그린다 (안내할 병원, 사용자 요청 2026-11-14)
  * @param showBadge "시연용 지도 · 가상 병원" 배지 (020 흐름은 보이지 않는다, 사용자 결정 D1)
  */
 @Composable
@@ -108,6 +109,7 @@ internal fun DemoMap(
     infoSubtitle: String? = null,
     selectedLabel: String? = null,
     showBadge: Boolean = true,
+    showRoute: Boolean = false,
 ) {
     BoxWithConstraints(
         modifier = modifier
@@ -147,6 +149,26 @@ internal fun DemoMap(
             drawLine(MapRoad, Offset(sw * 0.15f, sh), Offset(sw * 0.62f, 0f), thick, StrokeCap.Round)
             drawLine(MapRoad, Offset(0f, sh * 0.58f), Offset(sw, sh * 0.46f), thick, StrokeCap.Round)
             drawLine(MapRoad, Offset(sw * 0.55f, sh), Offset(sw * 0.95f, sh * 0.12f), thick, StrokeCap.Round)
+            // 대략적인 경로: 지금 위치에서 가로로 간 뒤 세로로 병원까지 (실제 길이 아니라 시연용 그림)
+            if (showRoute && selected != null) {
+                val start = Offset(sw * 0.5f, sh * 0.5f)
+                val end = Offset(sw * selected.mapX, sh * selected.mapY)
+                val corner = Offset(end.x, start.y)
+                val route = Path().apply {
+                    moveTo(start.x, start.y)
+                    lineTo(corner.x, corner.y)
+                    lineTo(end.x, end.y)
+                }
+                drawPath(
+                    route,
+                    primary,
+                    style = androidx.compose.ui.graphics.drawscope.Stroke(
+                        width = 10.dp.toPx() * scale.s.coerceAtLeast(0.6f),
+                        cap = StrokeCap.Round,
+                        join = androidx.compose.ui.graphics.StrokeJoin.Round,
+                    ),
+                )
+            }
             // 현재 위치
             val me = Offset(sw * 0.5f, sh * 0.5f)
             drawCircle(primary.copy(alpha = 0.16f), radius = 60.dp.toPx() * scale.s, center = me)

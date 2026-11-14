@@ -38,10 +38,10 @@ class DemoHospitalsTest {
     }
 
     @Test
-    fun `가상 병원이라 시연용 표시가 있고 전화번호와 대기 정보가 없다`() {
+    fun `가상 병원이라 시연용 표시와 시연용 번호가 있고 대기 정보가 없다`() {
         for (h in all) {
             assertTrue(h.name, h.row.hospital.isSample)
-            assertNull(h.name, h.row.hospital.phoneNumber)
+            assertEquals(h.name, "02-0000-%04d".format(20 + h.rank), h.row.hospital.phoneNumber)
             assertNull(h.name, h.row.candidate.status)
             assertEquals(h.name, StatusFreshness.NONE, h.row.freshness)
             assertNull(h.name, h.row.statusAge)
@@ -49,10 +49,10 @@ class DemoHospitalsTest {
     }
 
     @Test
-    fun `카드를 받지 않고 서버로 보내지도 않는 병원이다`() {
+    fun `카드를 받지만 서버로는 보내지 않는 시연 병원이다`() {
         for (h in all) {
-            assertEquals(h.name, HospitalOrigin.NEARBY_SEARCH, h.row.candidate.origin)
-            assertFalse(h.name, h.row.candidate.canReceiveCard)
+            assertEquals(h.name, HospitalOrigin.BUILT_IN, h.row.candidate.origin)
+            assertTrue(h.name, h.row.candidate.canReceiveCard)
             assertFalse(h.name, h.row.candidate.sendsCardToServer)
         }
     }

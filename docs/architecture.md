@@ -530,6 +530,16 @@ web/src/
 - (013) **서버 주소와 연결 상태**: 안내 줄 아래 "서버: 에뮬레이터 127.0.0.1:8080 · 프로젝트 … · 실시간 연결됨"(`metadata.fromCache`). 호스트가 `localhost`·`::1`이면 빨간 경고 (012 시연 준비 때 차와 병원 웹이 IPv4·IPv6 서로 다른 에뮬레이터에 붙었다).
 - (013) **시연 전 점검**: `npm --prefix firebase run preflight` (PF1~PF6: 127.0.0.1 응답, 시드, [::1]의 다른 에뮬레이터, adb reverse, 30분 안 대기 정보). [firebase/README.md](../firebase/README.md)
 
+## 동물병원 문의 흐름 (020, 2026-11-13)
+
+카드 [동물병원 찾기] → "동물병원 응답 확인"(+ 20초 무응답 팝업) → "동물병원 비교" → "출발 확인" → `HospitalTrip.depart(choice, card)`.
+
+- 규칙: `domain/inquiry/VetInquiry.kt` (순수, 시간 주입). 진료 시작까지 = max(이동, 남은 대기). 프로토타입 382행 규칙을 옮겼다 (계획 020 "프로토타입 규칙").
+- 답변은 **앱 안 시연 응답**(`InquiryScripts.DEFAULT`/`NO_RESPONSE`, debug 패널에서 고름). 병원 웹과 연결하지 않는다. 병원은 `DemoHospitals`(BUILT_IN, 카드는 Fake 전송).
+- 화면: `ui/hospital/VetInquiryScreen.kt`, `DepartConfirmScreen.kt`, 상태 `VetInquiryViewModel`(액티비티 범위). 시연 지도는 `DemoMap.kt` 공용.
+- 연결: `MainActivity`의 `SHOW_INQUIRY_FLOW`. false면 예전 제휴 병원 목록(012). 홈 [병원 찾기]는 019의 `DemoHospitalFindScreen` 그대로.
+- 주행 중에는 `homeContentOf`가 먼저 주행 화면을 고른다 (새 화면은 정차 쪽 HOSPITALS/CONFIRM_HOSPITAL 안).
+
 ## 테스트 전략
 
 - 단위 테스트(`app/src/test/`)로 Fake 데이터 소스와 ViewModel을 검증한다.

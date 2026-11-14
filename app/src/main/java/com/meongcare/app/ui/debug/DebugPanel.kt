@@ -46,6 +46,8 @@ fun DebugPanel(
     location: DebugLocationRow? = null,
     onAskLocation: () -> Unit = {},
     onFakeOwnerClaim: (() -> Unit)? = null,
+    inquiryScenarioLabel: String? = null,
+    onToggleInquiryScenario: () -> Unit = {},
 ) {
     Surface(
         color = MaterialTheme.colorScheme.surfaceVariant,
@@ -85,6 +87,8 @@ fun DebugPanel(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     DebugButton("위치 묻기", onAskLocation, enabled = !location.isAsking)
+                    // 동물병원 문의 시연 시나리오 (계획 020 D2 안 a): 다음 문의부터 쓴다
+                    inquiryScenarioLabel?.let { DebugButton(it, onToggleInquiryScenario) }
                     Text(
                         text = location.text,
                         style = MaterialTheme.typography.labelMedium,

@@ -76,6 +76,13 @@ object HomeIcons {
         }.build()
     }
 
+    /** 출발: 길안내 화살표 (채운 모양, 출발 확인 [목적지 설정하고 출발]) */
+    val Navigate: ImageVector by lazy {
+        ImageVector.Builder("Navigate", 24.dp, 24.dp, 24f, 24f).apply {
+            addPath(PathParser().parsePathString("M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z").toNodes(), fill = SolidColor(Color.Black))
+        }.build()
+    }
+
     /** 화면 머리 [←] (프로토타입 머리 화살표) */
     val Back: ImageVector by lazy { lineIcon("Back", "M19 12H5", "M11 6l-6 6 6 6", strokeWidth = 2f) }
 

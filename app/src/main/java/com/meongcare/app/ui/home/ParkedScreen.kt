@@ -59,7 +59,6 @@ import com.meongcare.app.ui.card.PetHeader
 import com.meongcare.app.ui.card.joinedText
 import com.meongcare.app.ui.card.previewCardState
 import com.meongcare.app.ui.card.symptomLabelRes
-import com.meongcare.app.ui.guidance.GuidancePanel
 import com.meongcare.app.ui.guidance.GuidanceUiState
 import com.meongcare.app.ui.guidance.TripPanel
 import com.meongcare.app.ui.theme.DesignColors
@@ -88,7 +87,7 @@ private val HomePetStatus = TextStyle(fontSize = 26.sp, lineHeight = 34.sp, font
  * 정차·주차 중 처음 화면 = 확정 디자인 프로토타입 2번 "응급 진료" (계획 019).
  *
  * - 위: 왼쪽 로고 글자, 오른쪽 반려견 줄(아바타·이름·상태) + 보호자 웹 연결 버튼(프로토타입 [⇄ 변경] 자리, D2).
- * - 왼쪽 열: (안내 중·도착이면 [GuidancePanel]) → "응급 진료" → 두 줄 안내 → [응급 진료 시작 >].
+ * - 왼쪽 열: "응급 진료" → 두 줄 안내 → [응급 진료 시작 >].
  *   진료 카드로 가는 버튼은 두지 않는다 (사용자 지시 2026-11-13).
  *   프로토타입 음성 힌트 자리에는 시연용 샘플 안내를 둔다 (음성 명령 기능은 없다).
  * - 오른쪽 열: 세로선 + 바로가기 3개 (병원 찾기, 릴렉스, 반려동물 카드).
@@ -293,10 +292,7 @@ private fun MainColumn(
     modifier: Modifier,
 ) {
     Column(modifier = modifier, horizontalAlignment = Alignment.Start) {
-        panel?.let {
-            GuidancePanel(it, onResend, Modifier.fillMaxWidth())
-            Spacer(Modifier.height(scale.gap(DesignSpace.xxxl)))
-        }
+        // 길안내 상태(안내 영역)는 처음 화면에 보이지 않는다 (사용자 결정 2026-11-14). 주행 화면과 진료 카드 화면이 보인다
         Text(stringResource(R.string.home_title), style = scale.style(HomeTitle), color = colors.homeText)
         Spacer(Modifier.height(scale.gap(28.dp)))
         Column(verticalArrangement = Arrangement.spacedBy(scale.gap(6.dp))) {

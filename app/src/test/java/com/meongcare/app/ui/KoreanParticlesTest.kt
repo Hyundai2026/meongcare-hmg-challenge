@@ -22,4 +22,13 @@ class KoreanParticlesTest {
         assertEquals("Max가", withSubjectParticle("Max"))
         assertEquals("", withSubjectParticle(""))
     }
+
+    @Test
+    fun `받침에 따라 으로와 로를 고른다`() {
+        assertEquals("온유동물병원으로", withDirectionParticle("온유동물병원"))
+        assertEquals("별숲동물의료센터로", withDirectionParticle("별숲동물의료센터"))
+        assertEquals("서울로", withDirectionParticle("서울"))
+        assertEquals("ABC로", withDirectionParticle("ABC"))
+        assertEquals("", withDirectionParticle(""))
+    }
 }

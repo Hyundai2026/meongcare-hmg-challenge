@@ -43,6 +43,7 @@ import com.meongcare.app.ui.theme.MeongCareTheme
  * [카드 없이 길안내만]은 보내지 않을 길이다 (사용자 결정 U2).
  *
  * @param phoneNumberPanel 전화 앱을 열지 못했을 때 번호를 크게 보이는 영역 (카드 화면과 같은 것)
+ * @param withCard false면 카드 없이 연 병원 찾기다 (홈 [병원 찾기], 019): 보낼 카드가 없으니 [길 안내 시작]만 있다
  */
 @Composable
 fun HospitalConfirmScreen(
@@ -53,6 +54,7 @@ fun HospitalConfirmScreen(
     onDepart: () -> Unit,
     modifier: Modifier = Modifier,
     phoneNumberPanel: @Composable () -> Unit = {},
+    withCard: Boolean = true,
 ) {
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val wide = maxWidth >= 840.dp
@@ -108,7 +110,9 @@ fun HospitalConfirmScreen(
                         }
                     }
                     NoticeBox(
-                        if (!choice.candidate.canReceiveCard) {
+                        if (!withCard && choice.candidate.canReceiveCard) {
+                            listOf(stringResource(R.string.confirm_no_card_home))
+                        } else if (!choice.candidate.canReceiveCard) {
                             // 근처 검색 병원 (계획 015): 카드를 보내지 않는다. 전화로 먼저 확인하게 한다
                             listOfNotNull(
                                 stringResource(R.string.confirm_nearby_no_card),
@@ -128,7 +132,7 @@ fun HospitalConfirmScreen(
                         modifier = Modifier.widthIn(max = 1100.dp),
                     )
                 }
-                Actions(choice, sideBySide, onCall, onDepartWithoutCard, onDepart)
+                Actions(choice, sideBySide, onCall, onDepartWithoutCard, onDepart, withCard)
             }
         }
     }
@@ -141,13 +145,14 @@ private fun Actions(
     onCall: (String) -> Unit,
     onDepartWithoutCard: () -> Unit,
     onDepart: () -> Unit,
+    withCard: Boolean,
 ) {
     val phone = choice.hospital.phoneNumber
     val call: (@Composable (Modifier) -> Unit)? = phone?.let {
         { modifier -> HospitalSecondaryButton(stringResource(R.string.card_call_hospital), { onCall(it) }, modifier, Icons.Filled.Phone, ActionBlue) }
     }
     // 근처 검색 병원은 카드를 받지 않으므로 [출발]·[카드 없이 길안내만] 대신 [길 안내 시작] 하나다 (계획 015)
-    val nearby = !choice.candidate.canReceiveCard
+    val nearby = !choice.candidate.canReceiveCard || !withCard
     val withoutCard: (@Composable (Modifier) -> Unit)? = if (nearby) null else { modifier ->
         HospitalSecondaryButton(stringResource(R.string.confirm_without_card), onDepartWithoutCard, modifier)
     }

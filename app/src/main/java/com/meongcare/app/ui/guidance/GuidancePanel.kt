@@ -187,12 +187,13 @@ private fun DeliveryChip(line: DeliveryLine, onResend: () -> Unit) {
     val scale = LocalCardScale.current
     val (icon: ImageVector, iconTint: Color, text: String) = when (line) {
         DeliveryLine.None -> return
+        // 시연 전송 줄은 보이지 않는다 (2026-11-14 사용자 결정, [com.meongcare.app.ui.SHOW_DEMO_NOTICES])
+        DeliveryLine.Sample -> if (!com.meongcare.app.ui.SHOW_DEMO_NOTICES) return else Triple(Icons.Outlined.Info, TripColors.ChipMuted, stringResource(R.string.delivery_sample))
         DeliveryLine.Sending -> Triple(Icons.Filled.Send, TripColors.ChipMuted, stringResource(R.string.delivery_sending))
         DeliveryLine.SentWaiting -> Triple(Icons.Filled.Send, TripColors.Panel, stringResource(R.string.delivery_sent_waiting))
         DeliveryLine.Sent -> Triple(Icons.Filled.Send, TripColors.Panel, stringResource(R.string.delivery_sent))
         is DeliveryLine.Acknowledged ->
             Triple(Icons.Filled.CheckCircle, TripColors.Ack, stringResource(R.string.delivery_acknowledged, clockText(line.at)))
-        DeliveryLine.Sample -> Triple(Icons.Outlined.Info, TripColors.ChipMuted, stringResource(R.string.delivery_sample))
         DeliveryLine.Failed -> Triple(Icons.Outlined.Warning, TripColors.Warn, stringResource(R.string.delivery_failed))
         DeliveryLine.NotSent -> Triple(Icons.Outlined.Info, TripColors.ChipMuted, stringResource(R.string.delivery_not_sent))
     }

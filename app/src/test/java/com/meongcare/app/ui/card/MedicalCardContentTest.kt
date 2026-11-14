@@ -1,6 +1,6 @@
 package com.meongcare.app.ui.card
 
-import com.meongcare.app.data.pet.SamplePetProfiles
+import com.meongcare.app.data.pet.ExamplePetProfiles
 import com.meongcare.app.domain.card.Symptom.BREATHING_DIFFICULTY
 import com.meongcare.app.domain.card.Symptom.COUGH
 import com.meongcare.app.domain.card.Symptom.SEIZURE
@@ -19,7 +19,7 @@ import org.junit.Test
 class MedicalCardContentTest {
     private val today = LocalDate.of(2026, 11, 5)
     private val seoul = ZoneId.of("Asia/Seoul")
-    private val bori = SamplePetProfiles.demoPet
+    private val bori = ExamplePetProfiles.bori
 
     private fun card(profile: PetProfileLoad?, vararg symptoms: com.meongcare.app.domain.card.Symptom) =
         medicalCardOf(profile, symptoms.toSet(), today, seoul)

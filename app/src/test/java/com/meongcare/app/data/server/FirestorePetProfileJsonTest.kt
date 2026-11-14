@@ -1,6 +1,6 @@
 package com.meongcare.app.data.server
 
-import com.meongcare.app.data.pet.SamplePetProfiles
+import com.meongcare.app.data.pet.ExamplePetProfiles
 import com.meongcare.app.testutil.DocsData
 import org.json.JSONArray
 import org.json.JSONObject
@@ -38,13 +38,13 @@ class FirestorePetProfileJsonTest {
 
     @Test
     fun `예시 프로필을 읽으면 샘플 보리와 같다`() {
-        assertEquals(SamplePetProfiles.demoPet.copy(photoDataUrl = null), FirestoreJson.petProfileOf(document(example())))
+        assertEquals(ExamplePetProfiles.bori.copy(photoDataUrl = null), FirestoreJson.petProfileOf(document(example())))
     }
 
     @Test
     fun `owner-link 예시의 서버 프로필 문서도 같다`() {
         val serverDoc = JSONObject(DocsData.read("owner-link.example.json")).getJSONObject("petProfiles/owner-uid-1")
-        assertEquals(SamplePetProfiles.demoPet.copy(photoDataUrl = null), FirestoreJson.petProfileOf(document(serverDoc)))
+        assertEquals(ExamplePetProfiles.bori.copy(photoDataUrl = null), FirestoreJson.petProfileOf(document(serverDoc)))
     }
 
     @Test

@@ -1,6 +1,6 @@
 package com.meongcare.app.ui.card
 
-import com.meongcare.app.data.pet.SamplePetProfiles
+import com.meongcare.app.data.pet.ExamplePetProfiles
 import com.meongcare.app.domain.card.Symptom
 import com.meongcare.app.domain.pet.AgeLabel
 import com.meongcare.app.domain.pet.MedicalInfo
@@ -22,7 +22,7 @@ import org.junit.Test
 class MedicalCardContentBoundaryTest {
     private val today = LocalDate.of(2026, 11, 5)
     private val seoul = ZoneId.of("Asia/Seoul")
-    private val bori = SamplePetProfiles.demoPet
+    private val bori = ExamplePetProfiles.bori
 
     private fun loaded(profile: PetProfile) = PetProfileLoad.Loaded(profile)
 

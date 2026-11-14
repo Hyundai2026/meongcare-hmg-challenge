@@ -25,7 +25,7 @@ class FakePetProfileSourceTest {
         // docs/data/pet-profile.example.json
         val bori = SamplePetProfiles.demoPet
         assertEquals("보리", bori.name)
-        assertEquals("골든리트리버", bori.breed)
+        assertEquals("포메라니안", bori.breed) // 예시 JSON(골든리트리버)과 품종만 다르다 (2026-11-14)
         assertEquals(Sex.MALE, bori.sex)
         assertEquals(LocalDate.of(2014, 8, 1), bori.birthDate)
         assertEquals(false, bori.birthDateIsEstimated)

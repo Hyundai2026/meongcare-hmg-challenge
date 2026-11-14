@@ -108,7 +108,7 @@ internal fun DemoMap(
     infoTitle: String? = null,
     infoSubtitle: String? = null,
     selectedLabel: String? = null,
-    showBadge: Boolean = true,
+    showBadge: Boolean = com.meongcare.app.ui.SHOW_DEMO_NOTICES,
     showRoute: Boolean = false,
 ) {
     BoxWithConstraints(

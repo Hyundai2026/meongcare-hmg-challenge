@@ -203,7 +203,7 @@ private fun TopBar(
             val status = when {
                 linkRow is LinkRow.Unlinked && linkRow.revoked -> stringResource(R.string.link_revoked) to colors.error
                 linkRow == LinkRow.Linked -> "● " + stringResource(R.string.home_pet_linked) to colors.success
-                isSample && registered != null -> stringResource(R.string.home_pet_sample) to colors.homeSubText
+                com.meongcare.app.ui.SHOW_DEMO_NOTICES && isSample && registered != null -> stringResource(R.string.home_pet_sample) to colors.homeSubText
                 else -> null
             }
             status?.let { (text, color) -> Text(text, style = scale.style(HomePetStatus), color = color) }
@@ -308,7 +308,7 @@ private fun MainColumn(
             scale = scale,
             colors = colors,
         )
-        if (isSample && card.card.pet is PetHeader.Registered) {
+        if (com.meongcare.app.ui.SHOW_DEMO_NOTICES && isSample && card.card.pet is PetHeader.Registered) {
             Spacer(Modifier.height(scale.gap(DesignSpace.l)))
             Text(
                 stringResource(R.string.card_sample_pet_notice),

@@ -104,7 +104,7 @@ fun HospitalConfirmScreen(
                                 style = MaterialTheme.typography.bodyLarge.copy(fontSize = scale.chip),
                                 color = CardColors.Muted,
                             )
-                            if (values.isSample) {
+                            if (com.meongcare.app.ui.SHOW_DEMO_NOTICES && values.isSample) {
                                 Text(stringResource(R.string.finder_sample), style = MaterialTheme.typography.labelMedium, color = CardColors.Muted)
                             }
                         }

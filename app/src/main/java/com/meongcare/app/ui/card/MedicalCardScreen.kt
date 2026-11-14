@@ -255,7 +255,7 @@ internal fun PhoneNumberPanel(number: String, isSample: Boolean, onDismiss: () -
         Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(stringResource(R.string.card_phone_panel_title), style = MaterialTheme.typography.bodyLarge)
             Text(number, style = MaterialTheme.typography.displayLarge, color = CardColors.Navy)
-            if (isSample) Text(stringResource(R.string.card_phone_panel_sample), style = MaterialTheme.typography.labelMedium, color = CardColors.Muted)
+            if (com.meongcare.app.ui.SHOW_DEMO_NOTICES && isSample) Text(stringResource(R.string.card_phone_panel_sample), style = MaterialTheme.typography.labelMedium, color = CardColors.Muted)
             Button(
                 onClick = onDismiss,
                 colors = ButtonDefaults.buttonColors(containerColor = ActionBlue, contentColor = Color.White),

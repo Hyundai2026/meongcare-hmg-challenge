@@ -257,7 +257,7 @@ git branch -d feat/<이름>
 
 # MeongCare 소개
 
-> 반려견이 갑자기 아플 때, 차 안에서 **증상 정리 → 동물병원 연결 → 출발 → 도착 → 귀가**까지 한 번에 돕는 Pleos Connect 앱
+> 멍쾌는 반려동물의 응급 상황부터 일상 진료까지, 가장 빠른 진료 연결과 차량 기반 맞춤 케어를 통해 병원 이동 전·중·후의 모든 과정을 함께하는 AI 반려동물 헬스케어 코파일럿입니다.
 
 <p align="center"><img src="docs/readme/demo.gif" alt="MeongCare 시연: 응급 진료 시작부터 귀가 완료까지" width="960"></p>
 

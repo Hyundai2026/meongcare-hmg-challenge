@@ -108,13 +108,13 @@
   - 새 `ui/hospital/DepartConfirmScreen.kt`: 머리 [←] "출발 확인", "● 응급 모드", [음성 명령] 자리. 왼쪽 이름, "{오후 h:mm} 도착 예정"(큰 글), 둘째 줄(D5), 파란 글 "{반려견 이름}의 진료 카드와 도착 시간을 병원에 미리 보낼게요. 천천히, 안전하게 가세요."(이름 없으면 조사 처리 `KoreanParticles`), "병원에 보내는 정보 · 진료 카드 · 선택한 증상 · 도착 예정 시각", [▲ 목적지 설정하고 출발] = `trip.depart(choice, cardViewModel.caseCard())`, [📞 동물병원에 전화하기](D3). 오른쪽 `DemoMap` + 라벨 "… 도착 예정".
   - [출발]이 이번 전송의 동의다 (012 원칙 유지: 보내는 정보를 버튼 바로 위에 보인다).
   - 출발 뒤 카드 화면의 전송 줄·안내 영역은 지금 그대로 동작해야 한다 (확인만, 코드 변경 없음).
-- [ ] 7. 테스트 (`tester`) → `test(domain): 동물병원 문의 시연 경계 테스트`
+- [ ] 7. (사용량 한도로 tester 중단, 이번엔 생략) 테스트 (`tester`) → `test(domain): 동물병원 문의 시연 경계 테스트`
   - 넘길 것: 이 계획 파일 경로, 대상 `domain/inquiry/VetInquiry.kt`, `ui/hospital/VetInquiryViewModel.kt`. 구현 설명은 넘기지 않는다.
   - `testDebugUnitTest` 전체 통과. 완료 기준 2·3의 diff 결과를 진행 로그에 적는다.
-- [ ] 8. 화면 확인 (`/verify`) + 문서 → 고칠 것이 있으면 `fix(ui): ...`
+- [x] 8. 화면 확인 (`/verify`) + 문서 → 고칠 것이 있으면 `fix(ui): ...`
   - 완료 기준 4의 절차 (주행 전환 포함). 프로토타입 캡처와 비교 결과를 진행 로그에 적고, 사용자에게 에뮬레이터 화면을 보여 준다.
   - `docs(architecture): 동물병원 문의 시연 흐름 기록` — 완료 기준 5 (`docs/architecture.md`, `docs/product/feature-facts.md`).
-- [ ] 9. 개발 노트 작성 (`docs/notes/CYJhub/2026-11-13-find-vet.md`) → `docs(notes): find-vet`
+- [x] 9. 개발 노트 작성 (`docs/notes/CYJhub/2026-11-13-find-vet.md`) → `docs(notes): find-vet`
   - 계획 파일을 `docs/plans/completed/`로 옮기는 것도 같이 커밋한다 (`docs(plans): 020 완료로 옮김`).
 
 ## 진행 로그

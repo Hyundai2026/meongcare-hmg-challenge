@@ -259,7 +259,9 @@ git branch -d feat/<이름>
 
 > 반려견이 갑자기 아플 때, 차 안에서 **증상 정리 → 동물병원 연결 → 출발 → 도착 → 귀가**까지 한 번에 돕는 Pleos Connect 앱
 
-<!-- 대표 움직이는 화면 (GIF, 20~30초): 응급 진료 시작 → 증상 선택 → 진료 카드 → 병원 응답 → 출발 확인 → 이동 중 → 병원 도착. docs/readme/demo.gif -->
+<p align="center"><img src="docs/readme/demo.gif" alt="MeongCare 시연: 응급 진료 시작부터 귀가 완료까지" width="960"></p>
+
+<p align="center"><sub>응급 진료 시작 → 증상 선택 → 진료 카드 → 동물병원 응답 확인 → 출발 → 병원 도착 → 진료 완료 → 귀가 (시연 모드, 태블릿 에뮬레이터)</sub></p>
 
 ## 왜 필요한가
 
@@ -279,9 +281,25 @@ git branch -d feat/<이름>
 | **병원 도착 · 진료 완료 · 귀가** | 도착 알림, 차 안에서 대기, 진료 기록 저장, 귀가 설정(릴렉스 모드)까지 이어진다 |
 | **반려동물 카드 · 릴렉스** | 반려견 정보와 진료 기록을 보고, 이동 중 실내 환경(사운드·안심 안내)을 정한다 |
 
-<!-- 기능별 캡처 (PNG, 가로 1600px, release 빌드로 debug 패널 없이): docs/readme/01-home.png, 02-symptoms.png, 03-card.png, 04-inquiry.png, 05-depart.png, 06-trip.png, 07-arrive.png, 08-after.png -->
+### 화면
+
+| 홈 · 응급 진료 | 증상 선택 |
+|---|---|
+| <img src="docs/readme/01-home.png" alt="홈 · 응급 진료" width="480"> | <img src="docs/readme/02-symptoms.png" alt="증상 선택" width="480"> |
+| **진료 카드 확인** | **동물병원 응답 확인** |
+| <img src="docs/readme/03-card.png" alt="진료 카드 확인" width="480"> | <img src="docs/readme/04-inquiry.png" alt="동물병원 응답 확인" width="480"> |
+| **출발 제안** | **출발 확인** |
+| <img src="docs/readme/05-suggest.png" alt="출발 제안" width="480"> | <img src="docs/readme/06-depart.png" alt="출발 확인" width="480"> |
+| **병원으로 이동 중** | **병원 도착** |
+| <img src="docs/readme/07-trip.png" alt="병원으로 이동 중" width="480"> | <img src="docs/readme/08-arrive.png" alt="병원 도착" width="480"> |
+| **진료 완료** | **귀가 중** |
+| <img src="docs/readme/09-after.png" alt="진료 완료" width="480"> | <img src="docs/readme/10-going-home.png" alt="귀가 중" width="480"> |
+| **반려동물 카드** | **릴렉스 모드** |
+| <img src="docs/readme/12-pet-card.png" alt="반려동물 카드" width="480"> | <img src="docs/readme/13-relax.png" alt="릴렉스 모드" width="480"> |
 
 ## 사용 흐름
+
+<img src="docs/readme/flow.png" alt="화면 흐름 한눈에 보기" width="100%">
 
 ```
 홈 ─▶ 증상 선택 ─▶ 진료 카드 확인 ─▶ 동물병원 응답 확인 (20초)

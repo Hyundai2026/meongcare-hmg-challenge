@@ -57,7 +57,8 @@ class HospitalTripHomeFinderBoundaryTest {
         runCurrent()
 
         assertEquals(listOf(demo.row.candidate), asked)
-        assertTrue(trip.trip.value?.delivery != CardDelivery.NotSent)
+        // 시연 전송이 실패하지 않는다 (병원 ID가 있어야 FakeCaseSender가 성공한다, 2026-11-14 버그 수정)
+        assertEquals(CardDelivery.Sent(toServer = false), trip.trip.value?.delivery)
         assertFalse(demo.row.candidate.sendsCardToServer)
         assertEquals(listOf(demo.row.hospital.destination.copy(expectedTravel = demo.travelMinutes.minutes)), guidance.started)
     }

@@ -55,6 +55,8 @@ object DemoHospitals {
             destination = Destination(name = name, latitude = lat, longitude = lon, expectedTravel = minutes.minutes),
             phoneNumber = "02-0000-%04d".format(20 + rank),
             isSample = true,
+            // 시연 전송(FakeCaseSender)은 병원 ID가 있어야 보낸 것으로 친다. 서버 문서가 아닌 앱 안 시연 ID다
+            id = "demo-vet-$rank",
         )
         val row = RankedHospital(
             candidate = HospitalCandidate(hospital, status = null, origin = HospitalOrigin.BUILT_IN),

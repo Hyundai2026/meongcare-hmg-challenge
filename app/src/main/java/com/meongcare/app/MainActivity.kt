@@ -6,6 +6,12 @@ import androidx.compose.runtime.setValue
 import com.meongcare.app.ui.card.PetHeader
 import com.meongcare.app.ui.home.HomePage
 import com.meongcare.app.ui.hospital.DemoHospitalFindScreen
+import com.meongcare.app.ui.home.TripActions
+import com.meongcare.app.ui.trip.tripViewOf
+import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import com.meongcare.app.ui.hospital.DepartConfirmScreen
 import com.meongcare.app.ui.hospital.VetInquiryScreen
 import com.meongcare.app.ui.hospital.VetInquiryViewModel
@@ -266,6 +272,30 @@ class MainActivity : ComponentActivity() {
                             countdown = rememberLinkCountdown(waitingSince, linkViewModel::now),
                         )
                     },
+                    // 병원으로 이동 중 (디자인 시안, 2026-11-14)
+                    tripViewFor = { tripPanel ->
+                        val inquiry = inquiryViewModel.current()
+                        val reply = inquiry.searchRows.firstOrNull { it.key == tripPanel.destinationName }
+                        val waitText = reply?.startMinutes?.let { stringResource(R.string.trip_wait_value, it) }
+                        // 도착 예정은 출발할 때 한 번 정해 두고 바꾸지 않는다 (사용자 요청: 숫자가 줄어들지 않게)
+                        val fixedEta = androidx.compose.runtime.remember(tripPanel.destinationName) { tripPanel.arrivesAt }
+                        tripViewOf(
+                            panel = tripPanel,
+                            trip = tripState,
+                            reply = reply,
+                            petName = (cardUiState.card.pet as? PetHeader.Registered)?.name,
+                            waitText = waitText,
+                            relaxOn = relaxSettings.enabled,
+                            relaxText = "",
+                            arrivesAt = fixedEta,
+                        )
+                    },
+                    tripActions = TripActions(
+                        onCall = { tripState?.candidate?.hospital?.phoneNumber?.let(cardViewModel::onCallNumber) },
+                        onArrive = {
+                            lifecycleScope.launch { container.guidanceSource.arriveNow(container.guidanceSource.state.first()) }
+                        },
+                    ),
                     pages = PageExtras(page = homePage, onOpen = { homePage = it }, onClose = { homePage = HomePage.NONE }),
                     petCardScreen = {
                         // 열려 있을 때만 프로필을 구독한다

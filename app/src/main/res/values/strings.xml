@@ -348,4 +348,29 @@
     <string name="times_total">총</string>
     <string name="times_about_prefix">"약 "</string>
     <string name="times_minutes_suffix">분</string>
+    <!-- 병원으로 이동 중 (디자인 시안 nav·주행, 문구 그대로) -->
+    <string name="trip_title">병원으로 이동 중</string>
+    <string name="trip_navi">Pleos 내비게이션에서 길 안내 중</string>
+    <string name="trip_routing">경로를 찾는 중</string>
+    <string name="trip_say_navi">Pleos 내비게이션에 목적지를 설정했어요. 길 안내는 내비게이션이 맡아요.</string>
+    <string name="trip_row_pet">반려동물</string>
+    <string name="trip_row_relax">릴렉스 모드</string>
+    <string name="trip_delivery_no_card">진료 카드 없이 이동</string>
+    <string name="trip_unknown">미확인</string>
+    <string name="trip_wait_unknown">진료 가능 시간 미확인</string>
+    <string name="trip_extra_title">추가 증상 알리기</string>
+    <string name="trip_end">이동 종료</string>
+    <string name="trip_arrive">병원 도착</string>
+    <string name="trip_to_hospital">병원까지 %1$d분</string>
+    <string name="trip_waiting_for">병원에서 %1$s 기다리고 있어요. 천천히 가도 괜찮아요.</string>
+    <string name="trip_waiting_for_none">병원에서 기다리고 있어요. 천천히 가도 괜찮아요.</string>
+    <string name="trip_row_delivery">병원에 전달</string>
+    <string name="trip_delivery_eta">도착 예정 %1$s</string>
+    <string name="trip_row_start">진료 시작 예상</string>
+    <string name="trip_wait_value">진료 시작까지 약 %1$d분</string>
+    <string name="trip_extra_sub">“%1$s 상태, 또 토했어”처럼 말하면 병원에 바로 전달해요</string>
+    <string name="trip_pet_fallback">반려동물</string>
+    <string name="trip_call">동물병원에 전화하기</string>
+    <string name="trip_relax_on">릴렉스 모드 켜짐</string>
+    <string name="trip_relax_off">릴렉스 모드 꺼짐</string>
 </resources>

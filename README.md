@@ -1,3 +1,132 @@
+<p align="center"><img src="docs/readme/banner.png" alt="멍쾌 (MeongCare)" width="100%"></p>
+
+<h1 align="center">멍쾌 · MeongCare</h1>
+
+<p align="center"><b>멍쾌는 반려동물의 응급 상황부터 일상 진료까지, 가장 빠른 진료 연결과 차량 기반 맞춤 케어를 통해<br>병원 이동 전·중·후의 모든 과정을 함께하는 AI 반려동물 헬스케어 코파일럿입니다.</b></p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Pleos_Connect-AAOS-1E3A8A?style=flat-square" alt="Pleos Connect">
+  <img src="https://img.shields.io/badge/Kotlin-2.0-3E5DB4?style=flat-square&logo=kotlin&logoColor=white" alt="Kotlin">
+  <img src="https://img.shields.io/badge/Jetpack_Compose-Material3-3E5DB4?style=flat-square&logo=jetpackcompose&logoColor=white" alt="Jetpack Compose">
+  <img src="https://img.shields.io/badge/Pleos_SDK-Vehicle_·_NaviHelper_·_STT-1E3A8A?style=flat-square" alt="Pleos SDK">
+  <img src="https://img.shields.io/badge/Web-React_·_TypeScript-3E5DB4?style=flat-square&logo=react&logoColor=white" alt="Web">
+  <img src="https://img.shields.io/badge/Server-Firebase-1E3A8A?style=flat-square&logo=firebase&logoColor=white" alt="Firebase">
+</p>
+
+<p align="center">
+  <a href="#한눈에-보기">한눈에 보기</a> ·
+  <a href="#핵심-기능">핵심 기능</a> ·
+  <a href="#차량이라서-가능한-것">차량 특화</a> ·
+  <a href="#서비스-생태계">서비스 생태계</a> ·
+  <a href="#시연-범위">시연 범위</a>
+</p>
+
+<p align="center"><img src="docs/readme/demo.gif" alt="멍쾌 시연: 응급 진료 시작부터 귀가 완료까지" width="960"></p>
+<p align="center"><sub>응급 진료 시작 → 증상 선택 → 진료 카드 → 동물병원 응답 확인 → 출발 → 병원 도착 → 진료 완료 → 귀가</sub></p>
+
+## 한눈에 보기
+
+| 문제 | 멍쾌의 해결 |
+|---|---|
+| 운전하면서 병원 찾고, 전화하고, 증상 설명 | **증상만 고르면 진료 카드 완성 → 근처 병원에 동시 문의** |
+| 병원 도착 후 처음부터 다시 설명 | **진료 카드 미리 전달** |
+| 진료 후 귀가 길 컨디션 관리 | **진료 기록 + 릴렉스 모드** |
+
+## 핵심 기능
+
+**1. 당황한 순간에도, 증상만 고르면 진료 카드 완성** — 큰 증상 카드를 누르기만 하면 반려견 정보와 합쳐져 병원에 보낼 진료 카드가 된다. 목록에 없는 증상은 말로 설명한다.
+
+<p align="center"><img src="docs/readme/scene-02-symptoms.png" alt="증상 선택" width="820"></p>
+
+**2. 병원마다 전화 돌릴 필요 없이, 근처 동물병원에 한 번에 문의** — 20초 안에 답한 병원과 진료 불가 병원을 색으로 한눈에 보여 준다.
+
+<p align="center"><img src="docs/readme/scene-04-inquiry.png" alt="동물병원 응답 확인" width="820"></p>
+
+**3. 가장 가까운 곳이 아니라, 가장 빨리 진료받는 곳으로** — 이동 시간과 대기 시간을 합쳐 최적의 병원을 먼저 제안하고, 경로를 지도에 그린다.
+
+<p align="center"><img src="docs/readme/scene-05-suggest.png" alt="출발 제안" width="820"></p>
+
+**4. 도착했을 땐 이미 병원이 보리를 알고 있다** — 진료 카드가 먼저 가 있어 접수 설명이 필요 없고, 차 안에서 기다리다 진료 차례가 되면 알려 준다.
+
+<p align="center"><img src="docs/readme/scene-08-arrive.png" alt="병원 도착" width="820"></p>
+
+## 차량이라서 가능한 것
+
+<p align="center"><img src="docs/readme/parked-vs-driving.png" alt="정차 중과 주행 중 화면 비교" width="900"></p>
+
+| Pleos SDK | 멍쾌에서 하는 일 |
+|---|---|
+| **Vehicle** · AAOS `CarUxRestrictions` | 주행 중엔 남은 시간만 크게, 정차 중에만 입력과 상세 화면 |
+| **NaviHelper** | 고른 병원을 목적지로 설정, 길 안내는 차량 내비게이션이 |
+| **SpeechToText** (`ON_DEVICE`) | 목록에 없는 증상은 말로 설명 |
+
+차량 디스플레이(1682×1210) 기준으로 설계했다. 모든 SDK는 래퍼 뒤에 두고 Fake 구현을 함께 만들어 PC·테스트·시연 영상에서도 같은 흐름이 돈다.
+
+## 사용 흐름
+
+```
+홈 ─▶ 증상 선택 ─▶ 진료 카드 확인 ─▶ 동물병원 응답 확인 (20초)
+                                        ├─ 답한 병원 있음 ─▶ "○○으로 출발할까요?" ─┐
+                                        └─ 답한 병원 없음 ─▶ 가장 가까운 병원 ────┤
+                                                                                  ▼
+     귀가 완료 ◀─ 귀가 중 ◀─ 진료 완료 ◀─ 병원 도착 ◀─ 병원으로 이동 중 ◀─ 출발 확인
+```
+
+<details>
+<summary><b>나머지 화면 보기</b> (9장)</summary>
+
+| 홈 · 응급 진료 | 진료 카드 확인 |
+|---|---|
+| <img src="docs/readme/01-home.png" alt="홈 · 응급 진료" width="480"> | <img src="docs/readme/03-card.png" alt="진료 카드 확인" width="480"> |
+| **출발 확인** | **병원으로 이동 중** |
+| <img src="docs/readme/06-depart.png" alt="출발 확인" width="480"> | <img src="docs/readme/07-trip.png" alt="병원으로 이동 중" width="480"> |
+| **진료 완료** | **귀가 중** |
+| <img src="docs/readme/09-after.png" alt="진료 완료" width="480"> | <img src="docs/readme/10-going-home.png" alt="귀가 중" width="480"> |
+| **귀가 완료** | **반려동물 카드** |
+| <img src="docs/readme/11-home-arrived.png" alt="귀가 완료" width="480"> | <img src="docs/readme/12-pet-card.png" alt="반려동물 카드" width="480"> |
+| **릴렉스 모드** | |
+| <img src="docs/readme/13-relax.png" alt="릴렉스 모드" width="480"> | |
+
+</details>
+
+## 서비스 생태계
+
+| | 하는 일 |
+|---|---|
+| **보호자 웹** (폰) | 반려동물 의료정보를 등록하고, 차 화면의 연결 코드로 차와 연결 |
+| **멍쾌** (차) | 증상 → 병원 선택 → 이동 → 진료 → 귀가 |
+| **병원 웹** | 대기 시간을 알리고, 진료 카드와 도착 예정을 실시간으로 받음 |
+
+보호자 · 차 · 동물병원을 잇는 구조라서, 제휴 병원과 진료 기록이 쌓일수록 다음 이동이 더 빨라진다.
+
+## 기술 구조
+
+- **Android 앱**: Kotlin, Jetpack Compose(Material3), MVVM, 수동 DI. 단일 `app` 모듈.
+- **웹**: React + Vite + TypeScript (보호자 웹 · 병원 웹).
+- **서버**: Firebase (Firestore, 익명 로그인). 서버가 없어도 앱은 내장 데이터로 끝까지 돈다.
+- **품질**: 단위 테스트(Android·웹), 커밋마다 빌드 확인, dev 반영 전 검증 파이프라인.
+- 자세한 구조: [docs/architecture.md](docs/architecture.md)
+
+## 시연 범위
+
+출품작은 시연 환경에서 동작한다. 아래 항목은 **실제 서비스가 아니라 시연용**이다. 앱 화면에는 따로 표시하지 않는다.
+
+| 항목 | 시연 내용 |
+|---|---|
+| 반려견 "보리" | 샘플 반려견이다. 사진·체중·특징은 정해 둔 값이다 (보호자 웹과 연결하면 등록한 정보로 바뀐다) |
+| 시연 동물병원 | 가상 병원이다. 이름·거리·이동 시간·전화번호(`02-0000-002N`)는 실제가 아니다 |
+| 병원 답변 · 진료 차례 호출 | 앱 안에서 정해 둔 시나리오로 온다. 병원 웹과 연결하지 않는다 |
+| 진료 카드 전송 (시연 병원) | 앱 안에서만 보낸 것으로 처리한다 |
+| 길 안내 | 차량 기기에서는 Pleos 내비가 실제 경로를 안내한다. 폰·태블릿에서는 시연용 길안내다. "병원 도착"은 버튼으로 처리한다 |
+| 지도 | 실제 지도가 아니라 그린 그림이다 |
+| 릴렉스 모드 | 설정 화면만 있다. 차량 공조·음악에는 적용하지 않는다 |
+| 진료 기록 | 앱 메모리에만 저장한다. 보호자 웹 저장과 병원 전달은 아직 없다 |
+| 음성 | 증상 음성 입력은 차량 기기에서만 실제로 듣는다. [음성 명령]·음성 안내 소리는 준비 중이다 |
+
+더 자세한 내용: [docs/product/feature-facts.md](docs/product/feature-facts.md)
+
+---
+
 # <앱 이름>
 
 > <한 줄 소개>
@@ -252,132 +381,3 @@ git branch -d feat/<이름>
 | [CLAUDE.md](CLAUDE.md) | Claude Code 작업 흐름, 훅, 서브에이전트 |
 | [docs/conventions/git.md](docs/conventions/git.md) | 브랜치, 커밋, `/ship`, `/promote` 상세 |
 | [docs/notes/README.md](docs/notes/README.md) | 개발 노트 템플릿 |
-
----
-
-<p align="center"><img src="docs/readme/banner.png" alt="멍쾌 (MeongCare)" width="100%"></p>
-
-<h1 align="center">멍쾌 · MeongCare</h1>
-
-<p align="center"><b>멍쾌는 반려동물의 응급 상황부터 일상 진료까지, 가장 빠른 진료 연결과 차량 기반 맞춤 케어를 통해<br>병원 이동 전·중·후의 모든 과정을 함께하는 AI 반려동물 헬스케어 코파일럿입니다.</b></p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/Pleos_Connect-AAOS-1E3A8A?style=flat-square" alt="Pleos Connect">
-  <img src="https://img.shields.io/badge/Kotlin-2.0-3E5DB4?style=flat-square&logo=kotlin&logoColor=white" alt="Kotlin">
-  <img src="https://img.shields.io/badge/Jetpack_Compose-Material3-3E5DB4?style=flat-square&logo=jetpackcompose&logoColor=white" alt="Jetpack Compose">
-  <img src="https://img.shields.io/badge/Pleos_SDK-Vehicle_·_NaviHelper_·_STT-1E3A8A?style=flat-square" alt="Pleos SDK">
-  <img src="https://img.shields.io/badge/Web-React_·_TypeScript-3E5DB4?style=flat-square&logo=react&logoColor=white" alt="Web">
-  <img src="https://img.shields.io/badge/Server-Firebase-1E3A8A?style=flat-square&logo=firebase&logoColor=white" alt="Firebase">
-</p>
-
-<p align="center">
-  <a href="#한눈에-보기">한눈에 보기</a> ·
-  <a href="#핵심-기능">핵심 기능</a> ·
-  <a href="#차량이라서-가능한-것">차량 특화</a> ·
-  <a href="#서비스-생태계">서비스 생태계</a> ·
-  <a href="#시연-범위">시연 범위</a>
-</p>
-
-<p align="center"><img src="docs/readme/demo.gif" alt="멍쾌 시연: 응급 진료 시작부터 귀가 완료까지" width="960"></p>
-<p align="center"><sub>응급 진료 시작 → 증상 선택 → 진료 카드 → 동물병원 응답 확인 → 출발 → 병원 도착 → 진료 완료 → 귀가</sub></p>
-
-## 한눈에 보기
-
-| 문제 | 멍쾌의 해결 |
-|---|---|
-| 운전하면서 병원 찾고, 전화하고, 증상 설명 | **증상만 고르면 진료 카드 완성 → 근처 병원에 동시 문의** |
-| 병원 도착 후 처음부터 다시 설명 | **진료 카드 미리 전달** |
-| 진료 후 귀가 길 컨디션 관리 | **진료 기록 + 릴렉스 모드** |
-
-## 핵심 기능
-
-**1. 당황한 순간에도, 증상만 고르면 진료 카드 완성** — 큰 증상 카드를 누르기만 하면 반려견 정보와 합쳐져 병원에 보낼 진료 카드가 된다. 목록에 없는 증상은 말로 설명한다.
-
-<p align="center"><img src="docs/readme/scene-02-symptoms.png" alt="증상 선택" width="820"></p>
-
-**2. 병원마다 전화 돌릴 필요 없이, 근처 동물병원에 한 번에 문의** — 20초 안에 답한 병원과 진료 불가 병원을 색으로 한눈에 보여 준다.
-
-<p align="center"><img src="docs/readme/scene-04-inquiry.png" alt="동물병원 응답 확인" width="820"></p>
-
-**3. 가장 가까운 곳이 아니라, 가장 빨리 진료받는 곳으로** — 이동 시간과 대기 시간을 합쳐 최적의 병원을 먼저 제안하고, 경로를 지도에 그린다.
-
-<p align="center"><img src="docs/readme/scene-05-suggest.png" alt="출발 제안" width="820"></p>
-
-**4. 도착했을 땐 이미 병원이 보리를 알고 있다** — 진료 카드가 먼저 가 있어 접수 설명이 필요 없고, 차 안에서 기다리다 진료 차례가 되면 알려 준다.
-
-<p align="center"><img src="docs/readme/scene-08-arrive.png" alt="병원 도착" width="820"></p>
-
-## 차량이라서 가능한 것
-
-<p align="center"><img src="docs/readme/parked-vs-driving.png" alt="정차 중과 주행 중 화면 비교" width="900"></p>
-
-| Pleos SDK | 멍쾌에서 하는 일 |
-|---|---|
-| **Vehicle** · AAOS `CarUxRestrictions` | 주행 중엔 남은 시간만 크게, 정차 중에만 입력과 상세 화면 |
-| **NaviHelper** | 고른 병원을 목적지로 설정, 길 안내는 차량 내비게이션이 |
-| **SpeechToText** (`ON_DEVICE`) | 목록에 없는 증상은 말로 설명 |
-
-차량 디스플레이(1682×1210) 기준으로 설계했다. 모든 SDK는 래퍼 뒤에 두고 Fake 구현을 함께 만들어 PC·테스트·시연 영상에서도 같은 흐름이 돈다.
-
-## 사용 흐름
-
-```
-홈 ─▶ 증상 선택 ─▶ 진료 카드 확인 ─▶ 동물병원 응답 확인 (20초)
-                                        ├─ 답한 병원 있음 ─▶ "○○으로 출발할까요?" ─┐
-                                        └─ 답한 병원 없음 ─▶ 가장 가까운 병원 ────┤
-                                                                                  ▼
-     귀가 완료 ◀─ 귀가 중 ◀─ 진료 완료 ◀─ 병원 도착 ◀─ 병원으로 이동 중 ◀─ 출발 확인
-```
-
-<details>
-<summary><b>나머지 화면 보기</b> (9장)</summary>
-
-| 홈 · 응급 진료 | 진료 카드 확인 |
-|---|---|
-| <img src="docs/readme/01-home.png" alt="홈 · 응급 진료" width="480"> | <img src="docs/readme/03-card.png" alt="진료 카드 확인" width="480"> |
-| **출발 확인** | **병원으로 이동 중** |
-| <img src="docs/readme/06-depart.png" alt="출발 확인" width="480"> | <img src="docs/readme/07-trip.png" alt="병원으로 이동 중" width="480"> |
-| **진료 완료** | **귀가 중** |
-| <img src="docs/readme/09-after.png" alt="진료 완료" width="480"> | <img src="docs/readme/10-going-home.png" alt="귀가 중" width="480"> |
-| **귀가 완료** | **반려동물 카드** |
-| <img src="docs/readme/11-home-arrived.png" alt="귀가 완료" width="480"> | <img src="docs/readme/12-pet-card.png" alt="반려동물 카드" width="480"> |
-| **릴렉스 모드** | |
-| <img src="docs/readme/13-relax.png" alt="릴렉스 모드" width="480"> | |
-
-</details>
-
-## 서비스 생태계
-
-| | 하는 일 |
-|---|---|
-| **보호자 웹** (폰) | 반려동물 의료정보를 등록하고, 차 화면의 연결 코드로 차와 연결 |
-| **멍쾌** (차) | 증상 → 병원 선택 → 이동 → 진료 → 귀가 |
-| **병원 웹** | 대기 시간을 알리고, 진료 카드와 도착 예정을 실시간으로 받음 |
-
-보호자 · 차 · 동물병원을 잇는 구조라서, 제휴 병원과 진료 기록이 쌓일수록 다음 이동이 더 빨라진다.
-
-## 기술 구조
-
-- **Android 앱**: Kotlin, Jetpack Compose(Material3), MVVM, 수동 DI. 단일 `app` 모듈.
-- **웹**: React + Vite + TypeScript (보호자 웹 · 병원 웹).
-- **서버**: Firebase (Firestore, 익명 로그인). 서버가 없어도 앱은 내장 데이터로 끝까지 돈다.
-- **품질**: 단위 테스트(Android·웹), 커밋마다 빌드 확인, dev 반영 전 검증 파이프라인.
-- 자세한 구조: [docs/architecture.md](docs/architecture.md)
-
-## 시연 범위
-
-출품작은 시연 환경에서 동작한다. 아래 항목은 **실제 서비스가 아니라 시연용**이다. 앱 화면에는 따로 표시하지 않는다.
-
-| 항목 | 시연 내용 |
-|---|---|
-| 반려견 "보리" | 샘플 반려견이다. 사진·체중·특징은 정해 둔 값이다 (보호자 웹과 연결하면 등록한 정보로 바뀐다) |
-| 시연 동물병원 | 가상 병원이다. 이름·거리·이동 시간·전화번호(`02-0000-002N`)는 실제가 아니다 |
-| 병원 답변 · 진료 차례 호출 | 앱 안에서 정해 둔 시나리오로 온다. 병원 웹과 연결하지 않는다 |
-| 진료 카드 전송 (시연 병원) | 앱 안에서만 보낸 것으로 처리한다 |
-| 길 안내 | 차량 기기에서는 Pleos 내비가 실제 경로를 안내한다. 폰·태블릿에서는 시연용 길안내다. "병원 도착"은 버튼으로 처리한다 |
-| 지도 | 실제 지도가 아니라 그린 그림이다 |
-| 릴렉스 모드 | 설정 화면만 있다. 차량 공조·음악에는 적용하지 않는다 |
-| 진료 기록 | 앱 메모리에만 저장한다. 보호자 웹 저장과 병원 전달은 아직 없다 |
-| 음성 | 증상 음성 입력은 차량 기기에서만 실제로 듣는다. [음성 명령]·음성 안내 소리는 준비 중이다 |
-
-더 자세한 내용: [docs/product/feature-facts.md](docs/product/feature-facts.md)

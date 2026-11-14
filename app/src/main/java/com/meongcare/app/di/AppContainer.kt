@@ -56,6 +56,7 @@ import com.meongcare.app.data.vehicle.VehicleConnection
 import com.meongcare.app.domain.driving.DrivingState
 import com.meongcare.app.domain.driving.DrivingStateSource
 import com.meongcare.app.domain.guidance.GuidanceSource
+import com.meongcare.app.domain.guidance.ManualArrivalGuidanceSource
 import com.meongcare.app.domain.hospital.Hospital
 import com.meongcare.app.domain.hospital.HospitalBoardSource
 import com.meongcare.app.domain.hospital.HospitalCandidate
@@ -115,7 +116,10 @@ class AppContainer(context: Context, val dataMode: DataMode) {
         SourceKind.REAL -> RealDrivingStateSource(uxRestrictionsClientOrNull(context))
     }
 
-    val guidanceSource: GuidanceSource = when (naviUse) {
+    /** 길안내 + [병원 도착] 직접 처리 (2026-11-14, 디자인 시안 "병원으로 이동 중") */
+    val guidanceSource: ManualArrivalGuidanceSource get() = manualGuidance
+
+    private val baseGuidanceSource: GuidanceSource = when (naviUse) {
         // Real + 차량 기기: 전부 차량 내비
         NaviUse.FULL -> NaviGuidanceSource(applicationScope, PleosNaviClient(context))
         // 시연 + 차량 기기: 경로만 차량 내비, 남은 시간(내비 예상 시간에서 시작)과 도착은 시연용
@@ -142,6 +146,8 @@ class AppContainer(context: Context, val dataMode: DataMode) {
             SourceKind.REAL -> RealGuidanceSource()
         }
     }
+
+    private val manualGuidance = ManualArrivalGuidanceSource(baseGuidanceSource)
 
     /** 현재 위치를 어디서 받는지 (011, [currentLocationKindOf]). */
     val locationKind: SourceKind = currentLocationKindOf(mode = dataMode, isAutomotive = isAutomotive)

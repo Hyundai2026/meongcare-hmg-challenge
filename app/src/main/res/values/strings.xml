@@ -357,7 +357,7 @@
     <string name="trip_row_relax">릴렉스 모드</string>
     <string name="trip_delivery_no_card">진료 카드 없이 이동</string>
     <string name="trip_unknown">미확인</string>
-    <string name="trip_wait_unknown">진료 가능 시간 미확인</string>
+    <string name="trip_wait_unknown">대기시간 미확인</string>
     <string name="trip_extra_title">추가 증상 알리기</string>
     <string name="trip_end">이동 종료</string>
     <string name="trip_arrive">병원 도착</string>

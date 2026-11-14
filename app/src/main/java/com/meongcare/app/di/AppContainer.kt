@@ -56,6 +56,7 @@ import com.meongcare.app.data.vehicle.VehicleConnection
 import com.meongcare.app.domain.driving.DrivingState
 import com.meongcare.app.domain.driving.DrivingStateSource
 import com.meongcare.app.domain.guidance.GuidanceSource
+import com.meongcare.app.domain.guidance.ManualArrivalGuidanceSource
 import com.meongcare.app.domain.hospital.Hospital
 import com.meongcare.app.domain.hospital.HospitalBoardSource
 import com.meongcare.app.domain.hospital.HospitalCandidate
@@ -115,7 +116,10 @@ class AppContainer(context: Context, val dataMode: DataMode) {
         SourceKind.REAL -> RealDrivingStateSource(uxRestrictionsClientOrNull(context))
     }
 
-    val guidanceSource: GuidanceSource = when (naviUse) {
+    /** 길안내 + [병원 도착] 직접 처리 (2026-11-14, 디자인 시안 "병원으로 이동 중") */
+    val guidanceSource: ManualArrivalGuidanceSource get() = manualGuidance
+
+    private val baseGuidanceSource: GuidanceSource = when (naviUse) {
         // Real + 차량 기기: 전부 차량 내비
         NaviUse.FULL -> NaviGuidanceSource(applicationScope, PleosNaviClient(context))
         // 시연 + 차량 기기: 경로만 차량 내비, 남은 시간(내비 예상 시간에서 시작)과 도착은 시연용
@@ -142,6 +146,8 @@ class AppContainer(context: Context, val dataMode: DataMode) {
             SourceKind.REAL -> RealGuidanceSource()
         }
     }
+
+    private val manualGuidance = ManualArrivalGuidanceSource(baseGuidanceSource)
 
     /** 현재 위치를 어디서 받는지 (011, [currentLocationKindOf]). */
     val locationKind: SourceKind = currentLocationKindOf(mode = dataMode, isAutomotive = isAutomotive)
@@ -357,7 +363,9 @@ class AppContainer(context: Context, val dataMode: DataMode) {
 
     init {
         // 주행 상태와 길안내가 모두 Fake일 때만: 안내를 시작하면 출발하고, 도착하면 주차하는 시연 흐름을 만든다.
-        if (sourcePlan.runsTripScenario) {
+        // 2026-11-14 사용자 결정: 끈다. 출발 뒤에도 정차 화면 "병원으로 이동 중"만 보이고, 남은 시간이 줄지 않으며,
+        // 도착은 [병원 도착]으로 한다 (시연 길안내는 주행 중에만 줄어든다). debug 패널 [주행]으로는 주행 화면을 볼 수 있다
+        if (TRIP_SCENARIO_ENABLED && sourcePlan.runsTripScenario) {
             FakeTripScenario(applicationScope, guidanceSource, fakeDrivingStateSource).start()
         }
         // 병원 가는 길의 사건(출발, 카드 전송, 병원 확인, 도착)을 소리로 알린다 (017). 로그에는 사건 종류와 결과만 남는다.
@@ -394,3 +402,6 @@ private const val OWNER_LINK_LOG_TAG = "OwnerLink"
 
 /** 근처 동물병원(카카오 로컬 API, 015). 사용자 결정 2026-11-13: 더 쓰지 않는다 */
 private const val NEARBY_VETS_ENABLED = false
+
+/** 시연 출발·도착 자동 시나리오 (출발하면 주행, 도착하면 정차). 2026-11-14 사용자 결정: 끔 */
+private const val TRIP_SCENARIO_ENABLED = false

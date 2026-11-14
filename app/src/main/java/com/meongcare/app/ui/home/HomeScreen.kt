@@ -79,6 +79,8 @@ fun HomeScreen(
     link: LinkExtras = LinkExtras(),
     linkScreen: @Composable () -> Unit = {},
     pages: PageExtras = PageExtras(),
+    tripViewFor: (@Composable (TripPanel) -> com.meongcare.app.ui.trip.TripView)? = null,
+    tripActions: TripActions = TripActions(),
     petCardScreen: @Composable () -> Unit = {},
     relaxScreen: @Composable () -> Unit = {},
     voice: VoiceScreenState? = null,
@@ -95,6 +97,7 @@ fun HomeScreen(
     val panel = remember(guidanceUiState, cardExtras.trip, tick) {
         tripPanelOf(guidanceUiState, cardExtras.trip, Instant.now(), ZoneId.systemDefault())
     }
+    val tripView = panel?.let { p -> tripViewFor?.invoke(p) }
     Surface(modifier = modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize().safeDrawingPadding()) {
             Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
@@ -120,6 +123,8 @@ fun HomeScreen(
                         link = link,
                         linkScreen = linkScreen,
                         pages = pages,
+                        tripView = tripView,
+                        tripActions = tripActions,
                         petCardScreen = petCardScreen,
                         relaxScreen = relaxScreen,
                         voice = voice,
@@ -156,6 +161,8 @@ private fun ParkedFlow(
     link: LinkExtras,
     linkScreen: @Composable () -> Unit,
     pages: PageExtras,
+    tripView: com.meongcare.app.ui.trip.TripView?,
+    tripActions: TripActions,
     petCardScreen: @Composable () -> Unit,
     relaxScreen: @Composable () -> Unit,
     voice: VoiceScreenState?,
@@ -220,6 +227,18 @@ private fun ParkedFlow(
         ParkedContent.CARD -> {
             // 카드에서 시스템 뒤로 = [홈] (카드는 남는다)
             BackHandler(onBack = cardActions.onGoHome)
+            // 안내 중이면 진료 카드 대신 디자인 시안 "병원으로 이동 중" (2026-11-14)
+            if (guidanceUiState is GuidanceUiState.Guiding && tripView != null) {
+                com.meongcare.app.ui.trip.ParkedTripScreen(
+                    view = tripView,
+                    onBack = cardActions.onGoHome,
+                    onCall = tripActions.onCall,
+                    onRelax = { pages.onOpen(HomePage.RELAX) },
+                    onEnd = onCancelGuidance,
+                    onArrive = tripActions.onArrive,
+                )
+                return
+            }
             MedicalCardScreen(
                 state = cardUiState,
                 guidance = guidanceUiState,
@@ -278,6 +297,12 @@ data class PageExtras(
     val page: HomePage = HomePage.NONE,
     val onOpen: (HomePage) -> Unit = {},
     val onClose: () -> Unit = {},
+)
+
+/** "병원으로 이동 중" 버튼 (2026-11-14). [onArrive]는 [병원 도착] 직접 처리 */
+data class TripActions(
+    val onCall: () -> Unit = {},
+    val onArrive: () -> Unit = {},
 )
 
 private const val PANEL_REFRESH_MILLIS = 30_000L

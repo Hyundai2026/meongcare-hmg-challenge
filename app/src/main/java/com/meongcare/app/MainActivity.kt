@@ -186,6 +186,13 @@ class MainActivity : ComponentActivity() {
                                 expandNotice = expandNotice,
                                 onBack = trip::back,
                                 onChoose = { trip.choose(it.row) },
+                                // 응답 없음 → 가장 가까운 병원으로 카드와 함께 바로 출발 + 병원 전화 연결 (2026-11-14)
+                                // 20초 안에 진료 가능 답이 있으면 가장 빨리 진료받을 곳으로 바로 출발 (2026-11-14)
+                                onDepartSuggested = { suggested -> trip.depart(suggested.row, cardViewModel.caseCard()) },
+                                onDepartNearest = { nearest ->
+                                    trip.depart(nearest.row, cardViewModel.caseCard())
+                                    nearest.row.hospital.phoneNumber?.let(cardViewModel::onCallNumber)
+                                },
                             )
                             return@hospitalList
                         }
@@ -221,6 +228,7 @@ class MainActivity : ComponentActivity() {
                                     trip.back()
                                 },
                                 onDepart = { trip.depart(choice, cardViewModel.caseCard()) },
+                                onCall = cardViewModel::onCallNumber,
                             )
                             return@hospitalConfirm
                         }

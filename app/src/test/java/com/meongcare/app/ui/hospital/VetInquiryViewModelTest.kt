@@ -17,7 +17,7 @@ class VetInquiryViewModelTest {
     private fun vm() = VetInquiryViewModel(clock = { now })
 
     @Test
-    fun `다시 시작하면 처음 3곳에 새로 문의하고 쪽과 선택이 처음으로 돌아간다`() {
+    fun `다시 시작하면 5곳에 새로 문의하고 쪽과 선택이 처음으로 돌아간다`() {
         val vm = vm()
         vm.restart()
         now = now.plusSeconds(10)
@@ -28,19 +28,16 @@ class VetInquiryViewModelTest {
         assertEquals(InquiryPage.SEARCH, vm.page.value)
         assertNull(vm.compareSelected.value)
         assertTrue(vm.current().searchRows.all { it.status == InquiryStatus.WAITING })
-        assertEquals(3, vm.current().searchRows.size)
+        assertEquals(5, vm.current().searchRows.size)
     }
 
     @Test
-    fun `다른 병원 문의는 더한 수를 한 번 알리고 다시 누르면 알리지 않는다`() {
+    fun `처음부터 모두 문의해서 다른 병원 문의는 알릴 것이 없다`() {
         val vm = vm()
         vm.restart()
         vm.expand()
-        assertEquals(2, vm.expandNotice.value)
-        vm.consumeExpandNotice()
-        vm.expand()
         assertNull(vm.expandNotice.value)
-        assertEquals(5, vm.current().searchRows.size)
+        assertEquals(0, vm.current().restCount)
     }
 
     @Test

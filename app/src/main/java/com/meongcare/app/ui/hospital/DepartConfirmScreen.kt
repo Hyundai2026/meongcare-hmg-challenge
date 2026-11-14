@@ -61,6 +61,7 @@ fun DepartConfirmScreen(
     onBack: () -> Unit,
     onDepart: () -> Unit,
     modifier: Modifier = Modifier,
+    onCall: (String) -> Unit = {},
 ) {
     val colors = LocalDesignTokens.current.colors
     var notice by rememberSaveable { mutableStateOf<Int?>(null) }
@@ -118,7 +119,7 @@ fun DepartConfirmScreen(
                     Spacer(Modifier.height(scale.gap(DesignSpace.m)))
                     FlowButton(
                         stringResource(R.string.depart_call),
-                        { notice = R.string.depart_no_phone },
+                        { hospital.row.hospital.phoneNumber?.let(onCall) ?: run { notice = R.string.depart_no_phone } },
                         primary = false,
                         scale = scale,
                         colors = colors,

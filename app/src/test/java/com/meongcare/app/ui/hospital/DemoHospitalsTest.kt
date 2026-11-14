@@ -38,10 +38,10 @@ class DemoHospitalsTest {
     }
 
     @Test
-    fun `가상 병원이라 시연용 표시가 있고 전화번호와 대기 정보가 없다`() {
+    fun `가상 병원이라 시연용 표시와 시연용 번호가 있고 대기 정보가 없다`() {
         for (h in all) {
             assertTrue(h.name, h.row.hospital.isSample)
-            assertNull(h.name, h.row.hospital.phoneNumber)
+            assertEquals(h.name, "02-0000-%04d".format(20 + h.rank), h.row.hospital.phoneNumber)
             assertNull(h.name, h.row.candidate.status)
             assertEquals(h.name, StatusFreshness.NONE, h.row.freshness)
             assertNull(h.name, h.row.statusAge)

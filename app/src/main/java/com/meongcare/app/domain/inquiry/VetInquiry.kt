@@ -7,7 +7,9 @@ import java.time.Instant
  * 동물병원 문의 (계획 020, 디자인 프로토타입 `search`→`hosp` 상태 규칙). **답변은 앱 안 시연 응답이다** ([InquiryScript]):
  * 병원 웹과 연결하지 않는다 (사용자 결정 2026-11-13). 시간은 밖에서 넣는다 (테스트·화면이 같은 규칙).
  *
- * - [start]: 이동 시간이 짧은 [FIRST_ASK]곳에 문의한다. [expand]: 나머지 전부에 문의한다.
+ * - [start]: 이동 시간이 짧은 [FIRST_ASK]곳(프로토타입: 가까운 5곳 전부)에 문의한다. [expand]: 나머지 전부에 문의한다.
+ * - 응답 대기 시간 [DELAY_AFTER](20초)이 지나도 진료 가능 답이 없으면 응답 없음 팝업을 띄운다:
+ *   [계속 기다리기] 또는 가장 가까운 병원([InquirySnapshot.nearest])으로 출발 + 전화 연결 (사용자 결정 2026-11-14).
  * - 한 곳의 상태: 문의 전 / 답변 대기(문의 후 [DELAY_AFTER] 이하) / 응답 지연(초과) / 진료 불가 / 진료 가능.
  * - 진료 가능이면 남은 대기 `wl = max(0, w - 응답 뒤 지난 분)`, **진료 시작까지 = max(이동, wl)**, 도착 후 대기 = max(0, wl - 이동).
  */
@@ -17,12 +19,15 @@ class VetInquiry(
 ) {
     private val askedAt = linkedMapOf<String, Instant>()
     private var startedAt: Instant? = null
-    private var promptDismissed = false
+    /** 응답 대기 시간을 센 시작 시각. [조금 더 기다리기]를 누르면 그때부터 다시 센다 */
+    private var waitFrom: Instant? = null
+    private var suggestionDismissed = false
 
     /** 새 문의: 가까운 [FIRST_ASK]곳 */
     fun start(now: Instant) {
         askedAt.clear()
-        promptDismissed = false
+        waitFrom = now
+        suggestionDismissed = false
         startedAt = now
         hospitals.sortedBy { it.travelMinutes }.take(FIRST_ASK).forEach { askedAt[it.key] = now }
     }
@@ -36,8 +41,14 @@ class VetInquiry(
     }
 
     /** 응답 없음 팝업의 [계속 기다리기] */
-    fun dismissNoResponse() {
-        promptDismissed = true
+    /** 출발 제안 팝업의 [다른 병원 비교]: 이번 문의에서는 다시 띄우지 않는다 */
+    fun dismissSuggestion() {
+        suggestionDismissed = true
+    }
+
+    /** 응답 없음 팝업의 [조금 더 기다리기]: 응답 대기 시간(20초)을 지금부터 다시 센다 */
+    fun dismissNoResponse(now: Instant) {
+        if (startedAt != null) waitFrom = now
     }
 
     fun snapshot(now: Instant): InquirySnapshot {
@@ -50,9 +61,11 @@ class VetInquiry(
             else -> InquirySummary.Waiting
         }
         val started = startedAt
-        val sinceStart = started?.let { Duration.between(it, now) } ?: Duration.ZERO
+        val sinceStart = waitFrom?.let { Duration.between(it, now) } ?: Duration.ZERO
         val noResponseList = rows.filter { it.status != InquiryStatus.UNAVAILABLE }.sortedBy { it.travelMinutes }
         val searchRows = asked.sortedWith(displayOrder)
+        // 출발 제안: 진료 시작까지(= 이동 + 도착 후 대기)가 가장 짧은 진료 가능 병원. 시간을 모르는 곳은 뒤로
+        val suggestion = searchRows.firstOrNull { it.status == InquiryStatus.AVAILABLE }
         return InquirySnapshot(
             searchRows = searchRows,
             compareRows = rows.filter { it.status != InquiryStatus.NOT_ASKED && it.status != InquiryStatus.UNAVAILABLE }.sortedWith(displayOrder),
@@ -60,10 +73,18 @@ class VetInquiry(
             okCount = okCount,
             summary = summary,
             restCount = if (started == null) 0 else hospitals.count { it.key !in askedAt },
-            showNoResponsePrompt = started != null && okCount == 0 && !promptDismissed &&
+            showNoResponsePrompt = started != null && okCount == 0 &&
                 sinceStart.seconds > DELAY_AFTER.seconds && noResponseList.isNotEmpty(),
-            progress = if (started == null) 0f else (sinceStart.toMillis().toFloat() / PROGRESS_SPAN.toMillis()).coerceIn(0f, 1f),
+            // 카운트다운 (사용자 요청 2026-11-14): 응답 대기 시간 20초에서 0초로 줄어든다
+            progress = if (started == null) 1f else (1f - sinceStart.toMillis().toFloat() / DELAY_AFTER.toMillis()).coerceIn(0f, 1f),
+            remainingSeconds = if (started == null) DELAY_AFTER.seconds.toInt()
+            else ((DELAY_AFTER.toMillis() - sinceStart.toMillis() + 999) / 1000).toInt().coerceAtLeast(0),
             best = searchRows.firstOrNull { it.status == InquiryStatus.AVAILABLE && it.startMinutes != null },
+            nearest = noResponseList.firstOrNull { it.status != InquiryStatus.NOT_ASKED } ?: noResponseList.firstOrNull(),
+            suggestion = suggestion,
+            // 응답 대기 시간(20초)이 끝났을 때 진료 가능 답이 있으면 바로 출발을 제안한다 (사용자 결정 2026-11-14)
+            showSuggestion = started != null && suggestion != null && !suggestionDismissed &&
+                sinceStart.seconds >= DELAY_AFTER.seconds,
         )
     }
 
@@ -98,9 +119,9 @@ class VetInquiry(
     }
 
     companion object {
-        const val FIRST_ASK = 3
+        /** 처음 문의할 병원 수 (프로토타입: 가까운 5곳, 사용자 결정 2026-11-14) */
+        const val FIRST_ASK = 5
         val DELAY_AFTER: Duration = Duration.ofSeconds(20)
-        val PROGRESS_SPAN: Duration = Duration.ofSeconds(60)
         const val RECHECK_AFTER_MINUTES = 10
 
         /** 보이는 순서: 진료 가능+시간 있음 → 진료 가능 → 대기 → 그 밖, 같으면 진료 시작까지 → 이동 */
@@ -153,8 +174,12 @@ sealed interface InquirySummary {
  * @param compareRows 비교 화면 줄 (진료 불가·문의 전 제외. 진료 가능이 아니면 고를 수 없다)
  * @param noResponseRows 응답 없음 팝업 목록 (진료 불가 제외, 이동 순)
  * @param restCount 아직 문의하지 않은 병원 수 ([다른 병원 N곳에도 문의])
- * @param progress 문의부터 60초 진행 (0~1)
+ * @param progress 응답 대기 시간 중 남은 비율 (1 → 0, 카운트다운 막대)
+ * @param remainingSeconds 응답 대기 시간 중 남은 초 (20 → 0). 0이 되고 진료 가능 답이 없으면 응답 없음 팝업
  * @param best 진료 시작이 가장 빠른 진료 가능 병원
+ * @param suggestion 출발 제안 병원: 진료 가능 답 중 진료 시작까지(이동 + 도착 후 대기)가 가장 짧은 곳
+ * @param showSuggestion 응답 대기 시간(20초)이 끝났고 진료 가능 답이 있으면 "○○으로 출발할까요?" 팝업
+ * @param nearest 응답 없음 팝업의 [가장 가까운 병원으로 출발] 대상 (진료 불가가 아닌 곳 중 이동이 가장 짧은 곳)
  */
 data class InquirySnapshot(
     val searchRows: List<InquiryRow>,
@@ -165,7 +190,11 @@ data class InquirySnapshot(
     val restCount: Int,
     val showNoResponsePrompt: Boolean,
     val progress: Float,
+    val remainingSeconds: Int = 0,
     val best: InquiryRow?,
+    val nearest: InquiryRow? = null,
+    val suggestion: InquiryRow? = null,
+    val showSuggestion: Boolean = false,
 )
 
 /** 시연 응답: 문의 뒤 [afterSeconds]초에 [answer] */
@@ -194,8 +223,6 @@ object InquiryScripts {
         ),
     )
 
-    /** 응답 없음 (debug에서 고름): 처음 3곳·달빛 무응답, 다른 병원 문의 뒤 가람 8초 가능(10분) */
-    val NO_RESPONSE = InquiryScript(
-        mapOf("가람24시동물병원" to ScriptedReply(8, ScriptedAnswer.Available(10))),
-    )
+    /** 응답 없음 (debug에서 고름): 모든 병원이 답하지 않는다 → 20초 뒤 팝업 */
+    val NO_RESPONSE = InquiryScript(emptyMap())
 }

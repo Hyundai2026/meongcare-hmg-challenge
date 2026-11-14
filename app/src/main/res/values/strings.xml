@@ -311,13 +311,13 @@
     <string name="compare_fastest">가장 빠름</string>
     <string name="compare_note">진료 시작까지 = 이동시간과 병원이 알려 준 진료 가능 시간 중 더 긴 쪽 · 모두 추정치이며 즉시 진료를 보장하지 않습니다</string>
     <string name="compare_go">이 병원으로 출발 준비</string>
-    <string name="prompt_title">아직 병원 응답이 없습니다</string>
-    <string name="prompt_body">병원이 거절한 것은 아닙니다. 계속 기다리거나 먼저 갈 병원을 고르세요.</string>
+    <string name="prompt_title">아직 답변한 병원이 없어요</string>
+    <string name="prompt_body">병원이 거절한 건 아니에요. 조금 더 기다리거나, 가장 가까운 병원으로 먼저 출발할 수 있어요.</string>
     <string name="prompt_row_detail">이동 %1$d분 · %2$s</string>
     <string name="prompt_not_asked">문의 전</string>
-    <string name="prompt_warning">진료 가능 여부는 아직 확인되지 않았습니다. 접수가 확정된 것이 아닙니다.</string>
+    <string name="prompt_warning">진료 가능 여부는 아직 확인되지 않았어요. 가는 동안 통화로 접수를 확인해 주세요.</string>
     <string name="prompt_map_hint">병원을 고르면 지도에 위치가 표시됩니다.</string>
-    <string name="prompt_wait">계속 기다리기</string>
+    <string name="prompt_wait">조금 더 기다리기</string>
     <string name="prompt_go">이 병원으로 출발 준비</string>
     <string name="prompt_map_title">우선 갈 병원 선택</string>
     <string name="prompt_map_subtitle">답변 전 · 위치와 이동시간만 표시</string>
@@ -333,4 +333,15 @@
     <string name="depart_go">목적지 설정하고 출발</string>
     <string name="depart_call">동물병원에 전화하기</string>
     <string name="depart_no_phone">이 병원은 전화번호가 등록되지 않았어요.</string>
+    <string name="prompt_go_nearest">가장 가까운 병원으로 안내</string>
+    <string name="prompt_nearest_note">%1$s까지 길을 안내하고 진료 카드를 보낼게요. 출발과 함께 병원에 전화도 연결해 드려요.</string>
+    <string name="prompt_nearest_title">가장 가까운 병원</string>
+    <string name="inquiry_countdown">응답 대기 시간 · 남은 시간 %1$d초</string>
+    <string name="inquiry_countdown_done">응답 대기 시간이 지났어요</string>
+    <string name="suggest_title">%1$s 출발할까요?</string>
+    <string name="suggest_body">답변한 병원 중 이동 시간과 대기 시간을 합쳐 가장 빨리 진료받을 수 있는 곳이에요.</string>
+    <string name="suggest_detail_start">이동 %1$d분 · 진료 시작까지 약 %2$d분</string>
+    <string name="suggest_detail_unknown">이동 %1$d분 · 대기시간 미확인</string>
+    <string name="suggest_go">여기로 출발</string>
+    <string name="suggest_compare">다른 병원 비교</string>
 </resources>

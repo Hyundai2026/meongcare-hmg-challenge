@@ -92,9 +92,16 @@ class VetInquiryViewModel(
     }
 
     fun dismissNoResponse() {
-        inquiry.dismissNoResponse()
+        inquiry.dismissNoResponse(clock())
         _promptSelected.value = null
         bump()
+    }
+
+    /** 출발 제안 [다른 병원 비교]: 제안을 닫고 비교 쪽으로 */
+    fun compareInsteadOfSuggestion() {
+        inquiry.dismissSuggestion()
+        bump()
+        openCompare()
     }
 
     fun selectInPrompt(name: String) {

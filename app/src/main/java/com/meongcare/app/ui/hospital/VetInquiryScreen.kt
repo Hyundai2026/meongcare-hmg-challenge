@@ -69,6 +69,7 @@ private val Mode = TextStyle(fontSize = 30.sp, lineHeight = 40.sp)
 private val Body = TextStyle(fontSize = 30.sp, lineHeight = 42.sp)
 private val RowName = TextStyle(fontSize = 36.sp, lineHeight = 46.sp, fontWeight = FontWeight.SemiBold)
 private val RowSub = TextStyle(fontSize = 28.sp, lineHeight = 38.sp)
+private val SearchName = TextStyle(fontSize = 32.sp, lineHeight = 40.sp, fontWeight = FontWeight.SemiBold)
 private val BadgeText = TextStyle(fontSize = 26.sp, lineHeight = 34.sp, fontWeight = FontWeight.Medium)
 private val Small = TextStyle(fontSize = 28.sp, lineHeight = 38.sp)
 private val ButtonText = TextStyle(fontSize = 32.sp, lineHeight = 40.sp, fontWeight = FontWeight.SemiBold)
@@ -83,7 +84,9 @@ private val TimeFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm",
  * 프로토타입과 같은 모양이다. 답변은 앱 안 시연 응답이다 (화면에는 표시하지 않는다, 사용자 결정 D1-B).
  *
  * @param onBack 응답 확인 [←] (카드로)
- * @param onChoose 비교·팝업에서 고른 병원으로 출발 확인 (`HospitalTrip.choose`)
+ * @param onChoose 비교에서 고른 병원으로 출발 확인 (`HospitalTrip.choose`)
+ * @param onDepartSuggested 출발 제안 팝업 [여기로 출발]: 카드와 함께 바로 출발 (비교 화면을 거치지 않는다)
+ * @param onDepartNearest 응답 없음 팝업 [가장 가까운 병원으로 출발]: 카드와 함께 바로 출발 + 병원 전화 연결
  */
 @Composable
 fun VetInquiryScreen(
@@ -96,6 +99,8 @@ fun VetInquiryScreen(
     onBack: () -> Unit,
     onChoose: (DemoHospital) -> Unit,
     modifier: Modifier = Modifier,
+    onDepartNearest: (DemoHospital) -> Unit = {},
+    onDepartSuggested: (DemoHospital) -> Unit = {},
 ) {
     val colors = LocalDesignTokens.current.colors
     // 비교 쪽에서 시스템 뒤로 = 응답 확인으로 (응답 확인에서는 HomeScreen의 BackHandler가 카드로 보낸다)
@@ -105,8 +110,11 @@ fun VetInquiryScreen(
         when (page) {
             InquiryPage.SEARCH -> {
                 SearchPage(vm, snapshot, expandNotice, onBack, scale, colors)
+                if (snapshot.showSuggestion) {
+                    SuggestionPrompt(vm, snapshot, onDepartSuggested, scale, colors)
+                }
                 if (snapshot.showNoResponsePrompt) {
-                    NoResponsePrompt(vm, snapshot, promptSelected, onChoose, scale, colors)
+                    NoResponsePrompt(vm, snapshot, onDepartNearest, scale, colors)
                 }
             }
             InquiryPage.COMPARE -> ComparePage(vm, snapshot, compareSelected, onChoose, scale, colors)
@@ -154,33 +162,33 @@ private fun SearchPage(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = scale.gap(DesignSpace.xxxl)),
         ) {
-            Spacer(Modifier.height(scale.gap(DesignSpace.l)))
+            Spacer(Modifier.height(scale.gap(DesignSpace.s)))
             VoiceGuideLine(
                 stringResource(if (s.okCount > 0) R.string.inquiry_voice_ok else R.string.inquiry_voice),
                 scale,
                 colors,
             )
-            Spacer(Modifier.height(scale.gap(DesignSpace.l)))
-            Text(stringResource(R.string.inquiry_intro, s.searchRows.size), style = scale.style(Body), color = colors.homeSubText)
-            Spacer(Modifier.height(scale.gap(DesignSpace.m)))
-            ProgressBar(s.progress, scale, colors)
-            Spacer(Modifier.height(scale.gap(DesignSpace.m)))
+            Spacer(Modifier.height(scale.gap(DesignSpace.s)))
+            Text(stringResource(R.string.inquiry_intro, s.searchRows.size), style = scale.style(Small), color = colors.homeSubText)
+            Spacer(Modifier.height(scale.gap(DesignSpace.s)))
+            // 카운트다운: 막대(20초 → 0초)와 남은 시간을 한 줄에
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.weight(1f)) { ProgressBar(s.progress, scale, colors) }
+                Spacer(Modifier.width(scale.gap(DesignSpace.l)))
+                Text(
+                    if (s.remainingSeconds > 0) stringResource(R.string.inquiry_countdown, s.remainingSeconds)
+                    else stringResource(R.string.inquiry_countdown_done),
+                    style = scale.style(Small),
+                    color = if (s.remainingSeconds > 0) colors.homeSubText else colors.warning,
+                )
+            }
+            Spacer(Modifier.height(scale.gap(DesignSpace.xs)))
             DesignDivider(colors, scale)
             s.searchRows.forEachIndexed { i, row ->
                 if (i > 0) DesignDivider(colors, scale)
                 SearchRow(row, scale, colors)
             }
             DesignDivider(colors, scale)
-            Spacer(Modifier.height(scale.gap(DesignSpace.l)))
-            Text(
-                when (val summary = s.summary) {
-                    is InquirySummary.Accepting -> stringResource(R.string.inquiry_status_accepting, summary.count)
-                    InquirySummary.NoneAvailable -> stringResource(R.string.inquiry_status_none)
-                    InquirySummary.Waiting -> stringResource(R.string.inquiry_status_waiting)
-                },
-                style = scale.style(Small),
-                color = if (s.okCount > 0) colors.success else colors.homeSubText,
-            )
             if (s.restCount > 0) {
                 Spacer(Modifier.height(scale.gap(DesignSpace.m)))
                 FlowButton(stringResource(R.string.inquiry_expand, s.restCount), vm::expand, primary = false, scale = scale, colors = colors)
@@ -190,7 +198,21 @@ private fun SearchPage(
                 Text(stringResource(R.string.inquiry_expanded, expandNotice), style = scale.style(Small), color = colors.selectedText)
             }
         }
-        Row(Modifier.fillMaxWidth().padding(top = scale.gap(DesignSpace.m)), horizontalArrangement = Arrangement.End) {
+        Row(
+            Modifier.fillMaxWidth().padding(start = scale.gap(DesignSpace.xxxl), top = scale.gap(DesignSpace.s)),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                when (val summary = s.summary) {
+                    is InquirySummary.Accepting -> stringResource(R.string.inquiry_status_accepting, summary.count)
+                    InquirySummary.NoneAvailable -> stringResource(R.string.inquiry_status_none)
+                    InquirySummary.Waiting -> stringResource(R.string.inquiry_status_waiting)
+                },
+                style = scale.style(Small),
+                color = if (s.okCount > 0) colors.success else colors.homeSubText,
+                modifier = Modifier.weight(1f),
+            )
+            Spacer(Modifier.width(scale.gap(DesignSpace.l)))
             FlowButton(
                 stringResource(R.string.inquiry_compare),
                 vm::openCompare,
@@ -213,22 +235,25 @@ private fun ProgressBar(fraction: Float, scale: DesignScale, colors: DesignColor
 
 @Composable
 private fun SearchRow(row: InquiryRow, scale: DesignScale, colors: DesignColors) {
+    // 5곳이 한 화면에 다 보이게 한 줄로: 이름 · 상태 설명 ……… 배지 (사용자 요청 2026-11-14)
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = scale.gap(DesignSpace.l)),
+        modifier = Modifier.fillMaxWidth().padding(vertical = scale.gap(DesignSpace.xs)),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(scale.gap(DesignSpace.xxs))) {
-            Text(row.key, style = scale.style(RowName), color = colors.homeText)
-            Text(
-                rowSubText(row),
-                style = scale.style(RowSub),
-                color = when (row.status) {
-                    InquiryStatus.DELAYED -> colors.warning
-                    InquiryStatus.AVAILABLE -> colors.homeText
-                    else -> colors.homeSubText
-                },
-            )
-        }
+        Text(row.key, style = scale.style(SearchName), color = colors.homeText, modifier = Modifier.width(scale.gap(420.dp)), maxLines = 1)
+        Text(
+            rowSubText(row),
+            style = scale.style(RowSub),
+            color = when (row.status) {
+                InquiryStatus.DELAYED -> colors.warning
+                InquiryStatus.AVAILABLE -> colors.homeText
+                else -> colors.homeSubText
+            },
+            modifier = Modifier.weight(1f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Spacer(Modifier.width(scale.gap(DesignSpace.m)))
         StatusBadge(row.status, scale, colors)
     }
 }
@@ -301,17 +326,105 @@ internal fun FlowButton(
     }
 }
 
-/** "아직 병원 응답이 없습니다" 팝업 (프로토타입: 20초 뒤 진료 가능 답이 없으면) */
+/**
+ * 출발 제안 팝업 (사용자 결정 2026-11-14): 응답 대기 시간(20초)이 끝났을 때 진료 가능 답이 있으면
+ * 진료 시작까지가 가장 짧은 병원을 "○○으로 출발할까요?"로 제안한다. [여기로 출발]은 비교 없이 바로 출발한다.
+ */
+@Composable
+private fun SuggestionPrompt(
+    vm: VetInquiryViewModel,
+    s: InquirySnapshot,
+    onDepartSuggested: (DemoHospital) -> Unit,
+    scale: DesignScale,
+    colors: DesignColors,
+) {
+    val row = s.suggestion ?: return
+    val h = vm.hospitalNamed(row.key) ?: return
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.4f))
+            .clickable(enabled = false) {},
+        contentAlignment = Alignment.Center,
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = scale.gap(DesignSpace.xxxl), vertical = scale.gap(DesignSpace.xl))
+                .background(colors.background, RoundedCornerShape(scale.gap(DesignRadius.xl)))
+                .padding(scale.gap(DesignSpace.xxl)),
+            horizontalArrangement = Arrangement.spacedBy(scale.gap(DesignSpace.xxl)),
+        ) {
+            Column(Modifier.weight(0.48f).fillMaxHeight().verticalScroll(rememberScrollState())) {
+                Text(
+                    stringResource(R.string.suggest_title, com.meongcare.app.ui.withDirectionParticle(h.name)),
+                    style = scale.style(PopupTitle),
+                    color = colors.homeText,
+                )
+                Spacer(Modifier.height(scale.gap(DesignSpace.s)))
+                Text(stringResource(R.string.suggest_body), style = scale.style(Body), color = colors.homeSubText)
+                Spacer(Modifier.height(scale.gap(DesignSpace.l)))
+                DesignDivider(colors, scale)
+                Row(Modifier.fillMaxWidth().padding(vertical = scale.gap(DesignSpace.m)), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(h.name, style = scale.style(RowName), color = colors.homeText)
+                        Text(
+                            row.startMinutes?.let { stringResource(R.string.suggest_detail_start, h.travelMinutes, it) }
+                                ?: stringResource(R.string.suggest_detail_unknown, h.travelMinutes),
+                            style = scale.style(RowSub),
+                            color = colors.homeSubText,
+                        )
+                    }
+                    StatusBadge(row.status, scale, colors)
+                }
+                DesignDivider(colors, scale)
+                Spacer(Modifier.height(scale.gap(DesignSpace.m)))
+                Text(stringResource(R.string.depart_sends), style = scale.style(Small), color = colors.homeSubText)
+                Spacer(Modifier.height(scale.gap(DesignSpace.l)))
+                Row(horizontalArrangement = Arrangement.spacedBy(scale.gap(DesignSpace.m))) {
+                    FlowButton(stringResource(R.string.suggest_compare), vm::compareInsteadOfSuggestion, primary = false, scale = scale, colors = colors)
+                    FlowButton(
+                        stringResource(R.string.suggest_go),
+                        { onDepartSuggested(h) },
+                        primary = true,
+                        scale = scale,
+                        colors = colors,
+                        modifier = Modifier.weight(1f),
+                        icon = HomeIcons.Navigate,
+                    )
+                }
+            }
+            DemoMap(
+                hospitals = vm.hospitals,
+                selected = h,
+                scale = scale,
+                colors = colors,
+                modifier = Modifier.weight(0.52f).fillMaxHeight(),
+                onSelect = null,
+                infoTitle = h.name,
+                infoSubtitle = row.startMinutes?.let { stringResource(R.string.suggest_detail_start, h.travelMinutes, it) }
+                    ?: stringResource(R.string.suggest_detail_unknown, h.travelMinutes),
+                selectedLabel = stringResource(R.string.map_label_travel, h.rank, h.name, h.travelMinutes),
+                showBadge = false,
+            )
+        }
+    }
+}
+
+/**
+ * "아직 병원 응답이 없습니다" 팝업: 응답 대기 시간(20초)이 지나도 진료 가능 답이 없으면 뜬다.
+ * [계속 기다리기] 또는 [가장 가까운 병원으로 출발](카드와 함께 출발 + 병원 전화 연결, 사용자 결정 2026-11-14).
+ */
 @Composable
 private fun NoResponsePrompt(
     vm: VetInquiryViewModel,
     s: InquirySnapshot,
-    selectedName: String?,
-    onChoose: (DemoHospital) -> Unit,
+    onDepartNearest: (DemoHospital) -> Unit,
     scale: DesignScale,
     colors: DesignColors,
 ) {
-    val selected = vm.hospitalNamed(selectedName)
+    val selected = vm.hospitalNamed(s.nearest?.key)
+    val selectedName = selected?.name
     Box(
         Modifier
             .fillMaxSize()
@@ -337,22 +450,21 @@ private fun NoResponsePrompt(
                     s.noResponseRows.forEachIndexed { i, row ->
                         val h = vm.hospitalNamed(row.key) ?: return@forEachIndexed
                         if (i > 0) DesignDivider(colors, scale)
-                        PromptRow(h, row, h.name == selectedName, scale, colors) { vm.selectInPrompt(h.name) }
+                        PromptRow(h, row, h.name == selectedName, scale, colors)
                     }
                 }
                 DesignDivider(colors, scale)
                 Spacer(Modifier.height(scale.gap(DesignSpace.m)))
-                Text(
-                    stringResource(if (selected != null) R.string.prompt_warning else R.string.prompt_map_hint),
-                    style = scale.style(Small),
-                    color = if (selected != null) colors.warning else colors.homeSubText,
-                )
+                Text(stringResource(R.string.prompt_warning), style = scale.style(Small), color = colors.warning)
+                selected?.let {
+                    Text(stringResource(R.string.prompt_nearest_note, it.name), style = scale.style(Small), color = colors.homeSubText)
+                }
                 Spacer(Modifier.height(scale.gap(DesignSpace.m)))
                 Row(horizontalArrangement = Arrangement.spacedBy(scale.gap(DesignSpace.m))) {
                     FlowButton(stringResource(R.string.prompt_wait), vm::dismissNoResponse, primary = false, scale = scale, colors = colors)
                     FlowButton(
-                        stringResource(R.string.prompt_go),
-                        { selected?.let(onChoose) },
+                        stringResource(R.string.prompt_go_nearest),
+                        { selected?.let(onDepartNearest) },
                         primary = true,
                         enabled = selected != null,
                         scale = scale,
@@ -367,7 +479,7 @@ private fun NoResponsePrompt(
                 scale = scale,
                 colors = colors,
                 modifier = Modifier.weight(0.52f).fillMaxHeight(),
-                onSelect = { vm.selectInPrompt(it.name) },
+                onSelect = null,
                 infoTitle = selected?.name ?: stringResource(R.string.prompt_map_title),
                 infoSubtitle = selected?.let { stringResource(R.string.map_travel_unknown_wait, it.travelMinutes) }
                     ?: stringResource(R.string.prompt_map_subtitle),
@@ -379,7 +491,7 @@ private fun NoResponsePrompt(
 }
 
 @Composable
-private fun PromptRow(h: DemoHospital, row: InquiryRow, isSelected: Boolean, scale: DesignScale, colors: DesignColors, onClick: () -> Unit) {
+private fun PromptRow(h: DemoHospital, row: InquiryRow, isSelected: Boolean, scale: DesignScale, colors: DesignColors) {
     val status = when (row.status) {
         InquiryStatus.DELAYED -> stringResource(R.string.inquiry_badge_delay)
         InquiryStatus.WAITING -> stringResource(R.string.inquiry_badge_wait)
@@ -389,7 +501,6 @@ private fun PromptRow(h: DemoHospital, row: InquiryRow, isSelected: Boolean, sca
         modifier = Modifier
             .fillMaxWidth()
             .background(if (isSelected) colors.selected else Color.Transparent)
-            .clickable(role = Role.RadioButton, onClick = onClick)
             .heightIn(min = scale.touch(100.dp))
             .padding(horizontal = scale.gap(DesignSpace.m), vertical = scale.gap(DesignSpace.s)),
         verticalAlignment = Alignment.CenterVertically,

@@ -27,7 +27,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.meongcare.app.R
-import com.meongcare.app.data.pet.SamplePetProfiles
 import com.meongcare.app.domain.pet.PetProfileLoad
 import com.meongcare.app.ui.card.PetAvatar
 import com.meongcare.app.ui.card.ageText
@@ -153,7 +152,7 @@ private fun RegisteredBody(
                         },
                         none, scale, colors,
                     )
-                    // 체중·특징은 프로필 형식에 없어 샘플 보리일 때만 정해 둔 값을 보인다 (2026-11-14)
+                    // 체중·특징은 프로필 형식에 없어 샘플 반려견일 때만 고른 반려견의 정해 둔 값을 보인다 (2026-11-14, 021)
                     InfoRow(stringResource(R.string.pet_card_weight), sampleWeight.takeIf { isSample }, none, scale, colors)
                     InfoRow(stringResource(R.string.pet_card_traits), sampleTraits.takeIf { isSample }, none, scale, colors)
                 }
@@ -238,16 +237,33 @@ private fun InfoRow(key: String, value: String?, none: String, scale: DesignScal
     }
 }
 
+/** 미리보기용 (ui는 data를 import하지 않는다). 값은 시연용 샘플 왕건이와 같다 */
+private val previewPet = com.meongcare.app.domain.pet.PetProfile(
+    name = "왕건이",
+    breed = "래브라도 리트리버",
+    sex = com.meongcare.app.domain.pet.Sex.MALE,
+    birthDate = LocalDate.of(2014, 3, 12),
+    birthDateIsEstimated = false,
+    photoDataUrl = null,
+    medical = com.meongcare.app.domain.pet.MedicalInfo(
+        conditions = listOf("심장질환"),
+        allergies = emptyList(),
+        medications = listOf(com.meongcare.app.domain.pet.Medication("심장질환 약 복용 중(상세 약명 미등록)", "")),
+    ),
+    updatedAt = java.time.Instant.parse("2026-11-05T00:00:00Z"),
+)
+
 @Preview(widthDp = 1682, heightDp = 1210)
 @Composable
 private fun PetCardScreenPreview() {
     MeongCareTheme(darkTheme = false) {
         Surface {
             PetCardScreen(
-                state = petCardOf(PetProfileLoad.Loaded(SamplePetProfiles.demoPet), LocalDate.of(2026, 11, 13)),
+                state = petCardOf(PetProfileLoad.Loaded(previewPet), LocalDate.of(2026, 11, 13)),
                 relaxSummary = "기본 설정",
                 isSample = true,
                 onBack = {},
+                sampleWeight = "30kg",
             )
         }
     }

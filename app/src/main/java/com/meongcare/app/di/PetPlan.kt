@@ -7,7 +7,7 @@ enum class LinkKind {
     /** 연결 없음. 처음 화면에 연결 버튼이 없다 */
     NONE,
 
-    /** 메모리 Fake. debug 패널 [가짜 보호자 코드 입력]으로 연결을 흉내 낸다. 연결해도 샘플 "보리"다 */
+    /** 메모리 Fake. debug 패널 [가짜 보호자 코드 입력]으로 연결을 흉내 낸다. 연결해도 그때 고른 샘플 반려견이다 (021) */
     FAKE,
 
     /** 서버 (Firestore REST) */
@@ -16,7 +16,7 @@ enum class LinkKind {
 
 /**
  * 반려견 프로필 구성 (014).
- * @param sampleBeforeLink 연결 전(또는 연결 없음)에 샘플 "보리"를 보이는지. false면 "등록 안 됨"이다
+ * @param sampleBeforeLink 연결 전(또는 연결 없음)에 샘플 반려견(왕건이·오숑이 중 고른 것)을 보이는지. false면 "등록 안 됨"이다
  */
 data class PetPlan(val link: LinkKind, val sampleBeforeLink: Boolean)
 
@@ -26,9 +26,9 @@ data class PetPlan(val link: LinkKind, val sampleBeforeLink: Boolean)
  *
  * | 모드 | 서버 설정 | 연결 | 연결 전 반려견 |
  * |---|---|---|---|
- * | Fake | 상관없음 | Fake | 샘플 보리 |
- * | 시연 (release) | 없음 | 없음 | 샘플 보리 (지금과 같다) |
- * | 시연 | 있음 | 서버 | 샘플 보리 |
+ * | Fake | 상관없음 | Fake | 고른 샘플 |
+ * | 시연 (release) | 없음 | 없음 | 고른 샘플 (지금과 같다) |
+ * | 시연 | 있음 | 서버 | 고른 샘플 |
  * | Real | 있음 | 서버 | 등록 안 됨 |
  * | Real | 없음 | 없음 | 등록 안 됨 |
  *
@@ -42,7 +42,7 @@ fun petPlanOf(mode: DataMode, hasServer: Boolean): PetPlan = when (mode) {
 
 /**
  * 화면에 "시연용 샘플 정보예요"를 보일지. 서버 연결로 받은 프로필만 샘플이 아니다.
- * Fake 연결은 연결해도 샘플 보리라서 계속 샘플이다.
+ * Fake 연결은 연결해도 고른 샘플이라서 계속 샘플이다.
  */
 fun petProfileIsSampleOf(plan: PetPlan, state: OwnerLinkState): Boolean = when (plan.link) {
     LinkKind.FAKE -> true

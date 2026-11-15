@@ -271,15 +271,15 @@ fun Notice(text: String, modifier: Modifier = Modifier, style: TextStyle = Mater
     Text(text = text, style = style, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = modifier)
 }
 
-/** 미리보기용 (ui는 data를 import하지 않는다). 값은 시연용 샘플 "보리"와 같다. */
+/** 미리보기용 (ui는 data를 import하지 않는다). 값은 시연용 샘플 왕건이와 같다 (021). */
 internal val PreviewPet = PetProfile(
-    name = "보리",
-    breed = "골든리트리버",
+    name = "왕건이",
+    breed = "래브라도 리트리버",
     sex = Sex.MALE,
-    birthDate = LocalDate.of(2014, 8, 1),
+    birthDate = LocalDate.of(2014, 3, 12),
     birthDateIsEstimated = false,
     photoDataUrl = null,
-    medical = MedicalInfo(listOf("심장질환"), listOf("특정 단백질 알레르기"), listOf(Medication("심장약", "1일 1회"))),
+    medical = MedicalInfo(listOf("심장질환"), emptyList(), listOf(Medication("심장질환 약 복용 중(상세 약명 미등록)", ""))),
     updatedAt = Instant.parse("2026-11-05T00:00:00Z"),
 )
 

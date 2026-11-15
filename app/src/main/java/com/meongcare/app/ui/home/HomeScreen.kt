@@ -90,6 +90,8 @@ fun HomeScreen(
     voice: VoiceScreenState? = null,
     voiceActions: VoiceActions = VoiceActions(),
     bottomBar: @Composable () -> Unit = {},
+    petChoice: com.meongcare.app.ui.pet.PetChoiceUi? = null,
+    onSelectPet: (String) -> Unit = {},
 ) {
     // 안내 영역의 도착 예정 시각이 정차 중에 낡지 않게 30초마다 다시 계산한다 (주행 화면은 시각을 보이지 않는다)
     val tick by produceState(0L) {
@@ -137,6 +139,8 @@ fun HomeScreen(
                         homeArrivedScreen = homeArrivedScreen,
                         voice = voice,
                         voiceActions = voiceActions,
+                        petChoice = petChoice,
+                        onSelectPet = onSelectPet,
                     )
                     HomeContent.DRIVING -> DrivingScreen(guidanceUiState, panel = panel)
                 }
@@ -179,6 +183,8 @@ private fun ParkedFlow(
     homeArrivedScreen: @Composable () -> Unit,
     voice: VoiceScreenState?,
     voiceActions: VoiceActions,
+    petChoice: com.meongcare.app.ui.pet.PetChoiceUi?,
+    onSelectPet: (String) -> Unit,
 ) {
     when (parkedContentOf(guidanceUiState, cardUiState.session, cardUiState.atHome, finder, link.linking, pages.page, finderWithoutCard)) {
         ParkedContent.HOME -> {
@@ -205,6 +211,8 @@ private fun ParkedFlow(
                 onFindHospital = onFindHospitalFromHome,
                 onOpenRelax = { pages.onOpen(HomePage.RELAX) },
                 onOpenPetCard = { pages.onOpen(HomePage.PET_CARD) },
+                petChoice = petChoice,
+                onSelectPet = onSelectPet,
             )
         }
         ParkedContent.PET_CARD -> {

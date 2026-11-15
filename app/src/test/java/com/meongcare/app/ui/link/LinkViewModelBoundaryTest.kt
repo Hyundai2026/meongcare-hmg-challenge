@@ -319,8 +319,8 @@ class LinkViewModelBoundaryTest {
     }
 
     @Test
-    fun `연결됨 화면은 서버에서 받은 반려견만 보이고 샘플 보리를 먼저 보이지 않는다`() = runTest(dispatcher) {
-        // 앱과 같은 구성: 연결 전에는 샘플 보리, 연결 뒤에는 서버에서 읽은 콩이 (LinkedPetProfileSource)
+    fun `연결됨 화면은 서버에서 받은 반려견만 보이고 샘플를 먼저 보이지 않는다`() = runTest(dispatcher) {
+        // 앱과 같은 구성: 연결 전에는 샘플, 연결 뒤에는 서버에서 읽은 콩이 (LinkedPetProfileSource)
         val fake = FakeOwnerLink(Random(3), now = { start.plusMillis(testScheduler.currentTime) })
         val answer = CompletableDeferred<LinkedProfileRead>()
         val reader = LinkedProfileReader { answer.await() }

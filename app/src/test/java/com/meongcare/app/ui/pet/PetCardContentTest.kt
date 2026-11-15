@@ -15,16 +15,16 @@ class PetCardContentTest {
     private val today = LocalDate.of(2026, 11, 13)
 
     @Test
-    fun `샘플 보리를 카드 값으로 바꾼다`() {
+    fun `샘플 왕건이를 카드 값으로 바꾼다`() {
         val card = petCardOf(PetProfileLoad.Loaded(SamplePetProfiles.demoPet), today) as PetCardUiState.Registered
-        assertEquals("보리", card.name)
-        assertEquals("보", card.initial)
-        assertEquals("포메라니안", card.breed)
-        assertEquals(LocalDate.of(2014, 8, 1), card.birthDate)
-        assertEquals(AgeLabel.YearsAndMonths(12, 3), card.age)
+        assertEquals("왕건이", card.name)
+        assertEquals("왕", card.initial)
+        assertEquals("래브라도 리트리버", card.breed)
+        assertEquals(LocalDate.of(2014, 3, 12), card.birthDate)
+        assertEquals(AgeLabel.YearsAndMonths(12, 8), card.age)
         assertEquals(listOf("심장질환"), card.conditions)
-        assertEquals(listOf(MedicationText("심장약", "1일 1회")), card.medications)
-        assertEquals(listOf("특정 단백질 알레르기"), card.allergies)
+        assertEquals(listOf(MedicationText("심장질환 약 복용 중(상세 약명 미등록)", null)), card.medications)
+        assertEquals(emptyList<String>(), card.allergies)
     }
 
     @Test

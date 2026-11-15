@@ -103,6 +103,7 @@ class MainActivity : ComponentActivity() {
                 val linking by linkViewModel.isOpen.collectAsStateWithLifecycle()
                 val linkState by container.ownerLink.state.collectAsStateWithLifecycle()
                 val isPetProfileSample by container.petProfileIsSample.collectAsStateWithLifecycle()
+                val selectedSamplePet by container.samplePets.selected.collectAsStateWithLifecycle()
                 // 처음 화면 바로가기로 연 쪽 (019). 주행으로 바뀌었다가 정차하면 같은 쪽으로 돌아온다
                 var homePage by rememberSaveable { mutableStateOf(HomePage.NONE) }
                 val relaxViewModel: RelaxViewModel = viewModel()
@@ -157,7 +158,8 @@ class MainActivity : ComponentActivity() {
                 }
 
                 androidx.compose.runtime.CompositionLocalProvider(
-                    com.meongcare.app.ui.card.LocalSamplePetPhoto provides isPetProfileSample,
+                    com.meongcare.app.ui.card.LocalSamplePetPhoto provides
+                        com.meongcare.app.ui.card.samplePetPhotoRes(selectedSamplePet.id).takeIf { isPetProfileSample },
                 ) {
                 HomeScreen(
                     uiState = uiState,
@@ -422,8 +424,8 @@ class MainActivity : ComponentActivity() {
                             relaxSummary = relaxSummaryOf(relaxSettings),
                             isSample = isPetProfileSample,
                             onBack = { homePage = HomePage.NONE },
-                            sampleWeight = com.meongcare.app.data.pet.SamplePetProfiles.DEMO_WEIGHT,
-                            sampleTraits = com.meongcare.app.data.pet.SamplePetProfiles.DEMO_TRAITS,
+                            sampleWeight = selectedSamplePet.weight,
+                            sampleTraits = selectedSamplePet.traits,
                             records = visitRecords.map { r ->
                                 listOfNotNull(
                                     r.endedAt.atZone(java.time.ZoneId.systemDefault())
@@ -450,6 +452,18 @@ class MainActivity : ComponentActivity() {
                     },
                     voice = voiceUiState,
                     voiceActions = voiceActions,
+                    // 샘플 반려견 고르기 (021): 정차 중 홈에서만. 고르면 만든 카드를 지운다 (D2, 프로토타입 cycle)
+                    petChoice = com.meongcare.app.ui.pet.petChoiceOf(
+                        pets = container.samplePets.pets.map { com.meongcare.app.ui.pet.PetChoiceItem(it.id, it.profile.name) },
+                        selectedId = selectedSamplePet.id,
+                        isSample = isPetProfileSample,
+                        linked = linkState is com.meongcare.app.domain.link.OwnerLinkState.Linked,
+                        tripActive = guidanceUiState !is com.meongcare.app.ui.guidance.GuidanceUiState.Idle || tripState != null,
+                    ),
+                    onSelectPet = { id ->
+                        container.samplePets.select(id)
+                        cardViewModel.onCloseCard()
+                    },
                     bottomBar = {
                         if (BuildConfig.DEBUG) {
                             val fake = container.fakeDrivingStateSource

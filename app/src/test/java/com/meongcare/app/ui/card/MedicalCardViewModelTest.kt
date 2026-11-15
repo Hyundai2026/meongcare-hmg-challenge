@@ -37,11 +37,11 @@ class MedicalCardViewModelTest {
         MedicalCardViewModel(profiles, session, hospital, dialer, clock)
 
     @Test
-    fun `처음에는 보리 요약을 보여 주고 카드가 없다`() = runTest {
+    fun `처음에는 샘플 왕건이 요약을 보여 주고 카드가 없다`() = runTest {
         viewModel().uiState.test {
             val state = expectMostRecentItem()
             assertEquals(CardSessionState.None, state.session)
-            assertEquals("보리", (state.card.pet as PetHeader.Registered).name)
+            assertEquals("왕건이", (state.card.pet as PetHeader.Registered).name)
             assertEquals("시연용 동물병원", state.hospitalName)
             assertEquals("02-0000-0000", state.hospitalPhone)
             assertTrue(state.isHospitalSample)

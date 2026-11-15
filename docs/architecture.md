@@ -155,7 +155,7 @@ app/src/main/java/com/meongcare/app/
     FirestoreHospitalBoardSource.kt, FirestoreCaseSender.kt  목록 GET / 카드 POST / 갱신·도착·취소는 documents:commit + updateMask / 확인 읽기는 단건 GET + mask (지운 건 403 = Gone)
     FirestoreOwnerLink.kt     (014) 연결 코드 만들기(commit + exists=false + REQUEST_TIME, 409면 새 코드) / 확인(단건 GET) / 끊기(허가 DELETE). 보호자 uid는 여기만 안다
     FirestorePetProfileReader.kt  (014) 연결된 보호자 프로필 단건 GET (403 = 연결 끊김, 404 = 등록 안 됨)
-  data/pet/                   SamplePetProfiles("보리", 예시 JSON과 같은 값), FakePetProfileSource,
+  data/pet/                   SamplePetProfiles(021: 샘플 왕건이·오숑이, 예시 JSON과 다른 값), SamplePetChooser(고른 샘플, domain SamplePetChoice), FakePetProfileSource(테스트용),
                               LinkedPetProfileSource(014: 연결 상태 × 샘플 × 서버 프로필, 연결 뒤 못 읽으면 샘플로 대신하지 않음)
   data/link/                  (014) FakeOwnerLink(debug [가짜 보호자 코드 입력]), NoOwnerLink(서버 설정 없음)
   data/phone/                 AndroidPhoneDialer (ACTION_DIAL. ACTION_DIAL을 부르는 유일한 파일)
@@ -307,9 +307,9 @@ ui ──▶ domain ◀── data
 
   | 모드 | 서버 설정 | 연결 | 연결 전 반려견 | 연결 뒤 |
   |---|---|---|---|---|
-  | Fake | 상관없음 | Fake (debug [가짜 보호자 코드 입력]) | 샘플 보리 | 샘플 보리 그대로 |
-  | 시연 (release) | 없음 | 없음 (연결 버튼 없음) | 샘플 보리 | - |
-  | 시연 | 있음 | 서버 | 샘플 보리 | 서버 프로필. 못 읽으면 "불러오지 못했어요" (보리로 대신하지 않는다) |
+  | Fake | 상관없음 | Fake (debug [가짜 보호자 코드 입력]) | 고른 샘플 (왕건이·오숑이) | 연결할 때 고른 샘플 |
+  | 시연 (release) | 없음 | 없음 (연결 버튼 없음) | 고른 샘플 (왕건이·오숑이) | - |
+  | 시연 | 있음 | 서버 | 고른 샘플 (왕건이·오숑이) | 서버 프로필. 못 읽으면 "불러오지 못했어요" (샘플로 대신하지 않는다) |
   | Real | 있음 | 서버 | 등록 안 됨 | 서버 프로필 |
   | Real | 없음 | 없음 | 등록 안 됨 | - |
 
@@ -354,7 +354,7 @@ ui ──▶ domain ◀── data
 
   | 안내 \ 카드 세션 | 없음 | 고르는 중 | 카드 있음 |
   |---|---|---|---|
-  | 안내 없음 | **처음 화면**: 보리 요약 + [진료 카드 만들기] | **증상 고르기**: 12개 큰 버튼 + [취소] [카드 만들기] | **카드** "진료 카드 생성 완료" + [홈] [수정] / [병원에 전화] [길 안내 시작] |
+  | 안내 없음 | **처음 화면**: 반려견 요약 + [진료 카드 만들기] | **증상 고르기**: 12개 큰 버튼 + [취소] [카드 만들기] | **카드** "진료 카드 생성 완료" + [홈] [수정] / [병원에 전화] [길 안내 시작] |
   | 안내 중 | **카드** (고른 증상 없음) | 증상 고르기 | **카드** "진료 카드" + [홈] [수정], 머리 아래 **안내 영역** / [병원에 전화] [안내 취소] |
   | 도착 | **카드** (고른 증상 없음) | 증상 고르기 | **카드** "진료 카드" + [홈] [수정], 머리 아래 **도착 안내 영역** / [병원에 전화] [닫기] |
 

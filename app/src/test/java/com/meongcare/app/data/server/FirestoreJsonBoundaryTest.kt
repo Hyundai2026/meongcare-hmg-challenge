@@ -303,7 +303,7 @@ class FirestoreJsonBoundaryTest {
             val written = petFields.v("updatedAt").getString("stringValue")
             assertTrue(written, pattern.matches(written))
             assertEquals(Instant.parse(text), Instant.parse(written))
-            assertEquals("2014-08-01", petFields.v("birthDate").getString("stringValue"))
+            assertEquals("2014-03-12", petFields.v("birthDate").getString("stringValue"))
         }
     }
 

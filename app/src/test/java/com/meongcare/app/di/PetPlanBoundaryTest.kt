@@ -25,7 +25,7 @@ class PetPlanBoundaryTest {
     }
 
     @Test
-    fun `연결 전 반려견은 Real만 등록 안 됨이고 나머지는 샘플 보리다`() {
+    fun `연결 전 반려견은 Real만 등록 안 됨이고 나머지는 샘플다`() {
         for (mode in DataMode.entries) {
             for (hasServer in listOf(false, true)) {
                 assertEquals("$mode, 서버 $hasServer", mode != DataMode.REAL, petPlanOf(mode, hasServer).sampleBeforeLink)

@@ -65,7 +65,7 @@ class LinkedPetProfileSourceBoundaryTest {
     }
 
     @Test
-    fun `연결된 뒤 서버 응답을 기다리는 동안 새로 보는 화면에 샘플 보리를 보이지 않는다`() = runTest {
+    fun `연결된 뒤 서버 응답을 기다리는 동안 새로 보는 화면에 샘플를 보이지 않는다`() = runTest {
         val link = FakeOwnerLink()
         val reader = GatedReader()
         val source = source(link, reader)
@@ -88,7 +88,7 @@ class LinkedPetProfileSourceBoundaryTest {
     }
 
     @Test
-    fun `구독이 멈춘 사이 연결되면 다시 구독할 때 샘플 보리를 먼저 보이지 않는다`() = runTest {
+    fun `구독이 멈춘 사이 연결되면 다시 구독할 때 샘플를 먼저 보이지 않는다`() = runTest {
         val link = FakeOwnerLink()
         val reader = GatedReader()
         val source = source(link, reader)

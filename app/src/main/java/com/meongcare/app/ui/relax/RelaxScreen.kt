@@ -133,7 +133,7 @@ fun RelaxScreen(
     }
 }
 
-/** "보리를 위한 편안한 이동" + 상태 + 큰 스위치 */
+/** "왕건이를 위한 편안한 이동" + 상태 + 큰 스위치 */
 @Composable
 private fun MainToggle(on: Boolean, petName: String?, onSet: (Boolean) -> Unit, scale: DesignScale, colors: DesignColors) {
     Row(
@@ -273,7 +273,7 @@ fun relaxSummaryOf(settings: RelaxSettings): String {
 private fun RelaxScreenPreview() {
     MeongCareTheme(darkTheme = false) {
         Surface {
-            RelaxScreen(RelaxSettings(), "보리", {}, {}, {}, {})
+            RelaxScreen(RelaxSettings(), "왕건이", {}, {}, {}, {})
         }
     }
 }

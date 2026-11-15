@@ -37,7 +37,7 @@ class FirestorePetProfileJsonTest {
     private fun withField(key: String, value: Any?): String = document(example().put(key, value ?: JSONObject.NULL))
 
     @Test
-    fun `예시 프로필을 읽으면 샘플 보리와 같다`() {
+    fun `예시 프로필을 읽으면 예시 보리와 같다`() {
         assertEquals(ExamplePetProfiles.bori.copy(photoDataUrl = null), FirestoreJson.petProfileOf(document(example())))
     }
 

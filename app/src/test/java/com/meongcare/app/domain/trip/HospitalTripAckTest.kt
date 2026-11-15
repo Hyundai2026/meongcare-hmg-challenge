@@ -285,7 +285,7 @@ class HospitalTripAckTest {
             assertFalse(line, line.contains(hospital.name))
             assertFalse(line, line.contains("2026"))
             assertFalse(line, Regex("\\d{1,2}:\\d{2}").containsMatchIn(line))
-            assertFalse(line, line.contains("보리"))
+            assertFalse(line, line.contains("왕건이"))
         }
     }
 }

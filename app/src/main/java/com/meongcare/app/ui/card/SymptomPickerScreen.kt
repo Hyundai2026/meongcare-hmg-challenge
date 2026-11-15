@@ -90,7 +90,7 @@ private val FourColumnMinWidth = 840.dp
  * - [음성으로 설명하기] = 이전 [말로 증상 고르기] (010 음성 입력, [VoiceActions.onStart]). 듣는 중이면 [듣기 취소],
  *   다 들었거나 실패하면 [다시 말하기]. 알아들은 말·고른 증상·실패 안내는 버튼 옆 안내 자리에 보인다.
  * - 음성 입력이 없는 구성([voice]가 null이거나 쓸 수 없음)이면 음성 버튼을 그리지 않는다.
- * 시안의 반려동물 [변경]은 한 마리만 다루므로 넣지 않았다.
+ * 시안의 반려동물 [변경]은 넣지 않았다. 샘플 반려견은 정차 중 홈의 [⇄ 변경]에서만 고른다 (021 D3).
  *
  * @param petName 머리와 제목에 쓰는 반려견 이름. 없으면 "반려동물"
  */
@@ -162,7 +162,7 @@ fun SymptomPickerScreen(
     }
 }
 
-/** "← 응급 진료 요청 · 증상 선택"  ……  "반려동물 보리" */
+/** "← 응급 진료 요청 · 증상 선택"  ……  "반려동물 왕건이" */
 @Composable
 private fun Header(petName: String?, onBack: () -> Unit, scale: DesignScale, colors: DesignColors) {
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -329,7 +329,7 @@ private fun SymptomPickerWidePreview() {
                 selected = setOf(Symptom.VOMITING, Symptom.BREATHING_DIFFICULTY),
                 onToggle = {}, onCancel = {}, onConfirm = {},
                 voice = VoiceScreenState(available = true, isSimulated = true, voice = VoiceUiState.Idle),
-                petName = "보리",
+                petName = "왕건이",
             )
         }
     }
@@ -348,7 +348,7 @@ private fun SymptomPickerHeardPreview() {
                     isSimulated = false,
                     voice = VoiceUiState.Heard("강아지가 갑자기 토하고 숨을 가쁘게 쉬어요", listOf(Symptom.BREATHING_DIFFICULTY, Symptom.VOMITING)),
                 ),
-                petName = "보리",
+                petName = "왕건이",
             )
         }
     }

@@ -5,7 +5,7 @@
 
 - 예시: [pet-profile.example.json](pet-profile.example.json). 컨셉 그림의 "보리"다. 웹 테스트가 이 파일을 읽어서, 문서와 코드가 어긋나면 테스트가 깨진다.
 - 웹 구현: `web/src/domain/petProfile.ts`, `web/src/domain/petProfileJson.ts`
-- 쓰는 곳: 보호자 웹 (브라우저 localStorage, 또는 동의하면 서버), 차 앱 (진료 카드. 보호자 웹과 연결하면 서버의 프로필, 연결 전에는 이 예시와 같은 값의 샘플 "보리", 009·014).
+- 쓰는 곳: 보호자 웹 (브라우저 localStorage, 또는 동의하면 서버), 차 앱 (진료 카드. 보호자 웹과 연결하면 서버의 프로필, 연결 전에는 차 앱 시연 샘플 왕건이·오숑이. 이 예시와 값이 다르다, 009·014·021).
 
 ## 필드
 

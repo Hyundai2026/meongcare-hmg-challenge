@@ -1,6 +1,6 @@
 package com.meongcare.app.data.server
 
-import com.meongcare.app.data.pet.SamplePetProfiles
+import com.meongcare.app.data.pet.ExamplePetProfiles
 import com.meongcare.app.domain.pet.Medication
 import com.meongcare.app.testutil.DocsData
 import java.time.Instant
@@ -163,7 +163,7 @@ class FirestorePetProfileJsonBoundaryTest {
             getJSONObject("medical").getJSONArray("medications").getJSONObject(0).put("note", "식후")
         }
         val profile = read(document(json))!!
-        assertEquals(SamplePetProfiles.demoPet.medical, profile.medical)
+        assertEquals(ExamplePetProfiles.bori.medical, profile.medical)
     }
 
     @Test

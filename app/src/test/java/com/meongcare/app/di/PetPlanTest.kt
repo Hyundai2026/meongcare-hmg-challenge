@@ -13,7 +13,7 @@ class PetPlanTest {
     private val linked = OwnerLinkState.Linked(Instant.parse("2026-11-06T09:00:00Z"))
 
     @Test
-    fun `Fake는 샘플 보리와 Fake 연결이다`() {
+    fun `Fake는 샘플와 Fake 연결이다`() {
         val expected = PetPlan(LinkKind.FAKE, sampleBeforeLink = true)
         assertEquals(expected, petPlanOf(DataMode.FAKE, hasServer = false))
         assertEquals(expected, petPlanOf(DataMode.FAKE, hasServer = true))
@@ -22,7 +22,7 @@ class PetPlanTest {
     }
 
     @Test
-    fun `시연에서 서버 설정이 없으면 샘플 보리이고 연결이 없다`() {
+    fun `시연에서 서버 설정이 없으면 샘플이고 연결이 없다`() {
         val plan = petPlanOf(DataMode.DEMO, hasServer = false)
         assertEquals(PetPlan(LinkKind.NONE, sampleBeforeLink = true), plan)
         assertTrue(petProfileIsSampleOf(plan, OwnerLinkState.Unavailable))

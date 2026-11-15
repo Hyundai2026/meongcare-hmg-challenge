@@ -3,33 +3,60 @@ package com.meongcare.app.data.pet
 import com.meongcare.app.domain.pet.MedicalInfo
 import com.meongcare.app.domain.pet.Medication
 import com.meongcare.app.domain.pet.PetProfile
+import com.meongcare.app.domain.pet.SamplePet
 import com.meongcare.app.domain.pet.Sex
 import java.time.Instant
 import java.time.LocalDate
 
 /**
- * 시연용 샘플 반려견. 보호자 웹과 연결되기 전까지 쓴다.
+ * 시연용 샘플 반려견 두 마리 (021). 보호자 웹과 연결되기 전까지 쓴다.
  *
- * 값은 docs/data/pet-profile.example.json과 같다 (컨셉 그림의 "보리"). 그 파일을 바꾸면 여기도 바꾼다.
- * 화면에는 시연용 샘플이라고 알린다 (출품 유의사항: 사실과 다르면 선정 취소).
+ * 값의 원천은 디자인 프로토타입(`docs/product/design/prototype/MeongCareCar.html`의 P-DEMO-01/02)과
+ * 2026-11-15 사용자 결정(왕건이 품종·체중, 두 마리 성별)이다. `docs/data/pet-profile.example.json`(보리,
+ * 형식 예시·보호자 웹 샘플)과는 다르다. 예시 JSON과 같은 값이 필요한 테스트는 test의 `ExamplePetProfiles`를 쓴다.
  */
 object SamplePetProfiles {
-    /** 샘플 보리의 체중·특징 (사용자 결정 2026-11-14). 반려견 프로필 형식에는 없는 값이라 화면 표시용으로만 둔다 */
-    const val DEMO_WEIGHT = "2.8kg"
-    const val DEMO_TRAITS = "낯선 곳에서 긴장해요, 안으면 진정해요"
+    private val updatedAt = Instant.parse("2026-11-05T00:00:00.000Z")
 
-    val demoPet = PetProfile(
-        name = "보리",
-        breed = "포메라니안",
-        sex = Sex.MALE,
-        birthDate = LocalDate.of(2014, 8, 1),
-        birthDateIsEstimated = false,
-        photoDataUrl = null,
-        medical = MedicalInfo(
-            conditions = listOf("심장질환"),
-            allergies = listOf("특정 단백질 알레르기"),
-            medications = listOf(Medication(name = "심장약", dosage = "1일 1회")),
+    val wanggeon = SamplePet(
+        id = "P-DEMO-01",
+        profile = PetProfile(
+            name = "왕건이",
+            breed = "래브라도 리트리버",
+            sex = Sex.MALE,
+            birthDate = LocalDate.of(2014, 3, 12),
+            birthDateIsEstimated = false,
+            photoDataUrl = null,
+            medical = MedicalInfo(
+                conditions = listOf("심장질환"),
+                allergies = emptyList(),
+                medications = listOf(Medication(name = "심장질환 약 복용 중(상세 약명 미등록)", dosage = "")),
+            ),
+            updatedAt = updatedAt,
         ),
-        updatedAt = Instant.parse("2026-11-05T00:00:00.000Z"),
+        weight = "30kg",
+        traits = null,
     )
+
+    val osyong = SamplePet(
+        id = "P-DEMO-02",
+        profile = PetProfile(
+            name = "오숑이",
+            breed = "비숑 프리제",
+            sex = Sex.MALE,
+            birthDate = LocalDate.of(2023, 5, 8),
+            birthDateIsEstimated = false,
+            photoDataUrl = null,
+            medical = MedicalInfo(conditions = emptyList(), allergies = emptyList(), medications = emptyList()),
+            updatedAt = updatedAt,
+        ),
+        weight = null,
+        traits = "차량 이동에 예민함",
+    )
+
+    /** 고르는 순서. 처음 고른 반려견은 첫째(왕건이)다 (프로토타입 `S.cur=0`) */
+    val all: List<SamplePet> = listOf(wanggeon, osyong)
+
+    /** 처음 고른 샘플(왕건이)의 프로필. 테스트와 Fake가 바탕 값으로 쓴다 */
+    val demoPet: PetProfile get() = wanggeon.profile
 }

@@ -200,6 +200,9 @@
     <string name="home_pet_linked">연결됨</string>
     <string name="home_pet_sample">시연용 샘플</string>
     <string name="home_pet_none">반려견 정보 없음</string>
+    <!-- 샘플 반려견 고르기 (021). 정차 중 홈에서만 -->
+    <string name="home_pet_change">변경</string>
+    <string name="home_pet_change_description">반려동물 변경</string>
     <!-- 반려동물 카드 (계획 019, 프로토타입 12번. 보기 전용) -->
     <string name="page_back">뒤로</string>
     <string name="pet_card_title">반려동물 카드</string>

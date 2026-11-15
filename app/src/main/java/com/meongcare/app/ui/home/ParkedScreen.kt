@@ -42,6 +42,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -86,7 +88,7 @@ private val HomePetStatus = TextStyle(fontSize = 26.sp, lineHeight = 34.sp, font
 /**
  * 정차·주차 중 처음 화면 = 확정 디자인 프로토타입 2번 "응급 진료" (계획 019).
  *
- * - 위: 왼쪽 로고 글자, 오른쪽 반려견 줄(아바타·이름·상태) + 보호자 웹 연결 버튼(프로토타입 [⇄ 변경] 자리, D2).
+ * - 위: 왼쪽 로고 글자, 오른쪽 반려견 줄(아바타·이름·상태) + [⇄ 변경](샘플 반려견 고르기, 021) + 보호자 웹 연결 버튼.
  * - 왼쪽 열: "응급 진료" → 두 줄 안내 → [응급 진료 시작 >].
  *   진료 카드로 가는 버튼은 두지 않는다 (사용자 지시 2026-11-13).
  *   프로토타입 음성 힌트 자리에는 시연용 샘플 안내를 둔다 (음성 명령 기능은 없다).
@@ -102,6 +104,8 @@ private val HomePetStatus = TextStyle(fontSize = 26.sp, lineHeight = 34.sp, font
  * @param onFindHospital 바로가기 [병원 찾기]. 안내 중·도착이면 비활성
  * @param onOpenRelax 바로가기 [릴렉스] (시연용 화면)
  * @param onOpenPetCard 바로가기 [반려동물 카드]
+ * @param petChoice 샘플 반려견 고르기 (021). null이면 [⇄ 변경]이 없다
+ * @param onSelectPet [⇄ 변경]을 누르면 다음 반려견 id로 부른다
  */
 @Composable
 fun ParkedScreen(
@@ -118,6 +122,8 @@ fun ParkedScreen(
     onFindHospital: () -> Unit = {},
     onOpenRelax: () -> Unit = {},
     onOpenPetCard: () -> Unit = {},
+    petChoice: com.meongcare.app.ui.pet.PetChoiceUi? = null,
+    onSelectPet: (String) -> Unit = {},
 ) {
     val colors = LocalDesignTokens.current.colors
     BoxWithConstraints(modifier = modifier.background(colors.homeBackground)) {
@@ -132,7 +138,7 @@ fun ParkedScreen(
                 .padding(horizontal = scale.gap(DesignSpace.xxxl), vertical = scale.gap(DesignSpace.xl)),
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
-            TopBar(card.card.pet, linkRow, isPetProfileSample, scale, colors, onOpenLink, onUnlink)
+            TopBar(card.card.pet, linkRow, isPetProfileSample, scale, colors, onOpenLink, onUnlink, petChoice, onSelectPet)
             val guiding = guidance !is GuidanceUiState.Idle
             val left = @Composable { m: Modifier ->
                 MainColumn(card, guidance, actions, isPetProfileSample, panel, onResend, scale, colors, m)
@@ -173,7 +179,7 @@ private fun Modifier.leftLine(colors: DesignColors, scale: DesignScale): Modifie
     drawLine(colors.homeLine, Offset(w / 2, 0f), Offset(w / 2, size.height), strokeWidth = w)
 }
 
-/** 위쪽 줄: 로고 글자 / 반려견 줄 + 연결 버튼 */
+/** 위쪽 줄: 로고 글자 / 반려견 줄 + [⇄ 변경] + 연결 버튼 */
 @Composable
 private fun TopBar(
     pet: PetHeader,
@@ -183,6 +189,8 @@ private fun TopBar(
     colors: DesignColors,
     onOpenLink: () -> Unit,
     onUnlink: () -> Unit,
+    petChoice: com.meongcare.app.ui.pet.PetChoiceUi?,
+    onSelectPet: (String) -> Unit,
 ) {
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Icon(PawIcon, contentDescription = null, tint = colors.primary, modifier = Modifier.size(scale.gap(44.dp)))
@@ -208,7 +216,27 @@ private fun TopBar(
             }
             status?.let { (text, color) -> Text(text, style = scale.style(HomePetStatus), color = color) }
         }
+        petChoice?.let { PetChangeButton(it, scale, colors, onSelectPet) }
         LinkAction(linkRow, registered?.name, scale, colors, onOpenLink, onUnlink)
+    }
+}
+
+/** [⇄ 변경] (프로토타입 홈 위쪽 줄, 021). 누를 때마다 다음 샘플 반려견으로 바뀐다 */
+@Composable
+private fun PetChangeButton(choice: com.meongcare.app.ui.pet.PetChoiceUi, scale: DesignScale, colors: DesignColors, onSelectPet: (String) -> Unit) {
+    val description = stringResource(R.string.home_pet_change_description)
+    Spacer(Modifier.width(scale.gap(DesignSpace.l)))
+    TextButton(
+        onClick = { onSelectPet(choice.nextId) },
+        shape = RoundedCornerShape(DesignRadius.m),
+        contentPadding = PaddingValues(horizontal = scale.gap(DesignSpace.m)),
+        modifier = Modifier
+            .heightIn(min = scale.touch(96.dp))
+            .semantics { contentDescription = description },
+    ) {
+        Icon(HomeIcons.Swap, contentDescription = null, tint = colors.selectedText, modifier = Modifier.size(scale.gap(32.dp)))
+        Spacer(Modifier.width(scale.gap(DesignSpace.s)))
+        Text(stringResource(R.string.home_pet_change), style = scale.style(HomeLabel), color = colors.selectedText)
     }
 }
 

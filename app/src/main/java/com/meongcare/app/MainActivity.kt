@@ -452,6 +452,18 @@ class MainActivity : ComponentActivity() {
                     },
                     voice = voiceUiState,
                     voiceActions = voiceActions,
+                    // 샘플 반려견 고르기 (021): 정차 중 홈에서만. 고르면 만든 카드를 지운다 (D2, 프로토타입 cycle)
+                    petChoice = com.meongcare.app.ui.pet.petChoiceOf(
+                        pets = container.samplePets.pets.map { com.meongcare.app.ui.pet.PetChoiceItem(it.id, it.profile.name) },
+                        selectedId = selectedSamplePet.id,
+                        isSample = isPetProfileSample,
+                        linked = linkState is com.meongcare.app.domain.link.OwnerLinkState.Linked,
+                        tripActive = guidanceUiState !is com.meongcare.app.ui.guidance.GuidanceUiState.Idle || tripState != null,
+                    ),
+                    onSelectPet = { id ->
+                        container.samplePets.select(id)
+                        cardViewModel.onCloseCard()
+                    },
                     bottomBar = {
                         if (BuildConfig.DEBUG) {
                             val fake = container.fakeDrivingStateSource

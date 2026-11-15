@@ -44,6 +44,16 @@ object HomeIcons {
         )
     }
 
+    /** 반려동물 변경: 좌우 화살표 (프로토타입 [⇄ 변경], 채운 모양, 021) */
+    val Swap: ImageVector by lazy {
+        ImageVector.Builder("Swap", 24.dp, 24.dp, 24f, 24f).apply {
+            addPath(
+                PathParser().parsePathString("M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z").toNodes(),
+                fill = SolidColor(Color.Black),
+            )
+        }.build()
+    }
+
     /** 버튼 끝 화살표 (선 굵기 2) */
     val Chevron: ImageVector by lazy { lineIcon("Chevron", "M9.5 6l6 6-6 6", strokeWidth = 2f) }
 

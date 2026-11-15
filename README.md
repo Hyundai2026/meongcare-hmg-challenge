@@ -258,7 +258,7 @@ Android Studio 없이 Gradle wrapper만으로 빌드됩니다.
 
 ## 팀
 
-**P2V (Pet to Vet)**
+팀명: **P2V (Pet to Vet)**
 
 | 이름 | 역할 |
 |---|---|

@@ -23,11 +23,10 @@ import com.meongcare.app.data.location.FakeCurrentLocationSource
 import com.meongcare.app.data.location.NaviCurrentLocationSource
 import com.meongcare.app.data.link.FakeOwnerLink
 import com.meongcare.app.data.link.NoOwnerLink
-import com.meongcare.app.data.pet.FakePetProfileSource
+import com.meongcare.app.data.pet.SamplePetChooser
 import com.meongcare.app.data.pet.LinkedPetProfileSource
 import com.meongcare.app.data.pet.LinkedProfileRead
 import com.meongcare.app.data.pet.LinkedProfileReader
-import com.meongcare.app.data.pet.SamplePetProfiles
 import com.meongcare.app.domain.link.OwnerLinkService
 import com.meongcare.app.data.server.AnonymousAuth
 import com.meongcare.app.data.server.FirestoreCaseSender
@@ -51,6 +50,7 @@ import com.meongcare.app.data.voice.PleosSpeechToTextClient
 import com.meongcare.app.data.voice.RealVoiceInput
 import com.meongcare.app.domain.card.MedicalCardSession
 import com.meongcare.app.domain.pet.PetProfileSource
+import com.meongcare.app.domain.pet.SamplePetChoice
 import com.meongcare.app.domain.phone.PhoneDialer
 import com.meongcare.app.data.vehicle.VehicleConnection
 import com.meongcare.app.domain.driving.DrivingState
@@ -275,9 +275,14 @@ class AppContainer(context: Context, val dataMode: DataMode) {
         LinkKind.NONE -> NoOwnerLink
     }
 
+    private val samplePetChooser = SamplePetChooser()
+
+    /** 시연용 샘플 반려견 두 마리와 고른 반려견 (021). 고르기는 정차 중 홈에서 한다. 앱 프로세스 동안만 기억한다 */
+    val samplePets: SamplePetChoice = samplePetChooser
+
     private val linkedProfileReader: LinkedProfileReader = when (petPlan.link) {
-        // Fake 연결은 연결해도 샘플 보리다 (화면에 시연용이라고 알린다)
-        LinkKind.FAKE -> LinkedProfileReader { LinkedProfileRead.Loaded(SamplePetProfiles.demoPet) }
+        // Fake 연결은 연결해도 샘플이다: 읽는 순간 고른 샘플 반려견 (021)
+        LinkKind.FAKE -> LinkedProfileReader { LinkedProfileRead.Loaded(samplePetChooser.selected.value.profile) }
         LinkKind.SERVER -> serverClient?.let { (config, auth) ->
             FirestorePetProfileReader(
                 config = config,
@@ -293,13 +298,13 @@ class AppContainer(context: Context, val dataMode: DataMode) {
     private val linkedPetProfileSource = LinkedPetProfileSource(
         scope = applicationScope,
         link = ownerLink,
-        sample = FakePetProfileSource(),
+        sample = samplePetChooser,
         reader = linkedProfileReader,
         sampleBeforeLink = petPlan.sampleBeforeLink,
     )
 
     /**
-     * 반려견 프로필 (014). 연결 전(또는 연결 없음)에는 샘플 "보리"(Real은 등록 안 됨), 서버 연결 뒤에는 보호자가 등록한 프로필이다.
+     * 반려견 프로필 (014). 연결 전(또는 연결 없음)에는 고른 샘플 반려견(Real은 등록 안 됨, 021), 서버 연결 뒤에는 보호자가 등록한 프로필이다.
      * 연결된 뒤 읽지 못하면 샘플로 대신하지 않는다 ([LinkedPetProfileSource]).
      */
     val petProfileSource: PetProfileSource = linkedPetProfileSource

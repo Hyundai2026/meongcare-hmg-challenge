@@ -140,7 +140,7 @@ Android Studio 없이 Gradle wrapper만으로 빌드됩니다.
    - JDK 17 이상 (JDK 21에서 확인)
    - Android SDK Platform 35, Build-Tools 35
    - `ANDROID_HOME` 환경 변수, 또는 저장소 루트 `local.properties`의 `sdk.dir`
-2. (선택) 음성 인식이나 로컬 서버를 쓸 때만 `secrets.properties`를 만듭니다. 아래 [설정과 API 키](#설정과-api-키). 없어도 빌드됩니다.
+2. (선택) 음성 인식이나 로컬 서버를 쓸 때만 `secrets.properties.example`을 복사해 `secrets.properties`를 만듭니다 (커밋하지 않습니다). 없어도 빌드됩니다.
 3. 빌드, 단위 테스트, 린트:
 
    ```
@@ -243,15 +243,6 @@ Android Studio 없이 Gradle wrapper만으로 빌드됩니다.
 | 보안 규칙 점검 | `npm --prefix firebase run check-rules` |
 
 자세히: [firebase/README.md](firebase/README.md), [web/README.md](web/README.md)
-
-## 설정과 API 키
-
-비밀값 파일은 모두 커밋하지 않습니다 (gitignore). 예시 파일을 복사해서 만듭니다.
-
-| 파일 | 넣는 값 | 예시 파일 | 없으면 |
-|---|---|---|---|
-| `secrets.properties` | `PLEOS_CLIENT_ID`/`PLEOS_CLIENT_SECRET` (Pleos Playground 콘솔에서 발급, 음성 인식), `FIREBASE_PROJECT_ID`/`FIREBASE_API_KEY`/`FIREBASE_EMULATOR_HOST` | `secrets.properties.example` | 빌드는 됩니다. 서버 없이 내장 시연 데이터로 동작합니다 |
-| `web/.env.local` | `VITE_FIREBASE_PROJECT_ID`/`VITE_FIREBASE_API_KEY`/`VITE_FIREBASE_EMULATOR_HOST` | `web/.env.example` | 보호자 웹은 브라우저 저장, 병원 웹은 메모리 모드 |
 
 ## SDK와 버전
 

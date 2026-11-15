@@ -103,6 +103,7 @@ class MainActivity : ComponentActivity() {
                 val linking by linkViewModel.isOpen.collectAsStateWithLifecycle()
                 val linkState by container.ownerLink.state.collectAsStateWithLifecycle()
                 val isPetProfileSample by container.petProfileIsSample.collectAsStateWithLifecycle()
+                val selectedSamplePet by container.samplePets.selected.collectAsStateWithLifecycle()
                 // 처음 화면 바로가기로 연 쪽 (019). 주행으로 바뀌었다가 정차하면 같은 쪽으로 돌아온다
                 var homePage by rememberSaveable { mutableStateOf(HomePage.NONE) }
                 val relaxViewModel: RelaxViewModel = viewModel()
@@ -157,7 +158,8 @@ class MainActivity : ComponentActivity() {
                 }
 
                 androidx.compose.runtime.CompositionLocalProvider(
-                    com.meongcare.app.ui.card.LocalSamplePetPhoto provides isPetProfileSample,
+                    com.meongcare.app.ui.card.LocalSamplePetPhoto provides
+                        com.meongcare.app.ui.card.samplePetPhotoRes(selectedSamplePet.id).takeIf { isPetProfileSample },
                 ) {
                 HomeScreen(
                     uiState = uiState,
@@ -422,8 +424,8 @@ class MainActivity : ComponentActivity() {
                             relaxSummary = relaxSummaryOf(relaxSettings),
                             isSample = isPetProfileSample,
                             onBack = { homePage = HomePage.NONE },
-                            sampleWeight = com.meongcare.app.data.pet.SamplePetProfiles.wanggeon.weight,
-                            sampleTraits = com.meongcare.app.data.pet.SamplePetProfiles.wanggeon.traits,
+                            sampleWeight = selectedSamplePet.weight,
+                            sampleTraits = selectedSamplePet.traits,
                             records = visitRecords.map { r ->
                                 listOfNotNull(
                                     r.endedAt.atZone(java.time.ZoneId.systemDefault())

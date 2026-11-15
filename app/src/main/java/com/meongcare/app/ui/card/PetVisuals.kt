@@ -37,22 +37,31 @@ val PawIcon: ImageVector by lazy {
 }
 
 /**
- * 샘플 반려견(보리)의 사진을 보일지 (2026-11-14 사용자 결정: 보리 프로필 사진). `MainActivity`가
- * 반려견 정보가 시연용 샘플일 때만 true로 둔다. 보호자 웹에서 연결한 반려견은 지금처럼 이름 첫 글자다.
+ * 지금 보일 샘플 반려견 사진 (021). `MainActivity`가 반려견 정보가 시연용 샘플일 때만 고른 반려견의 사진
+ * ([samplePetPhotoRes])을 넣는다. null이면 사진 없이 이름 첫 글자다 (보호자 웹에서 연결한 반려견).
  */
-val LocalSamplePetPhoto = androidx.compose.runtime.compositionLocalOf { false }
+val LocalSamplePetPhoto = androidx.compose.runtime.compositionLocalOf<Int?> { null }
+
+/** 샘플 반려견 id(프로토타입 P-DEMO-01/02)의 사진. 모르는 id면 null (021) */
+@androidx.annotation.DrawableRes
+fun samplePetPhotoRes(id: String): Int? = when (id) {
+    "P-DEMO-01" -> com.meongcare.app.R.drawable.sample_pet_wanggeon
+    "P-DEMO-02" -> com.meongcare.app.R.drawable.sample_pet_osyong
+    else -> null
+}
 
 /**
- * 반려견 아바타. 샘플 보리면 사진(둥근 원, 디자인 시안), 아니면 이름 첫 글자를 그린다.
+ * 반려견 아바타. 샘플 반려견이면 그 사진(둥근 원, 디자인 시안), 아니면 이름 첫 글자를 그린다.
  * 연결한 반려견의 사진(`PetProfile.photoDataUrl`)은 아직 그리지 않는다.
  *
  * @param initial null이거나 비면 발바닥을 그린다 (반려견 정보가 없을 때)
  */
 @Composable
 fun PetAvatar(initial: String?, size: Dp, modifier: Modifier = Modifier) {
-    if (LocalSamplePetPhoto.current && !initial.isNullOrEmpty()) {
+    val photo = LocalSamplePetPhoto.current
+    if (photo != null && !initial.isNullOrEmpty()) {
         androidx.compose.foundation.Image(
-            painter = androidx.compose.ui.res.painterResource(com.meongcare.app.R.drawable.sample_pet_photo),
+            painter = androidx.compose.ui.res.painterResource(photo),
             contentDescription = androidx.compose.ui.res.stringResource(com.meongcare.app.R.string.pet_photo_description),
             contentScale = androidx.compose.ui.layout.ContentScale.Crop,
             modifier = modifier.size(size).clip(androidx.compose.foundation.shape.CircleShape),

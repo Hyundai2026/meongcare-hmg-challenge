@@ -9,7 +9,7 @@ import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.unit.dp
 
 /**
- * 홈 화면 아이콘 (계획 019 D6). 확정 디자인 프로토타입(`docs/product/design/prototype/MeongCare car.html`)의
+ * 홈 화면 아이콘 (계획 019 D6). 확정 디자인 프로토타입(`docs/product/design/prototype/MeongCareCar.html`)의
  * 선 아이콘 SVG 경로를 그대로 옮겼다 (팀 디자인 자료). 24 격자, 선 굵기 1.8, 둥근 끝.
  * 색은 `Icon(tint = ...)`로 칠한다.
  */

@@ -11,7 +11,7 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 
 /**
- * 확정 디자인 프로토타입(`docs/product/design/prototype/MeongCare car.html`)의 토큰 (계획 018).
+ * 확정 디자인 프로토타입(`docs/product/design/prototype/MeongCareCar.html`)의 토큰 (계획 018).
  *
  * 값은 프로토타입 JS의 `TH` 표(라이트·다크)와 화면 스타일에서 그대로 옮겼다. 프로토타입 px ≈ dp, sp
  * (기준 화면 1682×1210 = 앱의 Wide 기준과 같은 크기).

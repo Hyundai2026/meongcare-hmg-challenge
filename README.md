@@ -18,6 +18,7 @@
   <a href="#전체-화면">전체 화면</a> ·
   <a href="#차량이라서-가능한-것">차량이라서 가능한 것</a> ·
   <a href="#서비스-생태계">서비스 생태계</a> ·
+  <a href="#기술-구조">기술 구조</a> ·
   <a href="#시연-범위">시연 범위</a> ·
   <a href="#실행-가이드">실행 가이드</a> ·
   <a href="#팀">팀</a>
@@ -40,7 +41,7 @@
 
 <p align="center"><img src="docs/readme/scene-05-suggest.png" alt="출발 제안" width="820"></p>
 
-**4. 도착했을 땐 이미 병원이 보리를 알고 있습니다** — 진료 카드가 먼저 가 있어 접수 설명이 필요 없고, 차 안에서 기다리다 진료 차례가 되면 알려 줍니다.
+**4. 도착했을 땐 이미 병원이 우리 아이를 알고 있습니다** — 진료 카드가 먼저 가 있어 접수 설명이 필요 없고, 차 안에서 기다리다 진료 차례가 되면 알려 줍니다.
 
 <p align="center"><img src="docs/readme/scene-08-arrive.png" alt="병원 도착" width="820"></p>
 
@@ -102,7 +103,7 @@
 
 | 항목 | 시연 내용 |
 |---|---|
-| 반려견 "보리" | 샘플 반려견입니다. 사진·체중·특징은 정해 둔 값입니다 (보호자 웹과 연결하면 등록한 정보로 바뀝니다) |
+| 반려견 "왕건이"·"오숑이" | 샘플 반려견 두 마리입니다. 정차 중 홈의 [⇄ 변경]으로 바꿉니다. 사진·품종·체중·특징·의료정보는 정해 둔 값입니다 (보호자 웹과 연결하면 등록한 정보로 바뀝니다) |
 | 시연 동물병원 | 가상 병원입니다. 이름·거리·이동 시간·전화번호(`02-0000-002N`)는 실제가 아닙니다 |
 | 병원 답변 · 진료 차례 호출 | 앱 안에서 정해 둔 시나리오로 옵니다. 병원 웹과 연결하지 않습니다 |
 | 진료 카드 전송 (시연 병원) | 앱 안에서만 보낸 것으로 처리합니다 |
@@ -185,7 +186,7 @@ Android Studio 없이 Gradle wrapper만으로 빌드됩니다.
 
 | | 서버 없이 | 로컬 서버를 켜면 |
 |---|---|---|
-| 반려견 정보 | 샘플 반려견 "보리" | 보호자 웹에서 등록한 정보를 연결 코드로 차에 가져옵니다 |
+| 반려견 정보 | 샘플 반려견 "왕건이"·"오숑이" | 보호자 웹에서 등록한 정보를 연결 코드로 차에 가져옵니다 |
 | 보호자 웹 | 브라우저에만 저장 | 서버에 저장하고 차와 연결 |
 | 병원 웹 | 이 브라우저에서만 (예시 환자 1건) | 같은 서버에 붙어 대기 시간 알림·진료 카드 화면을 봅니다 |
 | 동물병원 문의·카드 전송 | 앱 안 시연 | 앱 안 시연 (병원 웹으로 보내지 않습니다) |
@@ -250,6 +251,7 @@ Android Studio 없이 Gradle wrapper만으로 빌드됩니다.
 | Pleos SDK | Vehicle | `ai.pleos.playground:Vehicle:2.3.2` |
 | | NaviHelper (병원 경로 안내, 현재 위치) | `ai.pleos.playground:NaviHelper:3.0.5` |
 | | SpeechToText (`ON_DEVICE`, 증상 음성 입력) | `ai.pleos.playground:SpeechToText:3.3.1` |
+| | TextToSpeech (`ON_DEVICE`, 음성 안내 소리. 준비 중) | `ai.pleos.playground:TextToSpeech:3.3.1` |
 | AAOS | `CarUxRestrictionsManager` (주행·정차 판단) | Android API 34 에뮬레이터 |
 | Pleos 권한 | `NAVI_ROUTE_SEARCH`, `NAVI_ROUTE`, `STT_SERVICE`, `TTS_SERVICE` | |
 | Android 앱 | Kotlin 2.0.0, Jetpack Compose + Material3, AGP 8.8.2, Gradle 8.10.2 | minSdk 28 / target 35 |

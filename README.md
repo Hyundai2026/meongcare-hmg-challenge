@@ -55,7 +55,7 @@
 | **출발 확인** | **병원으로 이동 중** |
 | <img src="docs/readme/06-depart.png" alt="출발 확인" width="480"> | <img src="docs/readme/07-trip.png" alt="병원으로 이동 중" width="480"> |
 | **진료 완료** | **귀가 중** |
-| <img src="docs/readme/09-after.png" alt="진료 완료" width="480"> | <img src="docs/readme/10-going-home.png" alt="귀가 중" width="480"> |
+| <img src="docs/readme/09-after.png" alt="진료 완료" width="480"> | <img src="docs/readme/10-going-home.png" alt="귀가 중: 집까지 길 안내" width="480"> |
 | **귀가 완료** | **반려동물 카드** |
 | <img src="docs/readme/11-home-arrived.png" alt="귀가 완료" width="480"> | <img src="docs/readme/12-pet-card.png" alt="반려동물 카드" width="480"> |
 | **릴렉스 모드** | |

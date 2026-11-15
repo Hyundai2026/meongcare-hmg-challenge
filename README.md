@@ -65,7 +65,7 @@
 
 ## 차량이라서 가능한 것
 
-<p align="center"><img src="docs/readme/parked-vs-driving.png" alt="정차 중과 주행 중 화면 비교" width="900"></p>
+<p align="center"><img src="docs/readme/parked-vs-driving.png" alt="정차 중 멍쾌 화면과 주행 중 동물병원까지 길 안내 화면" width="900"></p>
 
 | Pleos SDK | 멍쾌에서 하는 일 |
 |---|---|

@@ -429,4 +429,4 @@ docs/product/bmad/planning-artifacts/
 
 ---
 
-더 알고 싶다면: [README의 팀원 개발 가이드](../../README.md#팀원-개발-가이드), [CLAUDE.md의 "기획 단계: BMAD"](../../CLAUDE.md)
+더 알고 싶다면: [팀원 개발 가이드](../conventions/team-guide.md), [CLAUDE.md의 "기획 단계: BMAD"](../../CLAUDE.md)

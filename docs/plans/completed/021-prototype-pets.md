@@ -167,7 +167,7 @@
 **필수**: 1, 2, 3, 4, 8, 9, 10 (11/15 APK·시연 영상에 바로 보이는 순서). **있으면 좋음**: 5(반려동물 카드 탭) → 6(테스트 이름 정리) → 7(증상 선택 [변경]) 순서. 시간이 모자라면 5~7을 건너뛰고 진행 로그에 적는다.
 Real SDK 래퍼 단계는 없다 (SDK를 쓰지 않는 메모리 값이다).
 
-- [ ] 1. 예시 JSON 값 떼어 놓기 + 샘플 두 마리 (데이터) → 커밋 2개
+- [x] 1. 예시 JSON 값 떼어 놓기 + 샘플 두 마리 (데이터) → 커밋 2개
   - `test(data): 예시 JSON 반려견 값을 샘플과 따로 둠`
     - `ExamplePetProfiles.bori`를 예시 JSON 값을 다 적은 독립 `PetProfile`로 (이름 보리, 골든리트리버, MALE, 2014-08-01, 추정 아님, 사진 null, 질환 ["심장질환"], 알레르기 ["특정 단백질 알레르기"], 약 [`Medication("심장약", "1일 1회")`], `2026-11-05T00:00:00Z`) + 위 KDoc.
     - `FirestorePetProfileJsonBoundaryTest.kt` 166행 → `ExamplePetProfiles.bori.medical`.
@@ -177,17 +177,17 @@ Real SDK 래퍼 단계는 없다 (SDK를 쓰지 않는 메모리 값이다).
     - `DEMO_WEIGHT`/`DEMO_TRAITS`를 지우므로 `MainActivity` 425~426행은 이 커밋에서 임시로 `SamplePetProfiles.wanggeon.weight`/`traits`를 넘긴다 (단계 3에서 고른 반려견 값으로 바뀐다).
     - 새 테스트 `data/pet/SamplePetProfilesTest`: 두 마리 값 전부, id가 서로 다르다, `all` 순서(왕건이 먼저), `demoPet == wanggeon.profile`.
     - 위 "테스트 분류" A·B를 고친다. 고친 파일 목록을 진행 로그에 적는다 (완료 기준 2).
-- [ ] 2. 고르기 Fake + 연결 → 커밋 1개
+- [x] 2. 고르기 Fake + 연결 → 커밋 1개
   - `feat(data): 샘플 반려견 고르기 추가`
     - 새 `data/pet/SamplePetChooser.kt`, `AppContainer`의 `samplePets`·`sample`·Fake reader (위 "데이터").
     - 새 테스트 `data/pet/SamplePetChooserTest`: 처음은 왕건이 / `select("P-DEMO-02")`면 `selected`와 `profile`이 오숑이 / 같은 id는 다시 내보내지 않음 / 모르는 id 무시 / `selectNext()`가 01→02→01 / 한 마리면 `selectNext()`가 그대로.
     - 새 테스트 `data/pet/LinkedPetProfileSourceSampleChoiceTest`: 연결 전 고르면 새 샘플이 나온다 / 연결됨이면 고르기를 바꿔도 서버 값만 나온다 / 끊기면 마지막으로 고른 샘플이 나온다 / `sampleBeforeLink=false`면 고르기와 상관없이 등록 안 됨.
-- [ ] 3. 사진 두 장 (UI) → 커밋 1개
+- [x] 3. 사진 두 장 (UI) → 커밋 1개
   - `feat(ui): 샘플 반려견마다 사진을 보임`
     - drawable 두 장 추가, `sample_pet_photo.jpg` 삭제, `PetVisuals.kt`(`LocalSamplePetPhoto: Int?`, `samplePetPhotoRes`), `MainActivity` provides.
     - `PetCardScreen`: `sampleWeight`/`sampleTraits`를 고른 샘플의 `weight`/`traits`로 (샘플일 때만, 지금 규칙 그대로). 미리보기는 `data` import를 빼고 파일 안의 미리보기 값(왕건이)을 쓴다.
     - 새 테스트 `ui/card/SamplePetPhotoTest`: 두 id가 서로 다른 null 아닌 값, 모르는 id·빈 문자열은 null.
-- [ ] 4. 홈 [⇄ 변경] (UI, Fake·시연 모드로 확인) → 커밋 1~2개
+- [x] 4. 홈 [⇄ 변경] (UI, Fake·시연 모드로 확인) → 커밋 1~2개
   - `feat(ui): 홈에서 샘플 반려견 바꾸기`
     - `HomeIcons.Swap`(프로토타입 채운 아이콘 경로, 팀 디자인 자료).
     - 새 `ui/pet/PetChoice.kt`(`PetChoiceItem`, `PetChoiceUi`, `petChoiceOf`) + 새 테스트 `ui/pet/PetChoiceTest`: 두 마리·샘플·연결 안 됨·trip 없음이면 보임, `nextId`가 다음 반려견(끝이면 처음) / 한 마리·샘플 아님·연결됨·trip 있음이면 null / 탭의 `selected`가 고른 하나뿐.
@@ -196,25 +196,25 @@ Real SDK 래퍼 단계는 없다 (SDK를 쓰지 않는 메모리 값이다).
     - 새 문자열: `home_pet_change` "변경", `home_pet_change_description` "반려동물 변경".
     - 미리보기: 두 마리 + 연결 버튼 없음.
   - (UI만 따로 커밋하고 싶으면 `PetChoice.kt`+테스트를 먼저 `feat(ui): 반려견 고르기 표시 규칙 추가`로 나눈다.)
-- [ ] 5. (있으면 좋음) 반려동물 카드 이름 탭 → `feat(ui): 반려동물 카드에서 샘플 반려견 고르기`
+- [-] 5. (건너뜀: 사용자 결정 D3 기본안) (있으면 좋음) 반려동물 카드 이름 탭 → `feat(ui): 반려동물 카드에서 샘플 반려견 고르기`
   - `PetCardScreen`에 `petChoice: PetChoiceUi? = null`, `onSelectPet`. 머리 줄 오른쪽 끝에 탭 줄 (프로토타입 2번 모양). 고른 탭 primary·SemiBold·아래 4dp 선, 아닌 탭 homeSubText. 같은 탭을 누르면 아무 일 없음.
   - 연결은 단계 4와 같은 `onSelectPet`.
-- [ ] 6. (있으면 좋음) 주석·미리보기·테스트 이름 정리 → 커밋 1~2개
+- [x] 6. (있으면 좋음) 주석·미리보기·테스트 이름 정리 → 커밋 1~2개
   - `docs(app): 샘플 반려견 주석과 미리보기를 왕건이로` — 완료 기준 4의 `보리` 0건을 만든다: `PetPlan.kt`(10·19·29~31·45행), `PetProfileSource.kt` 7행, `AppContainer.kt` 279·302행, `FakePetProfileSource.kt` 9행, `PetVisuals.kt` 40·46행, `PetCardScreen.kt` 156행 주석, `MedicalCardScreen.kt` 274~282행 미리보기 값(주석 "값은 시연용 샘플과 같다"도 왕건이 값에 맞춘다), `SymptomPickerScreen.kt` 165·332·351행, `TripScreens.kt` 280행, `RelaxScreen.kt` 136·276행, `SymptomPickerScreen.kt` 93행 "한 마리만 다루므로 넣지 않았다"는 단계 7을 안 하면 "증상 선택에는 넣지 않았다(021 D3)"로.
     - 주의: 완료 기준 4는 이 커밋에 기댄다. 단계 6을 건너뛰면 **주석·미리보기 줄만이라도** 이 커밋을 낸다 (필수 쪽으로 올린다). 테스트 이름 정리만 있으면 좋음이다.
   - `test: 테스트 이름의 샘플 보리를 샘플로` — "테스트 분류" D (+ E의 `FirestorePetProfileJsonTest` 이름).
-- [ ] 7. (있으면 좋음) 증상 선택 머리 [변경] → `feat(ui): 증상 선택에서 샘플 반려견 바꾸기`
+- [-] 7. (건너뜀: 사용자 결정 D3 기본안) (있으면 좋음) 증상 선택 머리 [변경] → `feat(ui): 증상 선택에서 샘플 반려견 바꾸기`
   - `SymptomPickerScreen`에 `petChoice`, `onSelectPet`. "반려동물 {이름}" 오른쪽 [변경] (프로토타입 3번 모양). 누르면 `samplePets.select(nextId)` + 고르던 증상을 비운다 (`cardViewModel.onCancelPicking()` 뒤 `onStartCard()`, 또는 세션에 "고르던 것 비우기"가 있으면 그것. 구현 전에 `MedicalCardSession`을 읽고 진행 로그에 적는다). 음성 듣는 중이면 멈춘다(`voiceActions.onStop`).
-- [ ] 8. 테스트 (`tester`) → `test(...): 샘플 반려견 고르기 경계 테스트`
+- [x] 8. 테스트 (`tester`) → `test(...): 샘플 반려견 고르기 경계 테스트`
   - 넘길 것: 이 계획 파일 경로, 대상 `domain/pet/SamplePet.kt`, `data/pet/SamplePetProfiles.kt`, `data/pet/SamplePetChooser.kt`, `ui/pet/PetChoice.kt`, `ui/card/PetVisuals.kt`(`samplePetPhotoRes`), `di/AppContainer.kt`의 샘플 연결(Fake reader). 구현 설명은 넘기지 않는다.
   - `testDebugUnitTest` 전체 통과. 완료 기준 2·3·4의 확인 결과를 진행 로그에 적는다.
-- [ ] 9. 화면 확인 (`/verify`) → 고칠 것이 있으면 `fix(ui): ...`
+- [x] 9. 화면 확인 (`/verify`) → 고칠 것이 있으면 `fix(ui): ...`
   - 완료 기준 5의 절차. 프로토타입 홈과 나란히 본 결과(사진 크기·[⇄ 변경] 위치), 주행 전환 결과를 진행 로그에 적는다. 다 되면 사용자에게 에뮬레이터 화면을 바로 보여 준다.
   - `docs: 차 앱 시연 샘플 반려견을 왕건이·오숑이로` — 완료 기준 6:
     - `docs/architecture.md` 158행(`SamplePetProfiles` 설명, `SamplePetChooser`·`SamplePetChoice` 추가), 310~312행 표("샘플 보리" → "고른 샘플(왕건이·오숑이)"), 357행.
     - `docs/product/feature-facts.md` 43행(샘플 반려견 두 마리, 사진은 프로토타입 사진·사용 권리 확인 필요, 왕건이 체중 30kg은 정해 둔 값), 53·54행("보리" → "샘플 반려견 왕건이·오숑이, 정차 중 홈에서 고름").
     - `docs/data/pet-profile.md` 8행, `docs/data/owner-link.md` 72행: 차 앱 설명 한 줄씩만 ("이 예시와 같은 값의 샘플 보리" → "차 앱 시연 샘플(예시와 값이 다름, 021)", "샘플 보리로" → "샘플로"). **예시 JSON은 고치지 않는다.**
-- [ ] 10. 개발 노트 작성 (`docs/notes/xxj15/2026-11-15-prototype-pets.md`) → `docs(notes): prototype-pets`
+- [x] 10. 개발 노트 작성 (`docs/notes/xxj15/2026-11-15-prototype-pets.md`) → `docs(notes): prototype-pets`
   - 계획 파일을 `docs/plans/completed/`로 옮기는 것도 커밋한다 (`docs(plans): 021 완료로 옮김`).
   - 그다음 `/ship`. 제출용 APK가 필요하면 사용자가 `/promote` → `/release-apk`를 요청한다 (스스로 하지 않는다).
 
@@ -231,4 +231,13 @@ Real SDK 래퍼 단계는 없다 (SDK를 쓰지 않는 메모리 값이다).
 - 2026-11-15: 계획 작성. 브랜치 `feat/prototype-pets`(dev `5b034b8`). 사용자 결정은 위 "사용자가 정한 것".
 - 2026-11-15: 사용자 결정 D1 = 두 마리 다 MALE, D2~D6 기본안, 사진 사용 가능. 구현 시작.
 
+- 2026-11-15: 시작할 때 테스트 1466개.
+- 단계 1: ExamplePetProfiles를 독립 값으로(e39173e). 샘플 두 마리(9006dc8). 고친 기존 테스트: FakePetProfileSourceTest, FirestoreJsonBoundaryTest, HospitalTripAckTest, HospitalTripTest, MedicalCardViewModelBoundaryTest, MedicalCardViewModelTest, PetCardContentTest (+ 첫 커밋의 FirestorePetProfileJsonBoundaryTest). 모두 A·B 목록 안.
+- 단계 2: SamplePetChooser + AppContainer(3c2993f). 단계 3: 사진(3f2b709). 단계 4: 홈 [⇄ 변경](3ca8c78).
+- 단계 6: 주석·미리보기(bd63cc6), 테스트 이름(e175f5f). `app/src/main`의 "보리"는 KoreanParticles 예시와 SamplePetProfiles KDoc의 예시 JSON 설명만 남았다. sample_pet_photo·DEMO_* 0건. ui→data import는 DemoHospitals.kt만.
+- 단계 8: tester 경계 테스트 36개(cde704c). 전체 1525개 통과, 버그 없음.
+- 단계 9: 화면 확인 (개발 노트 "확인"). 시연 모드 홈·반려동물 카드·진료 카드·바꾸면 카드 지워짐, Fake 모드 주행/정차·Fake 연결/끊기·출발 뒤 숨김, 크래시 없음. VHAL 주입(cmd car_service inject-vhal-event)은 예외로 막혀 주행 전환은 Fake 모드 debug 패널로 봤다. 문서(bbeeba8).
+
 ## 결정 / 배운 점
+
+- 프로토타입 데이터와 사진이 어긋날 수 있다(왕건이 "말티즈 3.8kg" + 큰 개 사진). 프로토타입 값을 옮길 때 사진과 같이 본다.

@@ -232,7 +232,6 @@ Android Studio 없이 Gradle wrapper만으로 빌드됩니다.
 - `adb reverse`는 `preflight -- --fix`가 걸어 줍니다. 에뮬레이터를 다시 켜면 다시 걸어야 합니다.
 - `adb reverse` 대신 `FIREBASE_EMULATOR_HOST=10.0.2.2`(Android 에뮬레이터에서 본 PC 주소)로도 붙습니다.
 - 모두 같은 PC 안의 연결이라 방화벽 설정은 필요 없습니다.
-- **projectId는 모두 `demo-meongcare`**로 맞춥니다: 차 앱 `secrets.properties`, 웹 `web/.env.local`, `firebase/.firebaserc`.
 
 ### 시연 데이터 초기화
 

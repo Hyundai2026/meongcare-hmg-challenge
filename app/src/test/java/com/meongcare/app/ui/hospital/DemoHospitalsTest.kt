@@ -17,7 +17,7 @@ import org.junit.Test
 
 /**
  * 계획 019 진행 로그(2026-11-13 사용자 결정): 홈 [병원 찾기]의 시연 병원은 디자인 시안 이름 5곳 고정, 가상 병원,
- * 대기시간 미확인, 카드 안 받음. 값은 프로토타입(`docs/product/design/prototype/MeongCare car.html`의 HP0)과 같다.
+ * 대기시간 미확인, 카드 안 받음. 값은 프로토타입(`docs/product/design/prototype/MeongCareCar.html`의 HP0)과 같다.
  */
 class DemoHospitalsTest {
     private val all = DemoHospitals.all

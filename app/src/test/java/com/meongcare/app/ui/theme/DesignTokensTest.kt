@@ -9,7 +9,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 /**
- * 계획 018 "토큰 (TH 표)"와 프로토타입 원본(`docs/product/design/prototype/MeongCare car.html`의 `TH.light`/`TH.dark`)의 값.
+ * 계획 018 "토큰 (TH 표)"와 프로토타입 원본(`docs/product/design/prototype/MeongCareCar.html`의 `TH.light`/`TH.dark`)의 값.
  * 다크 hbg는 원본에서 `TH.dark.bg`로 채운다.
  */
 class DesignTokensTest {

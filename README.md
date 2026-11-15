@@ -15,10 +15,12 @@
 
 <p align="center">
   <a href="#핵심-기능">핵심 기능</a> ·
-  <a href="#차량이라서-가능한-것">차량 특화</a> ·
+  <a href="#전체-화면">전체 화면</a> ·
+  <a href="#차량이라서-가능한-것">차량이라서 가능한 것</a> ·
   <a href="#서비스-생태계">서비스 생태계</a> ·
   <a href="#시연-범위">시연 범위</a> ·
-  <a href="#실행-가이드">실행 가이드</a>
+  <a href="#실행-가이드">실행 가이드</a> ·
+  <a href="#팀">팀</a>
 </p>
 
 <p align="center"><img src="docs/readme/demo.gif" alt="멍쾌 시연: 응급 진료 시작부터 귀가 완료까지" width="960"></p>
@@ -42,18 +44,6 @@
 
 <p align="center"><img src="docs/readme/scene-08-arrive.png" alt="병원 도착" width="820"></p>
 
-## 차량이라서 가능한 것
-
-<p align="center"><img src="docs/readme/parked-vs-driving.png" alt="정차 중과 주행 중 화면 비교" width="900"></p>
-
-| Pleos SDK | 멍쾌에서 하는 일 |
-|---|---|
-| **Vehicle** · AAOS `CarUxRestrictions` | 주행 중엔 남은 시간만 크게, 정차 중에만 입력과 상세 화면 |
-| **NaviHelper** | 고른 병원을 목적지로 설정, 길 안내는 차량 내비게이션이 |
-| **SpeechToText** (`ON_DEVICE`) | 목록에 없는 증상은 말로 설명 |
-
-차량 디스플레이(1682×1210) 기준으로 설계했습니다. 모든 SDK는 래퍼 뒤에 두고 Fake 구현을 함께 만들어 PC·테스트·시연 영상에서도 같은 흐름이 동작합니다.
-
 ## 전체 화면
 
 <details>
@@ -73,6 +63,18 @@
 
 </details>
 
+## 차량이라서 가능한 것
+
+<p align="center"><img src="docs/readme/parked-vs-driving.png" alt="정차 중과 주행 중 화면 비교" width="900"></p>
+
+| Pleos SDK | 멍쾌에서 하는 일 |
+|---|---|
+| **Vehicle** · AAOS `CarUxRestrictions` | 주행 중엔 남은 시간만 크게, 정차 중에만 입력과 상세 화면 |
+| **NaviHelper** | 고른 병원을 목적지로 설정, 길 안내는 차량 내비게이션이 |
+| **SpeechToText** (`ON_DEVICE`) | 목록에 없는 증상은 말로 설명 |
+
+차량 디스플레이(1682×1210) 기준으로 설계했습니다. 모든 SDK는 래퍼 뒤에 두고 Fake 구현을 함께 만들어 PC·테스트·시연 영상에서도 같은 흐름이 동작합니다.
+
 ## 서비스 생태계
 
 | | 하는 일 |
@@ -83,6 +85,8 @@
 
 보호자 · 차 · 동물병원을 잇는 구조라서, 제휴 병원과 진료 기록이 쌓일수록 다음 이동이 더 빨라집니다.
 
+현재 출품작에서 실제로 동작하는 범위는 아래 [시연 범위](#시연-범위)에 정리했습니다.
+
 ## 기술 구조
 
 - **Android 앱**: Kotlin, Jetpack Compose(Material3), MVVM, 수동 DI. 단일 `app` 모듈.
@@ -90,6 +94,7 @@
 - **서버**: Firebase (Firestore, 익명 로그인). 서버가 없어도 앱은 내장 데이터로 끝까지 동작합니다.
 - **품질**: 단위 테스트(Android·웹), 커밋마다 빌드 확인, dev 반영 전 검증 파이프라인.
 - 자세한 구조: [docs/architecture.md](docs/architecture.md)
+- 버전: 아래 [SDK와 버전](#sdk와-버전)
 
 ## 시연 범위
 
@@ -153,7 +158,7 @@ Android Studio 없이 Gradle wrapper만으로 빌드됩니다.
 
 | 경우 | 명령 | 확인할 것 |
 |---|---|---|
-| 신규 설치 | `adb uninstall com.meongcare.app` (있으면) → `adb install app/build/outputs/apk/debug/app-debug.apk` | 런처에서 MeongCare가 켜지고 홈 화면(응급 진료)이 보입니다 |
+| 신규 설치 | `adb uninstall com.meongcare.app` (있으면) → `adb install app/build/outputs/apk/debug/app-debug.apk` | 런처에서 MeongCare(멍쾌)가 켜지고 홈 화면(응급 진료)이 보입니다 |
 | 업데이트 | `adb install -r app/build/outputs/apk/debug/app-debug.apk` | 앱이 그대로 켜지고, debug 패널에서 고른 데이터 모드가 유지됩니다 |
 
 ## 실행과 시연

@@ -125,7 +125,7 @@
 | 항목 | 값 |
 |---|---|
 | 에뮬레이터 | Pleos Connect Emulator v2.1.0 (Android API 34, 시스템 이미지 `pleos_car_emulator`) |
-| 화면 규격 | 2560×1440, mdpi(160dpi), 12.8인치. 앱은 오른쪽 앱 영역 **1682×1210dp(가로)**에 뜹니다 |
+| 화면 규격 | 2560×1440, mdpi(160dpi), 12.8인치. 앱은 오른쪽 앱 영역 1682×1210dp(가로)에 뜹니다 |
 | 실행 조건 | GPU 필수, **Cold boot**로 켭니다 |
 | 앱 | `com.meongcare.app`, minSdk 28 / target SDK 35 |
 | 위치 | 에뮬레이터 내비의 현재 위치 (기본 시흥동). 내비 화면을 한 번 띄워야 위치가 옵니다 |
@@ -166,7 +166,7 @@ Android Studio 없이 Gradle wrapper만으로 빌드됩니다.
 1. 앱을 켭니다. debug 빌드는 **Fake 모드**로 켜집니다.
 2. 화면 아래 debug 패널 오른쪽 위 버튼으로 **시연 모드**로 바꿉니다 (누를 때마다 Fake → 시연 → Real, 바꾸면 앱이 다시 시작됩니다). 패널 제목이 `DEBUG · 시연`이면 됩니다.
    - 시연 모드: 주행·정차는 차량의 실제 주행 규제 값, 경로는 Pleos 내비게이션, 병원 답변·남은 시간·도착은 앱 안에서 정해 둔 시나리오.
-3. 주행·정차는 Virtual Console의 기어로 바꿉니다: `adb forward tcp:8088 tcp:8088` → PC 브라우저로 `http://127.0.0.1:8088/` → Emulation Controls → Motion → Gear Selection. 처음에는 **P(정차)**입니다.
+3. 주행·정차는 Virtual Console의 기어로 바꿉니다: `adb forward tcp:8088 tcp:8088` → PC 브라우저로 `http://127.0.0.1:8088/` → Emulation Controls → Motion → Gear Selection. 처음에는 P(정차)입니다.
 4. 시연 시나리오 (P 상태에서):
    1. 홈 **[응급 진료 시작]** → 증상 카드를 고릅니다 (예: 호흡 곤란, 구토) → **[증상 확인하기]**
    2. 진료 카드 확인 (반려견 정보 + 고른 증상) → **[동물병원 찾기]**
@@ -232,7 +232,6 @@ Android Studio 없이 Gradle wrapper만으로 빌드됩니다.
 - `adb reverse`는 `preflight -- --fix`가 걸어 줍니다. 에뮬레이터를 다시 켜면 다시 걸어야 합니다.
 - `adb reverse` 대신 `FIREBASE_EMULATOR_HOST=10.0.2.2`(Android 에뮬레이터에서 본 PC 주소)로도 붙습니다.
 - 모두 같은 PC 안의 연결이라 방화벽 설정은 필요 없습니다.
-- **projectId는 모두 `demo-meongcare`**로 맞춥니다: 차 앱 `secrets.properties`, 웹 `web/.env.local`, `firebase/.firebaserc`.
 
 ### 시연 데이터 초기화
 
@@ -259,7 +258,7 @@ Android Studio 없이 Gradle wrapper만으로 빌드됩니다.
 
 ## 팀
 
-**P2V (Pet to Vet)**
+팀명: **P2V (Pet to Vet)**
 
 | 이름 | 역할 |
 |---|---|

@@ -422,8 +422,8 @@ class MainActivity : ComponentActivity() {
                             relaxSummary = relaxSummaryOf(relaxSettings),
                             isSample = isPetProfileSample,
                             onBack = { homePage = HomePage.NONE },
-                            sampleWeight = com.meongcare.app.data.pet.SamplePetProfiles.DEMO_WEIGHT,
-                            sampleTraits = com.meongcare.app.data.pet.SamplePetProfiles.DEMO_TRAITS,
+                            sampleWeight = com.meongcare.app.data.pet.SamplePetProfiles.wanggeon.weight,
+                            sampleTraits = com.meongcare.app.data.pet.SamplePetProfiles.wanggeon.traits,
                             records = visitRecords.map { r ->
                                 listOfNotNull(
                                     r.endedAt.atZone(java.time.ZoneId.systemDefault())

@@ -340,7 +340,7 @@ class HospitalTripTest {
         f.guidance.arrive()
         runCurrent()
         val all = f.log.joinToString("\n")
-        assertFalse(all.contains("보리"))
+        assertFalse(all.contains("왕건이"))
         assertFalse(all.contains("기침") || all.contains("COUGH") || all.contains("호흡"))
         assertFalse(all.contains("바른"))
         assertFalse(all.contains("37."))

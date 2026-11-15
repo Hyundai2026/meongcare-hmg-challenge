@@ -142,7 +142,7 @@ class MedicalCardViewModelBoundaryTest {
 
         source.send(PetProfileLoad.Loaded(bori))
         runCurrent()
-        assertEquals("보리", (vm.uiState.value.card.pet as PetHeader.Registered).name)
+        assertEquals("왕건이", (vm.uiState.value.card.pet as PetHeader.Registered).name)
         assertEquals(CardSessionState.Ready(setOf(COUGH)), vm.uiState.value.session)
     }
 
@@ -281,7 +281,7 @@ class MedicalCardViewModelBoundaryTest {
         show(vm)
         val card = vm.uiState.value.card
         assertEquals(emptyList<Symptom>(), card.symptoms)
-        assertEquals(listOf("특정 단백질 알레르기"), card.medical!!.allergies)
+        assertEquals(listOf("심장질환"), card.medical!!.conditions)
     }
 
     @Test
